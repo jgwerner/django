@@ -58,7 +58,7 @@ class ProjectFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProjectFile
         fields = ("id", "project", "file", "public", "base64_data", "name")
-        read_only_fields = ("author",)
+        read_only_fields = ("author", "project")
 
     def create(self, validated_data):
         project = Project.objects.get(pk=validated_data.pop("project"))

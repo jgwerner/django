@@ -17,8 +17,6 @@ log = logging.getLogger('projects')
 class FileWatcherTest(TestCase):
     def setUp(self):
         self.project = ProjectFactory()
-        log.debug(("DB Settings in test file", settings.DATABASES))
-        log.debug(("self.project.pk", self.project.pk))
         collaborator = CollaboratorFactory(project=self.project)
         self.user = collaborator.user
         self.user_dir = Path(settings.MEDIA_ROOT, self.user.username)
