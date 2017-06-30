@@ -23,7 +23,7 @@ class ProjectViewSet(NamespaceMixin, viewsets.ModelViewSet):
     serializer_class = ProjectSerializer
     permission_classes = (permissions.IsAuthenticated, ProjectPermission)
     filter_fields = ('private', 'name')
-    ordering_fileds = ('name',)
+    ordering_fields = ('name',)
 
 
 class ProjectMixin(object):
@@ -83,11 +83,30 @@ class ProjectFileViewSet(ProjectMixin,
 
         return files
 
+    def get_queryset(self, *args, **kwargs):
+        queryset = ProjectFile.objects.all()
+        filename = self.request.query_params.get("filename", None)
+        if filename is not None:
+            complete_filename = "{usr}/{proj}/{file}".format(usr=self.request.user.username,
+                                                             proj=kwargs.get("project_pk"),
+                                                             file=filename)
+            queryset = ProjectFile.objects.filter(file=complete_filename)
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset(*args, **kwargs)
+        serializer = self.serializer_class(queryset, many=True)
+        data = serializer.data
+        for proj_file in data:
+            proj_file['file'] = request.build_absolute_uri(proj_file['file'])
+
+        return Response(data, status=status.HTTP_200_OK)
+
     def create(self, request, *args, **kwargs):
         files = self._get_files(request)
 
         proj_files_to_serialize = []
-        project_pk = request.data.get("project")
+        project_pk = kwargs.get("project_pk")
 
         public = request.data.get("public") in ["true", "on", True]
 

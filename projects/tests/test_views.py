@@ -163,8 +163,7 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
     def test_create_file(self):
         url = reverse('projectfile-list', kwargs=self.url_kwargs)
         test_file = open("projects/tests/file_upload_test_1.txt", "rb")
-        data = {'project': self.project.pk,
-                'file': test_file,
+        data = {'file': test_file,
                 'public': "on"}
         response = self.client.post(url, data, format="multipart")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -183,8 +182,7 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
         url = reverse('projectfile-list', kwargs=self.url_kwargs)
         b64_content = b"test"
         b64 = base64.b64encode(b64_content)
-        data = {'project': self.project.pk,
-                'base64_data': b64,
+        data = {'base64_data': b64,
                 'name': "foo"}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -203,8 +201,7 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
             files_list.append(uploaded_file)
 
         url = reverse('projectfile-list', kwargs=self.url_kwargs)
-        data = {'project': self.project.pk,
-                'files': files_list}
+        data = {'files': files_list}
 
         response = self.client.post(url, data, format="multipart")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -230,6 +227,24 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(ProjectFile.objects.count(), files_count)
 
+    def test_file_details_by_filename(self):
+        uploaded_file = generate_random_file_content("foo.txt")
+        project_file = ProjectFileFactory(author=self.user,
+                                          project=self.project,
+                                          file=uploaded_file)
+        url = reverse('projectfile-list', kwargs=self.url_kwargs)
+        filename_for_request = project_file.file.name.split("/")[2:]
+        response = self.client.get(url, {'filename': filename_for_request})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+
+        response_file = ProjectFile.objects.get(pk=response.data[0].get('id'))
+        self.assertEqual(response_file.file.name, project_file.file.name)
+        self.assertEqual(response_file.file.size, uploaded_file.size)
+        file_path = os.path.join(settings.MEDIA_ROOT, project_file.file.name)
+        self.assertEqual(response_file.file.path, str(file_path))
+
     def test_file_details(self):
         uploaded_file = generate_random_file_content("foo")
         project_file = ProjectFileFactory(author=self.user,
@@ -239,12 +254,11 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
         kwargs['pk'] = project_file.pk
         url = reverse('projectfile-detail', kwargs=kwargs)
         response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        db_project_file = ProjectFile.objects.get(pk=project_file.pk)
-        self.assertEqual(db_project_file.file.name, project_file.file.name)
-        self.assertEqual(db_project_file.file.size, uploaded_file.size)
+        response_file = ProjectFile.objects.get(pk=response.data.get('id'))
+        self.assertEqual(response_file.file.name, project_file.file.name)
+        self.assertEqual(response_file.file.size, uploaded_file.size)
         file_path = os.path.join(settings.MEDIA_ROOT, project_file.file.name)
-        self.assertEqual(project_file.file.path, str(file_path))
+        self.assertEqual(response_file.file.path, str(file_path))
 
     def test_file_update(self):
         uploaded_file = generate_random_file_content("to_update")
@@ -257,8 +271,7 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
         url = reverse('projectfile-detail', kwargs=kwargs)
         new_upload = generate_random_file_content("to_update",
                                                   num_kb=2)
-        data = {'project': self.project.pk,
-                'public': True,
+        data = {'public': True,
                 'file': new_upload}
         response = self.client.put(url, data, format="multipart")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -279,8 +292,7 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
         url = reverse('projectfile-detail', kwargs=kwargs)
         b64_content = b"test"
         b64 = base64.b64encode(b64_content)
-        data = {'project': self.project.pk,
-                'public': True,
+        data = {'public': True,
                 'base64_data': b64,
                 'name': project_file.file.name.split("/")[-1]}
         response = self.client.put(url, data)
