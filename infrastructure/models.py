@@ -1,7 +1,7 @@
 import logging
 from django.conf import settings
 from django.db import models
-from docker import DockerClient
+from docker import Client
 from docker.errors import APIError
 
 from .managers import DockerHostQuerySet
@@ -32,7 +32,7 @@ class DockerHost(models.Model):
 
     @property
     def client(self):
-        return DockerClient(base_url=self.url)
+        return Client(base_url=self.url)
 
     @property
     def status(self):

@@ -1,11 +1,11 @@
 from celery import shared_task
-from .spawners import SwarmModeSpawner
+from .spawners import DockerSpawner
 from .models import Server
 
 
 def server_action(action: str, server_pk: str):
     server = Server.objects.get(pk=server_pk)
-    spawner = SwarmModeSpawner(server)
+    spawner = DockerSpawner(server)
     getattr(spawner, action)()
 
 
