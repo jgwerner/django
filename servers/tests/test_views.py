@@ -33,7 +33,14 @@ class ServerTest(APITestCase):
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         db_server = Server.objects.get()
-        self.assertEqual(response.data['endpoint'], 'http://example.com/server/{}/jupyter/tree'.format(db_server.id))
+        self.assertEqual(
+            response.data['endpoint'],
+            'http://example.com/{namespace}/projects/{project_id}/servers/{server_id}/endpoint/jupyter/tree'.format(
+                namespace=self.user.username,
+                project_id=self.project.pk,
+                server_id=db_server.id
+            )
+        )
         self.assertEqual(Server.objects.count(), 1)
         self.assertEqual(db_server.name, data['name'])
         self.assertEqual(db_server.environment_resources, self.env_res)
@@ -102,7 +109,7 @@ class ServerTest(APITestCase):
     def test_server_internal_running(self, server_status):
         server_status.return_value = Server.RUNNING
         server = ServerFactory(project=self.project)
-        url = reverse('server_internal', kwargs={'server_pk': server.pk})
+        url = reverse('server_internal', kwargs={'server_pk': server.pk, **self.url_kwargs})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         server_ip = server.get_private_ip()
