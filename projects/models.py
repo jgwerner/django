@@ -96,6 +96,18 @@ class ProjectFile(models.Model):
 
     objects = FileQuerySet.as_manager()
 
+    @property
+    def path(self):
+        relative_path = self.file.name.replace(str(self.project.pk), "")
+        relative_path = relative_path.replace(self.author.username, "")
+        relative_path = relative_path.replace(self.file.name.split("/")[-1], "")
+        relative_path = relative_path.lstrip("/")
+        return relative_path
+
+    @property
+    def name(self):
+        return self.file.name.split("/")[-1]
+
     def __str__(self):
         return "{auth};{proj};{name}".format(auth=self.author.username,
                                              proj=self.project.name,

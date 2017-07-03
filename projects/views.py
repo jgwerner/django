@@ -1,6 +1,7 @@
 import base64
 import logging
-from django.core.files.base import ContentFile
+import os
+from django.core.files.base import ContentFile, File
 from rest_framework import viewsets, status, permissions
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
@@ -63,39 +64,67 @@ class ProjectFileViewSet(ProjectMixin,
     parser_classes = (MultiPartParser, FormParser, JSONParser)
 
     def _get_files(self, request):
-        files = request.FILES.get("file") or request.FILES.getlist("files")
+        django_files = []
+        form_files = request.FILES.get("file") or request.FILES.getlist("files")
         b64_data = request.data.get("base64_data")
+        path = request.data.get("path", "")
 
         if b64_data is not None:
             log.info("Base64 data uploaded.")
 
-            request.data.pop("base64_data")
+            # request.data.pop("base64_data")
             name = request.data.get("name")
             if name is None:
                 log.warning("Base64 data was uploaded, but no name was provided")
                 raise ValueError("When uploading base64 data, the 'name' field must be populated.")
 
+            new_name = os.path.join(path, name)
+
             file_data = base64.b64decode(b64_data)
-            files = ContentFile(file_data, name=name)
+            form_files = [ContentFile(file_data, name=new_name)]
 
-        if not isinstance(files, list):
-            files = [files]
+        if not isinstance(form_files, list):
+            form_files = [form_files]
 
-        return files
+        for reg_file in form_files:
+            new_name = os.path.join(path, reg_file.name)
+            dj_file = File(file=reg_file, name=new_name)
+            log.debug(dj_file.name)
+            django_files.append(dj_file)
+
+        return django_files
 
     def get_queryset(self, *args, **kwargs):
-        queryset = ProjectFile.objects.all()
+        project_pk = kwargs.get("project_pk")
+        queryset = ProjectFile.objects.filter(project__pk=project_pk)
         filename = self.request.query_params.get("filename", None)
         if filename is not None:
             complete_filename = "{usr}/{proj}/{file}".format(usr=self.request.user.username,
-                                                             proj=kwargs.get("project_pk"),
+                                                             proj=project_pk,
                                                              file=filename)
-            queryset = ProjectFile.objects.filter(file=complete_filename)
+            queryset = queryset.filter(file=complete_filename)
         return queryset
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = ProjectFile.objects.get(project__pk=kwargs.get("project_pk"),
+                                           pk=kwargs.get("pk"))
+        get_content = self.request.query_params.get('content', "false").lower() == "true"
+        serializer = self.serializer_class(instance,
+                                           context={'get_content': get_content})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = ProjectFile.objects.get(project__pk=kwargs.get("project_pk"),
+                                           pk=kwargs.get("pk"))
+        data = {'id': instance.pk}
+        instance.delete()
+        data['deleted'] = True
+        return Response(data=data, status=status.HTTP_204_NO_CONTENT)
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset(*args, **kwargs)
-        serializer = self.serializer_class(queryset, many=True)
+        get_content = self.request.query_params.get('content', "false").lower() == "true"
+        serializer = self.serializer_class(queryset, many=True, context={'get_content': get_content})
         data = serializer.data
         for proj_file in data:
             proj_file['file'] = request.build_absolute_uri(proj_file['file'])
@@ -103,7 +132,12 @@ class ProjectFileViewSet(ProjectMixin,
         return Response(data, status=status.HTTP_200_OK)
 
     def create(self, request, *args, **kwargs):
-        files = self._get_files(request)
+        try:
+            files = self._get_files(request)
+        except ValueError as e:
+            log.exception(e)
+            data = {'message': str(e)}
+            return Response(data=data, status=status.HTTP_400_BAD_REQUEST)
 
         proj_files_to_serialize = []
         project_pk = kwargs.get("project_pk")
@@ -131,7 +165,12 @@ class ProjectFileViewSet(ProjectMixin,
                         status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
-        files = self._get_files(request)
+        try:
+            files = self._get_files(request)
+        except ValueError as e:
+            log.exception(e)
+            data = {'message': str(e)}
+            return Response(data=data, status=status.HTTP_400_BAD_REQUEST)
         if len(files) > 1:
             log.warning("There was an attempt to update more than one file.")
             return Response(data={'message': "Only one file can be updated at a time."},
