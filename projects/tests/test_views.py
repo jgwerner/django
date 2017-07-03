@@ -189,7 +189,7 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
         created_file = ProjectFile.objects.filter(project=self.project,
                                                   author=self.user).first()
         self.assertIsNotNone(created_file)
-        full_path = os.path.join(self.project_root, "my/test/path/file_upload_test_1.txt")
+        full_path = os.path.join(str(self.project_root), "my/test/path/file_upload_test_1.txt")
         self.assertTrue(os.path.isfile(full_path))
         self.assertEqual(created_file.path, "my/test/path/")
         self.assertEqual(created_file.name, "file_upload_test_1.txt")
@@ -213,7 +213,7 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
         proj_files = ProjectFile.objects.filter(project=self.project,
                                                 author=self.user)
         self.assertEqual(proj_files.count(), file_count)
-        partial_path = os.path.join(self.project_root, "my/test/path/")
+        partial_path = os.path.join(str(self.project_root), "my/test/path/")
 
         for created_file in proj_files:
             full_path = os.path.join(partial_path, created_file.name)
