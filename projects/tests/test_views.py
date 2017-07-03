@@ -17,8 +17,6 @@ from projects.tests.factories import (CollaboratorFactory,
 from projects.tests.utils import generate_random_file_content
 from users.tests.factories import UserFactory
 from projects.models import Project, ProjectFile
-import logging
-log = logging.getLogger("projects")
 
 
 class ProjectTestMixin(object):
@@ -178,6 +176,50 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
         path_obj = Path(full_path)
         self.assertTrue(path_obj.is_file())
 
+    def test_create_file_in_nested_location(self):
+        url = reverse('projectfile-list', kwargs=self.url_kwargs)
+        test_file = open("projects/tests/file_upload_test_1.txt", "rb")
+        data = {'file': test_file,
+                'public': "on",
+                'path': "my/test/path"}
+        response = self.client.post(url, data, format="multipart")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # Test that it exists in DB
+        created_file = ProjectFile.objects.filter(project=self.project,
+                                                  author=self.user).first()
+        self.assertIsNotNone(created_file)
+        full_path = os.path.join(self.project_root, "my/test/path/file_upload_test_1.txt")
+        self.assertTrue(os.path.isfile(full_path))
+        self.assertEqual(created_file.path, "my/test/path/")
+        self.assertEqual(created_file.name, "file_upload_test_1.txt")
+
+    def test_create_multiple_files_in_nested_location(self):
+        files_list = []
+        file_count = 3
+
+        for x in range(0, file_count):
+            uploaded_file = generate_random_file_content(x)
+            files_list.append(uploaded_file)
+
+        url = reverse('projectfile-list', kwargs=self.url_kwargs)
+        data = {'files': files_list,
+                'public': "on",
+                'path': "my/test/path"}
+        response = self.client.post(url, data, format="multipart")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # Test that it exists in DB
+        proj_files = ProjectFile.objects.filter(project=self.project,
+                                                author=self.user)
+        self.assertEqual(proj_files.count(), file_count)
+        partial_path = os.path.join(self.project_root, "my/test/path/")
+
+        for created_file in proj_files:
+            full_path = os.path.join(partial_path, created_file.name)
+            self.assertTrue(os.path.isfile(full_path))
+            self.assertEqual(created_file.path, "my/test/path/")
+
     def test_create_base64_file(self):
         url = reverse('projectfile-list', kwargs=self.url_kwargs)
         b64_content = b"test"
@@ -191,6 +233,14 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
         self.assertIsNotNone(created_file)
         content = created_file.file.readlines()
         self.assertEqual(content[0], b64_content)
+
+    def test_create_base64_without_name_gets_400(self):
+        url = reverse('projectfile-list', kwargs=self.url_kwargs)
+        b64_content = b"test"
+        b64 = base64.b64encode(b64_content)
+        data = {'base64_data': b64}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_multiple_files(self):
         files_list = []
@@ -227,6 +277,32 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(ProjectFile.objects.count(), files_count)
 
+    def test_list_files_respects_project(self):
+        files_count = 4
+        this_project_files = []
+        for x in range(0, files_count):
+            uploaded_file = generate_random_file_content(x)
+            pf = ProjectFileFactory(author=self.user,
+                                    project=self.project,
+                                    file=uploaded_file)
+            this_project_files.append(str(pf.pk))
+
+        other_project = CollaboratorFactory(user=self.user).project
+        for x in range(0, files_count):
+            uploaded_file = generate_random_file_content(x)
+            ProjectFileFactory(author=self.user,
+                               project=other_project,
+                               file=uploaded_file)
+
+        url = reverse('projectfile-list', kwargs=self.url_kwargs)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), files_count)
+
+        for proj_file in response.data:
+            self.assertTrue(str(proj_file['id']) in this_project_files)
+            self.assertEqual(proj_file['project'], self.project.pk)
+
     def test_file_details_by_filename(self):
         uploaded_file = generate_random_file_content("foo.txt")
         project_file = ProjectFileFactory(author=self.user,
@@ -260,6 +336,21 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
         file_path = os.path.join(settings.MEDIA_ROOT, project_file.file.name)
         self.assertEqual(response_file.file.path, str(file_path))
 
+    def test_file_contents(self):
+        uploaded_file = generate_random_file_content("foo")
+        project_file = ProjectFileFactory(author=self.user,
+                                          project=self.project,
+                                          file=uploaded_file)
+        kwargs = self.url_kwargs
+        kwargs['pk'] = project_file.pk
+        url = reverse('projectfile-detail', kwargs=kwargs)
+        response = self.client.get(url, {'content': "True"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response_content = base64.b64decode(response.data.get('content'))
+        proj_file_content = project_file.file.read()
+        self.assertEqual(response_content, proj_file_content)
+
     def test_file_update(self):
         uploaded_file = generate_random_file_content("to_update")
         project_file = ProjectFileFactory(author=self.user,
@@ -280,6 +371,29 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
         self.assertEqual(db_project_file.file.size, new_upload.size)
         self.assertTrue(filecmp.cmp(os.path.join("/tmp/", new_upload.name),
                                     db_project_file.file.path))
+
+    def test_multiple_file_update_gets_400(self):
+        uploaded_file = generate_random_file_content("to_update")
+        project_file = ProjectFileFactory(author=self.user,
+                                          project=self.project,
+                                          file=uploaded_file,
+                                          public=False)
+        other_uploaded = generate_random_file_content("to_update")
+        other_proj_file = ProjectFileFactory(author=self.user,
+                                             project=self.project,
+                                             file=uploaded_file,
+                                             public=False)
+        kwargs = self.url_kwargs
+        kwargs['pk'] = project_file.pk
+        url = reverse('projectfile-detail', kwargs=kwargs)
+        new_upload = generate_random_file_content("to_update",
+                                                  num_kb=2)
+        other_new_upload = generate_random_file_content("other_update",
+                                                        num_kb=2)
+        data = {'public': True,
+                'files': [new_upload, other_new_upload]}
+        response = self.client.put(url, data, format="multipart")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_base64_file_update(self):
         uploaded_file = generate_random_file_content("to_update")
@@ -302,6 +416,22 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
 
         content = proj_file_reloaded.file.readlines()
         self.assertEqual(content[0], b64_content)
+
+    def test_update_base64_without_name_gets_400(self):
+        uploaded_file = generate_random_file_content("to_update")
+        project_file = ProjectFileFactory(author=self.user,
+                                          project=self.project,
+                                          file=uploaded_file,
+                                          public=False)
+        kwargs = self.url_kwargs
+        kwargs['pk'] = project_file.pk
+        url = reverse('projectfile-detail', kwargs=kwargs)
+        b64_content = b"test"
+        b64 = base64.b64encode(b64_content)
+        data = {'public': True,
+                'base64_data': b64}
+        response = self.client.put(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_file_delete(self):
         uploaded_file = generate_random_file_content("to_delete")

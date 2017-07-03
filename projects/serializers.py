@@ -52,13 +52,22 @@ class Base64CharField(serializers.CharField):
 
 
 class ProjectFileSerializer(serializers.ModelSerializer):
-    base64_data = Base64CharField(required=False)
+    base64_data = Base64CharField(required=False, write_only=True)
     name = serializers.CharField(required=False)
+    file = serializers.FileField(required=False)
+    path = serializers.CharField(required=False)
+    content = serializers.SerializerMethodField()
 
     class Meta:
         model = ProjectFile
-        fields = ("id", "project", "file", "public", "base64_data", "name")
-        read_only_fields = ("author", "project")
+        fields = ("id", "project", "file", "public", "base64_data", "name", "path", "content")
+        read_only_fields = ("author", "project", "content")
+
+    def get_content(self, obj):
+        encoded = None
+        if self.context.get("get_content", False):
+            encoded = base64.b64encode(obj.file.read())
+        return encoded
 
     def create(self, validated_data):
         project = Project.objects.get(pk=validated_data.pop("project"))
