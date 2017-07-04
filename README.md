@@ -51,7 +51,7 @@ We maintain an `docker-compose.yml` file to launch our working `app-backend` sta
 - [API](https://hub.docker.com/r/3blades/app-backend)
 - [Celery](https://hub.docker.com/r/3blades/app-backend)
 - [Elasticsearch](https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html)
-- [Notificaitons Server](https://hub.docker.com/r/3blades/notifications-server)
+- [Docker Events](https://hub.docker.com/r/3blades/docker-events)
 - [OpenResty](https://hub.docker.com/r/3blades/)
 - [Postgres](https://hub.docker.com/_/postgres/)
 - [Redis](https://hub.docker.com/_/redis/)
@@ -132,6 +132,7 @@ Modify environment variables located in `env` file with your local settings. You
     SLACK_SECRET=
     STRIPE_SECRET_KEY=
     TBS_HOST=
+    TBS_HTTPS=
 ```
 
 > Obtain internal virtual machine IPv4 address with `ifconfig`. Usually enp0s3 or eth0 will be the IP address you need to configure for DOCKER_HOST env var. If you switch setup to use production configuration (`DJANGO_SETTINGS_MODULE='appdj.settings.prod`) make sure to set debug to false (`DEBUG=False`). By default, app-backend allows connections from `staging.3blades.io` and `localhost`. Additional host names or IP addresses can be added to the `TBS_HOST`.
@@ -146,19 +147,7 @@ Use the following command to launch the full stack with docker compose (-d for d
 
     sudo docker-compose up -d
 
-Verify docker containers with `docker ps`:
-
-```
-CONTAINER ID        IMAGE                                 COMMAND                  CREATED             STATUS              PORTS                                                   NAMES
-3f52405452d9        3blades/openresty:latest              "/usr/local/openre..."   55 minutes ago      Up 55 minutes       443/tcp, 0.0.0.0:5000->80/tcp                           vagrant_server_1
-d27b923375c1        dev_celery                        "/srv/app/docker-e..."   55 minutes ago      Up 53 minutes       80/tcp                                                  vagrant_celery_1
-3034d8539114        dev_api                           "/srv/app/docker-e..."   55 minutes ago      Up 53 minutes       80/tcp                                                  vagrant_api_1
-3b2e36ca71f2        postgres:alpine                       "docker-entrypoint..."   55 minutes ago      Up 55 minutes       0.0.0.0:5432->5432/tcp                                  vagrant_db_1
-94cf97bb0bc6        rabbitmq:alpine                       "docker-entrypoint..."   55 minutes ago      Up 55 minutes       4369/tcp, 5671/tcp, 25672/tcp, 0.0.0.0:5672->5672/tcp   vagrant_broker_1
-bd8179fd15b8        3blades/notifications-server:latest   "npm start"              55 minutes ago      Up 55 minutes       0.0.0.0:3000->3000/tcp                                  vagrant_notifications-server_1
-3ef5ab52176b        redis:alpine                          "docker-entrypoint..."   55 minutes ago      Up 55 minutes       0.0.0.0:6379->6379/tcp                                  vagrant_cache_1
-c06b9d4c73ae        gliderlabs/logspout                   "/bin/logspout"          55 minutes ago      Up 55 minutes       80/tcp                                                  vagrant_logspout_1
-```
+Verify docker containers with `docker-compose ps`. `docker-compose ps -a` will show containers that have Exited status.
 
 Create admin (superuser) user:
 
