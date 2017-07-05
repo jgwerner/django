@@ -48,7 +48,8 @@ class UserSerializer(SearchSerializerMixin, serializers.ModelSerializer):
 class EmailSerializer(RequestUserMixin, serializers.ModelSerializer):
     class Meta:
         model = Email
-        fields = ('address', 'public', 'unsubscribed')
+        fields = ('id', 'address', 'public', 'unsubscribed')
+        read_only_fields = ("id",)
 
 
 class IntegrationSerializer(serializers.ModelSerializer):

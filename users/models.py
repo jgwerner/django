@@ -31,7 +31,7 @@ class UserProfile(models.Model):
 
 
 class Email(models.Model):
-    address = models.CharField(max_length=255, primary_key=True)
+    address = models.CharField(max_length=255)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='emails', null=True)
     public = models.BooleanField(default=False)
     unsubscribed = models.BooleanField(default=True)

@@ -94,14 +94,12 @@ def reset_api_key(request, user_pk):
     return Response(data={'key': token.key})
 
 
-class UserPKMixin(object):
-    def get_queryset(self):
-        return super().get_queryset().filter(user_id=self.kwargs.get('user_pk'))
-
-
-class EmailViewSet(UserPKMixin, viewsets.ModelViewSet):
+class EmailViewSet(viewsets.ModelViewSet):
     queryset = Email.objects.all()
     serializer_class = EmailSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().filter(user=self.request.user)
 
 
 class IntegrationViewSet(viewsets.ModelViewSet):
