@@ -14,9 +14,12 @@ from base.permissions import DeleteAdminOnly
 from base.views import UUIDRegexMixin
 from utils import create_ssh_key
 
-from .filters import UserSearchFilter
-from .models import Email
-from .serializers import UserSerializer, EmailSerializer, IntegrationSerializer, AuthTokenSerializer
+from users.filters import UserSearchFilter
+from users.models import Email
+from users.serializers import (UserSerializer,
+                               EmailSerializer,
+                               IntegrationSerializer,
+                               AuthTokenSerializer)
 
 User = get_user_model()
 

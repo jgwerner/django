@@ -36,11 +36,11 @@ from search.views import SearchViewSet
 router = routers.DefaultRouter()
 
 router.register(r'servers/options/resources', servers_views.EnvironmentResourceViewSet)
-router.register(r'users', user_views.UserViewSet)
 router.register(r'hosts', infra_views.DockerHostViewSet)
 router.register(r'triggers', trigger_views.TriggerViewSet)
 
-user_router = routers.NestedSimpleRouter(router, r'users', lookup='user')
+user_router = routers.SimpleRouter()
+user_router.register(r'', user_views.UserViewSet)
 user_router.register(r'emails', user_views.EmailViewSet)
 user_router.register(r'integrations', user_views.IntegrationViewSet)
 
@@ -87,12 +87,12 @@ urlpatterns = [
     url(r'^(?P<namespace>[\w-]+)/', include(project_router.urls)),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_pk>[\w-]+)/synced-resources/$',
         project_views.SyncedResourceViewSet.as_view({'get': 'list', 'post': 'create'})),
-    url(r'^(?P<namespace>[\w-]+)/', include(user_router.urls)),
-    url(r'^(?P<namespace>[\w-]+)/users/(?P<user_pk>[\w-]+)/ssh-key/$', user_views.ssh_key, name='ssh_key'),
-    url(r'^(?P<namespace>[\w-]+)/users/(?P<user_pk>[\w-]+)/ssh-key/reset/$', user_views.reset_ssh_key,
+    url(r'^users/', include(user_router.urls)),
+    url(r'^users/(?P<user_pk>[\w-]+)/ssh-key/$', user_views.ssh_key, name='ssh_key'),
+    url(r'^users/(?P<user_pk>[\w-]+)/ssh-key/reset/$', user_views.reset_ssh_key,
         name='reset_ssh_key'),
-    url(r'^(?P<namespace>[\w-]+)/users/(?P<user_pk>[\w-]+)/api-key/$', user_views.api_key, name='api_key'),
-    url(r'^(?P<namespace>[\w-]+)/users/(?P<user_pk>[\w-]+)/api-key/reset/$', user_views.reset_api_key,
+    url(r'^users/(?P<user_pk>[\w-]+)/api-key/$', user_views.api_key, name='api_key'),
+    url(r'^users/(?P<user_pk>[\w-]+)/api-key/reset/$', user_views.reset_api_key,
         name='reset_api_key'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_pk>[\w-]+)/servers/(?P<pk>[^/.]+)/is-allowed/$',
         servers_views.IsAllowed.as_view(), name='is_allowed'),

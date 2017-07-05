@@ -5,8 +5,7 @@ from social_django.models import UserSocialAuth
 
 from base.views import RequestUserMixin
 from base.serializers import SearchSerializerMixin
-from .models import UserProfile, Email
-
+from users.models import UserProfile, Email
 
 User = get_user_model()
 

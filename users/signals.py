@@ -5,7 +5,7 @@ from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 
 from utils import create_ssh_key
-from .models import UserProfile
+from users.models import UserProfile
 
 
 @receiver(post_save, sender=get_user_model())

@@ -2,7 +2,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .factories import UserFactory
+from users.tests.factories import UserFactory
 
 
 class UserTest(APITestCase):
@@ -14,12 +14,12 @@ class UserTest(APITestCase):
 
     def test_user_delete_by_admin(self):
         user = UserFactory()
-        url = reverse('user-detail', kwargs={'namespace': self.admin.username, 'pk': str(user.pk)})
+        url = reverse('user-detail', kwargs={'pk': str(user.pk)})
         response = self.admin_client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
     def test_user_delete_by_user(self):
         user = UserFactory()
-        url = reverse('user-detail', kwargs={'namespace': self.user.username, 'pk': str(user.pk)})
+        url = reverse('user-detail', kwargs={'pk': str(user.pk)})
         response = self.user_client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
