@@ -1,3 +1,4 @@
+import logging
 from django.contrib.auth import get_user_model
 from haystack.query import SearchQuerySet, EmptySearchQuerySet
 from social_django.models import UserSocialAuth
@@ -20,7 +21,7 @@ from users.serializers import (UserSerializer,
                                EmailSerializer,
                                IntegrationSerializer,
                                AuthTokenSerializer)
-
+log = logging.getLogger("users")
 User = get_user_model()
 
 
@@ -118,6 +119,10 @@ class ObtainAuthToken(APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         token, created = Token.objects.get_or_create(user=user)
+
+        if created:
+            log.info("Created a new token for {user}".format(user=user.username))
+
         return Response({'token': token.key}, status=201)
 
     def get_serializer(self):
