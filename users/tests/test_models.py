@@ -20,6 +20,6 @@ class UserProfileTestCase(TestCase):
         ssh_path = Path(settings.RESOURCE_DIR, self.user.username,
                         ".ssh", "id_rsa.pub")
         user_profile = UserProfile.objects.filter(user=self.user).first()
-        with open(ssh_path, "r") as ssh_file:
+        with open(str(ssh_path), "r") as ssh_file:
             contents = ssh_file.read()
             self.assertEqual(user_profile.ssh_public_key(), contents)
