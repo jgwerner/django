@@ -18,6 +18,14 @@ class SearchTestCase(APITestCase):
         UserFactory.create_batch(4)
         self.url = reverse('search', kwargs={'namespace': self.user.username})
 
+    def test_no_search_param(self):
+        response = self.client.get(self.url)
+        self.assertEqual(len(response.data), 0)
+
+    def test_search_param_empty(self):
+        response = self.client.get(self.url, {'q': ""})
+        self.assertEqual(len(response.data), 0)
+
     def test_user_search_by_username(self):
         response = self.client.get(self.url, {'q': self.user.username})
         self.assertEqual(len(response.data), 1)

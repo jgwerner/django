@@ -1,4 +1,5 @@
 from drf_haystack.viewsets import HaystackViewSet
+from haystack.query import EmptySearchQuerySet
 
 from .filters import SearchFilter
 from .serializers import SearchSerializer
@@ -7,6 +8,13 @@ from .serializers import SearchSerializer
 class SearchViewSet(HaystackViewSet):
     serializer_class = SearchSerializer
     filter_backends = (SearchFilter,)
+
+    def get_queryset(self):
+        qs = EmptySearchQuerySet()
+        params = self.request.query_params
+        if 'q' in params and params['q']:
+            qs = super().get_queryset()
+        return qs
 
     def filter_queryset(self, *args, **kwargs):
         qs = self.get_queryset()
