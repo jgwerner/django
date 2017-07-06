@@ -1,3 +1,4 @@
+import logging
 from django.contrib.auth import get_user_model
 from haystack.query import SearchQuerySet, EmptySearchQuerySet
 from social_django.models import UserSocialAuth
@@ -14,10 +15,13 @@ from base.permissions import DeleteAdminOnly
 from base.views import UUIDRegexMixin
 from utils import create_ssh_key
 
-from .filters import UserSearchFilter
-from .models import Email
-from .serializers import UserSerializer, EmailSerializer, IntegrationSerializer, AuthTokenSerializer
-
+from users.filters import UserSearchFilter
+from users.models import Email
+from users.serializers import (UserSerializer,
+                               EmailSerializer,
+                               IntegrationSerializer,
+                               AuthTokenSerializer)
+log = logging.getLogger("users")
 User = get_user_model()
 
 
@@ -90,14 +94,12 @@ def reset_api_key(request, user_pk):
     return Response(data={'key': token.key})
 
 
-class UserPKMixin(object):
-    def get_queryset(self):
-        return super().get_queryset().filter(user_id=self.kwargs.get('user_pk'))
-
-
-class EmailViewSet(UserPKMixin, viewsets.ModelViewSet):
+class EmailViewSet(viewsets.ModelViewSet):
     queryset = Email.objects.all()
     serializer_class = EmailSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().filter(user=self.request.user)
 
 
 class IntegrationViewSet(viewsets.ModelViewSet):
@@ -115,6 +117,10 @@ class ObtainAuthToken(APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         token, created = Token.objects.get_or_create(user=user)
+
+        if created:
+            log.info("Created a new token for {user}".format(user=user.username))
+
         return Response({'token': token.key}, status=201)
 
     def get_serializer(self):
