@@ -122,7 +122,6 @@ class ProjectFileViewSet(ProjectMixin,
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset(*args, **kwargs)
-        log.debug(("request.query_params", self.request.query_params))
         get_content = self.request.query_params.get('content', "false").lower() == "true"
         serializer = self.serializer_class(queryset, many=True, context={'get_content': get_content})
         data = serializer.data
