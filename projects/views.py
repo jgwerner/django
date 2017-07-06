@@ -78,10 +78,9 @@ class ProjectFileViewSet(ProjectMixin,
                 log.warning("Base64 data was uploaded, but no name was provided")
                 raise ValueError("When uploading base64 data, the 'name' field must be populated.")
 
-            new_name = os.path.join(path, name)
 
             file_data = base64.b64decode(b64_data)
-            form_files = [ContentFile(file_data, name=new_name)]
+            form_files = [ContentFile(file_data, name=name)]
 
         if not isinstance(form_files, list):
             form_files = [form_files]
