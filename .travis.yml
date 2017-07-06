@@ -39,12 +39,14 @@ install:
   - pip install -r requirements/dev.txt
   - pip install codecov
 
-after_success:
+script:
   - bash config/buildDockerImage.sh
+
+after_success:
   - bash <(curl -s https://codecov.io/bash)
 
 notifications:
   slack: 3blades:RouLDGyG58awmaGkjgvh9Yuz
-  
+
 env:
   - $DOCKER_IMAGE_NAME="3blades/app-backend"
