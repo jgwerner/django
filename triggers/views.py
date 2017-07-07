@@ -7,9 +7,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from base.views import NamespaceMixin
-from .models import Trigger
-from .serializers import TriggerSerializer, SlackMessageSerializer, ServerActionSerializer
-from .tasks import dispatch_trigger
+from triggers.models import Trigger
+from triggers.serializers import TriggerSerializer, SlackMessageSerializer, ServerActionSerializer
+from triggers.tasks import dispatch_trigger
 
 
 class TriggerViewSet(NamespaceMixin, viewsets.ModelViewSet):

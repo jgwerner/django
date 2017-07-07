@@ -5,8 +5,8 @@ from social_django.models import UserSocialAuth
 
 from actions.models import Action
 from servers.models import Server
-from .models import Trigger
-from .slack import send_message
+from triggers.models import Trigger
+from triggers.slack import send_message
 
 
 class TriggerActionSerializer(serializers.ModelSerializer):
@@ -20,7 +20,8 @@ class TriggerActionSerializer(serializers.ModelSerializer):
     def validate(self, data):
         if 'object_id' not in data:
             try:
-                reverse(data['action_name'], kwargs={'namespace': self.context['request'].namespace.name})
+                reverse(data['action_name'], kwargs={'namespace': self.context['request'].namespace.name,
+                                                     'version': self.context['request'].version})
             except:
                 raise serializers.ValidationError('There is no action with name %s' % data['action_name'])
         return data
@@ -70,9 +71,12 @@ class TriggerSerializer(serializers.ModelSerializer):
             content_type = ContentType.objects.filter(model=model).first()
             content_object = content_type.get_object_for_this_type(pk=validated_data['object_id'])
         if content_object:
-            path = content_object.get_action_url(self.context['request'].namespace, action_name)
+            path = content_object.get_action_url(self.context['request'].version,
+                                                 self.context['request'].namespace,
+                                                 action_name)
         else:
-            path = reverse(action_name, kwargs={'namespace': self.context['request'].namespace.name})
+            path = reverse(action_name, kwargs={'version': self.context['request'].version,
+                                                'namespace': self.context['request'].namespace.name})
         instance = Action.objects.filter(state=Action.CREATED, path=path, user=self.context['request'].user).first()
         if instance is None:
             instance = Action.objects.create(
@@ -140,7 +144,7 @@ class ServerActionSerializer(serializers.ModelSerializer):
             content_object=server,
             is_user_action=False,
             user=validated_data['user'],
-            path=server.get_action_url(namespace, validated_data['operation']),
+            path=server.get_action_url(self.context['request'].version, namespace, validated_data['operation']),
         )
         trigger = Trigger(
             name=validated_data.get('name', ''),
@@ -168,6 +172,7 @@ class ServerActionSerializer(serializers.ModelSerializer):
                     'namespace': namespace.name,
                     'server_pk': str(obj.effect.object_id),
                     'pk': str(obj.pk),
+                    'version': self.context['request'].version
                 }
             )
         }

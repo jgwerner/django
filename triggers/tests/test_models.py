@@ -1,4 +1,5 @@
 from django.urls import reverse
+from django.conf import settings
 from rest_framework.test import APILiveServerTestCase
 
 from actions.models import Action
@@ -22,7 +23,8 @@ class TriggerTest(APILiveServerTestCase):
         effect = ActionFactory(
             method='post',
             state=Action.CREATED,
-            path=reverse('project-list', kwargs={'namespace': self.user.username}),
+            path=reverse('project-list', kwargs={'namespace': self.user.username,
+                                                 'version': settings.DEFAULT_VERSION}),
             payload={'name': 'Project111'},
             user=self.user
         )
@@ -40,7 +42,8 @@ class TriggerTest(APILiveServerTestCase):
                 kwargs={
                     'namespace': self.user.username,
                     'project_pk': str(self.project.pk),
-                    'pk': str(server.pk)
+                    'pk': str(server.pk),
+                    'version': settings.DEFAULT_VERSION
                 }
             ),
             user=self.user
@@ -70,7 +73,8 @@ class TriggerTest(APILiveServerTestCase):
 
     def test_trigger_with_payload(self):
         cause = ActionFactory(state=Action.CREATED)
-        url = reverse('project-list', kwargs={'namespace': self.user.username})
+        url = reverse('project-list', kwargs={'namespace': self.user.username,
+                                              'version': settings.DEFAULT_VERSION})
         effect = ActionFactory(
             state=Action.CREATED,
             method='post',
