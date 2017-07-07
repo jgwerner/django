@@ -3,6 +3,7 @@ from haystack.query import EmptySearchQuerySet, SearchQuerySet
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.serializers import Serializer
 
 from projects.serializers import ProjectSerializer
 from users.serializers import UserSerializer
@@ -11,6 +12,7 @@ from servers.serializers import ServerSerializer
 
 class SearchView(ListAPIView):
     pagination_class = LimitOffsetPagination
+    serializer_class = Serializer  # to make schema generator happy
 
     serializers = {
         "projects": ProjectSerializer,
