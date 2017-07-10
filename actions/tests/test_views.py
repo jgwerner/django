@@ -1,5 +1,5 @@
 from unittest.mock import patch
-
+from django.conf import settings
 from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status
@@ -25,14 +25,15 @@ class ActionTest(APITestCase):
     def test_list_actions(self):
         actions_count = 4
         ActionFactory.create_batch(actions_count)
-        url = reverse('action-list')
+        url = reverse('action-list', kwargs={'version': settings.DEFAULT_VERSION})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), actions_count)
 
     def test_action_details(self):
         action = ActionFactory()
-        url = reverse('action-detail', kwargs={'pk': str(action.pk)})
+        url = reverse('action-detail', kwargs={'pk': str(action.pk),
+                                               'version': settings.DEFAULT_VERSION})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(action.path, response.data['path'])
@@ -41,18 +42,20 @@ class ActionTest(APITestCase):
     def test_cancel_action_can_be_canceled(self, revoke):
         revoke.return_value = None
         action = ActionFactory(can_be_cancelled=True)
-        url = reverse('action-cancel', kwargs={'pk': str(action.pk)})
+        url = reverse('action-cancel', kwargs={'pk': str(action.pk),
+                                               'version': settings.DEFAULT_VERSION})
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_cancel_action_cannot_be_canceled(self):
         action = ActionFactory()
-        url = reverse('action-cancel', kwargs={'pk': str(action.pk)})
+        url = reverse('action-cancel', kwargs={'pk': str(action.pk),
+                                               'version': settings.DEFAULT_VERSION})
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_create_action(self):
-        url = reverse('action-create')
+        url = reverse('action-create', kwargs={'version': settings.DEFAULT_VERSION})
         action_content_object = ProjectFactory()
         data = dict(
             action_name='detail',
@@ -66,5 +69,7 @@ class ActionTest(APITestCase):
         response = self.client.post(url, data=data)
         self.assertEqual(response.status_code, 201)
         project_delete_path = reverse(
-            'project-detail', kwargs={'namespace': self.user.username, 'pk': str(action_content_object.pk)})
+            'project-detail', kwargs={'namespace': self.user.username,
+                                      'pk': str(action_content_object.pk),
+                                      'version': settings.DEFAULT_VERSION})
         self.assertEqual(response.data['path'], project_delete_path)

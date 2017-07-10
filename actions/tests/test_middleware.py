@@ -2,6 +2,7 @@ from uuid import uuid4
 
 from celery.signals import task_postrun
 from django.core.handlers.base import BaseHandler
+from django.conf import settings
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from guardian.shortcuts import assign_perm
@@ -33,19 +34,20 @@ class ActionMiddlewareFunctionalTest(TestCase):
         self.middleware = ActionMiddleware(get_response=base_handler.get_response)
 
     def test_get_success_request(self):
-        request = self.factory.get('/actions/')
+        request = self.factory.get('/{ver}/actions/'.format(ver=settings.DEFAULT_VERSION))
         request.user = self.user
         response = self.middleware(request)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         action = Action.objects.get()
-        self.assertEqual(action.path, '/actions/')
+        self.assertEqual(action.path, '/{ver}/actions/'.format(ver=settings.DEFAULT_VERSION))
         self.assertEqual(self.user.id, action.user_id)
         self.assertEqual(action.state, Action.SUCCESS)
         self.assertEqual(action.method, 'get')
 
     def test_get_object_request(self):
         original_action = ActionFactory()
-        url = reverse('action-detail', kwargs={'pk': str(original_action.pk)})
+        url = reverse('action-detail', kwargs={'pk': str(original_action.pk),
+                                               'version': settings.DEFAULT_VERSION})
         request = self.factory.get(url)
         response = self.middleware(request)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -54,7 +56,8 @@ class ActionMiddlewareFunctionalTest(TestCase):
 
     def test_get_object_fail(self):
         non_existent = uuid4()
-        url = reverse('action-detail', kwargs={'pk': str(non_existent)})
+        url = reverse('action-detail', kwargs={'pk': str(non_existent),
+                                               'version': settings.DEFAULT_VERSION})
         request = self.factory.get(url)
         response = self.middleware(request)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
@@ -63,7 +66,8 @@ class ActionMiddlewareFunctionalTest(TestCase):
 
     def test_post_object_request(self):
         project = {'name': 'Test'}
-        url = reverse('project-list', kwargs={'namespace': self.user.username})
+        url = reverse('project-list', kwargs={'namespace': self.user.username,
+                                              'version': settings.DEFAULT_VERSION})
         request = self.factory.post(url, project)
         response = self.middleware(request)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -71,7 +75,8 @@ class ActionMiddlewareFunctionalTest(TestCase):
         self.assertEqual(action.payload, project)
 
     def test_post_object_fail(self):
-        url = reverse('project-list', kwargs={'namespace': self.user.username})
+        url = reverse('project-list', kwargs={'namespace': self.user.username,
+                                              'version': settings.DEFAULT_VERSION})
         request = self.factory.post(url, {})
         response = self.middleware(request)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -85,7 +90,8 @@ class ActionMiddlewareFunctionalTest(TestCase):
         url = reverse('server-start', kwargs={
             'namespace': self.user.username,
             'project_pk': str(server.project.pk),
-            'pk': str(server.pk)
+            'pk': str(server.pk),
+            'version': settings.DEFAULT_VERSION
         })
         request = self.factory.post(url)
         response = self.middleware(request)
@@ -126,7 +132,8 @@ class ActionMiddlewareTest(TestCase):
 
     def test_set_action_object_get(self):
         action = ActionFactory()
-        url = reverse('action-detail', kwargs={'pk': str(action.pk)})
+        url = reverse('action-detail', kwargs={'pk': str(action.pk),
+                                               'version': settings.DEFAULT_VERSION})
         request = self.factory.get(url)
         response = self.get_response(request)
         self.middleware._set_action_object(action, request, response)
@@ -138,7 +145,8 @@ class ActionMiddlewareTest(TestCase):
 
     def test_set_action_object_post(self):
         action = ActionFactory()
-        url = reverse('project-list', kwargs={'namespace': self.user.username})
+        url = reverse('project-list', kwargs={'namespace': self.user.username,
+                                              'version': settings.DEFAULT_VERSION})
         project = {'name': 'test'}
         request = self.factory.post(url, project)
         response = self.get_response(request)
@@ -146,7 +154,8 @@ class ActionMiddlewareTest(TestCase):
         self.assertEqual(str(action.object_id), response.data['id'])
 
     def test_get_object_from_post_data(self):
-        url = reverse('project-list', kwargs={'namespace': self.user.username})
+        url = reverse('project-list', kwargs={'namespace': self.user.username,
+                                              'version': settings.DEFAULT_VERSION})
         project = {'name': 'test'}
         request = self.factory.post(url, project)
         response = self.get_response(request)
@@ -175,7 +184,8 @@ class ActionMiddlewareTest(TestCase):
 
     def test_get_object_from_url(self):
         action = ActionFactory()
-        url = reverse('action-detail', kwargs={'pk': str(action.pk)})
+        url = reverse('action-detail', kwargs={'pk': str(action.pk),
+                                               'version': settings.DEFAULT_VERSION})
         request = self.factory.get(url)
         self.get_response(request)
         obj = self.middleware._get_object_from_url(request)
@@ -183,7 +193,8 @@ class ActionMiddlewareTest(TestCase):
 
     def test_get_action_name(self):
         action = ActionFactory()
-        url = reverse('action-detail', kwargs={'pk': str(action.pk)})
+        url = reverse('action-detail', kwargs={'pk': str(action.pk),
+                                               'version': settings.DEFAULT_VERSION})
         request = self.factory.get(url)
         self.get_response(request)
         name = ActionMiddleware._get_action_name(request)
@@ -191,14 +202,16 @@ class ActionMiddlewareTest(TestCase):
 
     def test_get_action_name_no_match(self):
         action = ActionFactory()
-        url = reverse('action-detail', kwargs={'pk': str(action.pk)})
+        url = reverse('action-detail', kwargs={'pk': str(action.pk),
+                                               'version': settings.DEFAULT_VERSION})
         request = self.factory.get(url)
         name = ActionMiddleware._get_action_name(request)
         self.assertEqual(name, 'Unknown')
 
     def test_get_client_ip(self):
         action = ActionFactory()
-        url = reverse('action-detail', kwargs={'pk': str(action.pk)})
+        url = reverse('action-detail', kwargs={'pk': str(action.pk),
+                                               'version': settings.DEFAULT_VERSION})
         request = self.factory.get(url)
         ip = ActionMiddleware._get_client_ip(request)
         self.assertEqual(ip, '127.0.0.1')
