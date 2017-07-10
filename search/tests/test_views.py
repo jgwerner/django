@@ -68,6 +68,15 @@ class SearchTestCase(APITestCase):
         response = self.client.get(self.url, {'q': project.name, 'type': 'projects'})
         self.assertEqual(len(response.data), 1)
 
+    def test_multiple_type_filter_search(self):
+        project = ProjectFactory(name='Test')
+        UserFactory(username='Test')
+        ProjectFactory.create_batch(4)
+        UserFactory.create_batch(4)
+        CollaboratorFactory(user=self.user, project=project)
+        response = self.client.get(self.url, {'q': 'test', 'type': 'projects,users'})
+        self.assertEqual(len(response.data), 2)
+
     def test_multi_response(self):
         project = ProjectFactory(name='TestProject')
         CollaboratorFactory(user=self.user, project=project, owner=True)

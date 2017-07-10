@@ -44,7 +44,7 @@ class SearchView(ListAPIView):
         params = self.request.query_params
         types = self.serializers.keys()
         if 'type' in params:
-            types = self.request.query_params.getlist('type')
+            types = self.request.query_params.get('type').split(',')
         querysets = {typ: EmptySearchQuerySet() for typ in types}
         if 'q' in params and params['q']:
             for typ in types:
