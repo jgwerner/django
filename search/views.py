@@ -12,7 +12,7 @@ class SearchViewSet(HaystackViewSet):
         qs = self.get_queryset()
         if 'type' in self.request.query_params:
             types = []
-            query_types = self.request.query_params.getlist('type')
+            query_types = self.request.query_params.get('type').split(',')
             for typ in query_types:
                 if typ in self.types:
                     types.append(self.types[typ])
