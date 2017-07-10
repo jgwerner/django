@@ -1,4 +1,3 @@
-import stripe
 import logging
 from django.test import override_settings
 from django.urls import reverse
@@ -11,6 +10,12 @@ from billing.models import Customer, Card, Plan, Subscription
 from users.tests.factories import UserFactory
 from billing.tests.factories import (CustomerFactory, PlanFactory, CardFactory, SubscriptionFactory)
 from billing.stripe_utils import create_stripe_customer_from_user
+
+
+if settings.TRAVIS_PULL_REQUEST:
+    from billing.tests import mock_stripe as stripe
+else:
+    import stripe
 
 log = logging.getLogger('billing')
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -141,23 +146,22 @@ class CustomerTest(APITestCase):
         data = {'user': str(self.user.pk),
                 'token': 'tok_visa'}
         self.client.post(url, data)
+        first_card = Card.objects.first()
 
         # Have to create two card because the first one automatically becomes the default in stripe
         data['token'] = "tok_mastercard"
         self.client.post(url, data)
 
-        brands = Card.objects.all().values_list("brand", flat=True)
-
         url = reverse("customer-detail", kwargs={'namespace': self.user.username,
                                                  'pk': customer.pk})
-        mastercard = Card.objects.get(brand="MasterCard")
-        data = {'default_source': str(mastercard.pk)}
+        second_card = Card.objects.exclude(pk=first_card.pk).first()
+        data = {'default_source': str(second_card.pk)}
 
         response = self.client.patch(url, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         customer_reloaded = Customer.objects.get(pk=customer.pk)
-        self.assertEqual(customer_reloaded.default_source, mastercard)
+        self.assertEqual(customer_reloaded.default_source, second_card)
 
         self.customers_to_delete.append(customer)
 

@@ -1,5 +1,4 @@
 import logging
-import stripe
 
 from django.utils import timezone
 from django.conf import settings
@@ -15,6 +14,12 @@ from billing.models import (Plan, Customer,
 from billing.serializers import (PlanSerializer, CustomerSerializer, CardSerializer,
                                  SubscriptionSerializer, InvoiceSerializer)
 log = logging.getLogger('billing')
+
+if settings.TRAVIS_PULL_REQUEST:
+    from billing.tests import mock_stripe as stripe
+    log.info("Using mock_stripe module.")
+else:
+    import stripe
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 

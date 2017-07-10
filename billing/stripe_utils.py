@@ -1,5 +1,4 @@
 import logging
-import stripe
 from datetime import datetime
 from django.db import models
 from django.conf import settings
@@ -8,13 +7,20 @@ from django.utils import timezone
 from billing.models import (Customer, Invoice,
                             Plan, Subscription,
                             Card)
+log = logging.getLogger('billing')
+
+if settings.TRAVIS_PULL_REQUEST:
+    from billing.tests import mock_stripe as stripe
+    log.info("Importing mock stripe in stripe utils.")
+else:
+    import stripe
+
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
-log = logging.getLogger('billing')
 
 
 def handle_foreign_key_field(stripe_data, stripe_field, model_field):
-    init_value = stripe_data.get(stripe_field)
+    init_value = stripe_data[stripe_field]
     final_value = None
     identifier = None
 
@@ -41,9 +47,8 @@ def handle_foreign_key_field(stripe_data, stripe_field, model_field):
 
 def convert_field_to_stripe(model, stripe_field, stripe_data):
     field_name = "stripe_id" if stripe_field == "id" else stripe_field
-    value = stripe_data.get(stripe_field)
+    value = stripe_data[stripe_field]
 
-    # Seems inefficient
     all_model_field_names = [f.name for f in model._meta.get_fields()]
     if field_name in all_model_field_names:
         model_field = model._meta.get_field(field_name)
@@ -149,8 +154,9 @@ def create_card_in_stripe(validated_data, user=None):
     return Card.objects.create(**converted_data)
 
 
-def sync_invoices_for_customer(customer):
-    stripe_invoices = stripe.Invoice.list(customer=customer.stripe_id)
+def sync_invoices_for_customer(customer, stripe_invoices=None):
+    if stripe_invoices is None:
+        stripe_invoices = stripe.Invoice.list(customer=customer.stripe_id)
 
     for stp_invoice in stripe_invoices:
         stp_invoice['invoice_date'] = stp_invoice['date']
