@@ -354,3 +354,5 @@ HAYSTACK_CONNECTIONS = {
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
 
 HTTPS = os.environ.get("TBS_HTTPS", "false").lower() == "true"
+
+TRAVIS_PULL_REQUEST = os.environ.get("TRAVIS_PULL_REQUEST", "true").lower() != "false"

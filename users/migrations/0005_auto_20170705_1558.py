@@ -13,16 +13,10 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterField(
-            model_name='email',
-            name='address',
-            field=models.CharField(max_length=255),
-        ),
-
         migrations.AddField(
             model_name='email',
-            name='id',
-            field=models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False),
+            name='uuid',
+            field=models.UUIDField(default=uuid.uuid4, null=True, serialize=False),
         ),
 
     ]
