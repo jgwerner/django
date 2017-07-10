@@ -41,7 +41,7 @@ router.register(r'triggers', trigger_views.TriggerViewSet)
 
 user_router = routers.SimpleRouter()
 user_router.register(r'profiles', user_views.UserViewSet)
-user_router.register(r'emails', user_views.EmailViewSet)
+user_router.register(r'(?P<user_id>[\w-]+)/emails', user_views.EmailViewSet)
 user_router.register(r'integrations', user_views.IntegrationViewSet)
 
 router.register(r'projects', project_views.ProjectViewSet)
