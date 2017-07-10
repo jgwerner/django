@@ -5,8 +5,7 @@ from social_django.models import UserSocialAuth
 
 from base.views import RequestUserMixin
 from base.serializers import SearchSerializerMixin
-from .models import UserProfile, Email
-
+from users.models import UserProfile, Email
 
 User = get_user_model()
 
@@ -49,7 +48,8 @@ class UserSerializer(SearchSerializerMixin, serializers.ModelSerializer):
 class EmailSerializer(RequestUserMixin, serializers.ModelSerializer):
     class Meta:
         model = Email
-        fields = ('address', 'public', 'unsubscribed')
+        fields = ('id', 'address', 'public', 'unsubscribed')
+        read_only_fields = ("id",)
 
 
 class IntegrationSerializer(serializers.ModelSerializer):

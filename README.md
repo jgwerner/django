@@ -1,8 +1,7 @@
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/6ba00ac8f94e4105b9b160287d1b62ec)](https://www.codacy.com/app/3Blades/app-backend?utm_source=github.com&utm_medium=referral&utm_content=3Blades/app-backend&utm_campaign=badger)
 [![Build Status](https://travis-ci.org/3Blades/app-backend.svg?branch=master)](https://travis-ci.org/3Blades/app-backend)
 [![Docker Hub](https://img.shields.io/badge/docker-ready-blue.svg)](https://hub.docker.com/r/3blades/app-backend/)
 [![codecov](https://codecov.io/gh/3Blades/app-backend/branch/master/graph/badge.svg)](https://codecov.io/gh/3Blades/app-backend)
-[![Code Climate](https://codeclimate.com/github/3Blades/app-backend/badges/gpa.svg)](https://codeclimate.com/github/3Blades/app-backend)
-[![Code Health](https://landscape.io/github/3Blades/app-backend/master/landscape.svg?style=flat)](https://landscape.io/github/3Blades/app-backend/master)
 [![Requirements Status](https://requires.io/github/3Blades/app-backend/requirements.svg?branch=master)](https://requires.io/github/3Blades/app-backend/requirements/?branch=master)
 [![slack in](https://slack.3blades.io/badge.svg)](https://slack.3blades.io)
 
@@ -46,18 +45,22 @@ If using Debian or Ubuntu Linux distributions, you may have to install dependenc
 
     sudo apt-get install -y libpq-dev libssl-dev
 
-We maintain an `docker-compose.yml` file to launch our full stack. Launching the full stack may be necessary to support integration testing, such as creating new user servers. Services include:
+We maintain an `docker-compose.yml` file to launch our working `app-backend` stack. Launching the full stack may be necessary to support integration testing, such as creating new user servers. Services include (in alphabetical order):
 
+- [API](https://hub.docker.com/r/3blades/app-backend)
+- [Celery](https://hub.docker.com/r/3blades/app-backend)
+- [Elasticsearch](https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html)
+- [Docker Events](https://hub.docker.com/r/3blades/docker-events)
+- [OpenResty](https://hub.docker.com/r/3blades/)
 - [Postgres](https://hub.docker.com/_/postgres/)
 - [Redis](https://hub.docker.com/_/redis/)
 - [RabbitMQ](https://hub.docker.com/_/rabbitmq/)
-- [Notificaitons Server](https://hub.docker.com/r/3blades/notifications-server)
-- [Logspout](https://hub.docker.com/r/3blades/logspout/)
-- [Celery](https://hub.docker.com/r/3blades/app-backend)
-- [API](https://hub.docker.com/r/3blades/app-backend)
-- [OpenResty](https://hub.docker.com/r/3blades/)
+
+
 
 > `docker-compose up -d` should check for latest image and pull newer image if one exists, but it may be necessary to pull images explicitly using `docker pull <3blades/image-name`.
+
+> Please refer to `https://github.com/3blades/onpremise` for full stack setup, which includes `react-frontend`.
 
 ### Systemd
 
@@ -97,17 +100,43 @@ Restart docker service and confirm that setting is in place for CGroup:
 
 Modify environment variables located in `env` file with your local settings. You can also export env vars like so:
 
-
-    TBS_HOST=my_external_facing_ipv4
+```
+    AWS_ACCESS_KEY_ID=
+    AWS_SECRET_ACCESS_KEY=
+    AWS_STORAGE_BUCKET_NAME=
     C_ROOT=1
-    DATABASE_URL='postgres://postgres:@db:5432/postgres'
+    DATABASE_URL=postgres://postgres:@db:5432/postgres/
     DEBUG=True
-    DJANGO_SETTINGS_MODULE='appdj.settings.dev'
-    DOCKER_HOST='tcp://my_vm_ipv4_address:2375'
-    RABBITMQ_URL='amqp://broker'
-    REDIS_URL='redis://localhost:6379/0'
+    DJANGO_SETTINGS_MODULE=appdj.settings.prod
+    DOCKER_DOMAIN=172.17.0.1:2375
+    DOCKER_HOST=tcp://172.17.0.1:2375/
+    ELASTICSEARCH_URL=http://search:9200/
+    EMAIL_HOST=
+    EMAIL_PORT=
+    EMAIL_HOST_USER=
+    EMAIL_HOST_PASSWORD=
+    EMAIL_USE_SSL=
+    EMAIL_USE_TLS=
+    ENABLE_BILLING=True
+    GITHUB_CLIENT_ID=
+    GITHUB_CLIENT_SECRET=
+    GOOGLE_CLIENT_ID=
+    GOOGLE_CLIENT_SECRET=
+    RABBITMQ_URL=amqp://broker/
+    REDIS_URL=redis://cache:6379/0
+    RESOURCE_DIR=
+    SERVER_RESOURCE_DIR=
+    SECRET_KEY=
+    SLACK_KEY=
+    SLACK_SECRET=
+    STRIPE_SECRET_KEY=
+    TBS_HOST=
+    TBS_HTTPS=
+```
 
-> Obtain internal virtual machine IPv4 address with `ifconfig`. Usually enp0s3 or eth0 will be the IP address you need to configure for DOCKER_HOST env var. If you switch setup to use production configuration (`DJANGO_SETTINGS_MODULE='appdj.settings.prod`) make sure to set debug to false (`DEBUG=False`). By default, app-backend allows connections from `go-pilot.3blades.io` and `localhost`. Additional host names or IP addresses can be added to the `TBS_HOST`.
+> Obtain internal virtual machine IPv4 address with `ifconfig`. Usually enp0s3 or eth0 will be the IP address you need to configure for DOCKER_HOST env var. If you switch setup to use production configuration (`DJANGO_SETTINGS_MODULE='appdj.settings.prod`) make sure to set debug to false (`DEBUG=False`). By default, app-backend allows connections from `staging.3blades.io` and `localhost`. Additional host names or IP addresses can be added to the `TBS_HOST`.
+
+> When launching stack with `dev` environment, `EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'` will always print emails to the console, regardless of what values are set.
 
 A volume mount is used to persist files used by docker containers. By default, `docker-compose.yml` uses the `/workspaces` directory. You can either add that directory or change `docker-compose.yml` to use another one.
 
@@ -117,19 +146,7 @@ Use the following command to launch the full stack with docker compose (-d for d
 
     sudo docker-compose up -d
 
-Verify docker containers with `docker ps`:
-
-```
-CONTAINER ID        IMAGE                                 COMMAND                  CREATED             STATUS              PORTS                                                   NAMES
-3f52405452d9        3blades/openresty:latest              "/usr/local/openre..."   55 minutes ago      Up 55 minutes       443/tcp, 0.0.0.0:5000->80/tcp                           vagrant_server_1
-d27b923375c1        dev_celery                        "/srv/app/docker-e..."   55 minutes ago      Up 53 minutes       80/tcp                                                  vagrant_celery_1
-3034d8539114        dev_api                           "/srv/app/docker-e..."   55 minutes ago      Up 53 minutes       80/tcp                                                  vagrant_api_1
-3b2e36ca71f2        postgres:alpine                       "docker-entrypoint..."   55 minutes ago      Up 55 minutes       0.0.0.0:5432->5432/tcp                                  vagrant_db_1
-94cf97bb0bc6        rabbitmq:alpine                       "docker-entrypoint..."   55 minutes ago      Up 55 minutes       4369/tcp, 5671/tcp, 25672/tcp, 0.0.0.0:5672->5672/tcp   vagrant_broker_1
-bd8179fd15b8        3blades/notifications-server:latest   "npm start"              55 minutes ago      Up 55 minutes       0.0.0.0:3000->3000/tcp                                  vagrant_notifications-server_1
-3ef5ab52176b        redis:alpine                          "docker-entrypoint..."   55 minutes ago      Up 55 minutes       0.0.0.0:6379->6379/tcp                                  vagrant_cache_1
-c06b9d4c73ae        gliderlabs/logspout                   "/bin/logspout"          55 minutes ago      Up 55 minutes       80/tcp                                                  vagrant_logspout_1
-```
+Verify docker containers with `docker-compose ps`. `docker-compose ps -a` will show containers that have Exited status.
 
 Create admin (superuser) user:
 

@@ -3,8 +3,8 @@ from django.db.models.signals import post_save
 from django.contrib.auth import get_user_model
 from rest_framework.authtoken.models import Token
 
-from ..models import UserProfile
-from ..signals import create_user_ssh_key
+from users.models import UserProfile
+from users.signals import create_user_ssh_key
 
 User = get_user_model()
 

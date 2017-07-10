@@ -46,27 +46,28 @@ class ServerSerializer(SearchSerializerMixin, serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
     def get_endpoint(self, obj):
-        request = self.context['request']
-        return '{scheme}://{host}/server/{id}{url}'.format(
-            scheme=request.scheme,
-            host=get_current_site(request).domain,
-            id=obj.id,
-            url=settings.SERVER_ENDPOINT_URLS.get(obj.config.get('type'), '/')
-        )
+        return self._get_url(obj, scheme='https' if self._is_secure else 'http', url='/endpoint{}'.format(
+            settings.SERVER_ENDPOINT_URLS.get(obj.config.get('type'), '/')))
 
     def get_logs_url(self, obj):
-        request = self.context['request']
-        return 'ws://{host}/server/logs/{id}'.format(
-            host=get_current_site(request).domain,
-            id=obj.id,
-        )
+        return self._get_url(obj, scheme='wss' if self._is_secure else 'ws', url='/logs/')
 
     def get_status_url(self, obj):
+        return self._get_url(obj, scheme='wss' if self._is_secure else 'ws', url='/status/')
+
+    def _get_url(self, obj, **kwargs):
         request = self.context['request']
-        return 'ws://{host}/server/status/{id}'.format(
+        return '{scheme}://{host}/{namespace}/projects/{project_id}/servers/{id}{url}'.format(
             host=get_current_site(request).domain,
+            namespace=request.namespace.name,
+            project_id=obj.project_id,
             id=obj.id,
+            **kwargs
         )
+
+    @property
+    def _is_secure(self):
+        return settings.HTTPS
 
 
 class ServerRunStatisticsSerializer(serializers.ModelSerializer):

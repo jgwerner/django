@@ -111,8 +111,8 @@ class IsAllowed(views.APIView):
 
 @api_view(['GET'], exclude_from_schema=True)
 @permission_classes((AllowAny,))
-def server_internal_details(request, server_pk):
-    server = get_object_or_404(models.Server, pk=server_pk)
+def server_internal_details(request, project_pk, server_pk):
+    server = get_object_or_404(models.Server, pk=server_pk, project_id=project_pk)
     data = {'server': '', 'container_name': ''}
     server_ip = server.get_private_ip()
     data = {

@@ -14,6 +14,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
 from django.conf import settings
+from django.conf.urls.static import static
 from django.conf.urls import url, include
 from django.contrib import admin
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
@@ -30,27 +31,23 @@ from infrastructure import views as infra_views
 from jwt_auth import views as jwt_views
 from triggers import views as trigger_views
 from billing import views as billing_views
-from search.views import SearchViewSet
+from search.views import SearchView
 
 router = routers.DefaultRouter()
 
 router.register(r'servers/options/resources', servers_views.EnvironmentResourceViewSet)
-router.register(r'users', user_views.UserViewSet)
 router.register(r'hosts', infra_views.DockerHostViewSet)
 router.register(r'triggers', trigger_views.TriggerViewSet)
-router.register(r'billing/customers', billing_views.CustomerViewSet)
-router.register(r'billing/cards', billing_views.CardViewSet)
-router.register(r'billing/plans', billing_views.PlanViewSet)
-router.register(r'billing/subscriptions', billing_views.SubscriptionViewSet)
-router.register(r'billing/invoices', billing_views.InvoiceViewSet)
-user_router = routers.NestedSimpleRouter(router, r'users', lookup='user')
+
+user_router = routers.SimpleRouter()
+user_router.register(r'profiles', user_views.UserViewSet)
 user_router.register(r'emails', user_views.EmailViewSet)
 user_router.register(r'integrations', user_views.IntegrationViewSet)
 
 router.register(r'projects', project_views.ProjectViewSet)
 project_router = routers.NestedSimpleRouter(router, r'projects', lookup='project')
 project_router.register(r'servers', servers_views.ServerViewSet)
-project_router.register(r'files', project_views.FileViewSet)
+project_router.register(r'project_files', project_views.ProjectFileViewSet)
 project_router.register(r'servers/(?P<server_pk>[^/.]+)/ssh-tunnels',
                         servers_views.SshTunnelViewSet)
 project_router.register(r'servers/(?P<server_pk>[^/.]+)/run-stats',
@@ -58,6 +55,14 @@ project_router.register(r'servers/(?P<server_pk>[^/.]+)/run-stats',
 project_router.register(r'servers/(?P<server_pk>[^/.]+)/stats',
                         servers_views.ServerStatisticsViewSet)
 project_router.register(r'collaborators', project_views.CollaboratorViewSet)
+
+if settings.ENABLE_BILLING:
+    router.register(r'billing/customers', billing_views.CustomerViewSet)
+    router.register(r'billing/cards', billing_views.CardViewSet)
+    router.register(r'billing/plans', billing_views.PlanViewSet)
+    router.register(r'billing/subscriptions', billing_views.SubscriptionViewSet)
+    router.register(r'billing/invoices', billing_views.InvoiceViewSet)
+
 router.register(r'service/(?P<server_pk>[^/.]+)/trigger', trigger_views.ServerActionViewSet)
 
 schema_view = get_swagger_view(title='3blades API', url=settings.FORCE_SCRIPT_NAME or '/')
@@ -71,22 +76,23 @@ urlpatterns = [
     url(r'^auth/token/?$', oauth2_views.TokenView.as_view(), name="token"),
     url(r'^auth/', include('social_django.urls', namespace="social")),
     url(r'^swagger/$', schema_view),
-    url(r'^(?P<namespace>[\w-]+)/search/$', SearchViewSet.as_view({'get': 'list'}), name='search'),
+    url(r'^(?P<namespace>[\w-]+)/search/$', SearchView.as_view(), name='search'),
     url(r'^tbs-admin/', admin.site.urls),
     url(r'^actions/', include('actions.urls')),
-    url(r'^servers/(?P<server_pk>[^/.]+)$', servers_views.server_internal_details, name="server_internal"),
+    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_pk>[\w-]+)/servers/(?P<server_pk>[^/.]+)/internal/$',
+        servers_views.server_internal_details, name="server_internal"),
     url(r'^(?P<namespace>[\w-]+)/triggers/send-slack-message/$', trigger_views.SlackMessageView.as_view(),
         name='send-slack-message'),
     url(r'^(?P<namespace>[\w-]+)/', include(router.urls)),
     url(r'^(?P<namespace>[\w-]+)/', include(project_router.urls)),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_pk>[\w-]+)/synced-resources/$',
         project_views.SyncedResourceViewSet.as_view({'get': 'list', 'post': 'create'})),
-    url(r'^(?P<namespace>[\w-]+)/', include(user_router.urls)),
-    url(r'^(?P<namespace>[\w-]+)/users/(?P<user_pk>[\w-]+)/ssh-key/$', user_views.ssh_key, name='ssh_key'),
-    url(r'^(?P<namespace>[\w-]+)/users/(?P<user_pk>[\w-]+)/ssh-key/reset/$', user_views.reset_ssh_key,
+    url(r'^users/', include(user_router.urls)),
+    url(r'^users/(?P<user_pk>[\w-]+)/ssh-key/$', user_views.ssh_key, name='ssh_key'),
+    url(r'^users/(?P<user_pk>[\w-]+)/ssh-key/reset/$', user_views.reset_ssh_key,
         name='reset_ssh_key'),
-    url(r'^(?P<namespace>[\w-]+)/users/(?P<user_pk>[\w-]+)/api-key/$', user_views.api_key, name='api_key'),
-    url(r'^(?P<namespace>[\w-]+)/users/(?P<user_pk>[\w-]+)/api-key/reset/$', user_views.reset_api_key,
+    url(r'^users/(?P<user_pk>[\w-]+)/api-key/$', user_views.api_key, name='api_key'),
+    url(r'^users/(?P<user_pk>[\w-]+)/api-key/reset/$', user_views.reset_api_key,
         name='reset_api_key'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_pk>[\w-]+)/servers/(?P<pk>[^/.]+)/is-allowed/$',
         servers_views.IsAllowed.as_view(), name='is_allowed'),
@@ -100,7 +106,7 @@ urlpatterns = [
         servers_views.terminate, name='server-terminate'),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'(?P<namespace>[\w-]+)/billing/subscription_required/$', billing_views.no_subscription,
-        name="subscription-required")
+        name="subscription-required"),
 ]
 
 
@@ -119,5 +125,5 @@ if settings.DEBUG:
     urlpatterns += [
         url(r'^auth/simple-token-auth/$', user_views.ObtainAuthToken.as_view()),
         url(r'^__debug__/', include(debug_toolbar.urls)),
-    ]
+    ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns = staticfiles_urlpatterns() + urlpatterns

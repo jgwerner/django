@@ -4,6 +4,7 @@ from .base import *
 SECRET_KEY = 'test'
 
 RESOURCE_DIR = '/tmp'
+MEDIA_ROOT = "/tmp"
 
 CACHES['default']['OPTIONS']['REDIS_CLIENT_CLASS'] = "fakeredis.FakeStrictRedis"
 
@@ -46,3 +47,5 @@ HAYSTACK_CONNECTIONS = {
         'ENGINE': 'haystack.backends.simple_backend.SimpleEngine',
     }
 }
+
+ENABLE_BILLING = True

@@ -82,25 +82,36 @@ class FileQuerySet(models.QuerySet):
         return self.filter(author__username=namespace.name)
 
 
-class File(models.Model):
-    path = models.CharField(max_length=255)
-    encoding = models.CharField(max_length=20)
-    author = models.ForeignKey(settings.AUTH_USER_MODEL, models.DO_NOTHING, related_name='files')
-    project = models.ForeignKey(Project, related_name='files')
+def user_project_directory_path(instance, filename):
+    return "{usr}/{proj}/{fname}/".format(usr=instance.author.username,
+                                          proj=instance.project.pk,
+                                          fname=filename)
+
+
+class ProjectFile(models.Model):
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
+    project = models.ForeignKey(Project, related_name="project_files")
+    file = models.FileField(upload_to=user_project_directory_path)
     public = models.BooleanField(default=False)
 
     objects = FileQuerySet.as_manager()
 
-    def __str__(self):
-        return self.path
+    @property
+    def path(self):
+        relative_path = self.file.name.replace(str(self.project.pk), "")
+        relative_path = relative_path.replace(self.author.username, "")
+        relative_path = relative_path.replace(self.file.name.split("/")[-1], "")
+        relative_path = relative_path.lstrip("/")
+        return relative_path
 
-    def save(self, content='', **kwargs):
-        if not self.sys_path.exists():
-            self.sys_path.parent.mkdir(parents=True, exist_ok=True)
-            self.sys_path.touch()
-        if content:
-            self.sys_path.write_bytes(content)
-        super().save(**kwargs)
+    @property
+    def name(self):
+        return self.file.name.split("/")[-1]
+
+    def __str__(self):
+        return "{auth};{proj};{name}".format(auth=self.author.username,
+                                             proj=self.project.name,
+                                             name=self.file.name)
 
     def get_absolute_url(self, namespace):
         return reverse(
@@ -108,18 +119,8 @@ class File(models.Model):
             kwargs={'namespace': namespace.name, 'project_pk': str(self.project.pk), 'pk': str(self.pk)}
         )
 
-    @property
-    def sys_path(self):
-        return self.project.resource_root().joinpath(self.path)
-
-    def content(self):
-        return self.sys_path.read_bytes()
-
-    def size(self):
-        return self.sys_path.stat().st_size
-
     def delete(self, using=None, keep_parents=False):
-        self.sys_path.unlink()
+        self.file.delete()
         return super().delete(using, keep_parents)
 
 

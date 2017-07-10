@@ -1,5 +1,6 @@
 import stripe
 import logging
+from django.test import override_settings
 from django.urls import reverse
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -60,12 +61,13 @@ class CustomerTest(APITestCase):
 
     def test_list_customers(self):
         customers_count = 4
-        customers = CustomerFactory.create_batch(customers_count)
+        _ = CustomerFactory.create_batch(customers_count)
+        my_customer = CustomerFactory(user=self.user)
         url = reverse("customer-list", kwargs={'namespace': self.user.username})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), customers_count)
-        # Feels like we need more assertions here...
+        # Making sure that only "my" customer can be viewed
+        self.assertEqual(len(response.data), 1)
 
     def test_customer_details(self):
         customer = CustomerFactory(user=self.user)
@@ -81,7 +83,6 @@ class CustomerTest(APITestCase):
         url = reverse("customer-detail", kwargs={'namespace': self.user.username,
                                                  'pk': customer.pk})
 
-        # TODO: Figure out how to only require user on create. Seems to require two serializers, which blech
         data = {'account_balance': 5000, 'user': str(self.user.pk)}
         response = self.client.put(url, data)
 
@@ -123,6 +124,42 @@ class CustomerTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_402_PAYMENT_REQUIRED)
         self.user.is_staff = True
         self.user.save()
+
+    @override_settings(ENABLE_BILLING=False)
+    def test_billing_disabled_doesnt_reject_user(self):
+        self.user.is_staff = False
+        self.user.save()
+        url = reverse("project-list", kwargs={'namespace': self.user.username})
+        response = self.client.get(url, follow=True)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.user.is_staff = True
+        self.user.save()
+
+    def test_updating_customer_default_source(self):
+        customer = create_stripe_customer_from_user(self.user)
+        url = reverse("card-list", kwargs={'namespace': self.user.username})
+        data = {'user': str(self.user.pk),
+                'token': 'tok_visa'}
+        self.client.post(url, data)
+
+        # Have to create two card because the first one automatically becomes the default in stripe
+        data['token'] = "tok_mastercard"
+        self.client.post(url, data)
+
+        brands = Card.objects.all().values_list("brand", flat=True)
+
+        url = reverse("customer-detail", kwargs={'namespace': self.user.username,
+                                                 'pk': customer.pk})
+        mastercard = Card.objects.get(brand="MasterCard")
+        data = {'default_source': str(mastercard.pk)}
+
+        response = self.client.patch(url, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        customer_reloaded = Customer.objects.get(pk=customer.pk)
+        self.assertEqual(customer_reloaded.default_source, mastercard)
+
+        self.customers_to_delete.append(customer)
 
 
 class PlanTest(APITestCase):
@@ -331,8 +368,8 @@ class SubscriptionTest(APITestCase):
         self.plans_to_delete.append(plan)
         return plan
 
-    def _create_subscription_in_stripe(self):
-        plan = self._create_plan_in_stripe()
+    def _create_subscription_in_stripe(self, trial_period=7):
+        plan = self._create_plan_in_stripe(trial_period)
         url = reverse("subscription-list", kwargs={'namespace': self.user.username})
         data = {'plan': plan.pk}
         self.client.post(url, data)

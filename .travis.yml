@@ -38,13 +38,16 @@ install:
   - pip install -U pip setuptools wheel
   - pip install -r requirements/dev.txt
   - pip install codecov
-# command to run tests
+
 script:
-  # run tests
   - coverage run --source='.' manage.py test && coverage report -m
+  - bash config/buildDockerImage.sh
+
 after_success:
   - bash <(curl -s https://codecov.io/bash)
+
 notifications:
   slack: 3blades:RouLDGyG58awmaGkjgvh9Yuz
+
 env:
   - $DOCKER_IMAGE_NAME="3blades/app-backend"

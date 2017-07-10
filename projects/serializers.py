@@ -1,5 +1,4 @@
 import base64
-
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db.models import Q
@@ -9,7 +8,10 @@ from rest_framework import serializers
 from social_django.models import UserSocialAuth
 
 from base.serializers import SearchSerializerMixin
-from .models import Project, File, Collaborator, SyncedResource
+from projects.models import (Project, Collaborator,
+                             SyncedResource, ProjectFile)
+
+User = get_user_model()
 
 
 class ProjectSerializer(SearchSerializerMixin, serializers.ModelSerializer):
@@ -24,7 +26,11 @@ class ProjectSerializer(SearchSerializerMixin, serializers.ModelSerializer):
         collaborators = validated_data.pop('collaborators', [])
         project = super().create(validated_data)
         request = self.context['request']
-        Collaborator.objects.create(project=project, owner=True, user=request.user)
+        if request.user.is_staff:
+            user = request.namespace.object
+        else:
+            user = request.user
+        Collaborator.objects.create(project=project, owner=True, user=user)
         assign_perm('write_project', request.user, project)
         Path(settings.RESOURCE_DIR, project.get_owner_name(), str(project.pk)).mkdir(parents=True, exist_ok=True)
         return project
@@ -32,7 +38,7 @@ class ProjectSerializer(SearchSerializerMixin, serializers.ModelSerializer):
 
 class FileAuthorSerializer(serializers.ModelSerializer):
     class Meta:
-        model = get_user_model()
+        model = User
         fields = ('id', 'email', 'username')
         read_only_fields = ('email', 'username')
 
@@ -45,31 +51,40 @@ class Base64CharField(serializers.CharField):
         return base64.b64decode(data)
 
 
-class FileSerializer(serializers.ModelSerializer):
-    content = Base64CharField()
-    size = serializers.IntegerField(read_only=True)
+class ProjectFileSerializer(serializers.ModelSerializer):
+    base64_data = Base64CharField(required=False, write_only=True)
+    name = serializers.CharField(required=False)
+    file = serializers.FileField(required=False)
+    path = serializers.CharField(required=False)
+    content = serializers.SerializerMethodField()
 
     class Meta:
-        model = File
-        fields = ('id', 'path', 'encoding', 'public', 'content', 'size', 'author', 'project')
+        model = ProjectFile
+        fields = ("id", "project", "file", "public", "base64_data", "name", "path", "content")
+        read_only_fields = ("author", "project", "content")
+
+    def get_content(self, obj):
+        encoded = None
+        if self.context.get("get_content", False):
+            encoded = base64.b64encode(obj.file.read())
+        return encoded
 
     def create(self, validated_data):
-        content = validated_data.pop('content')
-        project_file = File(**validated_data)
-        project_file.save(content=content)
-        return project_file
+        project = Project.objects.get(pk=validated_data.pop("project"))
+        proj_file = ProjectFile(project=project,
+                                **validated_data)
+        proj_file.save()
+        return proj_file
 
     def update(self, instance, validated_data):
-        content = validated_data.pop('content')
-        instance.author = validated_data.pop('author')
-        instance.project = validated_data.pop('project')
-        old_path = instance.sys_path
-        for field in validated_data:
-            setattr(instance, field, validated_data[field])
-        if not instance.sys_path.parent.exists():
-            instance.sys_path.parent.mkdir(parents=True, exist_ok=True)
-        old_path.rename(instance.sys_path)
-        instance.save(content=content)
+
+        for key in validated_data:
+            if key == "file":
+                # Sort of sketches me out.
+                instance.file.delete()
+            setattr(instance, key, validated_data[key])
+
+        instance.save()
         return instance
 
 
@@ -85,6 +100,10 @@ class CollaboratorSerializer(serializers.ModelSerializer):
         model = Collaborator
         fields = ('id', 'owner', 'joined', 'username', 'email', 'first_name', 'last_name', 'member', 'permissions')
 
+    def validate_member(self, value):
+        if not User.objects.filter(Q(username=value) | Q(email=value)).exists():
+            raise serializers.ValidationError("User %s does not exists" % value)
+
     def create(self, validated_data):
         permissions = validated_data.pop('permissions', ['read_project'])
         member = validated_data.pop('member')
@@ -93,7 +112,7 @@ class CollaboratorSerializer(serializers.ModelSerializer):
         owner = validated_data.get("owner", False)
         if owner is True:
             Collaborator.objects.filter(project_id=project_id).update(owner=False)
-        user = get_user_model().objects.filter(Q(username=member) | Q(email=member)).first()
+        user = User.objects.filter(Q(username=member) | Q(email=member)).first()
         for permission in permissions:
             assign_perm(permission, user, project)
         return Collaborator.objects.create(user=user, project_id=project_id, **validated_data)
