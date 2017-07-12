@@ -67,6 +67,19 @@ class ProjectTest(ProjectTestMixin, APITestCase):
         self.assertEqual(project.name, data['name'])
         self.assertEqual(project.get_owner_name(), self.user.username)
 
+    def test_create_project_with_the_same_name(self):
+        collaborator = CollaboratorFactory(user=self.user, owner=True)
+        project = collaborator.project
+        url = reverse('project-list', kwargs={'namespace': self.user.username})
+        data = dict(
+            name=project.name,
+            description='Test description',
+        )
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(Project.objects.count(), 1)
+        print(response.data)
+
     def test_list_projects(self):
         projects_count = 4
         CollaboratorFactory.create_batch(4, user=self.user)

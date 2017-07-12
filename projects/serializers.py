@@ -22,6 +22,12 @@ class ProjectSerializer(SearchSerializerMixin, serializers.ModelSerializer):
         model = Project
         fields = ('id', 'name', 'description', 'private', 'last_updated', 'owner', 'collaborators')
 
+    def validate_name(self, value):
+        request = self.context['request']
+        if Project.objects.filter(name=value, collaborator__user=request.user, collaborator__owner=True).exists():
+            raise serializers.ValidationError("You can have only one project named %s" % value)
+        return value
+
     def create(self, validated_data):
         collaborators = validated_data.pop('collaborators', [])
         project = super().create(validated_data)
