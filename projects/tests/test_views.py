@@ -471,11 +471,6 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
         data = {'base64_data': b64,
                 'name': "foo"}
         response = self.client.post(url, data)
-        import logging
-        log = logging.getLogger('projects')
-        log.debug(("max size", settings.DATA_UPLOAD_MAX_MEMORY_SIZE))
-        log.debug(("b64 length", len(b64)))
-        log.debug(("resonse.data", response.reason_phrase))
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         created_file = ProjectFile.objects.filter(project=self.project,
                                                   author=self.user).first()
