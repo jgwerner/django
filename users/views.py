@@ -1,4 +1,5 @@
 import logging
+from django.db.models import Q
 from django.contrib.auth import get_user_model
 from haystack.query import SearchQuerySet, EmptySearchQuerySet
 from social_django.models import UserSocialAuth
@@ -99,7 +100,19 @@ class EmailViewSet(viewsets.ModelViewSet):
     serializer_class = EmailSerializer
 
     def get_queryset(self):
-        return super().get_queryset().filter(user=self.request.user)
+        return super().get_queryset().filter(Q(user=self.request.user) | Q(public=True))
+
+    def list(self, request, *args, **kwargs):
+        emails = self.get_queryset().filter(user__pk=kwargs.get("user_id"))
+        serializer = self.get_serializer(emails, many=True)
+        return Response(serializer.data)
+
+    def retrieve(self, request, *args, **kwargs):
+        email = self.get_queryset().filter(user__pk=kwargs.get("user_id"),
+                                           pk=kwargs.get("pk")).first()
+        serializer = self.get_serializer(email)
+        data = serializer.data if email is not None else {}
+        return Response(data)
 
 
 class IntegrationViewSet(viewsets.ModelViewSet):
