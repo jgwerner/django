@@ -70,7 +70,8 @@ class ProjectTest(ProjectTestMixin, APITestCase):
     def test_create_project_with_the_same_name(self):
         collaborator = CollaboratorFactory(user=self.user, owner=True)
         project = collaborator.project
-        url = reverse('project-list', kwargs={'namespace': self.user.username})
+        url = reverse('project-list', kwargs={'namespace': self.user.username,
+                                              'version': settings.DEFAULT_VERSION})
         data = dict(
             name=project.name,
             description='Test description',
