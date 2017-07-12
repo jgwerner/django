@@ -358,4 +358,4 @@ HTTPS = os.environ.get("TBS_HTTPS", "false").lower() == "true"
 TRAVIS_PULL_REQUEST = os.environ.get("TRAVIS_PULL_REQUEST", "true").lower() != "false"
 
 # KB * KB = MB -> 15 MB
-DATA_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024 * 15
+DATA_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024 * int(os.getenv("MAX_FILE_UPLOAD_SIZE", 15))

@@ -9,9 +9,9 @@ from rest_framework.views import get_view_name
 from rest_framework_jwt.serializers import VerifyJSONWebTokenSerializer
 from rest_framework.authtoken.models import Token
 
-from .models import Action
+from actions.models import Action
 
-log = logging.getLogger('projects')
+log = logging.getLogger('actions')
 
 User = get_user_model()
 
@@ -47,7 +47,10 @@ class ActionMiddleware(object):
         start = timezone.now()
         path = request.get_full_path()
         try:
-            body = ujson.loads(request.body)
+            if request.content_type.lower() == "multipart/form-data":
+                body = {}
+            else:
+                body = ujson.loads(request.body)
         except ValueError:
             body = {}
         filter_kwargs = dict(
