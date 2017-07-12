@@ -37,7 +37,8 @@ class EmailTest(APITestCase):
         EmailFactory(public=True, user=self.user)
         EmailFactory(public=False, user=self.user)
 
-        url = reverse("email-list", kwargs={'user_id': self.user.pk})
+        url = reverse("email-list", kwargs={'user_id': self.user.pk,
+                                            'version': settings.DEFAULT_VERSION})
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -48,7 +49,8 @@ class EmailTest(APITestCase):
         other_email_private = EmailFactory(public=False,
                                            user=other_email_public.user)
 
-        url = reverse("email-list", kwargs={'user_id': other_email_private.user.pk})
+        url = reverse("email-list", kwargs={'user_id': other_email_private.user.pk,
+                                            'version': settings.DEFAULT_VERSION})
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -62,7 +64,8 @@ class EmailTest(APITestCase):
         other_email_private = EmailFactory(public=False,)
 
         url = reverse("email-detail", kwargs={'user_id': other_email_private.user.pk,
-                                              'pk': other_email_private.pk})
+                                              'pk': other_email_private.pk,
+                                              'version': settings.DEFAULT_VERSION})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 0)

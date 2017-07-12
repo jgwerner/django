@@ -234,7 +234,7 @@ REST_FRAMEWORK = {
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning'
 }
 
-DEFAULT_VERSION = "v1"
+DEFAULT_VERSION = os.environ.get('TBS_DEFAULT_VERSION', "v1")
 
 RESOURCE_DIR = os.environ.get('RESOURCE_DIR', '/workspaces')
 
