@@ -459,3 +459,26 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertIsNone(ProjectFile.objects.filter(pk=project_file.pk).first())
         self.assertFalse(os.path.isfile(sys_path))
+
+    def test_upload_base64_large(self):
+        # Make sure we're overriding Django's built in Data Upload (NOT file) size limit of 2.5 MB
+        url = reverse('projectfile-list', kwargs=self.url_kwargs)
+        # Not sure exactly why, but encoding or something inflates the eventual size of this data
+        # Plus there is overhead for the rest of the request. Regardless, we don't want to use the entire
+        # limit for base64 data. This leaves us 1MB short of the limit
+        b64_content = os.urandom(int(settings.DATA_UPLOAD_MAX_MEMORY_SIZE * 0.7))
+        b64 = base64.b64encode(b64_content)
+        data = {'base64_data': b64,
+                'name': "foo"}
+        response = self.client.post(url, data)
+        import logging
+        log = logging.getLogger('projects')
+        log.debug(("max size", settings.DATA_UPLOAD_MAX_MEMORY_SIZE))
+        log.debug(("b64 length", len(b64)))
+        log.debug(("resonse.data", response.reason_phrase))
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        created_file = ProjectFile.objects.filter(project=self.project,
+                                                  author=self.user).first()
+        self.assertIsNotNone(created_file)
+        content = created_file.file.read()
+        self.assertEqual(content, b64_content)
