@@ -123,6 +123,7 @@ Modify environment variables located in `env` file with your local settings. You
     GOOGLE_CLIENT_ID=
     GOOGLE_CLIENT_SECRET=
     INACTIVE_RESOURCE_DIR=/inactive
+    MAX_FILE_UPLOAD_SIZE=
     RABBITMQ_URL=amqp://broker/
     REDIS_URL=redis://cache:6379/0
     RESOURCE_DIR=

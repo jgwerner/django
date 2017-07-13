@@ -172,6 +172,7 @@ BCRYPT_LOG_ROUNDS = 13
 
 JWT_AUTH = {
     'JWT_EXPIRATION_DELTA': datetime.timedelta(days=30),
+    'JWT_AUTH_HEADER_PREFIX': 'Bearer',
 }
 
 # Internationalization
@@ -360,3 +361,6 @@ HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
 HTTPS = os.environ.get("TBS_HTTPS", "false").lower() == "true"
 
 TRAVIS_PULL_REQUEST = os.environ.get("TRAVIS_PULL_REQUEST", "true").lower() != "false"
+
+# KB * KB = MB -> 15 MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024 * int(os.getenv("MAX_FILE_UPLOAD_SIZE", 15))
