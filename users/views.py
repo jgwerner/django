@@ -1,7 +1,4 @@
 import logging
-import shutil
-from pathlib import Path
-from django.conf import settings
 from django.db.models import Q
 from django.contrib.auth import get_user_model
 from haystack.query import SearchQuerySet, EmptySearchQuerySet
