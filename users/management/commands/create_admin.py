@@ -19,7 +19,7 @@ class Command(BaseCommand):
             profile, created = UserProfile.objects.get_or_create(user=user)
 
             if created:
-                log.info("Created a User Profile for the admin user.")
+                log.info("Created a User Profile for the admin user: {prof}".format(prof=profile))
 
         except Exception as e:
             log.error("There was an error while creating a superuser. Exception stacktrace:")

@@ -6,7 +6,6 @@ from social_django.models import UserSocialAuth
 from base.views import RequestUserMixin
 from base.serializers import SearchSerializerMixin
 from users.models import UserProfile, Email
-
 User = get_user_model()
 
 
@@ -23,6 +22,13 @@ class UserSerializer(SearchSerializerMixin, serializers.ModelSerializer):
         model = User
         fields = ('id', 'username', 'email', 'first_name', 'last_name', 'password', 'profile')
         extra_kwargs = {'password': {'write_only': True}}
+
+    def validate_username(self, value):
+        user_exists = User.objects.filter(username=value,
+                                          is_active=True).exists()
+        if user_exists:
+            raise serializers.ValidationError("{username} is already taken.".format(username=value))
+        return value
 
     def create(self, validated_data):
         profile_data = validated_data.pop('profile')

@@ -1,9 +1,12 @@
 from django.urls import reverse
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from rest_framework import status
-from rest_framework.test import APITestCase
+from rest_framework.test import APITestCase, APIClient
 
 from users.tests.factories import UserFactory, EmailFactory
+
+User = get_user_model()
 
 
 class UserTest(APITestCase):
@@ -26,6 +29,48 @@ class UserTest(APITestCase):
                                              'version': settings.DEFAULT_VERSION})
         response = self.user_client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_user_delete_allows_new_user_with_same_username(self):
+        user = UserFactory()
+        username = user.username
+        url = reverse('user-detail', kwargs={'pk': str(user.pk),
+                                             'version': settings.DEFAULT_VERSION})
+        response = self.admin_client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        old_user = User.objects.get(username=username,
+                                    is_active=False)
+        self.assertIsNotNone(old_user)
+
+        url = reverse("user-list", kwargs={'version': settings.DEFAULT_VERSION})
+        data = {'username': user.username,
+                'email': "foo@example.com",
+                'first_name': "Foo",
+                'last_name': "Bar",
+                'password': "password",
+                'profile': {}}
+        response = self.admin_client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        new_user_reloaded = User.objects.get(username=username,
+                                             is_active=True)
+        self.assertIsNotNone(new_user_reloaded)
+
+        self.assertNotEqual(old_user.pk, new_user_reloaded.pk)
+
+    def test_creating_user_with_matching_active_user_fails(self):
+        url = reverse("user-list", kwargs={'version': settings.DEFAULT_VERSION})
+        data = {'username': self.user.username,
+                'email': "foo@example.com",
+                'first_name': "Foo",
+                'last_name': "Bar",
+                'password': "password",
+                'profile': {}}
+        response = self.admin_client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        expected_error = "{username} is already taken.".format(username=self.user.username)
+        error_list = response.data.get('username')
+        self.assertEqual(len(error_list), 1)
+        self.assertEqual(error_list[0], expected_error)
 
 
 class EmailTest(APITestCase):

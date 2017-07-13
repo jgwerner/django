@@ -2,10 +2,13 @@ from pathlib import Path
 
 from django.conf import settings
 from django.db import models
+from django.contrib.auth import get_user_model
+User = get_user_model()
+User._meta.get_field('username')._unique = False
 
 
 class UserProfile(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, primary_key=True, related_name='profile')
+    user = models.OneToOneField(User, primary_key=True, related_name='profile')
     avatar_url = models.CharField(max_length=100, blank=True, null=True)
     bio = models.CharField(max_length=400, blank=True, null=True)
     url = models.CharField(max_length=200, blank=True, null=True)
@@ -32,6 +35,6 @@ class UserProfile(models.Model):
 
 class Email(models.Model):
     address = models.CharField(max_length=255)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='emails', null=True)
+    user = models.ForeignKey(User, related_name='emails', null=True)
     public = models.BooleanField(default=False)
     unsubscribed = models.BooleanField(default=True)
