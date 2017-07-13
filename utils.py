@@ -1,4 +1,6 @@
 import ujson
+import logging
+import shutil
 from pathlib import Path
 
 from cryptography.hazmat.backends import default_backend
@@ -10,6 +12,7 @@ from django.utils.encoding import force_bytes, force_text
 from django_redis.serializers.base import BaseSerializer
 from rest_framework_jwt.settings import api_settings
 from hashids import Hashids
+log = logging.getLogger(__name__)
 
 jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
 jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
@@ -61,6 +64,18 @@ def create_ssh_key(user):
     user_ssh_dir.chmod(0o770)
     user_ssh_private_key_file.chmod(0o440)
     user_ssh_public_key_file.chmod(0o600)
+
+
+def deactivate_user(user):
+    user.is_active = False
+    old_resource = user.profile.resource_root()
+    new_resource_path = Path(settings.INACTIVE_RESOURCE_DIR,
+                             user.username +
+                             "_{uuid}".format(uuid=user.pk))
+    log.info("About to move {user}'s resource directory from {old} to {new}".format(user=user.username,
+                                                                                    old=str(old_resource),
+                                                                                    new=str(new_resource_path)))
+    shutil.move(str(old_resource), str(new_resource_path))
 
 
 class UJSONSerializer(BaseSerializer):

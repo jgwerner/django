@@ -1,4 +1,7 @@
 import logging
+import shutil
+from pathlib import Path
+from django.conf import settings
 from django.db.models import Q
 from django.contrib.auth import get_user_model
 from haystack.query import SearchQuerySet, EmptySearchQuerySet
@@ -14,7 +17,7 @@ from rest_framework.views import APIView
 
 from base.permissions import DeleteAdminOnly
 from base.views import UUIDRegexMixin
-from utils import create_ssh_key
+from utils import create_ssh_key, deactivate_user
 
 from users.filters import UserSearchFilter
 from users.models import Email
@@ -33,7 +36,7 @@ class UserViewSet(UUIDRegexMixin, viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, DeleteAdminOnly)
 
     def perform_destroy(self, instance):
-        instance.is_active = False
+        deactivate_user(instance)
         instance.save()
 
 

@@ -1,10 +1,12 @@
+import shutil
 from django.urls import reverse
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from rest_framework import status
-from rest_framework.test import APITestCase, APIClient
+from rest_framework.test import APITestCase
 
 from users.tests.factories import UserFactory, EmailFactory
+from utils import create_ssh_key
 
 User = get_user_model()
 
@@ -15,9 +17,17 @@ class UserTest(APITestCase):
         self.user = UserFactory(username='user')
         self.admin_client = self.client_class(HTTP_AUTHORIZATION='Token {}'.format(self.admin.auth_token.key))
         self.user_client = self.client_class(HTTP_AUTHORIZATION='Token {}'.format(self.user.auth_token.key))
+        self.to_remove = None
+
+    def tearDown(self):
+        if self.to_remove is not None:
+            shutil.rmtree(str(self.to_remove))
 
     def test_user_delete_by_admin(self):
         user = UserFactory()
+        # For whatever reason, create_ssh_key doesnt seem to be called by the Factory here.
+        # It doesn't matter, we just need the directory to exist.
+        create_ssh_key(user)
         url = reverse('user-detail', kwargs={'pk': str(user.pk),
                                              'version': settings.DEFAULT_VERSION})
         response = self.admin_client.delete(url)
@@ -32,6 +42,8 @@ class UserTest(APITestCase):
 
     def test_user_delete_allows_new_user_with_same_username(self):
         user = UserFactory()
+        create_ssh_key(user)
+
         username = user.username
         url = reverse('user-detail', kwargs={'pk': str(user.pk),
                                              'version': settings.DEFAULT_VERSION})
@@ -56,6 +68,7 @@ class UserTest(APITestCase):
         self.assertIsNotNone(new_user_reloaded)
 
         self.assertNotEqual(old_user.pk, new_user_reloaded.pk)
+        self.to_remove = new_user_reloaded.profile.resource_root()
 
     def test_creating_user_with_matching_active_user_fails(self):
         url = reverse("user-list", kwargs={'version': settings.DEFAULT_VERSION})
