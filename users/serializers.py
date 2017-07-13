@@ -36,9 +36,11 @@ class UserSerializer(SearchSerializerMixin, serializers.ModelSerializer):
         return user
 
     def update(self, instance, validated_data):
-        profile_data = validated_data.pop('profile')
-        profile = UserProfile(user=instance, **profile_data)
-        profile.save()
+        profile_data = validated_data.get('profile')
+        if profile_data is not None:
+            validated_data.pop('profile')
+            profile = UserProfile(user=instance, **profile_data)
+            profile.save()
         password = validated_data.pop('password', None)
         if password is not None:
             instance.set_password(password)
