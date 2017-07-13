@@ -1,5 +1,6 @@
 import requests
 from django.urls import reverse
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import status
 from rest_framework.test import APITestCase, APILiveServerTestCase
@@ -12,6 +13,8 @@ from triggers.serializers import ServerActionSerializer
 from triggers.tests.factories import TriggerFactory
 from projects.tests.factories import CollaboratorFactory
 from servers.tests.factories import ServerFactory
+import logging
+log = logging.getLogger('triggers')
 
 
 class TriggerTest(APITestCase):
@@ -40,7 +43,8 @@ class TriggerTest(APITestCase):
                 action_name='send-slack-message'
             ),
         )
-        url = reverse('trigger-list', kwargs={'namespace': self.user.username})
+        url = reverse('trigger-list', kwargs={'namespace': self.user.username,
+                                              'version': settings.DEFAULT_VERSION})
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         qs = Action.objects.filter(state=Action.CREATED)
@@ -60,6 +64,7 @@ class ServerActionTestCase(APILiveServerTestCase):
         self.url_kwargs = {
             'namespace': self.user.username,
             'server_pk': str(self.server.pk),
+            'version': settings.DEFAULT_VERSION
         }
 
     def test_create_server_action_trigger(self):
@@ -80,7 +85,7 @@ class ServerActionTestCase(APILiveServerTestCase):
             user=self.user,
             state=Action.CREATED,
             is_user_action=False,
-            path=self.server.get_action_url(namespace, 'stop'),
+            path=self.server.get_action_url(settings.DEFAULT_VERSION, namespace, 'stop'),
         )
         instance = TriggerFactory(effect=effect, cause=None)
         kwargs = {'pk': str(instance.pk), **self.url_kwargs}

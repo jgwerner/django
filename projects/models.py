@@ -35,13 +35,15 @@ class Project(models.Model):
     def __str__(self):
         return self.name
 
-    def get_absolute_url(self, namespace: Namespace):
-        return self.get_action_url(namespace, 'detail')
+    def get_absolute_url(self, version, namespace: Namespace):
+        return self.get_action_url(version, namespace, 'detail')
 
-    def get_action_url(self, namespace, action):
+    def get_action_url(self, version, namespace, action):
         return reverse(
             'project-{}'.format(action),
-            kwargs={'namespace': namespace.name, 'pk': str(self.id)}
+            kwargs={'namespace': namespace.name,
+                    'pk': str(self.id),
+                    'version': version}
         )
 
     @property

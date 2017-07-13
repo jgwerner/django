@@ -1,4 +1,5 @@
 from django.urls import reverse
+from django.conf import settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -14,13 +15,15 @@ class UserTest(APITestCase):
 
     def test_user_delete_by_admin(self):
         user = UserFactory()
-        url = reverse('user-detail', kwargs={'pk': str(user.pk)})
+        url = reverse('user-detail', kwargs={'pk': str(user.pk),
+                                             'version': settings.DEFAULT_VERSION})
         response = self.admin_client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
     def test_user_delete_by_user(self):
         user = UserFactory()
-        url = reverse('user-detail', kwargs={'pk': str(user.pk)})
+        url = reverse('user-detail', kwargs={'pk': str(user.pk),
+                                             'version': settings.DEFAULT_VERSION})
         response = self.user_client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
@@ -34,7 +37,8 @@ class EmailTest(APITestCase):
         EmailFactory(public=True, user=self.user)
         EmailFactory(public=False, user=self.user)
 
-        url = reverse("email-list", kwargs={'user_id': self.user.pk})
+        url = reverse("email-list", kwargs={'user_id': self.user.pk,
+                                            'version': settings.DEFAULT_VERSION})
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -45,7 +49,8 @@ class EmailTest(APITestCase):
         other_email_private = EmailFactory(public=False,
                                            user=other_email_public.user)
 
-        url = reverse("email-list", kwargs={'user_id': other_email_private.user.pk})
+        url = reverse("email-list", kwargs={'user_id': other_email_private.user.pk,
+                                            'version': settings.DEFAULT_VERSION})
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -59,7 +64,8 @@ class EmailTest(APITestCase):
         other_email_private = EmailFactory(public=False,)
 
         url = reverse("email-detail", kwargs={'user_id': other_email_private.user.pk,
-                                              'pk': other_email_private.pk})
+                                              'pk': other_email_private.pk,
+                                              'version': settings.DEFAULT_VERSION})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 0)

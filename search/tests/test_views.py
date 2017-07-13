@@ -1,4 +1,5 @@
 from django.urls import reverse
+from django.conf import settings
 from rest_framework.test import APITestCase
 
 from users.tests.factories import UserFactory
@@ -17,7 +18,8 @@ class SearchTestCase(APITestCase):
         self.token_header = 'Token {}'.format(self.user.auth_token.key)
         self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
         UserFactory.create_batch(4)
-        self.url = reverse('search', kwargs={'namespace': self.user.username})
+        self.url = reverse('search', kwargs={'namespace': self.user.username,
+                                             'version': settings.DEFAULT_VERSION})
 
     def test_no_search_param(self):
         response = self.client.get(self.url)

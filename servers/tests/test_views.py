@@ -1,14 +1,17 @@
 from unittest.mock import patch
 from guardian.shortcuts import assign_perm
 from django.urls import reverse
+from django.conf import settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from projects.tests.factories import CollaboratorFactory
 
-from ..models import Server
-from .factories import EnvironmentResourcesFactory, ServerStatisticsFactory,\
-    ServerRunStatisticsFactory, ServerFactory
+from servers.models import Server
+from servers.tests.factories import (EnvironmentResourcesFactory,
+                                     ServerStatisticsFactory,
+                                     ServerRunStatisticsFactory,
+                                     ServerFactory)
 
 
 class ServerTest(APITestCase):
@@ -17,7 +20,9 @@ class ServerTest(APITestCase):
         self.user = collaborator.user
         self.project = collaborator.project
         self.token_header = 'Token {}'.format(self.user.auth_token.key)
-        self.url_kwargs = {'namespace': self.user.username, 'project_pk': str(self.project.pk)}
+        self.url_kwargs = {'namespace': self.user.username,
+                           'project_pk': str(self.project.pk),
+                           'version': settings.DEFAULT_VERSION}
         self.env_res = EnvironmentResourcesFactory(name='Nano')
         EnvironmentResourcesFactory()
         self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
@@ -140,7 +145,9 @@ class ServerRunStatisticsTestCase(APITestCase):
         self.user = collaborator.user
         self.project = collaborator.project
         self.token_header = 'Token {}'.format(self.user.auth_token.key)
-        self.url_kwargs = {'namespace': self.user.username, 'project_pk': str(self.project.pk)}
+        self.url_kwargs = {'namespace': self.user.username,
+                           'project_pk': str(self.project.pk),
+                           'version': settings.DEFAULT_VERSION}
         self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
 
     def test_list(self):
@@ -148,7 +155,8 @@ class ServerRunStatisticsTestCase(APITestCase):
         url = reverse('serverrunstatistics-list', kwargs={
             'namespace': self.project.get_owner_name(),
             'project_pk': str(self.project.pk),
-            'server_pk': str(stats.server.pk)
+            'server_pk': str(stats.server.pk),
+            'version': settings.DEFAULT_VERSION
         })
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -167,7 +175,9 @@ class ServerStatisticsTestCase(APITestCase):
         self.user = collaborator.user
         self.project = collaborator.project
         self.token_header = 'Token {}'.format(self.user.auth_token.key)
-        self.url_kwargs = {'namespace': self.user.username, 'project_pk': str(self.project.pk)}
+        self.url_kwargs = {'namespace': self.user.username,
+                           'project_pk': str(self.project.pk),
+                           'version': settings.DEFAULT_VERSION}
         self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
 
     def test_list(self):
@@ -175,7 +185,8 @@ class ServerStatisticsTestCase(APITestCase):
         url = reverse('serverstatistics-list', kwargs={
             'namespace': self.project.get_owner_name(),
             'project_pk': str(self.project.pk),
-            'server_pk': str(stats.server.pk)
+            'server_pk': str(stats.server.pk),
+            'version': settings.DEFAULT_VERSION
         })
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)

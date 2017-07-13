@@ -26,7 +26,7 @@ class ServerViewSet(viewsets.ModelViewSet):
 
 @api_view(['post'])
 @permission_classes([IsAuthenticated, ServerActionPermission])
-def start(request, project_pk, pk):
+def start(request, version, project_pk, pk):
     start_server.apply_async(
         args=[pk],
         task_id=str(request.action.pk)
@@ -111,7 +111,7 @@ class IsAllowed(views.APIView):
 
 @api_view(['GET'], exclude_from_schema=True)
 @permission_classes((AllowAny,))
-def server_internal_details(request, project_pk, server_pk):
+def server_internal_details(request, version, project_pk, server_pk):
     server = get_object_or_404(models.Server, pk=server_pk, project_id=project_pk)
     data = {'server': '', 'container_name': ''}
     server_ip = server.get_private_ip()

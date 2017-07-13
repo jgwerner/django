@@ -1,3 +1,4 @@
+import stripe
 import logging
 from django.test import override_settings
 from django.urls import reverse
@@ -55,7 +56,8 @@ class CustomerTest(APITestCase):
         self.assertEqual(customer.count(), 1)
 
     def test_create_customer(self):
-        url = reverse("customer-list", kwargs={'namespace': self.user.username})
+        url = reverse("customer-list", kwargs={'namespace': self.user.username,
+                                               'version': settings.DEFAULT_VERSION})
         data = {'user': self.user.pk}
         response = self.client.post(url, data)
 
@@ -68,7 +70,8 @@ class CustomerTest(APITestCase):
         customers_count = 4
         _ = CustomerFactory.create_batch(customers_count)
         my_customer = CustomerFactory(user=self.user)
-        url = reverse("customer-list", kwargs={'namespace': self.user.username})
+        url = reverse("customer-list", kwargs={'namespace': self.user.username,
+                                               'version': settings.DEFAULT_VERSION})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # Making sure that only "my" customer can be viewed
@@ -77,7 +80,8 @@ class CustomerTest(APITestCase):
     def test_customer_details(self):
         customer = CustomerFactory(user=self.user)
         url = reverse("customer-detail", kwargs={'namespace': self.user.username,
-                                                 'pk': customer.pk})
+                                                 'pk': customer.pk,
+                                                 'version': settings.DEFAULT_VERSION})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(str(customer.pk), response.data.get('id'))
@@ -86,7 +90,8 @@ class CustomerTest(APITestCase):
         customer = create_stripe_customer_from_user(self.user)
         self.customers_to_delete = [customer]
         url = reverse("customer-detail", kwargs={'namespace': self.user.username,
-                                                 'pk': customer.pk})
+                                                 'pk': customer.pk,
+                                                 'version': settings.DEFAULT_VERSION})
 
         data = {'account_balance': 5000, 'user': str(self.user.pk)}
         response = self.client.put(url, data)
@@ -104,7 +109,8 @@ class CustomerTest(APITestCase):
         # Deleting it from stripe is part of the test, obviously.
         customer = create_stripe_customer_from_user(self.user)
         url = reverse("customer-detail", kwargs={'namespace': self.user.username,
-                                                 'pk': customer.pk})
+                                                 'pk': customer.pk,
+                                                 'version': settings.DEFAULT_VERSION})
         response = self.client.delete(url)
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
@@ -124,7 +130,8 @@ class CustomerTest(APITestCase):
         self.user.save()
         customer = create_stripe_customer_from_user(self.user)
         self.customers_to_delete = [customer]
-        url = reverse("project-list", kwargs={'namespace': self.user.username})
+        url = reverse("project-list", kwargs={'namespace': self.user.username,
+                                              'version': settings.DEFAULT_VERSION})
         response = self.client.get(url, follow=True)
         self.assertEqual(response.status_code, status.HTTP_402_PAYMENT_REQUIRED)
         self.user.is_staff = True
@@ -134,7 +141,8 @@ class CustomerTest(APITestCase):
     def test_billing_disabled_doesnt_reject_user(self):
         self.user.is_staff = False
         self.user.save()
-        url = reverse("project-list", kwargs={'namespace': self.user.username})
+        url = reverse("project-list", kwargs={'namespace': self.user.username,
+                                              'version': settings.DEFAULT_VERSION})
         response = self.client.get(url, follow=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.user.is_staff = True
@@ -142,7 +150,8 @@ class CustomerTest(APITestCase):
 
     def test_updating_customer_default_source(self):
         customer = create_stripe_customer_from_user(self.user)
-        url = reverse("card-list", kwargs={'namespace': self.user.username})
+        url = reverse("card-list", kwargs={'namespace': self.user.username,
+                                           'version': settings.DEFAULT_VERSION})
         data = {'user': str(self.user.pk),
                 'token': 'tok_visa'}
         self.client.post(url, data)
@@ -153,7 +162,8 @@ class CustomerTest(APITestCase):
         self.client.post(url, data)
 
         url = reverse("customer-detail", kwargs={'namespace': self.user.username,
-                                                 'pk': customer.pk})
+                                                 'pk': customer.pk,
+                                                 'version': settings.DEFAULT_VERSION})
         second_card = Card.objects.exclude(pk=first_card.pk).first()
         data = {'default_source': str(second_card.pk)}
 
@@ -179,14 +189,16 @@ class PlanTest(APITestCase):
             stripe_obj.delete()
 
     def _create_plan_in_stripe(self):
-        url = reverse("plan-list", kwargs={'namespace': self.user.username})
+        url = reverse("plan-list", kwargs={'namespace': self.user.username,
+                                           'version': settings.DEFAULT_VERSION})
         plan_data = create_plan_dict()
         self.client.post(url, plan_data)
         plan = Plan.objects.get()
         return plan
 
     def test_create_plan(self):
-        url = reverse("plan-list", kwargs={'namespace': self.user.username})
+        url = reverse("plan-list", kwargs={'namespace': self.user.username,
+                                           'version': settings.DEFAULT_VERSION})
         data = create_plan_dict()
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -197,7 +209,8 @@ class PlanTest(APITestCase):
     def test_list_plans(self):
         plan_count = 4
         plans = PlanFactory.create_batch(plan_count)
-        url = reverse("plan-list", kwargs={'namespace': self.user.username})
+        url = reverse("plan-list", kwargs={'namespace': self.user.username,
+                                           'version': settings.DEFAULT_VERSION})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), plan_count)
@@ -205,7 +218,8 @@ class PlanTest(APITestCase):
     def test_plan_details(self):
         plan = PlanFactory()
         url = reverse("plan-detail", kwargs={'namespace': self.user.username,
-                                             'pk': plan.pk})
+                                             'pk': plan.pk,
+                                             'version': settings.DEFAULT_VERSION})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(str(plan.pk), response.data.get('id'))
@@ -214,7 +228,8 @@ class PlanTest(APITestCase):
         plan = self._create_plan_in_stripe()
         self.plans_to_delete = [plan]
         url = reverse("plan-detail", kwargs={'namespace': self.user.username,
-                                             'pk': plan.pk})
+                                             'pk': plan.pk,
+                                             'version': settings.DEFAULT_VERSION})
         data = {'name': "Foo"}
         response = self.client.patch(url, data)
 
@@ -227,7 +242,8 @@ class PlanTest(APITestCase):
         pre_del_plan_count = Plan.objects.count()
         plan = self._create_plan_in_stripe()
         url = reverse("plan-detail", kwargs={'namespace': self.user.username,
-                                             'pk': plan.pk})
+                                             'pk': plan.pk,
+                                             'version': settings.DEFAULT_VERSION})
         response = self.client.delete(url)
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
@@ -239,7 +255,8 @@ class PlanTest(APITestCase):
     def test_non_staff_user_cannot_create_plan(self):
         self.user.is_staff = False
         self.user.save()
-        url = reverse("plan-list", kwargs={'namespace': self.user.username})
+        url = reverse("plan-list", kwargs={'namespace': self.user.username,
+                                           'version': settings.DEFAULT_VERSION})
         data = create_plan_dict()
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
@@ -252,7 +269,8 @@ class PlanTest(APITestCase):
         self.user.is_staff = False
         self.user.save()
         url = reverse("plan-detail", kwargs={'namespace': self.user.username,
-                                             'pk': plan.pk})
+                                             'pk': plan.pk,
+                                             'version': settings.DEFAULT_VERSION})
         data = {'name': "Foo"}
         response = self.client.patch(url, data)
 
@@ -266,7 +284,8 @@ class PlanTest(APITestCase):
         self.user.is_staff = False
         self.user.save()
         url = reverse("plan-detail", kwargs={'namespace': self.user.username,
-                                             'pk': plan.pk})
+                                             'pk': plan.pk,
+                                             'version': settings.DEFAULT_VERSION})
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
@@ -291,7 +310,8 @@ class CardTest(APITestCase):
         stripe_obj.delete()
 
     def _create_card_in_stripe(self):
-        url = reverse("card-list", kwargs={'namespace': self.user.username})
+        url = reverse("card-list", kwargs={'namespace': self.user.username,
+                                           'version': settings.DEFAULT_VERSION})
         data = {'user': str(self.user.pk),
                 'token': 'tok_visa'}
         self.client.post(url, data)
@@ -299,7 +319,8 @@ class CardTest(APITestCase):
         return card
 
     def test_create_card(self):
-        url = reverse("card-list", kwargs={'namespace': self.user.username})
+        url = reverse("card-list", kwargs={'namespace': self.user.username,
+                                           'version': settings.DEFAULT_VERSION})
         data = {'token': "tok_visa"}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -310,7 +331,8 @@ class CardTest(APITestCase):
         cards = CardFactory.create_batch(not_me_card_count)
         my_card_count = 2
         my_cards = CardFactory.create_batch(my_card_count, customer=self.customer)
-        url = reverse("card-list", kwargs={'namespace': self.user.username})
+        url = reverse("card-list", kwargs={'namespace': self.user.username,
+                                           'version': settings.DEFAULT_VERSION})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(Card.objects.count(), not_me_card_count + my_card_count)
@@ -319,7 +341,8 @@ class CardTest(APITestCase):
     def test_card_details(self):
         card = CardFactory(customer=self.customer)
         url = reverse("card-detail", kwargs={'namespace': self.user.username,
-                                             'pk': card.pk})
+                                             'pk': card.pk,
+                                             'version': settings.DEFAULT_VERSION})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(str(card.pk), response.data.get('id'))
@@ -327,7 +350,8 @@ class CardTest(APITestCase):
     def test_card_update(self):
         card = self._create_card_in_stripe()
         url = reverse("card-detail", kwargs={'namespace': self.user.username,
-                                             'pk': card.pk})
+                                             'pk': card.pk,
+                                             'version': settings.DEFAULT_VERSION})
         data = {'name': "Mr. Foo Bar",
                 'address_line1': "123 Any Street"}
         response = self.client.put(url, data)
@@ -339,7 +363,8 @@ class CardTest(APITestCase):
     def test_card_delete(self):
         card = self._create_card_in_stripe()
         url = reverse("card-detail", kwargs={'namespace': self.user.username,
-                                             'pk': card.pk})
+                                             'pk': card.pk,
+                                             'version': settings.DEFAULT_VERSION})
         response = self.client.delete(url)
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
@@ -365,7 +390,8 @@ class SubscriptionTest(APITestCase):
             stripe_obj.delete()
 
     def _create_plan_in_stripe(self, trial_period=None):
-        url = reverse("plan-list", kwargs={'namespace': self.user.username})
+        url = reverse("plan-list", kwargs={'namespace': self.user.username,
+                                           'version': settings.DEFAULT_VERSION})
         plan_data = create_plan_dict(trial_period)
         self.client.post(url, plan_data)
         plan = Plan.objects.get()
@@ -374,7 +400,8 @@ class SubscriptionTest(APITestCase):
 
     def _create_subscription_in_stripe(self, trial_period=7):
         plan = self._create_plan_in_stripe(trial_period)
-        url = reverse("subscription-list", kwargs={'namespace': self.user.username})
+        url = reverse("subscription-list", kwargs={'namespace': self.user.username,
+                                                   'version': settings.DEFAULT_VERSION})
         data = {'plan': plan.pk}
         self.client.post(url, data)
 
@@ -383,7 +410,8 @@ class SubscriptionTest(APITestCase):
 
     def test_subscription_create(self):
         plan = self._create_plan_in_stripe(trial_period=7)
-        url = reverse("subscription-list", kwargs={'namespace': self.user.username})
+        url = reverse("subscription-list", kwargs={'namespace': self.user.username,
+                                                   'version': settings.DEFAULT_VERSION})
         data = {'plan': plan.pk}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -394,7 +422,8 @@ class SubscriptionTest(APITestCase):
         other_subs = SubscriptionFactory.create_batch(not_me_sub_count)
         my_subs_count = 2
         my_subs = SubscriptionFactory.create_batch(my_subs_count, customer=self.customer)
-        url = reverse("subscription-list", kwargs={'namespace': self.user.username})
+        url = reverse("subscription-list", kwargs={'namespace': self.user.username,
+                                                   'version': settings.DEFAULT_VERSION})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(Subscription.objects.count(), not_me_sub_count + my_subs_count)
@@ -403,7 +432,8 @@ class SubscriptionTest(APITestCase):
     def test_subscription_details(self):
         sub = SubscriptionFactory(customer=self.customer)
         url = reverse("subscription-detail", kwargs={'namespace': self.user.username,
-                                                     'pk': sub.pk})
+                                                     'pk': sub.pk,
+                                                     'version': settings.DEFAULT_VERSION})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(str(sub.pk), response.data.get('id'))
@@ -411,7 +441,8 @@ class SubscriptionTest(APITestCase):
     def test_subscription_cancel(self):
         subscription = self._create_subscription_in_stripe()
         url = reverse("subscription-detail", kwargs={'namespace': self.user.username,
-                                                     'pk': subscription.pk})
+                                                     'pk': subscription.pk,
+                                                     'version': settings.DEFAULT_VERSION})
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(Subscription.objects.count(), 1)

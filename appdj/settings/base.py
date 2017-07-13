@@ -82,7 +82,7 @@ MIDDLEWARE = [
     'billing.middleware.SubscriptionMiddleware'
 ]
 
-ROOT_URLCONF = 'appdj.urls'
+ROOT_URLCONF = 'appdj.urls.base'
 
 TEMPLATES = [
     {
@@ -231,7 +231,10 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ),
     'DEFAULT_PAGINATION_CLASS': 'base.pagination.LimitOffsetPagination',
+    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning'
 }
+
+DEFAULT_VERSION = os.environ.get('TBS_DEFAULT_VERSION', "v1")
 
 RESOURCE_DIR = os.environ.get('RESOURCE_DIR', '/workspaces')
 

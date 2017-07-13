@@ -18,8 +18,14 @@ class SubscriptionMiddleware(object):
                     and not user.is_staff):
                     customer = user.customer
                     if not customer.has_active_subscription():
+                        # Using settings.DEFAULT_VERSION here isn't ideal, but:
+                        # 1.) request is still a WSGIRequest at this point, which doesn't have the version attribute.
+                        # 2.) settings.DEFAULT_VERSION should at least match the major version of the request
+                        #     because each version has its own instance *in theory*
+                        # 3.) subscription-required should very rarely, if ever, change.
                         return redirect("subscription-required",
-                                        namespace=user.username)
+                                        namespace=user.username,
+                                        version=settings.DEFAULT_VERSION)
         except Customer.DoesNotExist:
             pass
 
