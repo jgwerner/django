@@ -1,9 +1,11 @@
 from django.urls import reverse
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from users.tests.factories import UserFactory, EmailFactory
+User = get_user_model()
 
 
 class UserTest(APITestCase):
@@ -26,6 +28,16 @@ class UserTest(APITestCase):
                                              'version': settings.DEFAULT_VERSION})
         response = self.user_client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_patch_user_without_profile(self):
+        user = UserFactory()
+        url = reverse("user-detail", kwargs={'pk': user.pk,
+                                             'version': settings.DEFAULT_VERSION})
+        data = {'first_name': "Tom"}
+        response = self.admin_client.patch(url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        user_reloaded = User.objects.get(pk=user.pk)
+        self.assertEqual(user_reloaded.first_name, "Tom")
 
 
 class EmailTest(APITestCase):
