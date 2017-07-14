@@ -126,13 +126,12 @@ class ProjectTest(ProjectTestMixin, APITestCase):
         url = reverse('project-detail', kwargs={'namespace': self.user.username,
                                                 'pk': project.pk,
                                                 'version': settings.DEFAULT_VERSION})
-        data = dict(
-            name='Test-1',
-        )
+        data = {'description': "Foo",
+                'name': project.name}
         response = self.client.patch(url, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         project = Project.objects.get(pk=project.pk)
-        self.assertEqual(project.name, data['name'])
+        self.assertEqual(project.description, data['description'])
 
     def test_project_delete(self):
         collaborator = CollaboratorFactory(user=self.user)
