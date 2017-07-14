@@ -102,6 +102,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'appdj.wsgi.application'
 
+AUTH_USER_MODEL = 'users.User'
+
 # Email Settings
 EMAIL_HOST = os.environ.get('EMAIL_HOST', 'localhost')
 EMAIL_PORT = os.environ.get('EMAIL_PORT', '587')

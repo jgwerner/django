@@ -1,10 +1,16 @@
 from pathlib import Path
-
+import django
 from django.conf import settings
 from django.db import models
-from django.contrib.auth import get_user_model
-User = get_user_model()
-User._meta.get_field('username')._unique = False
+from django.contrib.auth.models import AbstractUser
+
+
+class User(AbstractUser):
+    username = models.CharField(error_messages={'unique': 'A user with that username already exists.'},
+                                help_text='Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.',
+                                max_length=150,
+                                validators=[django.contrib.auth.validators.UnicodeUsernameValidator()],
+                                verbose_name='username')
 
 
 class UserProfile(models.Model):
