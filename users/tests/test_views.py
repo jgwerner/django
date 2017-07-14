@@ -40,6 +40,16 @@ class UserTest(APITestCase):
         response = self.user_client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_patch_user_without_profile(self):
+        user = UserFactory()
+        url = reverse("user-detail", kwargs={'pk': user.pk,
+                                             'version': settings.DEFAULT_VERSION})
+        data = {'first_name': "Tom"}
+        response = self.admin_client.patch(url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        user_reloaded = User.objects.get(pk=user.pk)
+        self.assertEqual(user_reloaded.first_name, "Tom")
+
     def test_user_delete_allows_new_user_with_same_username(self):
         user = UserFactory()
         create_ssh_key(user)

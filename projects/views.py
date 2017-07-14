@@ -26,6 +26,19 @@ class ProjectViewSet(NamespaceMixin, viewsets.ModelViewSet):
     filter_fields = ('private', 'name')
     ordering_fields = ('name',)
 
+    def partial_update(self, request, *args, **kwargs):
+        instance = Project.objects.get(pk=kwargs.get("pk"))
+        update_data = request.data
+
+        serializer = self.serializer_class(instance, data=update_data,
+                                           context={'request': request,
+                                                    'pk': instance.pk})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(data=serializer.data,
+                        status=status.HTTP_200_OK)
+
 
 class ProjectMixin(object):
     permission_classes = (permissions.IsAuthenticated, ProjectChildPermission)
