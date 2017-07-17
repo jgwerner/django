@@ -40,7 +40,8 @@ class ServerTest(APITestCase):
         db_server = Server.objects.get()
         self.assertEqual(
             response.data['endpoint'],
-            'http://example.com/{namespace}/projects/{project_id}/servers/{server_id}/endpoint/jupyter/tree'.format(
+            'http://example.com/{version}/{namespace}/projects/{project_id}/servers/{server_id}/endpoint/jupyter/tree'.format(
+                version=settings.DEFAULT_VERSION,
                 namespace=self.user.username,
                 project_id=self.project.pk,
                 server_id=db_server.id
