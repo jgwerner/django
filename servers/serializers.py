@@ -56,9 +56,11 @@ class ServerSerializer(SearchSerializerMixin, serializers.ModelSerializer):
         return self._get_url(obj, scheme='wss' if self._is_secure else 'ws', url='/status/')
 
     def _get_url(self, obj, **kwargs):
+        version = self.context['view'].kwargs.get('version', settings.DEFAULT_VERSION)
         request = self.context['request']
-        return '{scheme}://{host}/{namespace}/projects/{project_id}/servers/{id}{url}'.format(
+        return '{scheme}://{host}/{version}/{namespace}/projects/{project_id}/servers/{id}{url}'.format(
             host=get_current_site(request).domain,
+            version=version,
             namespace=request.namespace.name,
             project_id=obj.project_id,
             id=obj.id,

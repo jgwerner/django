@@ -25,7 +25,7 @@ class SearchView(ListAPIView):
         rep = {}
         for typ, qs in querysets.items():
             serializer_class = self.serializers[typ]
-            serializer = serializer_class(qs, many=True, context={'request': request})
+            serializer = serializer_class(qs, many=True, context={'request': request, 'view': self})
             paginator = self.pagination_class()
             page = paginator.paginate_queryset(qs, request, view=self)
             result = OrderedDict()
