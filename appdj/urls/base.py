@@ -19,7 +19,7 @@ urlpatterns = [
     url(r'^auth/', include('social_django.urls', namespace="social")),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^swagger/$', schema_view),
-    url(r'^(?P<version>{major_version}(v[0-9]+)?)/'.format(major_version=settings.DEFAULT_VERSION),
+    url(r'^(?P<version>{major_version}(\.[0-9]+)?)/'.format(major_version=settings.DEFAULT_VERSION),
         include("appdj.urls.unversioned"))
 ]
 
