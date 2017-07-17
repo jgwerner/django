@@ -9,7 +9,7 @@ import uuid
 def gen_uuid(apps, schema_editor):
     UserEmail = apps.get_model('users', 'Email')
     for row in UserEmail.objects.all():
-        row.id = uuid.uuid4()
+        row.uuid = uuid.uuid4()
         row.save(update_fields=['uuid'])
 
 
