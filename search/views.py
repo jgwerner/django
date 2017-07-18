@@ -49,5 +49,5 @@ class SearchView(ListAPIView):
         if 'q' in params and params['q']:
             for typ in types:
                 model = self.serializers[typ].Meta.model
-                querysets[typ] = SearchQuerySet().models(model).filter(content=params.get('q'))
+                querysets[typ] = SearchQuerySet().models(model).filter(content__contains=params.get('q'))
         return querysets
