@@ -12,15 +12,6 @@ class BillingAddress(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 
-# Note: While this model is not used anymore, we shouldn't delete it (for now at least)
-# Because deleting it causes migration problems, especially when running the test suite
-class BillingPlan(models.Model):
-    name = models.CharField(max_length=50, blank=True, null=True)
-    description = models.CharField(max_length=400, blank=True)
-    settings = JSONField(default={})
-    cost = models.DecimalField(max_digits=6, decimal_places=2, default=Decimal(0.0))
-
-
 class StripeModel(models.Model):
     stripe_id = models.TextField(unique=True)
     created = models.DateTimeField()

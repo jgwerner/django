@@ -102,6 +102,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'appdj.wsgi.application'
 
+AUTH_USER_MODEL = 'users.User'
+
 # Email Settings
 EMAIL_HOST = os.environ.get('EMAIL_HOST', 'localhost')
 EMAIL_PORT = os.environ.get('EMAIL_PORT', '587')
@@ -121,7 +123,7 @@ AUTHENTICATION_BACKENDS = (
     'social_core.backends.google.GoogleOAuth2',
     'social_core.backends.github.GithubOAuth2',
     'social_core.backends.slack.SlackOAuth2',
-    'django.contrib.auth.backends.ModelBackend',
+    'users.backends.ActiveUserBackend',
     'guardian.backends.ObjectPermissionBackend',
 )
 
@@ -238,6 +240,7 @@ REST_FRAMEWORK = {
 DEFAULT_VERSION = os.environ.get('TBS_DEFAULT_VERSION', "v1")
 
 RESOURCE_DIR = os.environ.get('RESOURCE_DIR', '/workspaces')
+INACTIVE_RESOURCE_DIR = os.environ.get('INACTIVE_RESOURCE_DIR', '/inactive')
 
 CACHES = {
     'default': {

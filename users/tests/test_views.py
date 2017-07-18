@@ -1,3 +1,4 @@
+import shutil
 from django.urls import reverse
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -5,6 +6,8 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from users.tests.factories import UserFactory, EmailFactory
+from utils import create_ssh_key
+
 User = get_user_model()
 
 
@@ -14,9 +17,17 @@ class UserTest(APITestCase):
         self.user = UserFactory(username='user')
         self.admin_client = self.client_class(HTTP_AUTHORIZATION='Token {}'.format(self.admin.auth_token.key))
         self.user_client = self.client_class(HTTP_AUTHORIZATION='Token {}'.format(self.user.auth_token.key))
+        self.to_remove = None
+
+    def tearDown(self):
+        if self.to_remove is not None:
+            shutil.rmtree(str(self.to_remove))
 
     def test_user_delete_by_admin(self):
         user = UserFactory()
+        # For whatever reason, create_ssh_key doesnt seem to be called by the Factory here.
+        # It doesn't matter, we just need the directory to exist.
+        create_ssh_key(user)
         url = reverse('user-detail', kwargs={'pk': str(user.pk),
                                              'version': settings.DEFAULT_VERSION})
         response = self.admin_client.delete(url)
@@ -38,6 +49,51 @@ class UserTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         user_reloaded = User.objects.get(pk=user.pk)
         self.assertEqual(user_reloaded.first_name, "Tom")
+
+    def test_user_delete_allows_new_user_with_same_username(self):
+        user = UserFactory()
+        create_ssh_key(user)
+
+        username = user.username
+        url = reverse('user-detail', kwargs={'pk': str(user.pk),
+                                             'version': settings.DEFAULT_VERSION})
+        response = self.admin_client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        old_user = User.objects.get(username=username,
+                                    is_active=False)
+        self.assertIsNotNone(old_user)
+
+        url = reverse("user-list", kwargs={'version': settings.DEFAULT_VERSION})
+        data = {'username': user.username,
+                'email': "foo@example.com",
+                'first_name': "Foo",
+                'last_name': "Bar",
+                'password': "password",
+                'profile': {}}
+        response = self.admin_client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        new_user_reloaded = User.objects.get(username=username,
+                                             is_active=True)
+        self.assertIsNotNone(new_user_reloaded)
+
+        self.assertNotEqual(old_user.pk, new_user_reloaded.pk)
+        self.to_remove = new_user_reloaded.profile.resource_root()
+
+    def test_creating_user_with_matching_active_user_fails(self):
+        url = reverse("user-list", kwargs={'version': settings.DEFAULT_VERSION})
+        data = {'username': self.user.username,
+                'email': "foo@example.com",
+                'first_name': "Foo",
+                'last_name': "Bar",
+                'password': "password",
+                'profile': {}}
+        response = self.admin_client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        expected_error = "{username} is already taken.".format(username=self.user.username)
+        error_list = response.data.get('username')
+        self.assertEqual(len(error_list), 1)
+        self.assertEqual(error_list[0], expected_error)
 
 
 class EmailTest(APITestCase):
