@@ -3,6 +3,7 @@
 from __future__ import unicode_literals
 
 from django.conf import settings
+from django.contrib.postgres.operations import HStoreExtension
 import django.contrib.postgres.fields.hstore
 import django.contrib.postgres.fields.jsonb
 from django.db import migrations, models
@@ -21,6 +22,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        HStoreExtension(),
         migrations.CreateModel(
             name='EnvironmentResource',
             fields=[
