@@ -3,7 +3,7 @@ from django.db.models import Q
 from django.contrib.auth import get_user_model
 from haystack.query import SearchQuerySet, EmptySearchQuerySet
 from social_django.models import UserSocialAuth
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view
 from rest_framework.generics import get_object_or_404, CreateAPIView
@@ -118,6 +118,15 @@ class EmailViewSet(viewsets.ModelViewSet):
 class IntegrationViewSet(viewsets.ModelViewSet):
     queryset = UserSocialAuth.objects.all()
     serializer_class = IntegrationSerializer
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        data['user'] = request.user
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.create(validated_data=data)
+        return Response(data=serializer.data,
+                        status=status.HTTP_201_CREATED)
 
 
 class ObtainAuthToken(APIView):

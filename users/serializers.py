@@ -65,6 +65,8 @@ class IntegrationSerializer(serializers.ModelSerializer):
         model = UserSocialAuth
         fields = ('provider', 'extra_data')
 
+    extra_data = serializers.JSONField(required=False)
+
 
 class AuthTokenSerializer(RestAuthTokenSerializer):
     username = serializers.CharField(label="Username", write_only=True)
