@@ -31,44 +31,46 @@ class SearchTestCase(APITestCase):
 
     def test_user_search_by_username(self):
         response = self.client.get(self.url, {'q': self.user.username})
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data['users']['results'][0]['username'], self.user.username)
+        results = response.data['users']['results']
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]['username'], self.user.username)
 
     def test_user_search_contains(self):
-        response = self.client.get(self.url, {'q': self.user.username[1:3]})
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data['users']['results'][0]['username'], self.user.username)
-
-    def test_user_search_one_letter(self):
-        UserFactory(username="taytay")
-        response = self.client.get(self.url, {'q': 'y'})
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data['users']['results'][0]['username'], self.user.username)
+        user = UserFactory(username='taytay')
+        response = self.client.get(self.url, {'q': 'ayt'})
+        results = response.data['users']['results']
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]['username'], user.username)
 
     def test_user_search_startswith(self):
         response = self.client.get(self.url, {'q': self.user.username[:3]})
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data['users']['results'][0]['username'], self.user.username)
+        results = response.data['users']['results']
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]['username'], self.user.username)
 
     def test_user_search_endswith(self):
         response = self.client.get(self.url, {'q': self.user.username[2:]})
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data['users']['results'][0]['username'], self.user.username)
+        results = response.data['users']['results']
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]['username'], self.user.username)
 
     def test_user_search_by_first_name(self):
         response = self.client.get(self.url, {'q': self.user.first_name})
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data['users']['results'][0]['username'], self.user.username)
+        results = response.data['users']['results']
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]['username'], self.user.username)
 
     def test_user_search_by_last_name(self):
         response = self.client.get(self.url, {'q': self.user.last_name})
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data['users']['results'][0]['username'], self.user.username)
+        results = response.data['users']['results']
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]['username'], self.user.username)
 
     def test_user_search_by_email(self):
         response = self.client.get(self.url, {'q': self.user.email})
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data['users']['results'][0]['username'], self.user.username)
+        results = response.data['users']['results']
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]['username'], self.user.username)
 
     def test_user_search_by_first_name_multiple(self):
         UserFactory(first_name='Shane')
@@ -82,6 +84,13 @@ class SearchTestCase(APITestCase):
         response = self.client.get(self.url, {'q': project.name})
         self.assertEqual(len(response.data['projects']['results']), 1)
 
+    def test_project_by_one_letter(self):
+        project = ProjectFactory(name='Taytay')
+        CollaboratorFactory(user=self.user, project=project)
+        ProjectFactory.create_batch(4)
+        response = self.client.get(self.url, {'q': 'y'})
+        self.assertEqual(len(response.data['projects']['results']), 1)
+
     def test_type_filter_search(self):
         project = ProjectFactory(name='Test')
         UserFactory(username='Test')
@@ -89,7 +98,7 @@ class SearchTestCase(APITestCase):
         UserFactory.create_batch(4)
         CollaboratorFactory(user=self.user, project=project)
         response = self.client.get(self.url, {'q': project.name, 'type': 'projects'})
-        self.assertEqual(len(response.data), 1)
+        self.assertEqual(len(response.data['projects']['results']), 1)
 
     def test_multiple_type_filter_search(self):
         project = ProjectFactory(name='Test')
