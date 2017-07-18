@@ -34,6 +34,27 @@ class SearchTestCase(APITestCase):
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data['users']['results'][0]['username'], self.user.username)
 
+    def test_user_search_contains(self):
+        response = self.client.get(self.url, {'q': self.user.username[1:3]})
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data['users']['results'][0]['username'], self.user.username)
+
+    def test_user_search_one_letter(self):
+        UserFactory(username="taytay")
+        response = self.client.get(self.url, {'q': 'y'})
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data['users']['results'][0]['username'], self.user.username)
+
+    def test_user_search_startswith(self):
+        response = self.client.get(self.url, {'q': self.user.username[:3]})
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data['users']['results'][0]['username'], self.user.username)
+
+    def test_user_search_endswith(self):
+        response = self.client.get(self.url, {'q': self.user.username[2:]})
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data['users']['results'][0]['username'], self.user.username)
+
     def test_user_search_by_first_name(self):
         response = self.client.get(self.url, {'q': self.user.first_name})
         self.assertEqual(len(response.data), 1)
@@ -91,6 +112,29 @@ class SearchTestCase(APITestCase):
         self.assertEqual(response.data['servers']['results'][0]['name'], server.name)
         self.assertEqual(len(response.data['users']['results']), 1)
         self.assertEqual(response.data['users']['results'][0]['username'], user.username)
+
+    def test_multi_response_contains(self):
+        project = ProjectFactory(name='TestProject')
+        CollaboratorFactory(user=self.user, project=project, owner=True)
+        server = ServerFactory(name='TestServer', project=project)
+        user = UserFactory(username='TestUser')
+        response = self.client.get(self.url, {'q': "st"})
+        self.assertEqual(len(response.data['projects']['results']), 1)
+        self.assertEqual(response.data['projects']['results'][0]['name'], project.name)
+        self.assertEqual(len(response.data['servers']['results']), 1)
+        self.assertEqual(response.data['servers']['results'][0]['name'], server.name)
+        self.assertEqual(len(response.data['users']['results']), 1)
+        self.assertEqual(response.data['users']['results'][0]['username'], user.username)
+
+    def test_multi_response_partial(self):
+        project = ProjectFactory(name='TestProject')
+        CollaboratorFactory(user=self.user, project=project, owner=True)
+        server = ServerFactory(name='TestServer', project=project)
+        UserFactory(username='TestUser')
+        response = self.client.get(self.url, {'q': "er"})
+        self.assertEqual(len(response.data['servers']['results']), 1)
+        self.assertEqual(response.data['servers']['results'][0]['name'], server.name)
+        self.assertEqual(len(response.data['users']['results']), 6)
 
     def test_project_server(self):
         project = ProjectFactory(name='TestProject')
