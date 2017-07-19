@@ -4,7 +4,7 @@ START_TIME=`date +"%s"`
 
 
 
-watchman -j <<-EOT
+/srv/app/watchman -j <<-EOT
 ["trigger", "/workspaces", {
   "name": "test_trigger",
   "expression": ["allof",
