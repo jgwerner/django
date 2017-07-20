@@ -3,10 +3,15 @@ from rest_framework import permissions
 from projects.models import Project
 from projects.permissions import has_project_permission
 
+from .models import Server
+
 
 class ServerChildPermission(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
-        return has_project_permission(request, obj.server.project)
+        server = getattr(obj, 'server', None) or Server.objects.filter(pk=view.kwargs.get('server_pk')).first()
+        if server is None:
+            return False
+        return has_project_permission(request, server.project)
 
 
 class ServerActionPermission(permissions.BasePermission):
