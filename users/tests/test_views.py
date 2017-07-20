@@ -1,4 +1,5 @@
 import shutil
+import json
 from django.urls import reverse
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -137,3 +138,18 @@ class EmailTest(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 0)
+
+
+class UserIntegrationTest(APITestCase):
+    def setUp(self):
+        self.user = UserFactory()
+        self.client = self.client_class(HTTP_AUTHORIZATION='Token {}'.format(self.user.auth_token.key))
+
+    def test_creating_integration(self):
+        url = reverse("usersocialauth-list", kwargs={'version':settings.DEFAULT_VERSION})
+        data = {'provider': "github",
+                'extra_data': json.dumps({'foo': "Bar"})}
+        response = self.client.post(url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data.get("provider"), "github")
+        self.assertEqual(json.loads(response.data.get("extra_data")), {'foo': "Bar"})
