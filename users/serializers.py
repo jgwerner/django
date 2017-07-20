@@ -63,7 +63,7 @@ class EmailSerializer(RequestUserMixin, serializers.ModelSerializer):
 class IntegrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserSocialAuth
-        fields = ('provider', 'extra_data')
+        fields = ('id', 'provider', 'extra_data')
 
     extra_data = serializers.JSONField(required=False)
 
