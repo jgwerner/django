@@ -16,7 +16,6 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls.static import static
 from django.conf.urls import url, include
-from django.contrib import admin
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from rest_framework.decorators import api_view
 from rest_framework.exceptions import NotFound, APIException
@@ -65,7 +64,6 @@ router.register(r'service/(?P<server_pk>[^/.]+)/trigger', trigger_views.ServerAc
 
 urlpatterns = [
     url(r'^(?P<namespace>[\w-]+)/search/$', SearchView.as_view(), name='search'),
-    url(r'^tbs-admin/', admin.site.urls),
     url(r'^actions/', include('actions.urls')),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_pk>[\w-]+)/servers/(?P<server_pk>[^/.]+)/internal/$',
         servers_views.server_internal_details, name="server_internal"),

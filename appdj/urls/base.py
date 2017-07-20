@@ -1,6 +1,7 @@
 from django.conf.urls import url, include
 from django.conf import settings
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+from django.contrib import admin
 
 from oauth2_provider import views as oauth2_views
 from jwt_auth import views as jwt_views
@@ -19,6 +20,7 @@ urlpatterns = [
     url(r'^auth/', include('social_django.urls', namespace="social")),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^swagger/$', schema_view),
+    url(r'^tbs-admin/', admin.site.urls),
     url(r'^(?P<version>{major_version}(\.[0-9]+)?)/'.format(major_version=settings.DEFAULT_VERSION),
         include("appdj.urls.unversioned"))
 ]

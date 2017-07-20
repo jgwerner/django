@@ -1,5 +1,4 @@
 import shutil
-import json
 from django.urls import reverse
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -148,8 +147,8 @@ class UserIntegrationTest(APITestCase):
     def test_creating_integration(self):
         url = reverse("usersocialauth-list", kwargs={'version':settings.DEFAULT_VERSION})
         data = {'provider': "github",
-                'extra_data': json.dumps({'foo': "Bar"})}
+                'extra_data': {"foo": "Bar"}}
         response = self.client.post(url, data=data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data.get("provider"), "github")
-        self.assertEqual(json.loads(response.data.get("extra_data")), {'foo': "Bar"})
+        self.assertEqual(response.data.get("extra_data"), {'foo': "Bar"})
