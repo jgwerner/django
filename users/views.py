@@ -1,4 +1,5 @@
 import logging
+import json
 from django.db.models import Q
 from django.contrib.auth import get_user_model
 from haystack.query import SearchQuerySet, EmptySearchQuerySet
@@ -120,12 +121,13 @@ class IntegrationViewSet(viewsets.ModelViewSet):
     serializer_class = IntegrationSerializer
 
     def create(self, request, *args, **kwargs):
-        data = request.data
-        data['user'] = request.user
+        data = {'provider': request.data.get("provider"),
+                'extra_data': request.data.get("extra_data"),
+                'user': request.user}
         serializer = self.serializer_class(data=data)
         serializer.is_valid(raise_exception=True)
-        serializer.create(validated_data=data)
-        return Response(data=serializer.data,
+        instance = serializer.create(validated_data=data)
+        return Response(data=self.serializer_class(instance).data,
                         status=status.HTTP_201_CREATED)
 
 
