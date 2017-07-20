@@ -42,11 +42,9 @@ class DummyStripeObj:
         return self.json[item]
 
     def __iter__(self):
-        log.debug(("self.json", self.json))
         return iter(self.json.keys())
 
     def save(self):
-        log.debug("In the save method?")
         # for attr in vars(self):
         #     if attr in self.json:
         #         self.json[attr] = attr
