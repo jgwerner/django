@@ -14,9 +14,13 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         User = get_user_model()
         try:
-            user = User.objects.create_superuser("admin", "admin@example.com", "admin")
-            Token.objects.create(user=user)
-            profile, created = UserProfile.objects.get_or_create(user=user)
+            admin_exists = User.objects.filter(username="admin", is_active=True).exists()
+            if admin_exists:
+                log.info("Admin user already exists. Doing nothing.")
+            else:
+                user = User.objects.create_superuser("admin", "admin@example.com", "admin")
+                Token.objects.create(user=user)
+                profile, created = UserProfile.objects.get_or_create(user=user)
 
             if created:
                 log.info("Created a User Profile for the admin user: {prof}".format(prof=profile))
