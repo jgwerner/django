@@ -23,11 +23,15 @@ else:
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
-class CustomerViewSet(NamespaceMixin,
-                      viewsets.ModelViewSet):
+class CustomerViewSet(viewsets.ModelViewSet):
 
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = Customer.objects.filter(user=request.user)
+        serializer = self.serializer_class(queryset, many=True)
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
 
     def destroy(self, request, *args, **kwargs):
         # Assuming for now that we should only delete the customer record,
