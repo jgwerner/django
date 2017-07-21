@@ -8,6 +8,7 @@ START_TIME=`date +"%s"`
 ["trigger", "/workspaces", {
   "name": "test_trigger",
   "expression": ["allof",
+    ["not", ["match","*ssh"]],
     ["match", "*.*"],
     ["since", $START_TIME, "ctime"]
   ],

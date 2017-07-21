@@ -92,7 +92,8 @@ Edit the docker service file to add connections to docker daemon using tcp:
 Add `-H tcp://0.0.0.0:2375` after `-H fd://`
 
 Restart docker service and confirm that setting is in place for CGroup:
-
+     
+    sudo systemctl daemon-reload 
     sudo systemctl restart docker
     systemctl status docker
 
