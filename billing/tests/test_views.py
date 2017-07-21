@@ -13,7 +13,7 @@ from billing.tests.factories import (CustomerFactory, PlanFactory, CardFactory, 
 from billing.stripe_utils import create_stripe_customer_from_user
 
 
-if settings.TRAVIS_PULL_REQUEST:
+if settings.MOCK_STRIPE:
     from billing.tests import mock_stripe as stripe
 else:
     import stripe

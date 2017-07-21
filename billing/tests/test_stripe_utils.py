@@ -7,7 +7,7 @@ from billing.models import Customer, Plan, Invoice
 from billing.tests.factories import PlanFactory
 from billing import stripe_utils
 
-if settings.TRAVIS_PULL_REQUEST:
+if settings.MOCK_STRIPE:
     from billing.tests import mock_stripe as stripe
 else:
     import stripe
@@ -64,7 +64,7 @@ class TestStripeUtils(TestCase):
 
         now = datetime.now()
         mock_invoices = None
-        if settings.TRAVIS_PULL_REQUEST:
+        if settings.MOCK_STRIPE:
             kwargs = {'amount_due': plan.amount,
                       'date': now.timestamp(),
                       'subscription': subscription.stripe_id}

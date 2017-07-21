@@ -15,7 +15,7 @@ from billing.serializers import (PlanSerializer, CustomerSerializer, CardSeriali
                                  SubscriptionSerializer, InvoiceSerializer)
 log = logging.getLogger('billing')
 
-if settings.TRAVIS_PULL_REQUEST:
+if settings.MOCK_STRIPE:
     from billing.tests import mock_stripe as stripe
     log.info("Using mock_stripe module.")
 else:
