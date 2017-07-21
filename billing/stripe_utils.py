@@ -9,7 +9,7 @@ from billing.models import (Customer, Invoice,
                             Card)
 log = logging.getLogger('billing')
 
-if settings.TRAVIS_PULL_REQUEST:
+if settings.MOCK_STRIPE:
     from billing.tests import mock_stripe as stripe
     log.info("Importing mock stripe in stripe utils.")
 else:
