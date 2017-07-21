@@ -12,6 +12,8 @@ from projects.models import (Project, Collaborator,
                              SyncedResource, ProjectFile)
 
 User = get_user_model()
+import logging
+log = logging.getLogger('projects')
 
 
 class ProjectSerializer(SearchSerializerMixin, serializers.ModelSerializer):
@@ -113,6 +115,7 @@ class CollaboratorSerializer(serializers.ModelSerializer):
     def validate_member(self, value):
         if not User.objects.filter(Q(username=value) | Q(email=value)).exists():
             raise serializers.ValidationError("User %s does not exists" % value)
+        return value
 
     def create(self, validated_data):
         permissions = validated_data.pop('permissions', ['read_project'])
@@ -122,7 +125,7 @@ class CollaboratorSerializer(serializers.ModelSerializer):
         owner = validated_data.get("owner", False)
         if owner is True:
             Collaborator.objects.filter(project_id=project_id).update(owner=False)
-        user = User.objects.filter(Q(username=member) | Q(email=member)).first()
+        user = User.objects.filter(Q(username=member) | Q(email=member), is_active=True).first()
         for permission in permissions:
             assign_perm(permission, user, project)
         return Collaborator.objects.create(user=user, project_id=project_id, **validated_data)
