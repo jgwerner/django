@@ -168,6 +168,22 @@ class ProjectTest(ProjectTestMixin, APITestCase):
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
+    def test_create_collaborator(self):
+        collaborator = CollaboratorFactory(user=self.user)
+        other_user = UserFactory()
+        project = collaborator.project
+        url = reverse("collaborator-list", kwargs={'version': settings.DEFAULT_VERSION,
+                                                   'namespace': self.user.username,
+                                                   'project_pk': project.pk})
+        data = {'owner': False,
+                'member': other_user.username,
+                'permissions': ["read_project"]}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertFalse(response.data['owner'])
+        self.assertEqual(response.data['username'], other_user.username)
+        self.assertEqual(response.data['permissions'], {"read_project"})
+
 
 class ProjectFileTest(ProjectTestMixin, APITestCase):
     def setUp(self):
