@@ -70,26 +70,26 @@ class RegisterView(CreateAPIView):
 
 
 @api_view(['GET'])
-def ssh_key(request, user_pk):
+def ssh_key(request, version, user_pk):
     user = get_object_or_404(User, pk=user_pk)
     return Response(data={'key': user.profile.ssh_public_key()})
 
 
 @api_view(['POST'])
-def reset_ssh_key(request, user_pk):
+def reset_ssh_key(request, version, user_pk):
     user = get_object_or_404(User, pk=user_pk)
     create_ssh_key(user)
     return Response(data={'key': user.profile.ssh_public_key()})
 
 
 @api_view(['GET'])
-def api_key(request, user_pk):
+def api_key(request, version,user_pk):
     user = get_object_or_404(User, pk=user_pk)
     return Response(data={'key': user.auth_token.key})
 
 
 @api_view(['POST'])
-def reset_api_key(request, user_pk):
+def reset_api_key(request, version, user_pk):
     token = get_object_or_404(Token, user_id=user_pk)
     token.key = None
     token.save()
