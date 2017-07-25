@@ -298,3 +298,105 @@ class Invoice:
         Invoice.invoice = DummyStripeObj("invoice", mock_response)
         return [Invoice.invoice]
 
+
+class Event:
+    webhook_obj = {"api_version": "2017-04-06",
+                       "created": int(time.time()),
+                       "data": {
+                           "object": {
+                               "amount_due": 0,
+                               "application_fee": None,
+                               "attempt_count": 0,
+                               "attempted": True,
+                               "charge": None,
+                               "closed": True,
+                               "currency": "usd",
+                               "customer": "{customer.stripe_id}",
+                               "date": int(time.time()),
+                               "description": None,
+                               "discount": None,
+                               "ending_balance": 0,
+                               "forgiven": False,
+                               "id": "in_{fake}".format(fake=generate_fake_stripe_suffix(24)),
+                               "lines": {
+                                   "data": [
+                                       {
+                                           "amount": 0,
+                                           "currency": "usd",
+                                           "description": None,
+                                           "discountable": True,
+                                           "id": "{subscription.stripe_id}",
+                                           "livemode": False,
+                                           "metadata": {},
+                                           "object": "line_item",
+                                           "period": {
+                                               "end": 1501504202,
+                                               "start": int(time.time())
+                                           },
+                                           "plan": {
+                                               "amount": "{plan.amount}",
+                                               "created": 1500899401,
+                                               "currency": "usd",
+                                               "id": "{plan.stripe_id}",
+                                               "interval": "{plan.interval}",
+                                               "interval_count": 1,
+                                               "livemode": False,
+                                               "metadata": {},
+                                               "name": "{plan.name}",
+                                               "object": "plan",
+                                               "statement_descriptor": "qmhZQYnrLuOa",
+                                               "trial_period_days": "{plan.trial_period_days}"
+                                           },
+                                           "proration": False,
+                                           "quantity": 1,
+                                           "subscription": None,
+                                           "subscription_item": "si_1Aj5hGLUHPUzUsaQAh65Brms",
+                                           "type": "subscription"
+                                       }
+                                   ],
+                                   "has_more": False,
+                                   "object": "list",
+                                   "total_count": 1,
+                                   "url": "/v1/invoices/in_1Aj5hGLUHPUzUsaQRYfgETkt/lines"
+                               },
+                               "livemode": False,
+                               "metadata": {},
+                               "next_payment_attempt": None,
+                               "object": "invoice",
+                               "paid": True,
+                               "period_end": int(time.time()),
+                               "period_start": int(time.time()),
+                               "receipt_number": None,
+                               "starting_balance": 0,
+                               "statement_descriptor": None,
+                               "subscription": "{subscription.stripe_id}",
+                               "subtotal": 0,
+                               "tax": None,
+                               "tax_percent": None,
+                               "total": 0,
+                               "webhooks_delivered_at": None
+                           }
+                       },
+                   "id": "evt_{fake}".format(fake=generate_fake_stripe_suffix(24)),
+                       "livemode": False,
+                       "object": "event",
+                       "pending_webhooks": 0,
+                       "request": {
+                           "id": "req_{fake}".format(fake=generate_fake_stripe_suffix(16)),
+                           "idempotency_key": None
+                       },
+                       "type": "{event_type}"
+                   }
+
+    @classmethod
+    def get_webhook_event(cls, *args, **kwargs):
+        json = Event.webhook_obj
+        json['type'] = kwargs.get("event_type")
+        json['data']['object']['customer'] = kwargs.get("customer")
+        json['data']['object']['subscription'] = kwargs.get("subscription")
+        json['data']['object']['lines']['data'][0]['id'] = kwargs.get("subscription")
+        json['data']['object']['lines']['data'][0]['plan']['id'] =kwargs.get("plan")
+        json['data']['object']['lines']['data'][0]['plan']['amount'] = kwargs.get("amount")
+        json['data']['object']['lines']['data'][0]['plan']['interval'] = kwargs.get("interval")
+        json['data']['object']['lines']['data'][0]['plan']['trial_period_days'] = kwargs.get("trial_period")
+        return json

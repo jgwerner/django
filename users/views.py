@@ -23,6 +23,7 @@ from users.serializers import (UserSerializer,
                                EmailSerializer,
                                IntegrationSerializer,
                                AuthTokenSerializer)
+
 log = logging.getLogger("users")
 User = get_user_model()
 
@@ -83,7 +84,7 @@ def reset_ssh_key(request, version, user_pk):
 
 
 @api_view(['GET'])
-def api_key(request, version,user_pk):
+def api_key(request, version, user_pk):
     user = get_object_or_404(User, pk=user_pk)
     return Response(data={'key': user.auth_token.key})
 

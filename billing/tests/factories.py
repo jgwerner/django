@@ -73,7 +73,7 @@ class SubscriptionFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Subscription
 
-    stripe_id = factory.Sequence(lambda n: "cus_%d" % n)
+    stripe_id = factory.Sequence(lambda n: "sub_%d" % n)
     created = fuzzy.FuzzyDateTime(start_dt=timezone.make_aware(datetime.now() - timedelta(days=7)))
     metadata = None
     livemode = False

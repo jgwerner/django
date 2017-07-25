@@ -1,13 +1,14 @@
-import stripe
-import logging
-from django.test import override_settings
+import json
+from django.test import override_settings, Client, TestCase
 from django.urls import reverse
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from billing.models import Customer, Card, Plan, Subscription
+from billing.models import (Customer, Card,
+                            Plan, Subscription,
+                            Invoice, Event)
 from users.tests.factories import UserFactory
 from billing.tests.factories import (CustomerFactory, PlanFactory, CardFactory, SubscriptionFactory)
 from billing.stripe_utils import create_stripe_customer_from_user
@@ -18,7 +19,6 @@ if settings.MOCK_STRIPE:
 else:
     import stripe
 
-log = logging.getLogger('billing')
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
@@ -450,3 +450,89 @@ class SubscriptionTest(APITestCase):
         self.assertEqual(sub_reloaded.status, Subscription.CANCELED)
         self.assertIsNotNone(sub_reloaded.canceled_at)
         self.assertIsNotNone(sub_reloaded.ended_at)
+
+
+class InvoiceTest(TestCase):
+
+    def setUp(self):
+        self.user = UserFactory(first_name="Foo",
+                                last_name="Bar",
+                                is_staff=True)
+        self.customer = create_stripe_customer_from_user(self.user)
+        self.token_header = "Token {auth}".format(auth=self.user.auth_token.key)
+        self.token_header = "Token {auth}".format(auth=self.user.auth_token.key)
+        self.api_client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+        self.client = Client()
+        self.plans_to_delete = []
+
+    def tearDown(self):
+        stripe_obj = stripe.Customer.retrieve(self.customer.stripe_id)
+        stripe_obj.delete()
+
+        for plan in self.plans_to_delete:
+            stripe_obj = stripe.Plan.retrieve(plan.stripe_id)
+            stripe_obj.delete()
+
+    def _create_plan_in_stripe(self, trial_period=None):
+        url = reverse("plan-list", kwargs={'namespace': self.user.username,
+                                           'version': settings.DEFAULT_VERSION})
+        plan_data = create_plan_dict(trial_period)
+        self.api_client.post(url, json.dumps(plan_data), content_type="application/json")
+        plan = Plan.objects.get()
+        self.plans_to_delete.append(plan)
+        return plan
+
+    def _create_subscription_in_stripe(self, trial_period=7):
+        plan = self._create_plan_in_stripe(trial_period)
+        url = reverse("subscription-list", kwargs={'namespace': self.user.username,
+                                                   'version': settings.DEFAULT_VERSION})
+        data = {'plan': str(plan.pk)}
+        self.api_client.post(url, json.dumps(data), content_type="application/json")
+
+        subscription = Subscription.objects.get()
+        return subscription
+
+    def test_invoice_created_webhook(self):
+        url = reverse("stripe-invoice",
+                      kwargs={'version': settings.DEFAULT_VERSION})
+        # Always use Mock stripe for these tests, configuring webhooks for testing is near impossible.
+        from billing.tests import mock_stripe
+        subscription = self._create_subscription_in_stripe()
+        webhook_data = mock_stripe.Event.get_webhook_event(event_type="invoice.created",
+                                                           customer=self.customer.stripe_id,
+                                                           plan=subscription.plan.stripe_id,
+                                                           subscription=subscription.stripe_id,
+                                                           amount=subscription.plan.amount,
+                                                           interval=subscription.plan.interval,
+                                                           trial_period=subscription.plan.trial_period_days)
+        response = self.client.post(url, json.dumps(webhook_data), content_type="application/json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        invoices = Invoice.objects.filter(stripe_id=webhook_data['data']['object']['id'])
+        self.assertEqual(invoices.count(), 1)
+        events = Event.objects.filter(stripe_id=webhook_data['id'])
+        self.assertEqual(events.count(), 1)
+        self.assertEqual(events.first().event_type, "invoice.created")
+
+    def test_invoice_payment_failed_webhook(self):
+        url = reverse("stripe-invoice",
+                      kwargs={'version': settings.DEFAULT_VERSION})
+        # Always use Mock stripe for these tests, configuring webhooks for testing is near impossible.
+        from billing.tests import mock_stripe
+        subscription = self._create_subscription_in_stripe()
+        webhook_data = mock_stripe.Event.get_webhook_event(event_type="invoice.payment_failed",
+                                                           customer=self.customer.stripe_id,
+                                                           plan=subscription.plan.stripe_id,
+                                                           subscription=subscription.stripe_id,
+                                                           amount=subscription.plan.amount,
+                                                           interval=subscription.plan.interval,
+                                                           trial_period=subscription.plan.trial_period_days)
+        response = self.client.post(url, json.dumps(webhook_data), content_type="application/json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        invoices = Invoice.objects.filter(stripe_id=webhook_data['data']['object']['id'])
+        self.assertEqual(invoices.count(), 1)
+        events = Event.objects.filter(stripe_id=webhook_data['id'])
+        self.assertEqual(events.count(), 1)
+        self.assertEqual(events.first().event_type, "invoice.payment_failed")
+        sub_reloaded = Subscription.objects.get(pk=subscription.pk)
+        stripe_subscription = stripe.Subscription.retrieve(subscription.stripe_id)
+        self.assertEqual(sub_reloaded.status, stripe_subscription['status'])

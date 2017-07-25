@@ -92,6 +92,8 @@ urlpatterns = [
         servers_views.terminate, name='server-terminate'),
     url(r'(?P<namespace>[\w-]+)/billing/subscription_required/$', billing_views.no_subscription,
         name="subscription-required"),
+    url(r'webhooks/incoming/billing/invoice', billing_views.stripe_invoice_created,
+        name='stripe-invoice'),
 ]
 
 
