@@ -166,6 +166,6 @@ class InvoiceViewSet(NamespaceMixin,
 @csrf_exempt
 def stripe_invoice_created(request, *args, **kwargs):
     body = request.body
-    event_json = json.loads(body)
+    event_json = json.loads(body.decode("utf-8"))
     handle_stripe_invoice_webhook(event_json)
     return HttpResponse(status=status.HTTP_200_OK)
