@@ -1,7 +1,11 @@
 import logging
+import json
 
+from django.http import HttpResponse
 from django.utils import timezone
 from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from rest_framework import viewsets, status, mixins
 from rest_framework.decorators import api_view
 from rest_framework.permissions import BasePermission
@@ -13,6 +17,7 @@ from billing.models import (Plan, Customer,
                             Invoice)
 from billing.serializers import (PlanSerializer, CustomerSerializer, CardSerializer,
                                  SubscriptionSerializer, InvoiceSerializer)
+from billing.stripe_utils import handle_stripe_invoice_webhook
 log = logging.getLogger('billing')
 
 if settings.MOCK_STRIPE:
@@ -155,3 +160,12 @@ class InvoiceViewSet(NamespaceMixin,
                      viewsets.ReadOnlyModelViewSet):
     queryset = Invoice.objects.all()
     serializer_class = InvoiceSerializer
+
+
+@require_POST
+@csrf_exempt
+def stripe_invoice_created(request, *args, **kwargs):
+    body = request.body
+    event_json = json.loads(body)
+    handle_stripe_invoice_webhook(event_json)
+    return HttpResponse(status=status.HTTP_200_OK)
