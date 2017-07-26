@@ -2,7 +2,6 @@ import logging
 from django.conf import settings
 from django.db import models
 from docker import Client
-from docker.errors import APIError
 
 from .managers import DockerHostQuerySet
 
@@ -32,13 +31,13 @@ class DockerHost(models.Model):
 
     @property
     def client(self):
-        return Client(base_url=self.url)
+        return Client(base_url=self.url, timeout=3)
 
     @property
     def status(self):
         try:
             self.client.info()
-        except APIError:
+        except:
             logger.exception("Node status error")
             return self.NOT_AVAILABLE
         return self.AVAILABLE
