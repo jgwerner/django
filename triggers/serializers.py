@@ -38,6 +38,9 @@ class WebhookSerializer(serializers.Serializer):
     url = serializers.URLField()
     config = serializers.JSONField(required=False)
 
+    def to_representation(self, obj):
+        return obj
+
 
 class TriggerSerializer(serializers.ModelSerializer):
     cause = TriggerActionSerializer(required=False)
