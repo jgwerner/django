@@ -1,7 +1,7 @@
-from decimal import Decimal
 from django.contrib.postgres.fields import JSONField
 from django.db import models
 from django.conf import settings
+from django.urls import reverse
 
 
 class BillingAddress(models.Model):
@@ -42,6 +42,9 @@ class Customer(StripeModel):
         has_sub = self.subscription_set.filter(status__in=[Subscription.TRIAL,
                                                            Subscription.ACTIVE]).exists()
         return has_sub
+
+    def get_absolute_url(self, version, namespace):
+        return reverse('customer-detail', kwargs={'namespace': namespace.name, 'version': version, 'pk': str(self.pk)})
 
 
 class Card(StripeModel):
@@ -103,6 +106,9 @@ class Card(StripeModel):
 
     funding = models.CharField(max_length=7, choices=FUNDING_CHOICES)
 
+    def get_absolute_url(self, version, namespace):
+        return reverse('card-detail', kwargs={'namespace': namespace.name, 'version': version, 'pk': str(self.pk)})
+
 
 class Plan(StripeModel):
     amount = models.PositiveIntegerField()
@@ -123,6 +129,9 @@ class Plan(StripeModel):
     name = models.CharField(max_length=255)
     statement_descriptor = models.TextField(null=True)
     trial_period_days = models.PositiveIntegerField(null=True)
+
+    def get_absolute_url(self, version, namespace):
+        return reverse('card-detail', kwargs={'namespace': namespace.name, 'version': version, 'pk': str(self.pk)})
 
 
 class SubscriptionQuerySet(models.QuerySet):
@@ -159,6 +168,10 @@ class Subscription(StripeModel):
 
     objects = SubscriptionQuerySet.as_manager()
 
+    def get_absolute_url(self, version, namespace):
+        return reverse('subscription-detail', kwargs={
+            'namespace': namespace.name, 'version': version, 'pk': str(self.pk)})
+
 
 class InvoiceQuerySet(models.QuerySet):
     def namespace(self, namespace):
@@ -188,6 +201,10 @@ class Invoice(StripeModel):
     total = models.IntegerField()
 
     objects = InvoiceQuerySet.as_manager()
+
+    def get_absolute_url(self, version, namespace):
+        return reverse('invoice-detail', kwargs={
+            'namespace': namespace.name, 'version': version, 'pk': str(self.pk)})
 
 
 class InvoiceItem(StripeModel):

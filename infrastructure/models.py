@@ -1,6 +1,7 @@
 import logging
 from django.conf import settings
 from django.db import models
+from django.urls import reverse
 from docker import Client
 
 from .managers import DockerHostQuerySet
@@ -24,6 +25,10 @@ class DockerHost(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_absolute_url(self, version, namespace):
+        return reverse('dockerhost-detail', kwargs={
+            'namespace': namespace.name, 'version': version, 'pk': str(self.pk)})
 
     @property
     def url(self):

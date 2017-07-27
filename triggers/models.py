@@ -3,6 +3,7 @@ from collections import defaultdict
 from django.db import models
 from django.conf import settings
 from django.contrib.postgres.fields import JSONField
+from django.urls import reverse
 
 from actions.models import Action
 from utils import copy_model
@@ -29,6 +30,9 @@ class Trigger(models.Model):
         if self.cause:
             return '{} -> {}'.format(self.cause, self.effect)
         return '{}: {}'.format(self.effect, self.schedule)
+
+    def get_absolute_url(self, version, namespace):
+        return reverse('trigger-detail', kwargs={'namespace': namespace.name, 'version': version, 'pk': str(self.pk)})
 
     def dispatch(self, url='http://localhost'):
         new_effect = copy_model(self.effect)
