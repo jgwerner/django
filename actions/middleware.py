@@ -33,7 +33,7 @@ def get_user_from_token_header(request):
     if not token_header or ' ' not in token_header:
         return
     prefix, token = token_header.split()
-    if prefix == 'JWT':
+    if prefix == 'Bearer':
         return get_user_from_jwt(token)
     elif prefix == 'Token':
         return get_user_from_simple_token(token)
@@ -59,7 +59,6 @@ class ActionMiddleware(object):
             state=Action.CREATED,
         )
         defaults = dict(
-            action=self._get_action_name(request),
             method=request.method.lower(),
             user_agent=request.META.get('HTTP_USER_AGENT', ''),
             start_date=start,
@@ -73,6 +72,7 @@ class ActionMiddleware(object):
         response = self.get_response(request)  # type: HttpResponse
 
         action.refresh_from_db()
+        action.action = self._get_action_name(request)
         self._set_action_state(action, response.status_code)
         self._set_action_object(action, request, response)
         action.end_date = timezone.now()
