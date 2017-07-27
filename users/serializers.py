@@ -12,7 +12,8 @@ User = get_user_model()
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
-        fields = ('avatar_url', 'bio', 'url', 'location', 'company', 'timezone')
+        fields = ('bio', 'url', 'location', 'company', 'timezone', 'avatar')
+        read_only_fields = ('avatar',)
 
 
 class UserSerializer(SearchSerializerMixin, serializers.ModelSerializer):

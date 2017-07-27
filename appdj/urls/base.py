@@ -2,6 +2,7 @@ from django.conf.urls import url, include
 from django.conf import settings
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.contrib import admin
+from django.conf.urls.static import static
 
 from oauth2_provider import views as oauth2_views
 from jwt_auth import views as jwt_views
@@ -30,5 +31,5 @@ if settings.DEBUG:
     urlpatterns += [
         url(r'^auth/simple-token-auth/$', user_views.ObtainAuthToken.as_view()),
         url(r'^__debug__/', include(debug_toolbar.urls)),
-    ]
+    ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns = staticfiles_urlpatterns() + urlpatterns
