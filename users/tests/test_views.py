@@ -132,7 +132,7 @@ class UserTest(APITestCase):
                                         'user_pk': self.user.pk})
         response = self.user_client.get(url)
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-        resp_data = json.loads(response.content)
+        resp_data = json.loads(response.content.decode("utf-8"))
         self.assertEqual(resp_data.get("message"), "Only POST is allowed for this URL.")
 
 
