@@ -28,9 +28,9 @@ class TriggerActionSerializer(serializers.ModelSerializer):
 
     def to_representation(self, obj):
         return {
-            'id': str(obj.id),
+            'id': obj.pk,
             'payload': obj.payload,
-            'method': obj.method,
+            'method': obj.method
         }
 
 
@@ -88,7 +88,7 @@ class TriggerSerializer(serializers.ModelSerializer):
                 user=self.context['request'].user,
                 content_type=content_type,
                 is_user_action=False,
-                **validated_data
+                method=validated_data.get('method', "GET"),
             )
         return instance
 
