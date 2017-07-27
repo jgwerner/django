@@ -20,6 +20,7 @@ def user_directory_path(instance, filename):
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, primary_key=True, related_name='profile')
+    avatar_url = models.CharField(max_length=100, blank=True, null=True)
     avatar = models.ImageField(upload_to=user_directory_path, null=True, blank=True)
     bio = models.CharField(max_length=400, blank=True, null=True)
     url = models.CharField(max_length=200, blank=True, null=True)
