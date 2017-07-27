@@ -3,6 +3,7 @@ import django
 from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.urls import reverse
 
 
 class User(AbstractUser):
@@ -11,6 +12,9 @@ class User(AbstractUser):
                                 max_length=150,
                                 validators=[django.contrib.auth.validators.UnicodeUsernameValidator()],
                                 verbose_name='username')
+
+    def get_absolute_url(self, version, namespace):
+        return reverse('user-detail', kwargs={'version': version, 'pk': str(self.pk)})
 
 
 class UserProfile(models.Model):
@@ -44,3 +48,6 @@ class Email(models.Model):
     user = models.ForeignKey(User, related_name='emails', null=True)
     public = models.BooleanField(default=False)
     unsubscribed = models.BooleanField(default=True)
+
+    def get_absolute_url(self, version, namespace):
+        return reverse('email-detail', kwargs={'namespace': namespace.name, 'version': version, 'pk': str(self.pk)})
