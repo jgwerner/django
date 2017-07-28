@@ -70,7 +70,7 @@ class Collaborator(models.Model):
 
     objects = ProjectUsersQuerySet.as_manager()
 
-    def get_absolute_url(self, namespace):
+    def get_absolute_url(self, version, namespace):
         return ""
 
     @property
@@ -115,11 +115,9 @@ class ProjectFile(models.Model):
                                              proj=self.project.name,
                                              name=self.file.name)
 
-    def get_absolute_url(self, namespace):
-        return reverse(
-            'file-detail',
-            kwargs={'namespace': namespace.name, 'project_pk': str(self.project.pk), 'pk': str(self.pk)}
-        )
+    def get_absolute_url(self, version, namespace):
+        return reverse('projectfile-detail', kwargs={'namespace': namespace.name, 'version': version,
+                       'project_pk': str(self.project.pk), 'pk': str(self.pk)})
 
     def delete(self, using=None, keep_parents=False):
         self.file.delete()
