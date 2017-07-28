@@ -15,7 +15,7 @@ from docker.errors import APIError
 from utils import create_jwt_token
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("servers")
 
 
 class ServerSpawner(object):
