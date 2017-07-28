@@ -12,6 +12,8 @@ from servers.tests.factories import (EnvironmentResourcesFactory,
                                      ServerStatisticsFactory,
                                      ServerRunStatisticsFactory,
                                      ServerFactory)
+import logging
+log = logging.getLogger('servers')
 
 
 class ServerTest(APITestCase):
@@ -51,6 +53,20 @@ class ServerTest(APITestCase):
         self.assertEqual(db_server.name, data['name'])
         self.assertEqual(db_server.environment_resources, self.env_res)
         self.assertEqual(db_server.environment_resources.name, 'Nano')
+
+    def test_create_server_rejects_invalid_server_type(self):
+        url = reverse('server-list', kwargs=self.url_kwargs)
+        data = dict(
+            name='test',
+            project=str(self.project.pk),
+            connected=[],
+            config={'type': 'foo'},
+        )
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data.get("config")[0], "foo is not a valid server type")
+        # We only want one error.
+        self.assertEqual(len(response.data.keys()), 1)
 
     def test_list_servers(self):
         servers_count = 4
