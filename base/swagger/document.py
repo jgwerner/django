@@ -161,7 +161,8 @@ class Response(itypes.Object):
         if (status_code is not None) and (not isinstance(status_code, string_types)):
             raise TypeError("Argument 'status_code' must be a string.")
         if status_code is not None:
-            assert 99 < int(status_code) < 600, "Status code must be valid http status code"
+            if 99 >= int(status_code) or int(status_code) >= 600:
+                raise ValueError("Status code must be valid http status code")
         if (description is not None) and (not isinstance(description, string_types)):
             raise TypeError("Argument 'description' must be a string.")
         if (schema is not None) and (not isinstance(schema, (Schema, string_types))):

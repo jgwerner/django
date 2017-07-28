@@ -113,7 +113,7 @@ class CollaboratorSerializer(serializers.ModelSerializer):
         fields = ('id', 'owner', 'joined', 'username', 'email', 'first_name', 'last_name', 'member', 'permissions')
 
     def validate_member(self, value):
-        if not User.objects.filter(Q(username=value) | Q(email=value)).exists():
+        if not User.objects.filter(Q(username=value) | Q(email=value), is_active=True).exists():
             raise serializers.ValidationError("User %s does not exists" % value)
         return value
 
