@@ -28,7 +28,7 @@ class ServerSpawner(object):
         self.server = server
 
     @abc.abstractmethod
-    def start(self, **kwargs) -> None:
+    def start(self, *args, **kwargs) -> None:
         return None
 
     @abc.abstractmethod
@@ -67,7 +67,7 @@ class DockerSpawner(ServerSpawner):
         logger.info("Environment variables to create a container:'{}'".format(all_env_vars))
         return all_env_vars
 
-    def start(self) -> None:
+    def start(self, *args, **kwargs) -> None:
         self.cmd = self._get_cmd()
         if self._is_swarm and not self._is_network_exists():
             self._create_network()

@@ -7,7 +7,7 @@ from docker import Client
 from .managers import DockerHostQuerySet
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("infrastructure")
 
 
 class DockerHost(models.Model):
@@ -42,7 +42,7 @@ class DockerHost(models.Model):
     def status(self):
         try:
             self.client.info()
-        except:
-            logger.exception("Node status error")
+        except Exception as e:
+            logger.exception("Node status error: {excep}".format(excep=e))
             return self.NOT_AVAILABLE
         return self.AVAILABLE
