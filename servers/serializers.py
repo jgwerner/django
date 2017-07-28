@@ -3,12 +3,13 @@ from django.contrib.sites.shortcuts import get_current_site
 from rest_framework import serializers
 
 from base.serializers import SearchSerializerMixin
-from . import models
+from servers.models import (EnvironmentResource, Server, ServerRunStatistics,
+                            ServerStatistics, SshTunnel)
 
 
 class EnvironmentResourceSerializer(serializers.ModelSerializer):
     class Meta:
-        model = models.EnvironmentResource
+        model = EnvironmentResource
         fields = ('id', 'name', 'cpu', 'memory', 'active')
 
 
@@ -18,7 +19,7 @@ class ServerSerializer(SearchSerializerMixin, serializers.ModelSerializer):
     status_url = serializers.SerializerMethodField()
 
     class Meta:
-        model = models.Server
+        model = Server
         fields = ('id', 'name', 'created_at', 'image_name', 'environment_resources', 'startup_script', 'config',
                   'status', 'connected', 'host', 'endpoint', 'logs_url', 'status_url')
         read_only_fields = ('created_at',)
@@ -27,17 +28,21 @@ class ServerSerializer(SearchSerializerMixin, serializers.ModelSerializer):
             'environment_resources': {'allow_empty': True, 'required': False},
         }
 
+    def validate_config(self, value):
+        server_type = value.get("type")
+        if server_type not in Server.SERVER_TYPES:
+            raise serializers.ValidationError("{type} is not a valid server type".format(type=server_type))
+        return value
+
     def create(self, validated_data):
         config = validated_data.pop("config", {})
-        env_resource = validated_data.pop('environment_resources', None) or \
-            models.EnvironmentResource.objects.order_by('created_at').first()
-        return models.Server.objects.create(
-            project_id=self.context['view'].kwargs['project_pk'],
-            created_by=self.context['request'].user,
-            config=config,
-            environment_resources=env_resource,
-            **validated_data
-        )
+        env_resource = (validated_data.pop('environment_resources', None) or
+                        EnvironmentResource.objects.order_by('created_at').first())
+        return Server.objects.create(project_id=self.context['view'].kwargs['project_pk'],
+                                     created_by=self.context['request'].user,
+                                     config=config,
+                                     environment_resources=env_resource,
+                                     **validated_data)
 
     def update(self, instance, validated_data):
         if self.partial:
@@ -74,7 +79,7 @@ class ServerSerializer(SearchSerializerMixin, serializers.ModelSerializer):
 
 class ServerRunStatisticsSerializer(serializers.ModelSerializer):
     class Meta:
-        model = models.ServerRunStatistics
+        model = ServerRunStatistics
         fields = ('id', 'start', 'stop', 'exit_code', 'size', 'stacktrace')
 
 
@@ -87,7 +92,7 @@ class ServerRunStatisticsAggregatedSerializer(serializers.Serializer):
 
 class ServerStatisticsSerializer(serializers.ModelSerializer):
     class Meta:
-        model = models.ServerStatistics
+        model = ServerStatistics
         fields = ('id', 'start', 'stop', 'size')
 
 
@@ -99,5 +104,5 @@ class ServerStatisticsAggregatedSerializer(serializers.Serializer):
 
 class SshTunnelSerializer(serializers.ModelSerializer):
     class Meta:
-        model = models.SshTunnel
+        model = SshTunnel
         fields = ('id', 'name', 'host', 'local_port', 'remote_port', 'endpoint', 'username')

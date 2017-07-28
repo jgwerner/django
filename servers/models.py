@@ -8,8 +8,8 @@ from django.urls import reverse
 from django_redis import get_redis_connection
 
 from base.namespace import Namespace
-from .managers import ServerQuerySet
-from .spawners import DockerSpawner
+from servers.managers import ServerQuerySet
+from servers.spawners import DockerSpawner
 
 
 class Server(models.Model):
@@ -30,6 +30,8 @@ class Server(models.Model):
     TERMINATE = 'terminate'
 
     CONTAINER_NAME_FORMAT = "server_{}_{}"
+
+    SERVER_TYPES = ["jupyter", "restful", "cron"]
 
     objects = ServerQuerySet.as_manager()
 
