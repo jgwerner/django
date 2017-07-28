@@ -14,7 +14,6 @@ Including another URLconf
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
 from django.conf import settings
-from django.conf.urls.static import static
 from django.conf.urls import url, include
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from rest_framework.decorators import api_view
@@ -78,6 +77,7 @@ urlpatterns = [
     url(r'^users/(?P<user_pk>[\w-]+)/ssh-key/reset/$', user_views.reset_ssh_key,
         name='reset_ssh_key'),
     url(r'^users/(?P<user_pk>[\w-]+)/api-key/$', user_views.api_key, name='api_key'),
+    url(r'^users/(?P<user_pk>[\w-]+)/avatar/$', user_views.avatar, name='avatar'),
     url(r'^(?P<namespace>[\w-]+)/service/(?P<server_pk>[^/.]+)/trigger/(?P<pk>[^/.]+)/call/$',
         trigger_views.call_trigger, name='server-trigger-call'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_pk>[\w-]+)/servers/(?P<pk>[^/.]+)/start/$',

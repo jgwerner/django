@@ -1,5 +1,5 @@
 import logging
-import json
+from django.http import JsonResponse
 from django.db.models import Q
 from django.contrib.auth import get_user_model
 from haystack.query import SearchQuerySet, EmptySearchQuerySet
@@ -36,6 +36,28 @@ class UserViewSet(UUIDRegexMixin, viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         deactivate_user(instance)
         instance.save()
+
+
+def avatar(request, version, user_pk):
+    status_code = status.HTTP_200_OK
+
+    if request.method == "POST":
+        try:
+            user = User.objects.get(pk=user_pk)
+            profile = user.profile
+            profile.avatar = request.FILES.get("image")
+            profile.save()
+            log.info("Updated avatar for user: {user}".format(user=user.username))
+            data = UserSerializer(instance=user).data
+        except Exception as e:
+            data = {'message': str(e)}
+            log.exception(e)
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+    else:
+        data = {'message': "Only POST is allowed for this URL."}
+        status_code = status.HTTP_405_METHOD_NOT_ALLOWED
+
+    return JsonResponse(data=data, status=status_code)
 
 
 class UserSearchView(ListModelMixin, viewsets.GenericViewSet):
