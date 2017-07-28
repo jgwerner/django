@@ -36,6 +36,7 @@ djangorestframework-jwt==1.10
 slackclient==1.0.5
 django-cors-headers==2.0.2
 django-guardian==1.4.8
+Pillow==4.2.1
 stripe==1.55.2
 django-haystack==2.6.1
 elasticsearch<3.0.0
