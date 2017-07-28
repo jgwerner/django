@@ -1,4 +1,8 @@
+import filecmp
 import shutil
+import os
+import json
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -6,8 +10,10 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from users.tests.factories import UserFactory, EmailFactory
+from users.tests.utils import generate_random_image
 from utils import create_ssh_key
-
+import logging
+log = logging.getLogger('users')
 User = get_user_model()
 
 
@@ -18,10 +24,13 @@ class UserTest(APITestCase):
         self.admin_client = self.client_class(HTTP_AUTHORIZATION='Token {}'.format(self.admin.auth_token.key))
         self.user_client = self.client_class(HTTP_AUTHORIZATION='Token {}'.format(self.user.auth_token.key))
         self.to_remove = None
+        self.image_files = []
 
     def tearDown(self):
         if self.to_remove is not None:
             shutil.rmtree(str(self.to_remove))
+        for img_file in self.image_files:
+            os.remove(img_file)
 
     def test_user_delete_by_admin(self):
         user = UserFactory()
@@ -94,6 +103,37 @@ class UserTest(APITestCase):
         error_list = response.data.get('username')
         self.assertEqual(len(error_list), 1)
         self.assertEqual(error_list[0], expected_error)
+
+    def test_uploading_avatar(self):
+        url = reverse("avatar", kwargs={'version': settings.DEFAULT_VERSION,
+                                        'user_pk': self.user.pk})
+
+        generate_random_image("myavatar.png")
+        image_upload = SimpleUploadedFile(name="myavatar.png",
+                                          content=open("/tmp/myavatar.png", "rb").read(),
+                                          content_type="image/png")
+
+        data = {'image': image_upload}
+        response = self.user_client.post(url, data=data, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.image_files.append("/tmp/myavatar.png")
+
+        user_reloaded = User.objects.get(pk=self.user.pk)
+
+        self.assertEqual(user_reloaded.profile.avatar.name,
+                         "{dir}/myavatar.png".format(dir=self.user.username))
+        self.assertTrue(filecmp.cmp("/tmp/myavatar.png",
+                                    user_reloaded.profile.avatar.path))
+        self.to_remove = user_reloaded.profile.resource_root()
+
+    def test_non_post_request_is_rejected(self):
+        url = reverse("avatar", kwargs={'version': settings.DEFAULT_VERSION,
+                                        'user_pk': self.user.pk})
+        response = self.user_client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        resp_data = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(resp_data.get("message"), "Only POST is allowed for this URL.")
 
 
 class EmailTest(APITestCase):

@@ -40,3 +40,4 @@ stripe==1.55.2
 django-haystack==2.6.1
 elasticsearch<3.0.0
 drf-haystack==1.6.1
+Pillow==4.2.1
