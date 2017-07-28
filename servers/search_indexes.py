@@ -1,6 +1,6 @@
 from haystack import indexes
 
-from .models import Server
+from servers.models import Server
 
 
 class ServerIndex(indexes.SearchIndex, indexes.Indexable):

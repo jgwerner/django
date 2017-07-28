@@ -181,7 +181,7 @@ class TestResponse(TestCase):
         with self.assertRaises(TypeError) as status_code_str_error:
             Response(status_code=1)
             self.assertIn('string', status_code_str_error)
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             Response(status_code='1')
         self.assertEqual(Response(status_code=None).status_code, '')
         response = Response(status_code='200')

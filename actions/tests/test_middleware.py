@@ -176,11 +176,10 @@ class ActionMiddlewareTest(TestCase):
         pk = self.middleware._get_object_pk_from_response_data(data2)
         self.assertEqual(pk, data2['id'])
 
-    @staticmethod
-    def test_get_model_from_func():
+    def test_get_model_from_func(self):
         view_func = ActionList.as_view()
         model = ActionMiddleware._get_model_from_func(view_func)
-        assert issubclass(Action, model)
+        self.assertTrue(issubclass(Action, model))
 
     def test_get_object_from_url(self):
         action = ActionFactory()
