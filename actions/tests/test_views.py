@@ -6,7 +6,11 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from actions.models import Action
-from projects.tests.factories import ProjectFactory
+from billing.tests.factories import CustomerFactory, PlanFactory, CardFactory, SubscriptionFactory
+from infrastructure.tests.factories import DockerHostFactory
+from projects.tests.factories import ProjectFactory, CollaboratorFactory, ProjectFileFactory
+from servers.tests.factories import ServerFactory, EnvironmentResourcesFactory
+from triggers.tests.factories import TriggerFactory
 from users.tests.factories import UserFactory
 from .factories import ActionFactory
 
@@ -23,12 +27,20 @@ class ActionTest(APITestCase):
         self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
 
     def test_list_actions(self):
-        actions_count = 4
-        ActionFactory.create_batch(actions_count)
+        ActionFactory(content_object=CustomerFactory())
+        ActionFactory(content_object=PlanFactory())
+        ActionFactory(content_object=CardFactory())
+        ActionFactory(content_object=SubscriptionFactory())
+        ActionFactory(content_object=DockerHostFactory())
+        ActionFactory(content_object=ProjectFactory())
+        ActionFactory(content_object=CollaboratorFactory())
+        ActionFactory(content_object=ProjectFileFactory())
+        ActionFactory(content_object=ServerFactory())
+        ActionFactory(content_object=EnvironmentResourcesFactory())
+        ActionFactory(content_object=TriggerFactory())
         url = reverse('action-list', kwargs={'version': settings.DEFAULT_VERSION})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), actions_count)
 
     def test_action_details(self):
         action = ActionFactory()

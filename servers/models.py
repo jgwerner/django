@@ -125,8 +125,9 @@ class EnvironmentResource(models.Model):
     def __str__(self):
         return self.name
 
-    def get_absolute_url(self, namespace: Namespace):
-        return reverse('environmentresource-detail', kwargs={'namespace': namespace.name, 'pk': str(self.pk)})
+    def get_absolute_url(self, version, namespace: Namespace):
+        return reverse('environmentresource-detail', kwargs={'namespace': namespace.name, 'version': version,
+                       'pk': str(self.pk)})
 
 
 class ServerRunStatistics(models.Model):
