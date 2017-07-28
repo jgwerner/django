@@ -96,19 +96,6 @@ class EnvironmentResourceViewSet(UUIDRegexMixin, viewsets.ModelViewSet):
     serializer_class = serializers.EnvironmentResourceSerializer
 
 
-class IsAllowed(views.APIView):
-    """
-    Checks if user is allowed to access model server
-    """
-
-    def get(self, request, **kwargs):
-        token = request.META.get('HTTP_AUTHORIZATION', '').split(' ')[1]
-        if Project.objects.cache().only('pk').filter(
-                pk=kwargs.get('project_pk', ''), collaborators__auth_token__key=token).exists():
-            return Response()
-        return Response(status=status.HTTP_404_NOT_FOUND)
-
-
 @api_view(['GET'], exclude_from_schema=True)
 @permission_classes((AllowAny,))
 def server_internal_details(request, version, project_pk, server_pk):

@@ -310,10 +310,6 @@ MIGRATION_MODULES = {
     'guardian': 'appdj.migrations.guardian',
 }
 
-ABSOLUTE_URL_OVERRIDES = {
-    'auth.user': lambda o, n: reverse_lazy('user-detail', kwargs={'namespace': n.name, 'pk': o.pk}),
-}
-
 
 # Server settings
 SERVER_RESOURCE_DIR = os.environ.get("SERVER_RESOURCE_DIR", "/resources")
