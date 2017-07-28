@@ -89,13 +89,25 @@ Edit the docker service file to add connections to docker daemon using tcp:
 
     nano /lib/systemd/system/docker.service
 
-Add `-H tcp://0.0.0.0:2375` after `-H fd://`
+    Replace line:   ExecStart=/usr/bin/dockerd -H fd:// -H
+    With Line:      ExecStart=/usr/bin/dockerd -H fd:// -H tcp://0.0.0.0:2375
 
 Restart docker service and confirm that setting is in place for CGroup:
      
     sudo systemctl daemon-reload 
     sudo systemctl restart docker
     systemctl status docker
+    
+    ``` docker.service - Docker Application Container Engine
+   Loaded: loaded (/lib/systemd/system/docker.service; enabled; vendor preset: enabled)
+   Active: active (running) since Fri 2017-07-21 02:32:48 UTC; 1 weeks 0 days ago
+     Docs: https://docs.docker.com
+ Main PID: 15857 (dockerd)
+    Tasks: 63
+   Memory: 579.9M
+      CPU: 51min 15.120s
+   CGroup: /system.slice/docker.service
+           ├─15857 /usr/bin/dockerd -H fd:// -H tcp://0.0.0.0:2375 ```
 
 ### Environment Variables
 
@@ -109,7 +121,9 @@ Modify environment variables located in `env` file with your local settings. You
     DATABASE_URL=postgres://postgres:@db:5432/postgres/
     DEBUG=True
     DJANGO_SETTINGS_MODULE=appdj.settings.prod
-    DOCKER_DOMAIN=172.17.0.1:2375
+    DOCKER_DOMAIN=172.17.0.1
+    DOCKER_EVENTS_URL=http://events:8000
+    DOCKER_PORT=2375
     DOCKER_HOST=tcp://172.17.0.1:2375/
     ELASTICSEARCH_URL=http://search:9200/
     EMAIL_HOST=
