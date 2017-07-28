@@ -9,6 +9,7 @@ from projects.tests.factories import CollaboratorFactory
 from servers.tests.factories import ServerFactory
 from triggers.models import Trigger
 from triggers.tests.factories import TriggerFactory
+from utils import create_jwt_token
 
 
 class TriggerTest(APILiveServerTestCase):
@@ -34,23 +35,17 @@ class TriggerTest(APILiveServerTestCase):
 
     def test_launch_object_action(self):
         server = ServerFactory(project=self.project)
+        token = create_jwt_token(self.user)
         effect = ActionFactory(
-            method='get',
+            method='post',
             state=Action.CREATED,
-            path=reverse(
-                'is_allowed',
-                kwargs={
-                    'namespace': self.user.username,
-                    'project_pk': str(self.project.pk),
-                    'pk': str(server.pk),
-                    'version': settings.DEFAULT_VERSION
-                }
-            ),
+            path=reverse('verify-jwt'),
+            payload={'token': token},
             user=self.user
         )
         TriggerFactory(cause=None, effect=effect, user=self.user)
         resp = effect.dispatch(url=self.live_server_url)
-        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 201)
 
     def test_dispatch_signal(self):
         cause = ActionFactory(state=Action.CREATED)

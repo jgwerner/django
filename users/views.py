@@ -5,7 +5,6 @@ from django.contrib.auth import get_user_model
 from haystack.query import SearchQuerySet, EmptySearchQuerySet
 from social_django.models import UserSocialAuth
 from rest_framework import viewsets, status
-from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view
 from rest_framework.generics import get_object_or_404, CreateAPIView
 from rest_framework.mixins import ListModelMixin
@@ -15,7 +14,7 @@ from rest_framework.views import APIView
 
 from base.permissions import DeleteAdminOnly
 from base.views import UUIDRegexMixin
-from utils import create_ssh_key, deactivate_user
+from utils import create_ssh_key, deactivate_user, create_jwt_token
 
 from users.filters import UserSearchFilter
 from users.models import Email
@@ -86,16 +85,8 @@ def reset_ssh_key(request, version, user_pk):
 @api_view(['GET'])
 def api_key(request, version, user_pk):
     user = get_object_or_404(User, pk=user_pk)
-    return Response(data={'key': user.auth_token.key})
-
-
-@api_view(['POST'])
-def reset_api_key(request, version, user_pk):
-    token = get_object_or_404(Token, user_id=user_pk)
-    token.key = None
-    token.save()
-    return Response(data={'key': token.key})
-
+    token = create_jwt_token(user)
+    return Response(data={'token': token})
 
 class EmailViewSet(viewsets.ModelViewSet):
     queryset = Email.objects.all()
