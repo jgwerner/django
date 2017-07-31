@@ -16,7 +16,7 @@ RUN pip install virtualenv
 RUN mkdir -p /srv/
 WORKDIR /srv/
 RUN virtualenv env --python=python3
-RUN . env/bin/activate; pip --no-cache-dir install --upgrade setuptools pip wheel 
+RUN . env/bin/activate; pip --no-cache-dir install --upgrade setuptools pip wheel
 
 WORKDIR /srv/app/
 
