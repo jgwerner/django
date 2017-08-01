@@ -239,7 +239,7 @@ REST_FRAMEWORK = {
 }
 
 DJOSER = {
-    'DOMAIN': "",
+    'DOMAIN': os.getenv("TBS_DOMAIN"),
     'SITE_NAME': "3Blades",
     'PASSWORD_RESET_CONFIRM_URL': "auth/password-reset?uid={uid}&token={token}",
     'SERIALIZERS': {'user': "users.serializers.UserSerializer"}
