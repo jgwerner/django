@@ -241,7 +241,7 @@ REST_FRAMEWORK = {
 DJOSER = {
     'DOMAIN': "",
     'SITE_NAME': "3Blades",
-    'PASSWORD_RESET_CONFIRM_URL': "password/reset/{uid}/{token}",
+    'PASSWORD_RESET_CONFIRM_URL': "auth/password-reset?uid={uid}&token={token}",
     'SERIALIZERS': {'user': "users.serializers.UserSerializer"}
 }
 
