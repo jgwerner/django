@@ -3,6 +3,7 @@ from django.conf import settings
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.contrib import admin
 from django.conf.urls.static import static
+from djoser import views as djoser_views
 
 from oauth2_provider import views as oauth2_views
 from jwt_auth import views as jwt_views
@@ -17,6 +18,9 @@ urlpatterns = [
     url(r'^auth/authorize/?$', oauth2_views.AuthorizationView.as_view(), name="authorize"),
     url(r'^auth/token/?$', oauth2_views.TokenView.as_view(), name="token"),
     url(r'^auth/', include('social_django.urls', namespace="social")),
+    url(r'^auth/password/reset/$', djoser_views.PasswordResetView.as_view(), name="password-reset"),
+    url(r'^auth/password/reset/confirm/$', djoser_views.PasswordResetConfirmView.as_view(),
+        name="password-reset-confirm"),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^tbs-admin/', admin.site.urls),
     url(r'^(?P<version>{major_version}(\.[0-9]+)?)/'.format(major_version=settings.DEFAULT_VERSION),

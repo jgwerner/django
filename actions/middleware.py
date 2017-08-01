@@ -125,7 +125,7 @@ class ActionMiddleware(object):
 
     @staticmethod
     def _get_model_from_func(view_func):
-        if hasattr(view_func, 'cls') and hasattr(view_func.cls, 'queryset'):
+        if hasattr(view_func, 'cls') and getattr(view_func.cls, 'queryset', None) is not None:
             return view_func.cls.queryset.model
 
     def _get_object_from_url(self, request: HttpRequest):
