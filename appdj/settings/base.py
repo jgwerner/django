@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'guardian',
     'django_filters',
     'haystack',
+    'djoser',
 
     'base',
     'users',
@@ -237,6 +238,14 @@ REST_FRAMEWORK = {
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning'
 }
 
+DJOSER = {
+    'DOMAIN': "",
+    'SITE_NAME': "3Blades",
+    'PASSWORD_RESET_CONFIRM_URL': "password/reset/{uid}/{token}",
+    'SERIALIZERS': {'user': "users.serializers.UserSerializer"}
+}
+
+
 DEFAULT_VERSION = os.environ.get('TBS_DEFAULT_VERSION', "v1")
 
 RESOURCE_DIR = os.environ.get('RESOURCE_DIR', '/workspaces')
@@ -362,3 +371,5 @@ MOCK_STRIPE = os.environ.get("MOCK_STRIPE", "false").lower() == "true"
 
 # KB * KB = MB -> 15 MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024 * int(os.getenv("MAX_FILE_UPLOAD_SIZE", 15))
+
+SILENCED_SYSTEM_CHECKS = ["auth.W004"]
