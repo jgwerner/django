@@ -143,7 +143,8 @@ class SearchTestCase(APITestCase):
 
     def test_paginated(self):
         count = 4
-        ServerFactory.create_batch(count)
+        collaborator = CollaboratorFactory(user=self.user)
+        ServerFactory.create_batch(count, project=collaborator.project)
         response = self.client.get(self.url, {'q': "server", 'limit': 1})
         self.assertIn('count', response.data['servers'])
         self.assertIn('next', response.data['servers'])

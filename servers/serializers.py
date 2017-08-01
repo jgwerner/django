@@ -3,6 +3,7 @@ from django.contrib.sites.shortcuts import get_current_site
 from rest_framework import serializers
 
 from base.serializers import SearchSerializerMixin
+from projects.serializers import ProjectSerializer
 from servers.models import (EnvironmentResource, Server, ServerRunStatistics,
                             ServerStatistics, SshTunnel)
 
@@ -18,10 +19,12 @@ class ServerSerializer(SearchSerializerMixin, serializers.ModelSerializer):
     logs_url = serializers.SerializerMethodField()
     status_url = serializers.SerializerMethodField()
 
+    project = ProjectSerializer(read_only=True)
+
     class Meta:
         model = Server
         fields = ('id', 'name', 'created_at', 'image_name', 'environment_resources', 'startup_script', 'config',
-                  'status', 'connected', 'host', 'endpoint', 'logs_url', 'status_url')
+                  'status', 'connected', 'host', 'endpoint', 'logs_url', 'status_url', 'project')
         read_only_fields = ('created_at',)
         extra_kwargs = {
             'connected': {'allow_empty': True, 'required': False},
