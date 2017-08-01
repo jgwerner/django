@@ -149,7 +149,7 @@ Modify environment variables located in `env` file with your local settings. You
     SLACK_SECRET=
     STRIPE_SECRET_KEY=
     TBS_DEFAULT_VERSION=
-    TBS_DOMAIN=localhost:3000/
+    TBS_DOMAIN=localhost:3000
     TBS_HOST=
     TBS_HTTPS=
 ```
