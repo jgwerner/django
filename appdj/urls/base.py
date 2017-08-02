@@ -8,9 +8,7 @@ from djoser import views as djoser_views
 from oauth2_provider import views as oauth2_views
 from jwt_auth import views as jwt_views
 from users import views as user_views
-from base.swagger.views import get_swagger_view
 
-schema_view = get_swagger_view(title='3blades API', url=settings.FORCE_SCRIPT_NAME or '/')
 
 urlpatterns = [
     url(r'^auth/jwt-token-auth/$', jwt_views.ObtainJSONWebToken.as_view(), name='obtain-jwt'),
@@ -24,7 +22,6 @@ urlpatterns = [
     url(r'^auth/password/reset/confirm/$', djoser_views.PasswordResetConfirmView.as_view(),
         name="password-reset-confirm"),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
-    url(r'^swagger/$', schema_view),
     url(r'^tbs-admin/', admin.site.urls),
     url(r'^(?P<version>{major_version}(\.[0-9]+)?)/'.format(major_version=settings.DEFAULT_VERSION),
         include("appdj.urls.unversioned"))
@@ -32,8 +29,12 @@ urlpatterns = [
 
 if settings.DEBUG:
     import debug_toolbar
+    from swagger_docs.views import get_swagger_view
+
+    schema_view = get_swagger_view(title='3blades API', url=settings.FORCE_SCRIPT_NAME or '/')
     urlpatterns += [
         url(r'^auth/simple-token-auth/$', user_views.ObtainAuthToken.as_view()),
         url(r'^__debug__/', include(debug_toolbar.urls)),
+        url(r'^swagger/$', schema_view),
     ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns = staticfiles_urlpatterns() + urlpatterns
