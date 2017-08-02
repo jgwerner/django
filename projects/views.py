@@ -29,6 +29,7 @@ class ProjectViewSet(NamespaceMixin, viewsets.ModelViewSet):
         update_data = request.data
 
         serializer = self.serializer_class(instance, data=update_data,
+                                           partial=True,
                                            context={'request': request,
                                                     'pk': instance.pk})
         serializer.is_valid(raise_exception=True)
