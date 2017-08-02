@@ -45,3 +45,4 @@ Pillow==4.2.1
 djoser==0.6.0
 boto==2.48.0
 django-ses==0.8.2
+google-compute-engine==2.4.1
