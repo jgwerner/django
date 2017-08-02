@@ -30,6 +30,7 @@ class TriggerActionSerializer(serializers.ModelSerializer):
         return {
             'id': obj.pk,
             'payload': obj.payload,
+            'path': obj.path,
             'method': obj.method
         }
 
@@ -70,6 +71,7 @@ class TriggerSerializer(serializers.ModelSerializer):
         model = validated_data.pop('model', None)
         content_type = None
         content_object = None
+        payload = validated_data.get('payload', {})
         if model and validated_data.get('object_id'):
             content_type = ContentType.objects.filter(model=model).first()
             content_object = content_type.get_object_for_this_type(pk=validated_data['object_id'])
@@ -80,7 +82,12 @@ class TriggerSerializer(serializers.ModelSerializer):
         else:
             path = reverse(action_name, kwargs={'version': self.context['request'].version,
                                                 'namespace': self.context['request'].namespace.name})
-        instance = Action.objects.filter(state=Action.CREATED, path=path, user=self.context['request'].user).first()
+        instance = Action.objects.filter(
+            state=Action.CREATED,
+            path=path,
+            user=self.context['request'].user,
+            payload=payload
+        ).first()
         if instance is None:
             instance = Action.objects.create(
                 path=path,
@@ -88,6 +95,7 @@ class TriggerSerializer(serializers.ModelSerializer):
                 user=self.context['request'].user,
                 content_type=content_type,
                 is_user_action=False,
+                payload=payload,
                 method=validated_data.get('method', "GET"),
             )
         return instance
