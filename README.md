@@ -116,6 +116,10 @@ Modify environment variables located in `env` file with your local settings. You
 ```
     AWS_ACCESS_KEY_ID=
     AWS_SECRET_ACCESS_KEY=
+    AWS_SES_ACCESS_KEY_ID=
+    AWS_SES_SECRET_ACCESS_KEY=
+    AWS_SES_REGION_NAME=
+    AWS_SES_REGION_ENDPOINT=
     AWS_STORAGE_BUCKET_NAME=
     C_ROOT=1
     DATABASE_URL=postgres://postgres:@db:5432/postgres/
