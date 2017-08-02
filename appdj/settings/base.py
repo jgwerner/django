@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'django_filters',
     'haystack',
     'djoser',
+    'django_ses',
 
     'base',
     'users',
@@ -317,6 +318,7 @@ MIGRATION_MODULES = {
     'oauth2_provider': 'appdj.migrations.oauth2_provider',
     'social_django': 'appdj.migrations.social_django',
     'guardian': 'appdj.migrations.guardian',
+    'django_ses': 'appdj.migrations.django_ses',
 }
 
 
