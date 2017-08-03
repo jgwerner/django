@@ -40,7 +40,7 @@ class Server(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     name = models.CharField(max_length=50)
     container_id = models.CharField(max_length=100, blank=True)
-    environment_resources = models.ForeignKey('EnvironmentResource')
+    server_size = models.ForeignKey('ServerSize')
     env_vars = HStoreField(default={})
     startup_script = models.CharField(max_length=50, blank=True)
     project = models.ForeignKey('projects.Project', related_name='servers')
@@ -115,7 +115,7 @@ class Server(models.Model):
         return urlsplit(os.environ.get("DOCKER_HOST")).hostname
 
 
-class EnvironmentResource(models.Model):
+class ServerSize(models.Model):
     name = models.CharField(unique=True, max_length=50)
     cpu = models.IntegerField()
     memory = models.IntegerField()
@@ -128,7 +128,7 @@ class EnvironmentResource(models.Model):
         return self.name
 
     def get_absolute_url(self, version, namespace: Namespace):
-        return reverse('environmentresource-detail', kwargs={'namespace': namespace.name, 'version': version,
+        return reverse('serversize-detail', kwargs={'namespace': namespace.name, 'version': version,
                        'pk': str(self.pk)})
 
 

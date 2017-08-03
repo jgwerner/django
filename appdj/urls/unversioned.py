@@ -30,7 +30,7 @@ from search.views import SearchView
 
 router = routers.DefaultRouter()
 
-router.register(r'servers/options/resources', servers_views.EnvironmentResourceViewSet)
+router.register(r'servers/options/server-size', servers_views.ServerSizeViewSet)
 router.register(r'hosts', infra_views.DockerHostViewSet)
 router.register(r'triggers', trigger_views.TriggerViewSet)
 
