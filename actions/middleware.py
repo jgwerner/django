@@ -10,6 +10,7 @@ from rest_framework_jwt.serializers import VerifyJSONWebTokenSerializer
 from rest_framework.authtoken.models import Token
 
 from actions.models import Action
+from triggers.models import Trigger
 
 log = logging.getLogger('actions')
 
@@ -53,20 +54,25 @@ class ActionMiddleware(object):
                 body = ujson.loads(request.body)
         except ValueError:
             body = {}
-        filter_kwargs = dict(
-            path=path,
-            user=get_user_from_token_header(request),
-            state=Action.CREATED,
-        )
-        defaults = dict(
-            method=request.method.lower(),
-            user_agent=request.META.get('HTTP_USER_AGENT', ''),
-            start_date=start,
-            payload=body,
-            ip=self._get_client_ip(request),
-            state=Action.PENDING,
-        )
-        action = Action.objects.get_or_create_action(filter_kwargs, defaults)
+        user = get_user_from_token_header(request)
+        trigger_cause = Trigger.objects.filter(
+            cause__path=path,
+            cause__user=user,
+            cause__state=Action.CREATED
+        ).first()
+        if trigger_cause is not None:
+            action = trigger_cause.cause
+        else:
+            action = Action.objects.create(
+                path=path,
+                user=user,
+                method=request.method.lower(),
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                start_date=start,
+                ip=self._get_client_ip(request),
+                payload=body,
+                state=Action.PENDING,
+            )
         request.action = action
 
         response = self.get_response(request)  # type: HttpResponse

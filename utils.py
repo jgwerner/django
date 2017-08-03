@@ -8,28 +8,14 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from django.conf import settings
 from django.core.validators import RegexValidator
+from django.contrib.sites.models import Site
 from django.utils.encoding import force_bytes, force_text
 from django_redis.serializers.base import BaseSerializer
 from rest_framework_jwt.settings import api_settings
-from hashids import Hashids
 log = logging.getLogger(__name__)
 
 jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
 jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
-
-
-def encode_id(value, salt=settings.SECRET_KEY):
-    hashids = Hashids(salt=salt, min_length=8)
-    return hashids.encode(value)
-
-
-def decode_id(value_hashed, salt=settings.SECRET_KEY):
-    hashids = Hashids(salt=salt, min_length=8)
-    value_decode = hashids.decode(value_hashed)
-    if value_decode:
-        return hashids.decode(value_hashed)[0]
-    else:
-        return 0
 
 
 def google_access_token_decoder(resp_str):

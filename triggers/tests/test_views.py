@@ -1,7 +1,9 @@
 import requests
+from urllib.parse import urlparse
 from django.urls import reverse
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.sites.models import Site
 from rest_framework import status
 from rest_framework.test import APITestCase, APILiveServerTestCase
 
@@ -100,6 +102,10 @@ class ServerActionTestCase(APILiveServerTestCase):
 
     def test_trigger_signal(self):
         namespace = Namespace.from_name(self.user.username)
+        parsed = urlparse(self.live_server_url)
+        site = Site.objects.get()
+        site.domain = parsed.netloc
+        site.save()
         url = reverse('project-list', kwargs={'namespace': namespace.name, 'version': settings.DEFAULT_VERSION})
         cause = ActionFactory(
             path=url,
@@ -119,4 +125,5 @@ class ServerActionTestCase(APILiveServerTestCase):
         instance = TriggerFactory(cause=cause, effect=effect)
         resp = self.client.post(url, {'name': 'TestProject0'})
         self.assertEqual(resp.status_code, 201)
-        self.assertEqual(Project.objects.count(), 3)
+        self.assertEqual(Project.objects.count(), 4)
+        self.assertTrue(Project.objects.filter(name=effect.payload['name']).exists())

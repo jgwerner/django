@@ -49,7 +49,7 @@ class TriggerTest(APILiveServerTestCase):
         self.assertEqual(resp.status_code, 201)
 
     def test_dispatch_signal(self):
-        cause = ActionFactory(state=Action.CREATED)
+        cause = ActionFactory(state=Action.CREATED, user=self.user)
         tf = TriggerFactory(cause=cause, effect=None, webhook={})
         cause.state = Action.SUCCESS
         cause.save()
