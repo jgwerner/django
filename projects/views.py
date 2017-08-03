@@ -24,12 +24,20 @@ class ProjectViewSet(NamespaceMixin, viewsets.ModelViewSet):
     filter_fields = ('private', 'name')
     ordering_fields = ('name',)
 
-    def partial_update(self, request, *args, **kwargs):
+    def _update(self, request, partial,  *args, **kwargs):
         instance = Project.objects.get(pk=kwargs.get("pk"))
+        user = request.user
+
+        has_perm = user.has_perm("projects.write_project", instance)
+
+        if not user.has_perm("projects.write_project", instance):
+            return Response(data={'message': "Insufficient permissions to modify project"},
+                            status=status.HTTP_403_FORBIDDEN)
+
         update_data = request.data
 
         serializer = self.serializer_class(instance, data=update_data,
-                                           partial=True,
+                                           partial=partial,
                                            context={'request': request,
                                                     'pk': instance.pk})
         serializer.is_valid(raise_exception=True)
@@ -37,6 +45,26 @@ class ProjectViewSet(NamespaceMixin, viewsets.ModelViewSet):
 
         return Response(data=serializer.data,
                         status=status.HTTP_200_OK)
+
+    def update(self, request, *args, **kwargs):
+        return self._update(request, False, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        return self._update(request, True, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = Project.objects.get(pk=kwargs.get("pk"))
+        user = request.user
+        is_owner = Collaborator.objects.filter(project=instance,
+                                               user=user,
+                                               owner=True)
+        if not is_owner.exists():
+            return Response(data={'message': "Insufficient permissions to delete project"},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        instance.delete()
+        return Response(data={"message": "Project deleted."},
+                        status=status.HTTP_204_NO_CONTENT)
 
 
 class ProjectMixin(object):
