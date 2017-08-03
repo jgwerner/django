@@ -1,3 +1,4 @@
+import logging
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from rest_framework import serializers
@@ -7,6 +8,9 @@ from actions.models import Action
 from servers.models import Server
 from triggers.models import Trigger
 from triggers.slack import send_message
+
+
+logger = logging.getLogger("triggers")
 
 
 class TriggerActionSerializer(serializers.ModelSerializer):
@@ -30,6 +34,7 @@ class TriggerActionSerializer(serializers.ModelSerializer):
         return {
             'id': obj.pk,
             'payload': obj.payload,
+            'path': obj.path,
             'method': obj.method
         }
 
@@ -52,8 +57,12 @@ class TriggerSerializer(serializers.ModelSerializer):
         fields = ('id', 'cause', 'effect', 'schedule', 'webhook')
 
     def create(self, validated_data):
-        cause = self.create_action(validated_data.pop('cause', None))
-        effect = self.create_action(validated_data.pop('effect', None))
+        cause_data = validated_data.pop('cause', None)
+        logger.debug(f'Create cause with data: {cause_data}')
+        cause = self.create_action(cause_data)
+        effect_data = validated_data.pop('effect', None)
+        logger.debug(f'Create effect with data: {effect_data}')
+        effect = self.create_action(effect_data)
         instance = Trigger(
             user=self.context['request'].user,
             cause=cause,
@@ -70,6 +79,8 @@ class TriggerSerializer(serializers.ModelSerializer):
         model = validated_data.pop('model', None)
         content_type = None
         content_object = None
+        payload = validated_data.get('payload', {})
+        method = validated_data.get('method', "GET")
         if model and validated_data.get('object_id'):
             content_type = ContentType.objects.filter(model=model).first()
             content_object = content_type.get_object_for_this_type(pk=validated_data['object_id'])
@@ -80,16 +91,19 @@ class TriggerSerializer(serializers.ModelSerializer):
         else:
             path = reverse(action_name, kwargs={'version': self.context['request'].version,
                                                 'namespace': self.context['request'].namespace.name})
-        instance = Action.objects.filter(state=Action.CREATED, path=path, user=self.context['request'].user).first()
-        if instance is None:
-            instance = Action.objects.create(
-                path=path,
-                state=Action.CREATED,
-                user=self.context['request'].user,
+        instance, created = Action.objects.get_or_create(
+            state=Action.CREATED,
+            method=method,
+            is_user_action=False,
+            path=path,
+            user=self.context['request'].user,
+            payload=payload,
+            defaults=dict(
                 content_type=content_type,
-                is_user_action=False,
-                method=validated_data.get('method', "GET"),
+                content_object=content_object,
             )
+        )
+        logger.debug(f'Action details: {instance.__dict__}')
         return instance
 
 
