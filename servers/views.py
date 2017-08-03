@@ -91,9 +91,9 @@ class SshTunnelViewSet(ProjectMixin, ServerMixin, viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, ServerChildPermission)
 
 
-class EnvironmentResourceViewSet(UUIDRegexMixin, viewsets.ModelViewSet):
-    queryset = models.EnvironmentResource.objects.all()
-    serializer_class = serializers.EnvironmentResourceSerializer
+class ServerSizeViewSet(UUIDRegexMixin, viewsets.ModelViewSet):
+    queryset = models.ServerSize.objects.all()
+    serializer_class = serializers.ServerSizeSerializer
 
 
 @api_view(['GET'], exclude_from_schema=True)

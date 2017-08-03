@@ -9,7 +9,7 @@ from actions.models import Action
 from billing.tests.factories import CustomerFactory, PlanFactory, CardFactory, SubscriptionFactory
 from infrastructure.tests.factories import DockerHostFactory
 from projects.tests.factories import ProjectFactory, CollaboratorFactory, ProjectFileFactory
-from servers.tests.factories import ServerFactory, EnvironmentResourcesFactory
+from servers.tests.factories import ServerFactory, ServerSizeFactory
 from triggers.tests.factories import TriggerFactory
 from users.tests.factories import UserFactory
 from .factories import ActionFactory
@@ -36,7 +36,7 @@ class ActionTest(APITestCase):
         ActionFactory(content_object=CollaboratorFactory())
         ActionFactory(content_object=ProjectFileFactory())
         ActionFactory(content_object=ServerFactory())
-        ActionFactory(content_object=EnvironmentResourcesFactory())
+        ActionFactory(content_object=ServerSizeFactory())
         ActionFactory(content_object=TriggerFactory())
         url = reverse('action-list', kwargs={'version': settings.DEFAULT_VERSION})
         response = self.client.get(url, {'limit': 100})
