@@ -11,6 +11,7 @@ from actions.tests.factories import ActionFactory
 from triggers.models import Trigger
 from triggers.serializers import ServerActionSerializer
 from triggers.tests.factories import TriggerFactory
+from projects.models import Project
 from projects.tests.factories import CollaboratorFactory
 from servers.tests.factories import ServerFactory
 import logging
@@ -96,3 +97,26 @@ class ServerActionTestCase(APILiveServerTestCase):
         headers = {'Content-Type': 'application/json'}
         resp = requests.post(call_url, headers=headers)
         self.assertEqual(resp.status_code, 200)
+
+    def test_trigger_signal(self):
+        namespace = Namespace.from_name(self.user.username)
+        url = reverse('project-list', kwargs={'namespace': namespace.name, 'version': settings.DEFAULT_VERSION})
+        cause = ActionFactory(
+            path=url,
+            method='post',
+            user=self.user,
+            state=Action.CREATED,
+            is_user_action=False
+        )
+        effect = ActionFactory(
+            path=url,
+            method='post',
+            payload={'name':'TestProject1'},
+            user=self.user,
+            state=Action.CREATED,
+            is_user_action=False
+        )
+        instance = TriggerFactory(cause=cause, effect=effect)
+        resp = self.client.post(url, {'name': 'TestProject0'})
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(Project.objects.count(), 3)
