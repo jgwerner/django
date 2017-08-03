@@ -144,6 +144,23 @@ class ProjectTest(ProjectTestMixin, APITestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertIsNone(Project.objects.filter(pk=project.pk).first())
 
+    def test_non_owner_cannot_delete_project(self):
+        owner_collab = CollaboratorFactory()
+        project = owner_collab.project
+        collaborator = CollaboratorFactory(user=self.user,
+                                           owner=False,
+                                           project=project)
+        assign_perm("write_project", self.user, project)
+        url = reverse("project-detail", kwargs={'namespace': self.user.username,
+                                                'pk': project.pk,
+                                                'version': settings.DEFAULT_VERSION})
+        response = self.client.delete(url)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        project_reloaded = Project.objects.filter(pk=project.pk).first()
+        self.assertIsNotNone(project_reloaded)
+
     def test_project_read_perm(self):
         collaborator = CollaboratorFactory(user=self.user)
         project = collaborator.project
@@ -162,11 +179,12 @@ class ProjectTest(ProjectTestMixin, APITestCase):
         url = reverse('project-detail', kwargs={'namespace': self.user.username,
                                                 'pk': project.pk,
                                                 'version': settings.DEFAULT_VERSION})
-        response = self.client.delete(url)
+        data = {'description': "Foo"}
+        response = self.client.patch(url, data=data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         assign_perm('write_project', self.user, project)
-        response = self.client.delete(url)
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        response = self.client.patch(url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_create_collaborator(self):
         collaborator = CollaboratorFactory(user=self.user)
