@@ -156,6 +156,7 @@ Modify environment variables located in `env` file with your local settings. You
     TBS_DEFAULT_VERSION=
     TBS_DOMAIN=localhost:3000
     TBS_HOST=
+	TBS_PORT=
     TBS_HTTPS=
 ```
 
