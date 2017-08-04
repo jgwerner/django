@@ -5,6 +5,7 @@ from django.conf import settings
 from django.contrib.postgres.fields import HStoreField, JSONField
 from django.db import models
 from django.urls import reverse
+from django.utils.text import slugify
 from django_redis import get_redis_connection
 
 from base.namespace import Namespace
@@ -68,7 +69,7 @@ class Server(models.Model):
 
     @property
     def container_name(self):
-        return self.CONTAINER_NAME_FORMAT.format(self.pk, self.name)
+        return slugify(self.CONTAINER_NAME_FORMAT.format(self.pk, self.name))
 
     @property
     def volume_path(self):
