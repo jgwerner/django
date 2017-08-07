@@ -17,7 +17,7 @@ from billing.models import (Plan, Customer,
                             Invoice)
 from billing.serializers import (PlanSerializer, CustomerSerializer, CardSerializer,
                                  SubscriptionSerializer, InvoiceSerializer)
-from billing.stripe_utils import handle_stripe_invoice_webhook
+from billing.stripe_utils import handle_stripe_invoice_webhook, handle_upcoming_invoice
 
 
 log = logging.getLogger('billing')
@@ -163,5 +163,6 @@ def stripe_invoice_upcoming(request, *args, **kwargs):
     body = request.body
     event_json = json.loads(body.decode("utf-8"))
     # TODO: Think about how to return 200 OK before doing this calculation
-    # calculate_compute_usage(event_json)
+    handle_stripe_invoice_webhook(event_json)
+
     return HttpResponse(status=status.HTTP_200_OK)

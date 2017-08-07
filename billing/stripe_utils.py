@@ -1,15 +1,18 @@
 import logging
 from datetime import datetime
+from decimal import Decimal
+from collections import defaultdict
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
 
 from users.models import User
 from servers.models import Server
+from servers.utils import get_server_usage
 
 from billing.models import (Customer, Invoice,
                             Plan, Subscription,
-                            Card, Event)
+                            Card, Event, InvoiceItem)
 log = logging.getLogger('billing')
 
 if settings.MOCK_STRIPE:
@@ -220,3 +223,49 @@ def handle_stripe_invoice_webhook(stripe_obj):
     else:
         log.info("Event {event}:{type} already exists. Doing nothing.".format(event=stripe_obj['id'],
                                                                               type=stripe_obj['type']))
+
+
+def calculate_compute_usage(customer_stripe_id):
+    usage_data = defaultdict(int)
+
+    usage_start_time = None
+    last_invoice = Invoice.objects.filter(customer__stripe_id=
+                                          customer_stripe_id).order_by("-period_end").first()
+    if last_invoice is not None:
+        usage_start_time = last_invoice.period_end
+    user = User.objects.get(customer__stripe_id=customer_stripe_id)
+
+    # Is there a more efficient way to do these queries?
+    projects = user.collaborator_set.filter(owner=True).values_list('project__pk', flat=True)
+    servers = Server.objects.filter(project__pk__in=projects).select_related('server_size').distinct('server_size')
+    total_cost = 0
+    for server in servers:
+        # Essentially forcing this query to happen twice - not good.
+        server_pks = Server.objects.filter(project__pk__in=projects).values_list("id", flat=True)
+
+        this_size_data = get_server_usage(server_pks, begin_measure_time=usage_start_time)
+        # server_size.cost_per_second is in _dollars_, we want cents
+        this_size_cost = 100 * server.server_size.cost_per_second * Decimal(this_size_data['duration'].total_seconds())
+        usage_data[server.server_size] += this_size_cost
+        total_cost += this_size_cost
+
+    usage_data['total'] = total_cost
+
+    return usage_data
+
+
+def create_invoice_item_for_compute_usage(customer_stripe_id, usage_data):
+    stripe_invoice_item = stripe.InvoiceItem.create(customer=customer_stripe_id,
+                                                    amount=usage_data['total'],
+                                                    currency="usd",
+                                                    description="3Blades Compute Usage")
+    converted_data = convert_stripe_object(InvoiceItem, stripe_invoice_item)
+    return InvoiceItem.objects.create(**converted_data)
+
+
+def handle_upcoming_invoice(stripe_event):
+    customer_stripe_id = stripe_event['data']['object']['customer']
+    usage_data = calculate_compute_usage(customer_stripe_id)
+    invoice_item = create_invoice_item_for_compute_usage(customer_stripe_id,
+                                                         usage_data)
+    log.info(f"Created a new invoice item for {customer_stripe_id}: {invoice_item.stripe_id}")
