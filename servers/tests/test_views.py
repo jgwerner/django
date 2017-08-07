@@ -226,8 +226,20 @@ class ServerSizeTestCase(APITestCase):
     def test_server_size_detail(self):
         # Indirectly tests get_absolute_url
         url = reverse("serversize-detail", kwargs={'version': settings.DEFAULT_VERSION,
-                                                   'namespace': self.user.username,
                                                    'pk': self.server_size.pk})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data.get("id"), str(self.server_size.pk))
+
+    def test_non_staff_cannot_create_server_size(self):
+        non_staff = UserFactory(is_staff=False)
+        token_header = 'Token {}'.format(non_staff.auth_token.key)
+        client = self.client_class(HTTP_AUTHORIZATION=token_header)
+
+        data = {'name': "Permission Test",
+                'cpu': 4,
+                'memory': 1024,
+                'active': True}
+        url = reverse("serversize-list", kwargs={'version': settings.DEFAULT_VERSION})
+        response = client.post(url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

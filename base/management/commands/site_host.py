@@ -8,6 +8,9 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         site = Site.objects.get(pk=settings.SITE_ID)
         host = os.environ.get('TBS_HOST')
+        port = os.environ.get('TBS_PORT')
+        if port != '80':
+            host = f'{host}:{port}'
         if host and site.domain == 'example.com':
             site.domain = host
             site.name = host

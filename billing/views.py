@@ -8,10 +8,10 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from rest_framework import viewsets, status, mixins
 from rest_framework.decorators import api_view
-from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
 
 from base.views import NamespaceMixin
+from base.permissions import IsAdminUser
 from billing.models import (Plan, Customer,
                             Card, Subscription,
                             Invoice)
@@ -92,22 +92,6 @@ class CardViewSet(mixins.CreateModelMixin,
 
         data = {'stripe_id': stripe_response['id'], 'deleted': True}
         return Response(data=data, status=status.HTTP_204_NO_CONTENT)
-
-
-class IsAdminUser(BasePermission):
-    def has_permission(self, request, view):
-        permission = False
-
-        if request.user.is_authenticated:
-            if request.method != "GET":
-                # Authenticated, and method is modifying records in some way.
-                # Must be staff
-                permission = request.user.is_staff
-            else:
-                # Authenticated, and method is get
-                permission = True
-
-        return permission
 
 
 class PlanViewSet(viewsets.ModelViewSet):

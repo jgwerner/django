@@ -30,7 +30,6 @@ from search.views import SearchView
 
 router = routers.DefaultRouter()
 
-router.register(r'servers/options/server-size', servers_views.ServerSizeViewSet)
 router.register(r'hosts', infra_views.DockerHostViewSet)
 router.register(r'triggers', trigger_views.TriggerViewSet)
 
@@ -60,6 +59,9 @@ if settings.ENABLE_BILLING:
 
 router.register(r'service/(?P<server_pk>[^/.]+)/trigger', trigger_views.ServerActionViewSet)
 
+servers_router = routers.SimpleRouter()
+servers_router.register("options/server-size", servers_views.ServerSizeViewSet)
+
 
 urlpatterns = [
     url(r'^(?P<namespace>[\w-]+)/search/$', SearchView.as_view(), name='search'),
@@ -86,6 +88,7 @@ urlpatterns = [
         servers_views.stop, name='server-stop'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_pk>[\w-]+)/servers/(?P<pk>[^/.]+)/terminate/$',
         servers_views.terminate, name='server-terminate'),
+    url(r'^servers/', include(servers_router.urls)),
     url(r'(?P<namespace>[\w-]+)/billing/subscription_required/$', billing_views.no_subscription,
         name="subscription-required"),
     url(r'webhooks/incoming/billing/invoice_created/$', billing_views.stripe_invoice_created,
