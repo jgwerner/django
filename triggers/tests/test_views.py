@@ -1,4 +1,5 @@
 import requests
+from unittest.mock import MagicMock
 from urllib.parse import urlparse
 from django.urls import reverse
 from django.conf import settings
@@ -98,7 +99,7 @@ class ServerActionTestCase(APILiveServerTestCase):
         effect = ActionFactory(
             path=url,
             method='post',
-            payload={'name':'TestProject1'},
+            payload={'name': 'TestProject1'},
             user=self.user,
             state=Action.CREATED,
             is_user_action=False
@@ -129,4 +130,6 @@ class ServerActionTestCase(APILiveServerTestCase):
             'payload': {'token': self.token}
         }
         instance = TriggerFactory(user=self.user, effect=None, cause=cause, webhook=webhook)
+        requests.post = MagicMock()
         self.client.post(url, data={})
+        requests.post.assert_called()
