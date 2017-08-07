@@ -493,7 +493,7 @@ class InvoiceTest(TestCase):
         return subscription
 
     def test_invoice_created_webhook(self):
-        url = reverse("stripe-invoice",
+        url = reverse("stripe-invoice-created",
                       kwargs={'version': settings.DEFAULT_VERSION})
         # Always use Mock stripe for these tests, configuring webhooks for testing is near impossible.
         from billing.tests import mock_stripe
@@ -514,7 +514,7 @@ class InvoiceTest(TestCase):
         self.assertEqual(events.first().event_type, "invoice.created")
 
     def test_invoice_payment_failed_webhook(self):
-        url = reverse("stripe-invoice",
+        url = reverse("stripe-invoice-created",
                       kwargs={'version': settings.DEFAULT_VERSION})
         # Always use Mock stripe for these tests, configuring webhooks for testing is near impossible.
         from billing.tests import mock_stripe

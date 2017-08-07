@@ -56,6 +56,7 @@ class TestStripeUtils(TestCase):
         plan_data = create_plan_dict()
         plan_data['trial_period_days'] = 0
         plan = stripe_utils.create_plan_in_stripe(plan_data)
+        plan.save()
         self.plans_to_delete.append(plan)
 
         sub_data = {'customer': customer,

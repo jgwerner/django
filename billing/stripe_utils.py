@@ -4,6 +4,9 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 
+from users.models import User
+from servers.models import Server
+
 from billing.models import (Customer, Invoice,
                             Plan, Subscription,
                             Card, Event)
@@ -105,7 +108,7 @@ def create_plan_in_stripe(validated_data):
                                          trial_period_days=validated_data.get('trial_period_days'))
 
     converted_data = convert_stripe_object(Plan, stripe_response)
-    return Plan.objects.create(**converted_data)
+    return Plan(**converted_data)
 
 
 def create_subscription_in_stripe(validated_data, user=None):

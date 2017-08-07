@@ -26,7 +26,9 @@ class PlanSerializer(serializers.ModelSerializer):
         read_only_fields = ('stripe_id', 'created')
 
     def create(self, validated_data):
-        return create_plan_in_stripe(validated_data)
+        plan = create_plan_in_stripe(validated_data)
+        plan.save()
+        return plan
 
     def update(self, instance, validated_data):
         stripe_obj = stripe.Plan.retrieve(instance.stripe_id)

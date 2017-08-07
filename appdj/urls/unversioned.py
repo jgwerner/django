@@ -88,8 +88,10 @@ urlpatterns = [
         servers_views.terminate, name='server-terminate'),
     url(r'(?P<namespace>[\w-]+)/billing/subscription_required/$', billing_views.no_subscription,
         name="subscription-required"),
-    url(r'webhooks/incoming/billing/invoice', billing_views.stripe_invoice_created,
-        name='stripe-invoice'),
+    url(r'webhooks/incoming/billing/invoice_created/$', billing_views.stripe_invoice_created,
+        name='stripe-invoice-created'),
+    url(r'webhooks/incoming/billing/invoice_upcoming/$', billing_views.stripe_invoice_upcoming,
+        name='stripe-invoice-upcoming'),
 ]
 
 

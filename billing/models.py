@@ -111,7 +111,8 @@ class Card(StripeModel):
 
 
 class Plan(StripeModel):
-    amount = models.PositiveIntegerField()
+    amount = models.PositiveIntegerField(help_text="Amount, in cents (or equivalent) the plan should cost."
+                                                   " For example, a value of 500 -> $5.00")
     currency = models.CharField(max_length=3, default="usd")
 
     DAY = "day"
@@ -218,6 +219,7 @@ class InvoiceItem(StripeModel):
     invoice_date = models.DateTimeField()
     proration = models.BooleanField(default=False)
     quantity = models.IntegerField()
+    description = models.TextField(default="")
 
 
 class Charge(StripeModel):
