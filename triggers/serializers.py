@@ -41,7 +41,7 @@ class TriggerActionSerializer(serializers.ModelSerializer):
 
 class WebhookSerializer(serializers.Serializer):
     url = serializers.URLField()
-    config = serializers.JSONField(required=False)
+    payload = serializers.JSONField(required=False)
 
     def to_representation(self, obj):
         return obj
@@ -130,24 +130,21 @@ class SlackMessageSerializer(serializers.Serializer):
 class ServerActionSerializer(serializers.ModelSerializer):
     START = 'start'
     STOP = 'stop'
-    REDEPLOY = 'redeploy'
     TERMINATE = 'terminate'
-    SCALEUP = 'scaleup'
 
     OPERATIONS = (
         (START, "Start"),
         (STOP, "Stop"),
-        (REDEPLOY, "Redeploy"),
         (TERMINATE, "Terminate"),
-        (SCALEUP, "Scale up"),
     )
 
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
-    operation = serializers.ChoiceField(choices=OPERATIONS, default=REDEPLOY)
+    operation = serializers.ChoiceField(choices=OPERATIONS, default=START)
+    webhook = WebhookSerializer()
 
     class Meta:
         model = Trigger
-        fields = ('id', 'name', 'user', 'operation')
+        fields = ('id', 'name', 'user', 'operation', 'webhook')
 
     def create(self, validated_data):
         content_type = ContentType.objects.filter(model='server').first()
@@ -165,31 +162,23 @@ class ServerActionSerializer(serializers.ModelSerializer):
         )
         trigger = Trigger(
             name=validated_data.get('name', ''),
-            effect=action,
+            cause=action,
             user=validated_data['user'],
+            webhook=validated_data.get('webhook', {})
         )
         trigger.save()
         return trigger
 
     def get_operation(self, obj):
-        action_name = obj.effect.action
+        action_name = obj.cause.action
         for op, op_name in self.OPERATIONS:
             if op in action_name:
                 return op
 
     def to_representation(self, obj):
-        namespace = self.context['request'].namespace
         return {
             'id': str(obj.pk),
             'name': obj.name,
             'operation': self.get_operation(obj),
-            'url': reverse(
-                'server-trigger-call',
-                kwargs={
-                    'namespace': namespace.name,
-                    'server_pk': str(obj.effect.object_id),
-                    'pk': str(obj.pk),
-                    'version': self.context['request'].version
-                }
-            )
+            'webhook': obj.webhook
         }

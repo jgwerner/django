@@ -31,6 +31,10 @@ class ServerActionViewSet(NamespaceMixin, viewsets.ModelViewSet):
     queryset = Trigger.objects.all()
     serializer_class = ServerActionSerializer
 
+    def get_queryset(self):
+        server_pk = self.kwargs.get('server_pk')
+        return super().get_queryset().filter(effect__object_id=server_pk)
+
 
 @api_view(['POST'])
 @authentication_classes([])
@@ -39,4 +43,4 @@ def call_trigger(request, **kwargs):
     trigger = get_object_or_404(Trigger, pk=kwargs['pk'])
     url = '{}://{}'.format(request.scheme, Site.objects.get_current().domain)
     dispatch_trigger.delay(trigger.pk, url=url)
-    return Response({'message': 'OK'})
+    return Response({'message': 'OK'}, status=status.HTTP_202_ACCEPTED)

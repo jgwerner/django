@@ -7,6 +7,7 @@ from django.contrib.sites.models import Site
 from rest_framework import status
 from rest_framework.test import APITestCase, APILiveServerTestCase
 
+from utils import create_jwt_token
 from base.namespace import Namespace
 from actions.models import Action
 from actions.tests.factories import ActionFactory
@@ -61,7 +62,8 @@ class ServerActionTestCase(APILiveServerTestCase):
         collaborator = CollaboratorFactory()
         self.user = collaborator.user
         self.project = collaborator.project
-        self.token_header = 'Token {}'.format(self.user.auth_token.key)
+        self.token = create_jwt_token(self.user)
+        self.token_header = f'Bearer {self.token}'
         self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
         self.server = ServerFactory()
         self.url_kwargs = {
@@ -72,33 +74,12 @@ class ServerActionTestCase(APILiveServerTestCase):
 
     def test_create_server_action_trigger(self):
         url = reverse('trigger-list', kwargs=self.url_kwargs)
-        data = dict(operation='stop')
+        data = dict(operation='stop', webhook={'url': 'http://example.com'})
         resp = self.client.post(url, data=data)
         self.assertEqual(resp.status_code, 201)
         self.assertEqual(Trigger.objects.count(), 1)
         self.assertEqual(Action.objects.count(), 2)
         self.assertEqual(resp.data['operation'], ServerActionSerializer.STOP)
-
-    def test_server_action_call(self):
-        namespace = Namespace.from_name(self.user.username)
-        content_type = ContentType.objects.filter(model='server').first()
-        effect = ActionFactory(
-            content_type=content_type,
-            object_id=self.server.pk,
-            user=self.user,
-            state=Action.CREATED,
-            is_user_action=False,
-            path=self.server.get_action_url(settings.DEFAULT_VERSION, namespace, 'stop'),
-        )
-        instance = TriggerFactory(effect=effect, cause=None)
-        kwargs = {'pk': str(instance.pk), **self.url_kwargs}
-        call_url = '{}{}'.format(
-            self.live_server_url,
-            reverse('server-trigger-call', kwargs=kwargs)
-        )
-        headers = {'Content-Type': 'application/json'}
-        resp = requests.post(call_url, headers=headers)
-        self.assertEqual(resp.status_code, 200)
 
     def test_trigger_signal(self):
         namespace = Namespace.from_name(self.user.username)
@@ -127,3 +108,25 @@ class ServerActionTestCase(APILiveServerTestCase):
         self.assertEqual(resp.status_code, 201)
         self.assertEqual(Project.objects.count(), 4)
         self.assertTrue(Project.objects.filter(name=effect.payload['name']).exists())
+
+    def test_trigger_webhook_after_server_action(self):
+        url = reverse('server-start', kwargs={
+            'namespace': self.user.username,
+            'version': settings.DEFAULT_VERSION,
+            'project_pk': str(self.project.pk),
+            'pk': str(self.server.pk)
+        })
+        cause = ActionFactory(
+            path=url,
+            method='post',
+            user=self.user,
+            state=Action.CREATED,
+            is_user_action=False
+        )
+        path = reverse('verify-jwt')
+        webhook = {
+            'url': f'{self.live_server_url}{path}',
+            'payload': {'token': self.token}
+        }
+        instance = TriggerFactory(user=self.user, effect=None, cause=cause, webhook=webhook)
+        self.client.post(url, data={})

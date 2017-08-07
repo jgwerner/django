@@ -49,6 +49,7 @@ project_router.register(r'servers/(?P<server_pk>[^/.]+)/run-stats',
                         servers_views.ServerRunStatisticsViewSet)
 project_router.register(r'servers/(?P<server_pk>[^/.]+)/stats',
                         servers_views.ServerStatisticsViewSet)
+project_router.register(r'servers/(?P<server_pk>[^/.]+)/triggers', trigger_views.ServerActionViewSet)
 project_router.register(r'collaborators', project_views.CollaboratorViewSet)
 
 if settings.ENABLE_BILLING:
