@@ -5,6 +5,7 @@ from django_redis import get_redis_connection
 
 from projects.tests.factories import CollaboratorFactory
 from servers.models import Server
+from servers.tests.factories import ServerFactory
 
 
 class TestServer(TestCase):
@@ -58,3 +59,7 @@ class TestServer(TestCase):
         self.cache.hset('server_state_00000000-0000-0000-0000-000000000000', 'update', msg)
         del server.update_message
         self.assertFalse(bool(self.cache.hexists('server_state_00000000-0000-0000-0000-000000000000', "update")))
+
+    def test_server_container_name_has_no_spaces(self):
+        server = ServerFactory(name=" I have spaces ")
+        self.assertFalse(" " in server.container_name)
