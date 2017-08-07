@@ -128,9 +128,9 @@ class ServerSize(models.Model):
     def __str__(self):
         return self.name
 
-    def get_absolute_url(self, version, namespace: Namespace):
-        return reverse('serversize-detail', kwargs={'namespace': namespace.name, 'version': version,
-                       'pk': str(self.pk)})
+    def get_absolute_url(self, version, *args, **kwargs):
+        return reverse('serversize-detail', kwargs={'version': version,
+                                                    'pk': str(self.pk)})
 
 
 class ServerRunStatistics(models.Model):
