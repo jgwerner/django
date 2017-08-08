@@ -91,14 +91,16 @@ def convert_stripe_object(model, stripe_obj):
 
 
 def create_stripe_customer_from_user(auth_user):
-    stripe_response = stripe.Customer.create(description=auth_user.first_name + " " + auth_user.last_name,
-                                             email=auth_user.email)
+    customer = Customer.objects.filter(user=auth_user)
+    if not customer.exists():
+        stripe_response = stripe.Customer.create(description=auth_user.first_name + " " + auth_user.last_name,
+                                                 email=auth_user.email)
 
-    # Meh.
-    stripe_response['user'] = auth_user.pk
+        stripe_response['user'] = auth_user.pk
 
-    converted_data = convert_stripe_object(Customer, stripe_response)
-    return Customer.objects.create(**converted_data)
+        converted_data = convert_stripe_object(Customer, stripe_response)
+        return Customer.objects.create(**converted_data)
+    return customer.first()
 
 
 def create_plan_in_stripe(validated_data):
@@ -181,13 +183,9 @@ def sync_invoices_for_customer(customer, stripe_invoices=None):
     customer.save()
 
 
-def handle_stripe_invoice_webhook(stripe_obj):
-    """
-    :param stripe_obj: The Stripe *event* object
-    :return: None
-    """
-    event = Event.objects.filter(stripe_id=stripe_obj['id'])
-    if not event.exists():
+def create_event_from_webhook(stripe_obj):
+    event = Event.objects.filter(stripe_id=stripe_obj['id']).first()
+    if not event:
         # This conversion is *just* custom enough that using the convert method isn't useful
         create_ts = datetime.fromtimestamp(stripe_obj['created'])
         create_ts = timezone.make_aware(create_ts)
@@ -200,6 +198,19 @@ def handle_stripe_invoice_webhook(stripe_obj):
         event.save()
         log.info("Created new stripe event: {event}:{type}".format(event=event.stripe_id,
                                                                    type=event.event_type))
+        return event
+    log.info("Event {event}:{type} already exists. Doing nothing.".format(event=stripe_obj['id'],
+                                                                          type=stripe_obj['type']))
+    return None
+
+
+def handle_stripe_invoice_webhook(stripe_obj):
+    """
+    :param stripe_obj: The Stripe *event* object
+    :return: None
+    """
+    event = create_event_from_webhook(stripe_obj)
+    if event is not None:
         if event.event_type == "invoice.payment_failed":
             # Suspend the subscription...
             sub_stripe_id = stripe_obj['data']['object']['subscription']
@@ -221,9 +232,6 @@ def handle_stripe_invoice_webhook(stripe_obj):
             log.info("Created a new invoice: {invoice}".format(invoice=invoice.pk))
         else:
             log.info("Updated an invoice: {invoice}".format(invoice=invoice.stripe_id))
-    else:
-        log.info("Event {event}:{type} already exists. Doing nothing.".format(event=stripe_obj['id'],
-                                                                              type=stripe_obj['type']))
 
 
 def calculate_compute_usage(customer_stripe_id):
@@ -268,8 +276,10 @@ def create_invoice_item_for_compute_usage(customer_stripe_id, usage_data):
 
 
 def handle_upcoming_invoice(stripe_event):
-    customer_stripe_id = stripe_event['data']['object']['customer']
-    usage_data = calculate_compute_usage(customer_stripe_id)
-    invoice_item = create_invoice_item_for_compute_usage(customer_stripe_id,
-                                                         usage_data)
-    log.info(f"Created a new invoice item for {customer_stripe_id}: {invoice_item.stripe_id}")
+    event = create_event_from_webhook(stripe_event)
+    if event is not None:
+        customer_stripe_id = stripe_event['data']['object']['customer']
+        usage_data = calculate_compute_usage(customer_stripe_id)
+        invoice_item = create_invoice_item_for_compute_usage(customer_stripe_id,
+                                                             usage_data)
+        log.info(f"Created a new invoice item for {customer_stripe_id}: {invoice_item.stripe_id}")

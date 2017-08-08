@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from django.utils import timezone
 from factory import fuzzy
 from users.tests.factories import UserFactory
-from billing.models import Customer, Plan, Card, Subscription
+from billing.models import Customer, Plan, Card, Subscription, Event
 
 
 class CustomerFactory(factory.django.DjangoModelFactory):
@@ -43,7 +43,7 @@ class CardFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Card
 
-    stripe_id = factory.Sequence(lambda n: "cus_%d" % n)
+    stripe_id = factory.Sequence(lambda n: "card_%d" % n)
     created = fuzzy.FuzzyDateTime(start_dt=timezone.make_aware(datetime.now() - timedelta(days=7)))
     metadata = None
     livemode = False
@@ -85,3 +85,16 @@ class SubscriptionFactory(factory.django.DjangoModelFactory):
     quantity = fuzzy.FuzzyInteger(low=1, high=5)
     status = fuzzy.FuzzyChoice([c[0] for c in Subscription.SUBSCRIPTION_STATUS_CHOICES])
 
+
+class EventFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Event
+
+    stripe_id = factory.Sequence(lambda n: "evt_%d" % n)
+    created = fuzzy.FuzzyDateTime(start_dt=timezone.make_aware(datetime.now() - timedelta(days=7)))
+    metadata = None
+    livemode = False
+    api_version = fuzzy.FuzzyText(length=50)
+    pending_webhooks = fuzzy.FuzzyInteger(low=0, high=5)
+    request = fuzzy.FuzzyText(length=100)
+    event_type = fuzzy.FuzzyChoice(["invoice.upcoming", "invoice.created", "invoice.payment_failed"])

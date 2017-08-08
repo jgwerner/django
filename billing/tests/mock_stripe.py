@@ -431,4 +431,6 @@ class Event:
         json['data']['object']['lines']['data'][0]['plan']['amount'] = kwargs.get("amount")
         json['data']['object']['lines']['data'][0]['plan']['interval'] = kwargs.get("interval")
         json['data']['object']['lines']['data'][0]['plan']['trial_period_days'] = kwargs.get("trial_period")
+        if kwargs.get("stripe_id") is not None:
+            json['id'] = kwargs.get("stripe_id")
         return json
