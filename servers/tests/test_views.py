@@ -5,8 +5,8 @@ from django.conf import settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from jwt_auth.utils import create_server_jwt
 from projects.tests.factories import CollaboratorFactory
-
 from servers.models import Server
 from users.tests.factories import UserFactory
 from servers.tests.factories import (ServerSizeFactory,
@@ -155,6 +155,34 @@ class ServerTest(APITestCase):
         assign_perm('write_project', self.user, self.project)
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_server_api_key(self):
+        server = ServerFactory(project=self.project)
+        server.access_token = create_server_jwt(self.user, str(server.pk))
+        server.save()
+        self.url_kwargs.update({'pk': str(server.pk)})
+        url = reverse('server-api-key', kwargs=self.url_kwargs)
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertTrue('token' in resp.data)
+
+    def test_server_api_key_reset(self):
+        server = ServerFactory(project=self.project)
+        self.url_kwargs.update({'pk': str(server.pk)})
+        url = reverse('server-api-key-reset', kwargs=self.url_kwargs)
+        resp = self.client.post(url)
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertNotEqual(resp.data['token'], server.access_token)
+
+    def test_server_api_key_verify(self):
+        server = ServerFactory(project=self.project)
+        server.access_token = create_server_jwt(self.user, str(server.pk))
+        server.save()
+        self.url_kwargs.update({'pk': str(server.pk)})
+        url = reverse('server-api-key-verify', kwargs=self.url_kwargs)
+        data = {"token": server.access_token}
+        resp = self.client.post(url, data)
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
 
 
 class ServerRunStatisticsTestCase(APITestCase):

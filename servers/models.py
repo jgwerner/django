@@ -8,7 +8,6 @@ from django.urls import reverse
 from django.utils.text import slugify
 from django_redis import get_redis_connection
 
-from base.namespace import Namespace
 from servers.managers import ServerQuerySet
 from servers.spawners import DockerSpawner
 
@@ -51,6 +50,7 @@ class Server(models.Model):
     connected = models.ManyToManyField('self', blank=True, related_name='servers')
     image_name = models.CharField(max_length=100, blank=True)
     host = models.ForeignKey('infrastructure.DockerHost', related_name='servers', null=True, blank=True)
+    access_token = models.TextField(blank=True)
 
     def __str__(self):
         return self.name
