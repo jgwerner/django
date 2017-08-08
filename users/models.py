@@ -2,8 +2,13 @@ from pathlib import Path
 import django
 from django.conf import settings
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, UserManager
 from django.urls import reverse
+
+
+class CustomUserManager(UserManager):
+    def get_by_natural_key(self, username):
+        return self.get(username=username, is_active=True)
 
 
 class User(AbstractUser):
@@ -12,6 +17,8 @@ class User(AbstractUser):
                                 max_length=150,
                                 validators=[django.contrib.auth.validators.UnicodeUsernameValidator()],
                                 verbose_name='username')
+
+    objects = CustomUserManager()
 
     def get_absolute_url(self, version, namespace):
         return reverse('user-detail', kwargs={'version': version, 'pk': str(self.pk)})

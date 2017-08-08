@@ -5,6 +5,7 @@ from django.conf import settings
 from django.contrib.postgres.fields import HStoreField, JSONField
 from django.db import models
 from django.urls import reverse
+from django.utils.text import slugify
 from django_redis import get_redis_connection
 
 from base.namespace import Namespace
@@ -40,7 +41,7 @@ class Server(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     name = models.CharField(max_length=50)
     container_id = models.CharField(max_length=100, blank=True)
-    environment_resources = models.ForeignKey('EnvironmentResource')
+    server_size = models.ForeignKey('ServerSize')
     env_vars = HStoreField(default={})
     startup_script = models.CharField(max_length=50, blank=True)
     project = models.ForeignKey('projects.Project', related_name='servers')
@@ -68,7 +69,7 @@ class Server(models.Model):
 
     @property
     def container_name(self):
-        return self.CONTAINER_NAME_FORMAT.format(self.pk, self.name)
+        return slugify(self.CONTAINER_NAME_FORMAT.format(self.pk, self.name))
 
     @property
     def volume_path(self):
@@ -115,7 +116,7 @@ class Server(models.Model):
         return urlsplit(os.environ.get("DOCKER_HOST")).hostname
 
 
-class EnvironmentResource(models.Model):
+class ServerSize(models.Model):
     name = models.CharField(unique=True, max_length=50)
     cpu = models.IntegerField()
     memory = models.IntegerField()
@@ -127,9 +128,9 @@ class EnvironmentResource(models.Model):
     def __str__(self):
         return self.name
 
-    def get_absolute_url(self, version, namespace: Namespace):
-        return reverse('environmentresource-detail', kwargs={'namespace': namespace.name, 'version': version,
-                       'pk': str(self.pk)})
+    def get_absolute_url(self, version, *args, **kwargs):
+        return reverse('serversize-detail', kwargs={'version': version,
+                                                    'pk': str(self.pk)})
 
 
 class ServerRunStatistics(models.Model):

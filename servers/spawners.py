@@ -118,7 +118,7 @@ class DockerSpawner(ServerSpawner):
         ports = {port: None for port in self._get_exposed_ports()}
         ports[self.container_port] = None
         config = dict(
-            mem_limit='{}m'.format(self.server.environment_resources.memory),
+            mem_limit='{}m'.format(self.server.server_size.memory),
             port_bindings=ports,
             binds=binds,
             restart_policy=self.restart,

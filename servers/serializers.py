@@ -3,14 +3,16 @@ from django.contrib.sites.shortcuts import get_current_site
 from rest_framework import serializers
 
 from base.serializers import SearchSerializerMixin
+from servers.models import (ServerSize, Server,
+                            ServerRunStatistics,
+                            ServerStatistics,
+                            SshTunnel)
 from projects.serializers import ProjectSerializer
-from servers.models import (EnvironmentResource, Server, ServerRunStatistics,
-                            ServerStatistics, SshTunnel)
 
 
-class EnvironmentResourceSerializer(serializers.ModelSerializer):
+class ServerSizeSerializer(serializers.ModelSerializer):
     class Meta:
-        model = EnvironmentResource
+        model = ServerSize
         fields = ('id', 'name', 'cpu', 'memory', 'active')
 
 
@@ -23,12 +25,12 @@ class ServerSerializer(SearchSerializerMixin, serializers.ModelSerializer):
 
     class Meta:
         model = Server
-        fields = ('id', 'name', 'created_at', 'image_name', 'environment_resources', 'startup_script', 'config',
+        fields = ('id', 'name', 'created_at', 'image_name', 'server_size', 'startup_script', 'config',
                   'status', 'connected', 'host', 'endpoint', 'logs_url', 'status_url', 'project')
         read_only_fields = ('created_at',)
         extra_kwargs = {
             'connected': {'allow_empty': True, 'required': False},
-            'environment_resources': {'allow_empty': True, 'required': False},
+            'server_size': {'allow_empty': True, 'required': False},
         }
 
     def validate_config(self, value):
@@ -39,12 +41,12 @@ class ServerSerializer(SearchSerializerMixin, serializers.ModelSerializer):
 
     def create(self, validated_data):
         config = validated_data.pop("config", {})
-        env_resource = (validated_data.pop('environment_resources', None) or
-                        EnvironmentResource.objects.order_by('created_at').first())
+        server_size = (validated_data.pop('server_size', None) or
+                       ServerSize.objects.order_by('created_at').first())
         return Server.objects.create(project_id=self.context['view'].kwargs['project_pk'],
                                      created_by=self.context['request'].user,
                                      config=config,
-                                     environment_resources=env_resource,
+                                     server_size=server_size,
                                      **validated_data)
 
     def update(self, instance, validated_data):

@@ -116,10 +116,15 @@ Modify environment variables located in `env` file with your local settings. You
 ```
     AWS_ACCESS_KEY_ID=
     AWS_SECRET_ACCESS_KEY=
+    AWS_SES_ACCESS_KEY_ID=
+    AWS_SES_SECRET_ACCESS_KEY=
+    AWS_SES_REGION_NAME=
+    AWS_SES_REGION_ENDPOINT=
     AWS_STORAGE_BUCKET_NAME=
     C_ROOT=1
     DATABASE_URL=postgres://postgres:@db:5432/postgres/
     DEBUG=True
+    DEFAULT_FROM_EMAIL=
     DJANGO_SETTINGS_MODULE=appdj.settings.prod
     DOCKER_DOMAIN=172.17.0.1
     DOCKER_EVENTS_URL=http://events:8000
@@ -149,7 +154,9 @@ Modify environment variables located in `env` file with your local settings. You
     SLACK_SECRET=
     STRIPE_SECRET_KEY=
     TBS_DEFAULT_VERSION=
+    TBS_DOMAIN=localhost:3000
     TBS_HOST=
+	TBS_PORT=
     TBS_HTTPS=
 ```
 

@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from base.views import ProjectMixin, UUIDRegexMixin, ServerMixin
+from base.permissions import IsAdminUser
 from projects.models import Project
 from projects.permissions import ProjectChildPermission
 from .tasks import start_server, stop_server, terminate_server
@@ -91,9 +92,10 @@ class SshTunnelViewSet(ProjectMixin, ServerMixin, viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, ServerChildPermission)
 
 
-class EnvironmentResourceViewSet(UUIDRegexMixin, viewsets.ModelViewSet):
-    queryset = models.EnvironmentResource.objects.all()
-    serializer_class = serializers.EnvironmentResourceSerializer
+class ServerSizeViewSet(UUIDRegexMixin, viewsets.ModelViewSet):
+    queryset = models.ServerSize.objects.all()
+    serializer_class = serializers.ServerSizeSerializer
+    permission_classes = (IsAdminUser,)
 
 
 @api_view(['GET'], exclude_from_schema=True)

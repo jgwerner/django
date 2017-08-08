@@ -8,9 +8,9 @@ from servers import models
 from users.tests.factories import UserFactory
 
 
-class EnvironmentResourcesFactory(factory.django.DjangoModelFactory):
+class ServerSizeFactory(factory.django.DjangoModelFactory):
     class Meta:
-        model = models.EnvironmentResource
+        model = models.ServerSize
 
     name = factory.Sequence(lambda n: 'resource_{}'.format(n))
     cpu = random.randint(1, 9)
@@ -25,7 +25,7 @@ class ServerFactory(factory.django.DjangoModelFactory):
     private_ip = '127.0.0.1'
     public_ip = '127.0.0.1'
     name = factory.Faker('name')
-    environment_resources = factory.SubFactory(EnvironmentResourcesFactory)
+    server_size = factory.SubFactory(ServerSizeFactory)
     project = factory.SubFactory(ProjectFactory)
     created_by = factory.SubFactory(UserFactory)
     image_name = '3blades/server'

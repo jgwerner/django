@@ -30,7 +30,6 @@ from search.views import SearchView
 
 router = routers.DefaultRouter()
 
-router.register(r'servers/options/resources', servers_views.EnvironmentResourceViewSet)
 router.register(r'hosts', infra_views.DockerHostViewSet)
 router.register(r'triggers', trigger_views.TriggerViewSet)
 
@@ -49,6 +48,7 @@ project_router.register(r'servers/(?P<server_pk>[^/.]+)/run-stats',
                         servers_views.ServerRunStatisticsViewSet)
 project_router.register(r'servers/(?P<server_pk>[^/.]+)/stats',
                         servers_views.ServerStatisticsViewSet)
+project_router.register(r'servers/(?P<server_pk>[^/.]+)/triggers', trigger_views.ServerActionViewSet)
 project_router.register(r'collaborators', project_views.CollaboratorViewSet)
 
 if settings.ENABLE_BILLING:
@@ -59,6 +59,9 @@ if settings.ENABLE_BILLING:
     router.register(r'billing/invoices', billing_views.InvoiceViewSet)
 
 router.register(r'service/(?P<server_pk>[^/.]+)/trigger', trigger_views.ServerActionViewSet)
+
+servers_router = routers.SimpleRouter()
+servers_router.register("options/server-size", servers_views.ServerSizeViewSet)
 
 
 urlpatterns = [
@@ -86,6 +89,7 @@ urlpatterns = [
         servers_views.stop, name='server-stop'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_pk>[\w-]+)/servers/(?P<pk>[^/.]+)/terminate/$',
         servers_views.terminate, name='server-terminate'),
+    url(r'^servers/', include(servers_router.urls)),
     url(r'(?P<namespace>[\w-]+)/billing/subscription_required/$', billing_views.no_subscription,
         name="subscription-required"),
     url(r'webhooks/incoming/billing/invoice', billing_views.stripe_invoice_created,

@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'django_filters',
     'haystack',
     'djoser',
+    'django_ses',
 
     'base',
     'users',
@@ -105,6 +106,12 @@ WSGI_APPLICATION = 'appdj.wsgi.application'
 AUTH_USER_MODEL = 'users.User'
 
 # Email Settings
+EMAIL_BACKEND = 'django_ses.SESBackend'
+AWS_SES_ACCESS_KEY_ID = os.getenv("AWS_SES_ACCESS_KEY_ID")
+AWS_SES_SECRET_ACCESS_KEY = os.getenv("AWS_SES_SECRET_ACCESS_KEY")
+AWS_SES_REGION_NAME = os.getenv("AWS_SES_REGION_NAME")
+AWS_SES_REGION_ENDPOINT = os.getenv("AWS_SES_REGION_ENDPOINT")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
 EMAIL_HOST = os.environ.get('EMAIL_HOST', 'localhost')
 EMAIL_PORT = os.environ.get('EMAIL_PORT', '587')
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
@@ -238,7 +245,7 @@ REST_FRAMEWORK = {
 }
 
 DJOSER = {
-    'DOMAIN': "",
+    'DOMAIN': os.getenv("TBS_DOMAIN"),
     'SITE_NAME': "3Blades",
     'PASSWORD_RESET_CONFIRM_URL': "auth/password-reset?uid={uid}&token={token}",
     'SERIALIZERS': {'user': "users.serializers.UserSerializer"}
@@ -316,6 +323,7 @@ MIGRATION_MODULES = {
     'oauth2_provider': 'appdj.migrations.oauth2_provider',
     'social_django': 'appdj.migrations.social_django',
     'guardian': 'appdj.migrations.guardian',
+    'django_ses': 'appdj.migrations.django_ses',
 }
 
 

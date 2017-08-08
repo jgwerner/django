@@ -7,6 +7,7 @@ from djoser import views as djoser_views
 
 from oauth2_provider import views as oauth2_views
 from jwt_auth import views as jwt_views
+from base.views import tbs_status
 from users import views as user_views
 
 
@@ -24,7 +25,8 @@ urlpatterns = [
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^tbs-admin/', admin.site.urls),
     url(r'^(?P<version>{major_version}(\.[0-9]+)?)/'.format(major_version=settings.DEFAULT_VERSION),
-        include("appdj.urls.unversioned"))
+        include("appdj.urls.unversioned")),
+    url(r'^tbs-status/', tbs_status, name="tbs-status")
 ]
 
 if settings.DEBUG:
