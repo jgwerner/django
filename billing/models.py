@@ -216,7 +216,8 @@ class InvoiceItem(StripeModel):
     subscription = models.ForeignKey(Subscription, on_delete=models.CASCADE, null=True)
     amount = models.IntegerField()
     currency = models.CharField(max_length=10)
-    invoice_date = models.DateTimeField()
+    # Nullable since this item could be for an upcoming invoice
+    invoice_date = models.DateTimeField(null=True)
     proration = models.BooleanField(default=False)
     quantity = models.IntegerField()
     description = models.TextField(default="")

@@ -1,13 +1,13 @@
 import logging
 from datetime import datetime
-from decimal import Decimal
+from decimal import Decimal, getcontext
 from collections import defaultdict
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
 
 from users.models import User
-from servers.models import Server
+from servers.models import Server, ServerSize
 from servers.utils import get_server_usage
 
 from billing.models import (Customer, Invoice,
@@ -23,6 +23,7 @@ else:
 
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
+getcontext().prec = 6
 
 
 def handle_foreign_key_field(stripe_data, stripe_field, model_field):
@@ -237,16 +238,18 @@ def calculate_compute_usage(customer_stripe_id):
 
     # Is there a more efficient way to do these queries?
     projects = user.collaborator_set.filter(owner=True).values_list('project__pk', flat=True)
-    servers = Server.objects.filter(project__pk__in=projects).select_related('server_size').distinct('server_size')
+    server_sizes = ServerSize.objects.filter(server__project__pk__in=projects).distinct()
+    servers = Server.objects.filter(project__pk__in=projects).select_related('server_size')
     total_cost = 0
-    for server in servers:
+    for server_size in server_sizes:
         # Essentially forcing this query to happen twice - not good.
-        server_pks = Server.objects.filter(project__pk__in=projects).values_list("id", flat=True)
+        servers = Server.objects.filter(project__pk__in=projects,
+                                        server_size=server_size).values_list("id", flat=True)
 
-        this_size_data = get_server_usage(server_pks, begin_measure_time=usage_start_time)
+        this_size_data = get_server_usage(servers, begin_measure_time=usage_start_time)
         # server_size.cost_per_second is in _dollars_, we want cents
-        this_size_cost = 100 * server.server_size.cost_per_second * Decimal(this_size_data['duration'].total_seconds())
-        usage_data[server.server_size] += this_size_cost
+        this_size_cost = 100 * server_size.cost_per_second * Decimal(this_size_data['duration'].total_seconds())
+        usage_data[server_size] += this_size_cost
         total_cost += this_size_cost
 
     usage_data['total'] = total_cost
@@ -260,6 +263,7 @@ def create_invoice_item_for_compute_usage(customer_stripe_id, usage_data):
                                                     currency="usd",
                                                     description="3Blades Compute Usage")
     converted_data = convert_stripe_object(InvoiceItem, stripe_invoice_item)
+    converted_data['quantity'] = 1
     return InvoiceItem.objects.create(**converted_data)
 
 

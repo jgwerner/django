@@ -22,4 +22,9 @@ class Migration(migrations.Migration):
             name='amount',
             field=models.PositiveIntegerField(help_text='Amount, in cents (or equivalent) the plan should cost. For example, a value of 500 -> $5.00'),
         ),
+        migrations.AlterField(
+            model_name='invoiceitem',
+            name='invoice_date',
+            field=models.DateTimeField(null=True),
+        ),
     ]

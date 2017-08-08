@@ -299,6 +299,38 @@ class Invoice:
         return [Invoice.invoice]
 
 
+class InvoiceItem:
+    invoice_item = None
+
+    @classmethod
+    def create(cls, *args, **kwargs):
+        mock_response = {"id": "ii_" + generate_fake_stripe_suffix(24),
+                         "object": "invoiceitem",
+                         "amount": kwargs.get("amount"),
+                         "currency": kwargs.get("currency"),
+                         "customer": kwargs.get("customer"),
+                         "date": 1502191238,
+                         "description": "3Blades Compute Usage",
+                         "discountable": True,
+                         "invoice": None,
+                         "livemode": False,
+                         "metadata": {
+                         },
+                         "period": {
+                             "start": 1502191238,
+                             "end": 1502191238
+                         },
+                         "plan": None,
+                         "proration": False,
+                         "quantity": kwargs.get("quantity"),
+                         "subscription": None}
+        for field in ["amount", "currency", "customer", "quantity"]:
+            mock_response[field] = kwargs.get(field)
+
+        InvoiceItem.invoice_item = DummyStripeObj("invoice_item", mock_response)
+        return InvoiceItem.invoice_item
+
+
 class Event:
     webhook_obj = {"api_version": "2017-04-06",
                        "created": int(time.time()),
