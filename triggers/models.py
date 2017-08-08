@@ -47,7 +47,7 @@ class Trigger(models.Model):
             self.effect.dispatch(url)
         if self.webhook and self.webhook.get('url'):
             logger.debug(f'Dispatching webhook {self.webhook}')
-            resp = requests.post(self.webhook['url'], json=self.webhook.get('config', {}))
+            resp = requests.post(self.webhook['url'], json=self.webhook.get('payload', {}))
             resp.raise_for_status()
         self.effect = new_effect
         self.cause = new_cause
