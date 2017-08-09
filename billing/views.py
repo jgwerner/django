@@ -14,9 +14,10 @@ from base.views import NamespaceMixin
 from base.permissions import IsAdminUser
 from billing.models import (Plan, Customer,
                             Card, Subscription,
-                            Invoice)
-from billing.serializers import (PlanSerializer, CustomerSerializer, CardSerializer,
-                                 SubscriptionSerializer, InvoiceSerializer)
+                            Invoice, InvoiceItem)
+from billing.serializers import (PlanSerializer, CustomerSerializer,
+                                 CardSerializer, SubscriptionSerializer,
+                                 InvoiceSerializer, InvoiceItemSerializer)
 from billing.stripe_utils import handle_stripe_invoice_webhook, handle_upcoming_invoice
 
 
@@ -146,6 +147,12 @@ class InvoiceViewSet(NamespaceMixin,
                      viewsets.ReadOnlyModelViewSet):
     queryset = Invoice.objects.all()
     serializer_class = InvoiceSerializer
+
+
+class InvoiceItemViewSet(NamespaceMixin,
+                         viewsets.ReadOnlyModelViewSet):
+    queryset = InvoiceItem.objects.all()
+    serializer_class = InvoiceItemSerializer
 
 
 @require_POST

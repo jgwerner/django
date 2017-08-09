@@ -246,18 +246,14 @@ def calculate_compute_usage(customer_stripe_id):
 
     # Is there a more efficient way to do these queries?
     projects = user.collaborator_set.filter(owner=True).values_list('project__pk', flat=True)
-    server_sizes = ServerSize.objects.filter(server__project__pk__in=projects).distinct()
+    # server_sizes = ServerSize.objects.filter(server__project__pk__in=projects).distinct()
     servers = Server.objects.filter(project__pk__in=projects).select_related('server_size')
     total_cost = 0
-    for server_size in server_sizes:
-        # Essentially forcing this query to happen twice - not good.
-        servers = Server.objects.filter(project__pk__in=projects,
-                                        server_size=server_size).values_list("id", flat=True)
-
-        this_size_data = get_server_usage(servers, begin_measure_time=usage_start_time)
+    for server in servers:
+        this_size_data = get_server_usage([server], begin_measure_time=usage_start_time)
         # server_size.cost_per_second is in _dollars_, we want cents
-        this_size_cost = 100 * server_size.cost_per_second * Decimal(this_size_data['duration'].total_seconds())
-        usage_data[server_size] += this_size_cost
+        this_size_cost = 100 * server.server_size.cost_per_second * Decimal(this_size_data['duration'].total_seconds())
+        usage_data[server] += this_size_cost
         total_cost += this_size_cost
 
     usage_data['total'] = total_cost

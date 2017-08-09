@@ -4,7 +4,7 @@ from rest_framework import serializers
 
 from billing.models import (Customer, Card,
                             Plan, Subscription,
-                            Invoice)
+                            Invoice, InvoiceItem)
 from billing.stripe_utils import (convert_stripe_object,
                                   create_stripe_customer_from_user,
                                   create_plan_in_stripe,
@@ -150,4 +150,10 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 class InvoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Invoice
+        fields = "__all__"
+
+
+class InvoiceItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InvoiceItem
         fields = "__all__"

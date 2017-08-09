@@ -57,6 +57,7 @@ if settings.ENABLE_BILLING:
     router.register(r'billing/plans', billing_views.PlanViewSet)
     router.register(r'billing/subscriptions', billing_views.SubscriptionViewSet)
     router.register(r'billing/invoices', billing_views.InvoiceViewSet)
+    router.register(r'billing/invoice-items', billing_views.InvoiceViewSet)
 
 router.register(r'service/(?P<server_pk>[^/.]+)/trigger', trigger_views.ServerActionViewSet)
 

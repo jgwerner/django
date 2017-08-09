@@ -3,7 +3,9 @@ from datetime import datetime, timedelta
 from django.utils import timezone
 from factory import fuzzy
 from users.tests.factories import UserFactory
-from billing.models import Customer, Plan, Card, Subscription, Event
+from billing.models import (Customer, Plan, Card,
+                            Subscription, Event,
+                            Invoice, InvoiceItem)
 
 
 class CustomerFactory(factory.django.DjangoModelFactory):
@@ -98,3 +100,47 @@ class EventFactory(factory.django.DjangoModelFactory):
     pending_webhooks = fuzzy.FuzzyInteger(low=0, high=5)
     request = fuzzy.FuzzyText(length=100)
     event_type = fuzzy.FuzzyChoice(["invoice.upcoming", "invoice.created", "invoice.payment_failed"])
+
+
+class InvoiceFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Invoice
+
+    # Note that specifying none of these fields can currently create a lot of invalid
+    # States relating to the period of billing, invoice amount, and payment status
+    # If you want a valid invoice, you should specify all the relevant fields, or generate
+    # One via subscription
+    customer = factory.SubFactory(CustomerFactory)
+    subscription = factory.SubFactory(Subscription)
+    amount_due = fuzzy.FuzzyInteger(low=100, high=5000)
+    application_fee = fuzzy.FuzzyInteger(low=0, high=100)
+    atttempt_count = fuzzy.FuzzyInteger(low=0, high=3)
+    attempted = fuzzy.FuzzyChoice([True, False])
+    closed = fuzzy.FuzzyChoice([True, False])
+    currency = "usd"
+    invoice_date = fuzzy.FuzzyDateTime(start_dt=timezone.make_aware(datetime.now() - timedelta(days=365)))
+    description = fuzzy.FuzzyText(length=100)
+    next_payment_attempt = None
+    paid = fuzzy.FuzzyChoice([True, False])
+    period_start = fuzzy.FuzzyDateTime(start_dt=timezone.make_aware(datetime.now() - timedelta(days=365)))
+    period_end = fuzzy.FuzzyDateTime(start_dt=timezone.make_aware(datetime.now() - timedelta(days=7)))
+    reciept_number = fuzzy.FuzzyText(length=255)
+    starting_balance = 0
+    statement_descriptor = fuzzy.FuzzyText(length=100)
+    subtotal = fuzzy.FuzzyInteger(low=100, high=4000)
+    tax = fuzzy.FuzzyInteger(low=0, high=1000)
+    total = fuzzy.FuzzyInteger(low=100, high=1000)
+
+
+class InvoiceItemFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = InvoiceItem
+
+    invoice = factory.SubFactory(InvoiceFactory)
+    subscription = None
+    amount = fuzzy.FuzzyInteger(low=100, high=1000)
+    currency = "usd"
+    invoice_date = fuzzy.FuzzyDateTime(start_dt=timezone.make_aware(datetime.now() - timedelta(days=365)))
+    proration = fuzzy.FuzzyChoice([True, False])
+    quantity = fuzzy.FuzzyInteger(low=1, high=5)
+    description = fuzzy.FuzzyText(length=200)
