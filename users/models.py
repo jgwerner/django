@@ -1,7 +1,7 @@
 from pathlib import Path
 import django
 from django.conf import settings
-from django.db import models
+from django.db import models, IntegrityError
 from django.contrib.auth.models import AbstractUser, UserManager
 from django.urls import reverse
 
@@ -19,6 +19,14 @@ class User(AbstractUser):
                                 verbose_name='username')
 
     objects = CustomUserManager()
+
+    def save(self, *args, **kwargs):
+        existing_users = User.objects.filter(username=self.username,
+                                             is_active=True)
+        if existing_users.exists():
+            raise IntegrityError(f"A user with the username {self.username} already exists.")
+        else:
+            super(User, self).save(*args, **kwargs)
 
     def get_absolute_url(self, version, namespace):
         return reverse('user-detail', kwargs={'version': version, 'pk': str(self.pk)})
