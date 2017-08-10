@@ -1,13 +1,17 @@
-import stripe
 import logging
 from datetime import datetime
 from django.conf import settings
 from django.test import TestCase
-
 from users.tests.factories import UserFactory
 from billing.models import Customer, Plan, Invoice
 from billing.tests.factories import PlanFactory
 from billing import stripe_utils
+
+if settings.MOCK_STRIPE:
+    from billing.tests import mock_stripe as stripe
+else:
+    import stripe
+
 stripe.api_key = settings.STRIPE_SECRET_KEY
 log = logging.getLogger('billing')
 
@@ -58,7 +62,16 @@ class TestStripeUtils(TestCase):
                     'plan': plan}
         subscription = stripe_utils.create_subscription_in_stripe(sub_data)
 
-        stripe_utils.sync_invoices_for_customer(customer)
+        now = datetime.now()
+        mock_invoices = None
+        if settings.MOCK_STRIPE:
+            kwargs = {'amount_due': plan.amount,
+                      'date': now.timestamp(),
+                      'subscription': subscription.stripe_id}
+            mock_invoices = stripe.Invoice.list(customer=customer.stripe_id,
+                                                **kwargs)
+
+        stripe_utils.sync_invoices_for_customer(customer, stripe_invoices=mock_invoices)
 
         self.assertEqual(Invoice.objects.count(), 1)
 

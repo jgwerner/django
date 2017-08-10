@@ -12,6 +12,8 @@ from projects.models import (Project, Collaborator,
                              SyncedResource, ProjectFile)
 
 User = get_user_model()
+import logging
+log = logging.getLogger('projects')
 
 
 class ProjectSerializer(SearchSerializerMixin, serializers.ModelSerializer):
@@ -21,6 +23,16 @@ class ProjectSerializer(SearchSerializerMixin, serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = ('id', 'name', 'description', 'private', 'last_updated', 'owner', 'collaborators')
+
+    def validate_name(self, value):
+        request = self.context['request']
+        existing_pk = self.context.get("pk")
+        if Project.objects.filter(name=value,
+                                  collaborator__user=request.user,
+                                  collaborator__user__is_active=True,
+                                  collaborator__owner=True).exclude(pk=existing_pk).exists():
+            raise serializers.ValidationError("You can have only one project named %s" % value)
+        return value
 
     def create(self, validated_data):
         collaborators = validated_data.pop('collaborators', [])
@@ -101,8 +113,9 @@ class CollaboratorSerializer(serializers.ModelSerializer):
         fields = ('id', 'owner', 'joined', 'username', 'email', 'first_name', 'last_name', 'member', 'permissions')
 
     def validate_member(self, value):
-        if not User.objects.filter(Q(username=value) | Q(email=value)).exists():
+        if not User.objects.filter(Q(username=value) | Q(email=value), is_active=True).exists():
             raise serializers.ValidationError("User %s does not exists" % value)
+        return value
 
     def create(self, validated_data):
         permissions = validated_data.pop('permissions', ['read_project'])
@@ -112,7 +125,7 @@ class CollaboratorSerializer(serializers.ModelSerializer):
         owner = validated_data.get("owner", False)
         if owner is True:
             Collaborator.objects.filter(project_id=project_id).update(owner=False)
-        user = User.objects.filter(Q(username=member) | Q(email=member)).first()
+        user = User.objects.filter(Q(username=member) | Q(email=member), is_active=True).first()
         for permission in permissions:
             assign_perm(permission, user, project)
         return Collaborator.objects.create(user=user, project_id=project_id, **validated_data)

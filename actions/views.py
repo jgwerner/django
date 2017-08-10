@@ -22,7 +22,7 @@ class ActionViewSet(viewsets.ModelViewSet):
 
 
 @api_view(['POST'])
-def cancel(request, pk=None):
+def cancel(request, version, pk=None):
     """
     Cancel an action object by ID
     """

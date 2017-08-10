@@ -1,17 +1,18 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 
 START_TIME=`date +"%s"`
 
 
 
-watchman -j <<-EOT
+/srv/app/watchman -j <<-EOT
 ["trigger", "/workspaces", {
   "name": "test_trigger",
   "expression": ["allof",
+    ["not", ["match","*ssh"]],
     ["match", "*.*"],
     ["since", $START_TIME, "ctime"]
   ],
-  "command": ["venv/bin/python", "run_watchman.py", "$DJANGO_SETTINGS_MODULE"],
+  "command": ["/srv/env/bin/python", "run_watchman.py", "$DJANGO_SETTINGS_MODULE"],  
   "chdir": "`pwd`",
   "stdin": ["name", "exists"]
 }]

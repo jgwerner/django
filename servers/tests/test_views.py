@@ -1,14 +1,20 @@
 from unittest.mock import patch
 from guardian.shortcuts import assign_perm
 from django.urls import reverse
+from django.conf import settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from projects.tests.factories import CollaboratorFactory
 
-from ..models import Server
-from .factories import EnvironmentResourcesFactory, ServerStatisticsFactory,\
-    ServerRunStatisticsFactory, ServerFactory
+from servers.models import Server
+from users.tests.factories import UserFactory
+from servers.tests.factories import (ServerSizeFactory,
+                                     ServerStatisticsFactory,
+                                     ServerRunStatisticsFactory,
+                                     ServerFactory)
+import logging
+log = logging.getLogger('servers')
 
 
 class ServerTest(APITestCase):
@@ -17,9 +23,11 @@ class ServerTest(APITestCase):
         self.user = collaborator.user
         self.project = collaborator.project
         self.token_header = 'Token {}'.format(self.user.auth_token.key)
-        self.url_kwargs = {'namespace': self.user.username, 'project_pk': str(self.project.pk)}
-        self.env_res = EnvironmentResourcesFactory(name='Nano')
-        EnvironmentResourcesFactory()
+        self.url_kwargs = {'namespace': self.user.username,
+                           'project_pk': str(self.project.pk),
+                           'version': settings.DEFAULT_VERSION}
+        self.server_size = ServerSizeFactory(name='Nano')
+        ServerSizeFactory()
         self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
 
     def test_create_server(self):
@@ -35,7 +43,8 @@ class ServerTest(APITestCase):
         db_server = Server.objects.get()
         self.assertEqual(
             response.data['endpoint'],
-            'http://example.com/{namespace}/projects/{project_id}/servers/{server_id}/endpoint/jupyter/tree'.format(
+            'http://example.com/{version}/{namespace}/projects/{project_id}/servers/{server_id}/endpoint/jupyter/tree'.format(
+                version=settings.DEFAULT_VERSION,
                 namespace=self.user.username,
                 project_id=self.project.pk,
                 server_id=db_server.id
@@ -43,8 +52,22 @@ class ServerTest(APITestCase):
         )
         self.assertEqual(Server.objects.count(), 1)
         self.assertEqual(db_server.name, data['name'])
-        self.assertEqual(db_server.environment_resources, self.env_res)
-        self.assertEqual(db_server.environment_resources.name, 'Nano')
+        self.assertEqual(db_server.server_size, self.server_size)
+        self.assertEqual(db_server.server_size.name, 'Nano')
+
+    def test_create_server_rejects_invalid_server_type(self):
+        url = reverse('server-list', kwargs=self.url_kwargs)
+        data = dict(
+            name='test',
+            project=str(self.project.pk),
+            connected=[],
+            config={'type': 'foo'},
+        )
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data.get("config")[0], "foo is not a valid server type")
+        # We only want one error.
+        self.assertEqual(len(response.data.keys()), 1)
 
     def test_list_servers(self):
         servers_count = 4
@@ -73,7 +96,7 @@ class ServerTest(APITestCase):
         url = reverse('server-detail', kwargs=self.url_kwargs)
         data = dict(
             name='test',
-            environment_resources=str(self.env_res.pk),
+            server_size=str(self.server_size.pk),
             connected=[]
         )
         response = self.client.put(url, data)
@@ -140,7 +163,9 @@ class ServerRunStatisticsTestCase(APITestCase):
         self.user = collaborator.user
         self.project = collaborator.project
         self.token_header = 'Token {}'.format(self.user.auth_token.key)
-        self.url_kwargs = {'namespace': self.user.username, 'project_pk': str(self.project.pk)}
+        self.url_kwargs = {'namespace': self.user.username,
+                           'project_pk': str(self.project.pk),
+                           'version': settings.DEFAULT_VERSION}
         self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
 
     def test_list(self):
@@ -148,7 +173,8 @@ class ServerRunStatisticsTestCase(APITestCase):
         url = reverse('serverrunstatistics-list', kwargs={
             'namespace': self.project.get_owner_name(),
             'project_pk': str(self.project.pk),
-            'server_pk': str(stats.server.pk)
+            'server_pk': str(stats.server.pk),
+            'version': settings.DEFAULT_VERSION
         })
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -167,7 +193,9 @@ class ServerStatisticsTestCase(APITestCase):
         self.user = collaborator.user
         self.project = collaborator.project
         self.token_header = 'Token {}'.format(self.user.auth_token.key)
-        self.url_kwargs = {'namespace': self.user.username, 'project_pk': str(self.project.pk)}
+        self.url_kwargs = {'namespace': self.user.username,
+                           'project_pk': str(self.project.pk),
+                           'version': settings.DEFAULT_VERSION}
         self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
 
     def test_list(self):
@@ -175,7 +203,8 @@ class ServerStatisticsTestCase(APITestCase):
         url = reverse('serverstatistics-list', kwargs={
             'namespace': self.project.get_owner_name(),
             'project_pk': str(self.project.pk),
-            'server_pk': str(stats.server.pk)
+            'server_pk': str(stats.server.pk),
+            'version': settings.DEFAULT_VERSION
         })
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -185,3 +214,32 @@ class ServerStatisticsTestCase(APITestCase):
             'stop': stats.stop.isoformat('T')[:-6] + 'Z',
         }
         self.assertDictEqual(response.data, expected)
+
+
+class ServerSizeTestCase(APITestCase):
+    def setUp(self):
+        self.user = UserFactory()
+        self.token_header = 'Token {}'.format(self.user.auth_token.key)
+        self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+        self.server_size = ServerSizeFactory()
+
+    def test_server_size_detail(self):
+        # Indirectly tests get_absolute_url
+        url = reverse("serversize-detail", kwargs={'version': settings.DEFAULT_VERSION,
+                                                   'pk': self.server_size.pk})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data.get("id"), str(self.server_size.pk))
+
+    def test_non_staff_cannot_create_server_size(self):
+        non_staff = UserFactory(is_staff=False)
+        token_header = 'Token {}'.format(non_staff.auth_token.key)
+        client = self.client_class(HTTP_AUTHORIZATION=token_header)
+
+        data = {'name': "Permission Test",
+                'cpu': 4,
+                'memory': 1024,
+                'active': True}
+        url = reverse("serversize-list", kwargs={'version': settings.DEFAULT_VERSION})
+        response = client.post(url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

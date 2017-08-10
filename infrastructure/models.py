@@ -1,13 +1,13 @@
 import logging
 from django.conf import settings
 from django.db import models
+from django.urls import reverse
 from docker import Client
-from docker.errors import APIError
 
 from .managers import DockerHostQuerySet
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("infrastructure")
 
 
 class DockerHost(models.Model):
@@ -26,19 +26,23 @@ class DockerHost(models.Model):
     def __str__(self):
         return self.name
 
+    def get_absolute_url(self, version, namespace):
+        return reverse('dockerhost-detail', kwargs={
+            'namespace': namespace.name, 'version': version, 'pk': str(self.pk)})
+
     @property
     def url(self):
         return 'tcp://{self.ip}:{self.port}'.format(self=self)
 
     @property
     def client(self):
-        return Client(base_url=self.url)
+        return Client(base_url=self.url, timeout=3)
 
     @property
     def status(self):
         try:
             self.client.info()
-        except APIError:
-            logger.exception("Node status error")
+        except Exception as e:
+            logger.exception("Node status error: {excep}".format(excep=e))
             return self.NOT_AVAILABLE
         return self.AVAILABLE

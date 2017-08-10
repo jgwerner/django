@@ -7,6 +7,7 @@ from django.urls import reverse
 from requests import Session, Request
 
 from base.namespace import Namespace
+from utils import create_jwt_token
 
 
 class ActionQuerySet(models.QuerySet):
@@ -65,19 +66,21 @@ class Action(models.Model):
     def __str__(self):
         return self.action
 
-    def get_absolute_url(self, namespace: Namespace):
-        return reverse('action-detail', args=[str(self.id)])
+    def get_absolute_url(self, version, namespace: Namespace):
+        return reverse('action-detail', kwargs={'version': version,
+                                                'pk': str(self.pk)})
 
     def get_state_display(self):
         return dict(self.STATE_CHOICES)[self.state]
 
-    def content_object_url(self, namespace: Namespace):
-        return self.content_object.get_absolute_url(namespace) if self.content_object else ''
+    def content_object_url(self, version, namespace: Namespace):
+        return self.content_object.get_absolute_url(version, namespace) if self.content_object else ''
 
     def dispatch(self, url='http://localhost'):
         url = '{}{}'.format(url, self.path)
         s = Session()
-        headers = {'AUTHORIZATION': 'Token {}'.format(self.user.auth_token.key)}
+        token = create_jwt_token(self.user)
+        headers = {'AUTHORIZATION': 'Bearer {}'.format(token)}
         request = Request(self.method.upper(), url, json=self.payload, headers=headers).prepare()
         resp = s.send(request)
         resp.raise_for_status()

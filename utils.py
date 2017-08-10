@@ -1,4 +1,6 @@
 import ujson
+import logging
+import shutil
 from pathlib import Path
 
 from cryptography.hazmat.backends import default_backend
@@ -6,27 +8,14 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from django.conf import settings
 from django.core.validators import RegexValidator
+from django.contrib.sites.models import Site
 from django.utils.encoding import force_bytes, force_text
 from django_redis.serializers.base import BaseSerializer
 from rest_framework_jwt.settings import api_settings
-from hashids import Hashids
+log = logging.getLogger(__name__)
 
 jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
 jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
-
-
-def encode_id(value, salt=settings.SECRET_KEY):
-    hashids = Hashids(salt=salt, min_length=8)
-    return hashids.encode(value)
-
-
-def decode_id(value_hashed, salt=settings.SECRET_KEY):
-    hashids = Hashids(salt=salt, min_length=8)
-    value_decode = hashids.decode(value_hashed)
-    if value_decode:
-        return hashids.decode(value_hashed)[0]
-    else:
-        return 0
 
 
 def google_access_token_decoder(resp_str):
@@ -61,6 +50,18 @@ def create_ssh_key(user):
     user_ssh_dir.chmod(0o770)
     user_ssh_private_key_file.chmod(0o440)
     user_ssh_public_key_file.chmod(0o600)
+
+
+def deactivate_user(user):
+    user.is_active = False
+    old_resource = user.profile.resource_root()
+    new_resource_path = Path(settings.INACTIVE_RESOURCE_DIR,
+                             user.username +
+                             "_{uuid}".format(uuid=user.pk))
+    log.info("About to move {user}'s resource directory from {old} to {new}".format(user=user.username,
+                                                                                    old=str(old_resource),
+                                                                                    new=str(new_resource_path)))
+    shutil.move(str(old_resource), str(new_resource_path))
 
 
 class UJSONSerializer(BaseSerializer):

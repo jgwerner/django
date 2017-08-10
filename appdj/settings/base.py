@@ -44,7 +44,6 @@ INSTALLED_APPS = [
     'django.contrib.sites',
 
     'rest_framework',
-    'rest_framework_swagger',
     'oauth2_provider',
     'social_django',
     'rest_framework_social_oauth2',
@@ -55,6 +54,8 @@ INSTALLED_APPS = [
     'guardian',
     'django_filters',
     'haystack',
+    'djoser',
+    'django_ses',
 
     'base',
     'users',
@@ -82,7 +83,7 @@ MIDDLEWARE = [
     'billing.middleware.SubscriptionMiddleware'
 ]
 
-ROOT_URLCONF = 'appdj.urls'
+ROOT_URLCONF = 'appdj.urls.base'
 
 TEMPLATES = [
     {
@@ -102,7 +103,15 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'appdj.wsgi.application'
 
+AUTH_USER_MODEL = 'users.User'
+
 # Email Settings
+EMAIL_BACKEND = 'django_ses.SESBackend'
+AWS_SES_ACCESS_KEY_ID = os.getenv("AWS_SES_ACCESS_KEY_ID")
+AWS_SES_SECRET_ACCESS_KEY = os.getenv("AWS_SES_SECRET_ACCESS_KEY")
+AWS_SES_REGION_NAME = os.getenv("AWS_SES_REGION_NAME")
+AWS_SES_REGION_ENDPOINT = os.getenv("AWS_SES_REGION_ENDPOINT")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
 EMAIL_HOST = os.environ.get('EMAIL_HOST', 'localhost')
 EMAIL_PORT = os.environ.get('EMAIL_PORT', '587')
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
@@ -121,7 +130,7 @@ AUTHENTICATION_BACKENDS = (
     'social_core.backends.google.GoogleOAuth2',
     'social_core.backends.github.GithubOAuth2',
     'social_core.backends.slack.SlackOAuth2',
-    'django.contrib.auth.backends.ModelBackend',
+    'users.backends.ActiveUserBackend',
     'guardian.backends.ObjectPermissionBackend',
 )
 
@@ -172,6 +181,7 @@ BCRYPT_LOG_ROUNDS = 13
 
 JWT_AUTH = {
     'JWT_EXPIRATION_DELTA': datetime.timedelta(days=30),
+    'JWT_AUTH_HEADER_PREFIX': 'Bearer',
 }
 
 # Internationalization
@@ -231,9 +241,21 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ),
     'DEFAULT_PAGINATION_CLASS': 'base.pagination.LimitOffsetPagination',
+    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning'
 }
 
+DJOSER = {
+    'DOMAIN': os.getenv("TBS_DOMAIN"),
+    'SITE_NAME': "3Blades",
+    'PASSWORD_RESET_CONFIRM_URL': "auth/password-reset?uid={uid}&token={token}",
+    'SERIALIZERS': {'user': "users.serializers.UserSerializer"}
+}
+
+
+DEFAULT_VERSION = os.environ.get('TBS_DEFAULT_VERSION', "v1")
+
 RESOURCE_DIR = os.environ.get('RESOURCE_DIR', '/workspaces')
+INACTIVE_RESOURCE_DIR = os.environ.get('INACTIVE_RESOURCE_DIR', '/inactive')
 
 CACHES = {
     'default': {
@@ -301,10 +323,7 @@ MIGRATION_MODULES = {
     'oauth2_provider': 'appdj.migrations.oauth2_provider',
     'social_django': 'appdj.migrations.social_django',
     'guardian': 'appdj.migrations.guardian',
-}
-
-ABSOLUTE_URL_OVERRIDES = {
-    'auth.user': lambda o, n: reverse_lazy('user-detail', kwargs={'namespace': n.name, 'pk': o.pk}),
+    'django_ses': 'appdj.migrations.django_ses',
 }
 
 
@@ -314,7 +333,7 @@ SERVER_PORT = os.environ.get("SERVER_PORT", '8000')
 SERVER_PORT_MAPPING = {'8888': "jupyter", '6006': "tensorflow", '8000': 'restful'}
 SERVER_ENDPOINT_URLS = {'jupyter': '/jupyter/tree', 'restful': '/restfull/'}
 SERVER_COMMANDS = {
-    "jupyter": "jupyter notebook --no-browser --NotebookApp.token=''",
+    "jupyter": "jupyter notebook --no-browser --allow-root --NotebookApp.token=''",
 }
 
 # slack
@@ -354,3 +373,10 @@ HAYSTACK_CONNECTIONS = {
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
 
 HTTPS = os.environ.get("TBS_HTTPS", "false").lower() == "true"
+
+MOCK_STRIPE = os.environ.get("MOCK_STRIPE", "false").lower() == "true"
+
+# KB * KB = MB -> 15 MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024 * int(os.getenv("MAX_FILE_UPLOAD_SIZE", 15))
+
+SILENCED_SYSTEM_CHECKS = ["auth.W004"]

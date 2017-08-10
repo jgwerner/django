@@ -33,7 +33,9 @@ class ActionSerializer(serializers.ModelSerializer):
             if not path:
                 namespace = Namespace.from_name(user.username)
                 obj = content_type_obj.get_object_for_this_type(pk=validated_data['object_id'])
-                path = obj.get_action_url(namespace, action_name)
+                path = obj.get_action_url(self.context['request'].version,
+                                          namespace,
+                                          action_name)
         filter_kwargs = dict(
             path=path,
             user=user,
@@ -49,7 +51,7 @@ class ActionSerializer(serializers.ModelSerializer):
         return instance
 
     def get_object_url(self, obj):
-        return obj.get_absolute_url(self.context['request'].namespace)
+        return obj.get_absolute_url(self.context['request'].version, self.context['request'].namespace)
 
     def content_object_url(self, obj):
-        return obj.content_object_url(self.context['request'].namespace)
+        return obj.content_object_url(self.context['request'].version, self.context['request'].namespace)

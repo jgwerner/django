@@ -35,13 +35,15 @@ class Project(models.Model):
     def __str__(self):
         return self.name
 
-    def get_absolute_url(self, namespace: Namespace):
-        return self.get_action_url(namespace, 'detail')
+    def get_absolute_url(self, version, namespace: Namespace):
+        return self.get_action_url(version, namespace, 'detail')
 
-    def get_action_url(self, namespace, action):
+    def get_action_url(self, version, namespace, action):
         return reverse(
             'project-{}'.format(action),
-            kwargs={'namespace': namespace.name, 'pk': str(self.id)}
+            kwargs={'namespace': namespace.name,
+                    'pk': str(self.id),
+                    'version': version}
         )
 
     @property
@@ -68,7 +70,7 @@ class Collaborator(models.Model):
 
     objects = ProjectUsersQuerySet.as_manager()
 
-    def get_absolute_url(self, namespace):
+    def get_absolute_url(self, version, namespace):
         return ""
 
     @property
@@ -113,11 +115,9 @@ class ProjectFile(models.Model):
                                              proj=self.project.name,
                                              name=self.file.name)
 
-    def get_absolute_url(self, namespace):
-        return reverse(
-            'file-detail',
-            kwargs={'namespace': namespace.name, 'project_pk': str(self.project.pk), 'pk': str(self.pk)}
-        )
+    def get_absolute_url(self, version, namespace):
+        return reverse('projectfile-detail', kwargs={'namespace': namespace.name, 'version': version,
+                       'project_pk': str(self.project.pk), 'pk': str(self.pk)})
 
     def delete(self, using=None, keep_parents=False):
         self.file.delete()

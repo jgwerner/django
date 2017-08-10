@@ -3,12 +3,15 @@ from django.contrib.sites.shortcuts import get_current_site
 from rest_framework import serializers
 
 from base.serializers import SearchSerializerMixin
-from . import models
+from servers.models import (ServerSize, Server,
+                            ServerRunStatistics,
+                            ServerStatistics,
+                            SshTunnel)
 
 
-class EnvironmentResourceSerializer(serializers.ModelSerializer):
+class ServerSizeSerializer(serializers.ModelSerializer):
     class Meta:
-        model = models.EnvironmentResource
+        model = ServerSize
         fields = ('id', 'name', 'cpu', 'memory', 'active')
 
 
@@ -18,26 +21,30 @@ class ServerSerializer(SearchSerializerMixin, serializers.ModelSerializer):
     status_url = serializers.SerializerMethodField()
 
     class Meta:
-        model = models.Server
-        fields = ('id', 'name', 'created_at', 'image_name', 'environment_resources', 'startup_script', 'config',
+        model = Server
+        fields = ('id', 'name', 'created_at', 'image_name', 'server_size', 'startup_script', 'config',
                   'status', 'connected', 'host', 'endpoint', 'logs_url', 'status_url')
         read_only_fields = ('created_at',)
         extra_kwargs = {
             'connected': {'allow_empty': True, 'required': False},
-            'environment_resources': {'allow_empty': True, 'required': False},
+            'server_size': {'allow_empty': True, 'required': False},
         }
+
+    def validate_config(self, value):
+        server_type = value.get("type")
+        if server_type not in Server.SERVER_TYPES:
+            raise serializers.ValidationError("{type} is not a valid server type".format(type=server_type))
+        return value
 
     def create(self, validated_data):
         config = validated_data.pop("config", {})
-        env_resource = validated_data.pop('environment_resources', None) or \
-            models.EnvironmentResource.objects.order_by('created_at').first()
-        return models.Server.objects.create(
-            project_id=self.context['view'].kwargs['project_pk'],
-            created_by=self.context['request'].user,
-            config=config,
-            environment_resources=env_resource,
-            **validated_data
-        )
+        server_size = (validated_data.pop('server_size', None) or
+                       ServerSize.objects.order_by('created_at').first())
+        return Server.objects.create(project_id=self.context['view'].kwargs['project_pk'],
+                                     created_by=self.context['request'].user,
+                                     config=config,
+                                     server_size=server_size,
+                                     **validated_data)
 
     def update(self, instance, validated_data):
         if self.partial:
@@ -56,9 +63,11 @@ class ServerSerializer(SearchSerializerMixin, serializers.ModelSerializer):
         return self._get_url(obj, scheme='wss' if self._is_secure else 'ws', url='/status/')
 
     def _get_url(self, obj, **kwargs):
+        version = self.context['view'].kwargs.get('version', settings.DEFAULT_VERSION)
         request = self.context['request']
-        return '{scheme}://{host}/{namespace}/projects/{project_id}/servers/{id}{url}'.format(
+        return '{scheme}://{host}/{version}/{namespace}/projects/{project_id}/servers/{id}{url}'.format(
             host=get_current_site(request).domain,
+            version=version,
             namespace=request.namespace.name,
             project_id=obj.project_id,
             id=obj.id,
@@ -72,7 +81,7 @@ class ServerSerializer(SearchSerializerMixin, serializers.ModelSerializer):
 
 class ServerRunStatisticsSerializer(serializers.ModelSerializer):
     class Meta:
-        model = models.ServerRunStatistics
+        model = ServerRunStatistics
         fields = ('id', 'start', 'stop', 'exit_code', 'size', 'stacktrace')
 
 
@@ -85,7 +94,7 @@ class ServerRunStatisticsAggregatedSerializer(serializers.Serializer):
 
 class ServerStatisticsSerializer(serializers.ModelSerializer):
     class Meta:
-        model = models.ServerStatistics
+        model = ServerStatistics
         fields = ('id', 'start', 'stop', 'size')
 
 
@@ -97,5 +106,5 @@ class ServerStatisticsAggregatedSerializer(serializers.Serializer):
 
 class SshTunnelSerializer(serializers.ModelSerializer):
     class Meta:
-        model = models.SshTunnel
+        model = SshTunnel
         fields = ('id', 'name', 'host', 'local_port', 'remote_port', 'endpoint', 'username')

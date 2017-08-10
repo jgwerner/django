@@ -1,4 +1,5 @@
 from unittest.mock import patch, PropertyMock
+from django.conf import settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -11,7 +12,8 @@ class DockerHostTest(APITestCase):
     def setUp(self):
         self.user = UserFactory()
         self.token_header = 'Token {}'.format(self.user.auth_token.key)
-        self.url_kwargs = {'namespace': self.user.username}
+        self.url_kwargs = {'namespace': self.user.username,
+                           'version': settings.DEFAULT_VERSION}
         self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
 
     @patch('infrastructure.models.DockerHost.status', new_callable=PropertyMock)

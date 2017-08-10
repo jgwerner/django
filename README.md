@@ -89,12 +89,25 @@ Edit the docker service file to add connections to docker daemon using tcp:
 
     nano /lib/systemd/system/docker.service
 
-Add `-H tcp://0.0.0.0:2375` after `-H fd://`
+    Replace line:   ExecStart=/usr/bin/dockerd -H fd:// -H
+    With Line:      ExecStart=/usr/bin/dockerd -H fd:// -H tcp://0.0.0.0:2375
 
 Restart docker service and confirm that setting is in place for CGroup:
-
+     
+    sudo systemctl daemon-reload 
     sudo systemctl restart docker
     systemctl status docker
+    
+    ``` docker.service - Docker Application Container Engine
+   Loaded: loaded (/lib/systemd/system/docker.service; enabled; vendor preset: enabled)
+   Active: active (running) since Fri 2017-07-21 02:32:48 UTC; 1 weeks 0 days ago
+     Docs: https://docs.docker.com
+ Main PID: 15857 (dockerd)
+    Tasks: 63
+   Memory: 579.9M
+      CPU: 51min 15.120s
+   CGroup: /system.slice/docker.service
+           ├─15857 /usr/bin/dockerd -H fd:// -H tcp://0.0.0.0:2375 ```
 
 ### Environment Variables
 
@@ -103,12 +116,19 @@ Modify environment variables located in `env` file with your local settings. You
 ```
     AWS_ACCESS_KEY_ID=
     AWS_SECRET_ACCESS_KEY=
+    AWS_SES_ACCESS_KEY_ID=
+    AWS_SES_SECRET_ACCESS_KEY=
+    AWS_SES_REGION_NAME=
+    AWS_SES_REGION_ENDPOINT=
     AWS_STORAGE_BUCKET_NAME=
     C_ROOT=1
     DATABASE_URL=postgres://postgres:@db:5432/postgres/
     DEBUG=True
+    DEFAULT_FROM_EMAIL=
     DJANGO_SETTINGS_MODULE=appdj.settings.prod
-    DOCKER_DOMAIN=172.17.0.1:2375
+    DOCKER_DOMAIN=172.17.0.1
+    DOCKER_EVENTS_URL=http://events:8000
+    DOCKER_PORT=2375
     DOCKER_HOST=tcp://172.17.0.1:2375/
     ELASTICSEARCH_URL=http://search:9200/
     EMAIL_HOST=
@@ -122,6 +142,9 @@ Modify environment variables located in `env` file with your local settings. You
     GITHUB_CLIENT_SECRET=
     GOOGLE_CLIENT_ID=
     GOOGLE_CLIENT_SECRET=
+    INACTIVE_RESOURCE_DIR=/inactive
+    MAX_FILE_UPLOAD_SIZE=
+    MOCK_STRIPE=false
     RABBITMQ_URL=amqp://broker/
     REDIS_URL=redis://cache:6379/0
     RESOURCE_DIR=
@@ -130,7 +153,10 @@ Modify environment variables located in `env` file with your local settings. You
     SLACK_KEY=
     SLACK_SECRET=
     STRIPE_SECRET_KEY=
+    TBS_DEFAULT_VERSION=
+    TBS_DOMAIN=localhost:3000
     TBS_HOST=
+	TBS_PORT=
     TBS_HTTPS=
 ```
 

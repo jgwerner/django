@@ -1,7 +1,4 @@
-import base64
 import logging
-import os
-from django.core.files.base import ContentFile, File
 from rest_framework import viewsets, status, permissions
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
@@ -15,6 +12,7 @@ from projects.models import Project, Collaborator, SyncedResource
 from projects.permissions import ProjectPermission, ProjectChildPermission
 from projects.tasks import sync_github
 from projects.models import ProjectFile
+from projects.utils import get_files_from_request
 
 log = logging.getLogger('projects')
 
@@ -25,6 +23,48 @@ class ProjectViewSet(NamespaceMixin, viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated, ProjectPermission)
     filter_fields = ('private', 'name')
     ordering_fields = ('name',)
+
+    def _update(self, request, partial,  *args, **kwargs):
+        instance = Project.objects.get(pk=kwargs.get("pk"))
+        user = request.user
+
+        has_perm = user.has_perm("projects.write_project", instance)
+
+        if not user.has_perm("projects.write_project", instance):
+            return Response(data={'message': "Insufficient permissions to modify project"},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        update_data = request.data
+
+        serializer = self.serializer_class(instance, data=update_data,
+                                           partial=partial,
+                                           context={'request': request,
+                                                    'pk': instance.pk})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(data=serializer.data,
+                        status=status.HTTP_200_OK)
+
+    def update(self, request, *args, **kwargs):
+        return self._update(request, False, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        return self._update(request, True, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = Project.objects.get(pk=kwargs.get("pk"))
+        user = request.user
+        is_owner = Collaborator.objects.filter(project=instance,
+                                               user=user,
+                                               owner=True)
+        if not is_owner.exists():
+            return Response(data={'message': "Insufficient permissions to delete project"},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        instance.delete()
+        return Response(data={"message": "Project deleted."},
+                        status=status.HTTP_204_NO_CONTENT)
 
 
 class ProjectMixin(object):
@@ -62,36 +102,6 @@ class ProjectFileViewSet(ProjectMixin,
     queryset = ProjectFile.objects.all()
     serializer_class = ProjectFileSerializer
     parser_classes = (MultiPartParser, FormParser, JSONParser)
-
-    def _get_files(self, request):
-        django_files = []
-        form_files = request.FILES.get("file") or request.FILES.getlist("files")
-        b64_data = request.data.get("base64_data")
-        path = request.data.get("path", "")
-
-        if b64_data is not None:
-            log.info("Base64 data uploaded.")
-
-            # request.data.pop("base64_data")
-            name = request.data.get("name")
-            if name is None:
-                log.warning("Base64 data was uploaded, but no name was provided")
-                raise ValueError("When uploading base64 data, the 'name' field must be populated.")
-
-
-            file_data = base64.b64decode(b64_data)
-            form_files = [ContentFile(file_data, name=name)]
-
-        if not isinstance(form_files, list):
-            form_files = [form_files]
-
-        for reg_file in form_files:
-            new_name = os.path.join(path, reg_file.name)
-            dj_file = File(file=reg_file, name=new_name)
-            log.debug(dj_file.name)
-            django_files.append(dj_file)
-
-        return django_files
 
     def get_queryset(self, *args, **kwargs):
         project_pk = kwargs.get("project_pk")
@@ -132,7 +142,7 @@ class ProjectFileViewSet(ProjectMixin,
 
     def create(self, request, *args, **kwargs):
         try:
-            files = self._get_files(request)
+            files = get_files_from_request(request)
         except ValueError as e:
             log.exception(e)
             data = {'message': str(e)}
@@ -165,7 +175,7 @@ class ProjectFileViewSet(ProjectMixin,
 
     def update(self, request, *args, **kwargs):
         try:
-            files = self._get_files(request)
+            files = get_files_from_request(request)
         except ValueError as e:
             log.exception(e)
             data = {'message': str(e)}

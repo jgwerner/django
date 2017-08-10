@@ -2,3 +2,4 @@
 factory-boy==2.8.1
 fakeredis==0.8.2
 django-debug-toolbar==1.6
+https://github.com/3Blades/django-swagger-docs/archive/master.zip

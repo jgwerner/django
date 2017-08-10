@@ -1,9 +1,10 @@
 import logging
+from django.http import JsonResponse
+from django.db.models import Q
 from django.contrib.auth import get_user_model
 from haystack.query import SearchQuerySet, EmptySearchQuerySet
 from social_django.models import UserSocialAuth
-from rest_framework import viewsets
-from rest_framework.authtoken.models import Token
+from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
 from rest_framework.generics import get_object_or_404, CreateAPIView
 from rest_framework.mixins import ListModelMixin
@@ -13,7 +14,7 @@ from rest_framework.views import APIView
 
 from base.permissions import DeleteAdminOnly
 from base.views import UUIDRegexMixin
-from utils import create_ssh_key
+from utils import create_ssh_key, deactivate_user, create_jwt_token
 
 from users.filters import UserSearchFilter
 from users.models import Email
@@ -21,6 +22,7 @@ from users.serializers import (UserSerializer,
                                EmailSerializer,
                                IntegrationSerializer,
                                AuthTokenSerializer)
+
 log = logging.getLogger("users")
 User = get_user_model()
 
@@ -32,8 +34,30 @@ class UserViewSet(UUIDRegexMixin, viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, DeleteAdminOnly)
 
     def perform_destroy(self, instance):
-        instance.is_active = False
+        deactivate_user(instance)
         instance.save()
+
+
+def avatar(request, version, user_pk):
+    status_code = status.HTTP_200_OK
+
+    if request.method == "POST":
+        try:
+            user = User.objects.get(pk=user_pk)
+            profile = user.profile
+            profile.avatar = request.FILES.get("image")
+            profile.save()
+            log.info("Updated avatar for user: {user}".format(user=user.username))
+            data = UserSerializer(instance=user).data
+        except Exception as e:
+            data = {'message': str(e)}
+            log.exception(e)
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+    else:
+        data = {'message': "Only POST is allowed for this URL."}
+        status_code = status.HTTP_405_METHOD_NOT_ALLOWED
+
+    return JsonResponse(data=data, status=status_code)
 
 
 class UserSearchView(ListModelMixin, viewsets.GenericViewSet):
@@ -68,43 +92,57 @@ class RegisterView(CreateAPIView):
 
 
 @api_view(['GET'])
-def ssh_key(request, user_pk):
+def ssh_key(request, version, user_pk):
     user = get_object_or_404(User, pk=user_pk)
     return Response(data={'key': user.profile.ssh_public_key()})
 
 
 @api_view(['POST'])
-def reset_ssh_key(request, user_pk):
+def reset_ssh_key(request, version, user_pk):
     user = get_object_or_404(User, pk=user_pk)
     create_ssh_key(user)
     return Response(data={'key': user.profile.ssh_public_key()})
 
 
 @api_view(['GET'])
-def api_key(request, user_pk):
+def api_key(request, version, user_pk):
     user = get_object_or_404(User, pk=user_pk)
-    return Response(data={'key': user.auth_token.key})
-
-
-@api_view(['POST'])
-def reset_api_key(request, user_pk):
-    token = get_object_or_404(Token, user_id=user_pk)
-    token.key = None
-    token.save()
-    return Response(data={'key': token.key})
-
+    token = create_jwt_token(user)
+    return Response(data={'token': token})
 
 class EmailViewSet(viewsets.ModelViewSet):
     queryset = Email.objects.all()
     serializer_class = EmailSerializer
 
     def get_queryset(self):
-        return super().get_queryset().filter(user=self.request.user)
+        return super().get_queryset().filter(Q(user=self.request.user) | Q(public=True))
+
+    def list(self, request, *args, **kwargs):
+        emails = self.get_queryset().filter(user__pk=kwargs.get("user_id"))
+        serializer = self.get_serializer(emails, many=True)
+        return Response(serializer.data)
+
+    def retrieve(self, request, *args, **kwargs):
+        email = self.get_queryset().filter(user__pk=kwargs.get("user_id"),
+                                           pk=kwargs.get("pk")).first()
+        serializer = self.get_serializer(email)
+        data = serializer.data if email is not None else {}
+        return Response(data)
 
 
 class IntegrationViewSet(viewsets.ModelViewSet):
     queryset = UserSocialAuth.objects.all()
     serializer_class = IntegrationSerializer
+
+    def create(self, request, *args, **kwargs):
+        data = {'provider': request.data.get("provider"),
+                'extra_data': request.data.get("extra_data"),
+                'user': request.user}
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.create(validated_data=data)
+        return Response(data=self.serializer_class(instance).data,
+                        status=status.HTTP_201_CREATED)
 
 
 class ObtainAuthToken(APIView):

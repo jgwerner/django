@@ -7,7 +7,7 @@ from projects.tests.factories import CollaboratorFactory
 from servers.tests.fake_docker_api_client.fake_api import FAKE_CONTAINER_ID
 from ..models import Server
 from ..spawners import DockerSpawner
-from .factories import EnvironmentResourcesFactory, ServerFactory
+from .factories import ServerSizeFactory, ServerFactory
 from .fake_docker_api_client.fake_api_client import make_fake_client
 
 
@@ -17,7 +17,7 @@ class TestDockerSpawnerForModel(TransactionTestCase):
         self.user = collaborator.user
         self.server = ServerFactory(
             image_name='test',
-            environment_resources=EnvironmentResourcesFactory(
+            server_size=ServerSizeFactory(
                 memory=512
             ),
             env_vars={'test': 'test'},

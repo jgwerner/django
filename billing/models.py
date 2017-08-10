@@ -1,7 +1,7 @@
-from decimal import Decimal
 from django.contrib.postgres.fields import JSONField
 from django.db import models
 from django.conf import settings
+from django.urls import reverse
 
 
 class BillingAddress(models.Model):
@@ -10,15 +10,6 @@ class BillingAddress(models.Model):
     state_province = models.CharField(max_length=100)
     zip_code = models.CharField(max_length=11)
     created_at = models.DateTimeField(auto_now_add=True)
-
-
-# Note: While this model is not used anymore, we shouldn't delete it (for now at least)
-# Because deleting it causes migration problems, especially when running the test suite
-class BillingPlan(models.Model):
-    name = models.CharField(max_length=50, blank=True, null=True)
-    description = models.CharField(max_length=400, blank=True)
-    settings = JSONField(default={})
-    cost = models.DecimalField(max_digits=6, decimal_places=2, default=Decimal(0.0))
 
 
 class StripeModel(models.Model):
@@ -39,11 +30,6 @@ class Event(StripeModel):
     event_type = models.CharField(max_length=255)
 
 
-class CustomerQuerySet(models.QuerySet):
-    def namespace(self, namespace):
-        return self.filter(user=namespace.object)
-
-
 class Customer(StripeModel):
     user = models.OneToOneField(settings.AUTH_USER_MODEL)
     # Should account_balance really be exposed?
@@ -52,12 +38,13 @@ class Customer(StripeModel):
     default_source = models.ForeignKey("Card", null=True, related_name="+", on_delete=models.CASCADE)
     last_invoice_sync = models.DateTimeField(null=True)
 
-    objects = CustomerQuerySet.as_manager()
-
     def has_active_subscription(self):
         has_sub = self.subscription_set.filter(status__in=[Subscription.TRIAL,
                                                            Subscription.ACTIVE]).exists()
         return has_sub
+
+    def get_absolute_url(self, version, namespace):
+        return reverse('customer-detail', kwargs={'namespace': namespace.name, 'version': version, 'pk': str(self.pk)})
 
 
 class Card(StripeModel):
@@ -119,6 +106,9 @@ class Card(StripeModel):
 
     funding = models.CharField(max_length=7, choices=FUNDING_CHOICES)
 
+    def get_absolute_url(self, version, namespace):
+        return reverse('card-detail', kwargs={'namespace': namespace.name, 'version': version, 'pk': str(self.pk)})
+
 
 class Plan(StripeModel):
     amount = models.PositiveIntegerField()
@@ -139,6 +129,9 @@ class Plan(StripeModel):
     name = models.CharField(max_length=255)
     statement_descriptor = models.TextField(null=True)
     trial_period_days = models.PositiveIntegerField(null=True)
+
+    def get_absolute_url(self, version, namespace):
+        return reverse('card-detail', kwargs={'namespace': namespace.name, 'version': version, 'pk': str(self.pk)})
 
 
 class SubscriptionQuerySet(models.QuerySet):
@@ -175,6 +168,10 @@ class Subscription(StripeModel):
 
     objects = SubscriptionQuerySet.as_manager()
 
+    def get_absolute_url(self, version, namespace):
+        return reverse('subscription-detail', kwargs={
+            'namespace': namespace.name, 'version': version, 'pk': str(self.pk)})
+
 
 class InvoiceQuerySet(models.QuerySet):
     def namespace(self, namespace):
@@ -204,6 +201,10 @@ class Invoice(StripeModel):
     total = models.IntegerField()
 
     objects = InvoiceQuerySet.as_manager()
+
+    def get_absolute_url(self, version, namespace):
+        return reverse('invoice-detail', kwargs={
+            'namespace': namespace.name, 'version': version, 'pk': str(self.pk)})
 
 
 class InvoiceItem(StripeModel):

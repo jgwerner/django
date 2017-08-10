@@ -25,7 +25,7 @@ ujson==1.35
 django-redis==4.8.0
 django-extensions==1.7.9
 gunicorn==19.7.1
-celery==4.0.2
+celery==4.1.0
 django-celery-results==1.0.1
 uuid==1.30
 django-cacheops==3.2.1
@@ -36,7 +36,13 @@ djangorestframework-jwt==1.10
 slackclient==1.0.5
 django-cors-headers==2.0.2
 django-guardian==1.4.8
+Pillow==4.2.1
 stripe==1.55.2
 django-haystack==2.6.1
 elasticsearch<3.0.0
 drf-haystack==1.6.1
+Pillow==4.2.1
+djoser==0.6.0
+boto==2.48.0
+django-ses==0.8.2
+google-compute-engine==2.4.1

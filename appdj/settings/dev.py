@@ -4,8 +4,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-
 REST_FRAMEWORK['DEFAULT_RENDERER_CLASSES'] = (
     'rest_framework.renderers.JSONRenderer',
     'rest_framework.renderers.BrowsableAPIRenderer',
@@ -17,9 +15,9 @@ REST_FRAMEWORK['DEFAULT_PARSER_CLASSES'] = (
     'rest_framework.parsers.MultiPartParser'
 )
 
-# INSTALLED_APPS.append('debug_toolbar')
+INSTALLED_APPS.extend(['debug_toolbar', 'rest_framework_swagger', 'swagger_docs'])
 
-# MIDDLEWARE.append('debug_toolbar.middleware.DebugToolbarMiddleware')
+MIDDLEWARE.append('debug_toolbar.middleware.DebugToolbarMiddleware')
 
 INTERNAL_IPS = ['127.0.0.1']
 

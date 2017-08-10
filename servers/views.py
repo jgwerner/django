@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from base.views import ProjectMixin, UUIDRegexMixin, ServerMixin
+from base.permissions import IsAdminUser
 from projects.models import Project
 from projects.permissions import ProjectChildPermission
 from .tasks import start_server, stop_server, terminate_server
@@ -26,7 +27,7 @@ class ServerViewSet(viewsets.ModelViewSet):
 
 @api_view(['post'])
 @permission_classes([IsAuthenticated, ServerActionPermission])
-def start(request, project_pk, pk):
+def start(request, version, project_pk, pk):
     start_server.apply_async(
         args=[pk],
         task_id=str(request.action.pk)
@@ -91,27 +92,15 @@ class SshTunnelViewSet(ProjectMixin, ServerMixin, viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, ServerChildPermission)
 
 
-class EnvironmentResourceViewSet(UUIDRegexMixin, viewsets.ModelViewSet):
-    queryset = models.EnvironmentResource.objects.all()
-    serializer_class = serializers.EnvironmentResourceSerializer
-
-
-class IsAllowed(views.APIView):
-    """
-    Checks if user is allowed to access model server
-    """
-
-    def get(self, request, **kwargs):
-        token = request.META.get('HTTP_AUTHORIZATION', '').split(' ')[1]
-        if Project.objects.cache().only('pk').filter(
-                pk=kwargs.get('project_pk', ''), collaborators__auth_token__key=token).exists():
-            return Response()
-        return Response(status=status.HTTP_404_NOT_FOUND)
+class ServerSizeViewSet(UUIDRegexMixin, viewsets.ModelViewSet):
+    queryset = models.ServerSize.objects.all()
+    serializer_class = serializers.ServerSizeSerializer
+    permission_classes = (IsAdminUser,)
 
 
 @api_view(['GET'], exclude_from_schema=True)
 @permission_classes((AllowAny,))
-def server_internal_details(request, project_pk, server_pk):
+def server_internal_details(request, version, project_pk, server_pk):
     server = get_object_or_404(models.Server, pk=server_pk, project_id=project_pk)
     data = {'server': '', 'container_name': ''}
     server_ip = server.get_private_ip()

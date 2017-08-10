@@ -1,28 +1,42 @@
 import logging
-import stripe
+import json
 
+from django.http import HttpResponse
 from django.utils import timezone
 from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from rest_framework import viewsets, status, mixins
 from rest_framework.decorators import api_view
-from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
 
 from base.views import NamespaceMixin
+from base.permissions import IsAdminUser
 from billing.models import (Plan, Customer,
                             Card, Subscription,
                             Invoice)
 from billing.serializers import (PlanSerializer, CustomerSerializer, CardSerializer,
                                  SubscriptionSerializer, InvoiceSerializer)
+from billing.stripe_utils import handle_stripe_invoice_webhook
 log = logging.getLogger('billing')
+
+if settings.MOCK_STRIPE:
+    from billing.tests import mock_stripe as stripe
+    log.info("Using mock_stripe module.")
+else:
+    import stripe
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
-class CustomerViewSet(NamespaceMixin,
-                      viewsets.ModelViewSet):
+class CustomerViewSet(viewsets.ModelViewSet):
 
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = Customer.objects.filter(user=request.user)
+        serializer = self.serializer_class(queryset, many=True)
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
 
     def destroy(self, request, *args, **kwargs):
         # Assuming for now that we should only delete the customer record,
@@ -78,22 +92,6 @@ class CardViewSet(mixins.CreateModelMixin,
         return Response(data=data, status=status.HTTP_204_NO_CONTENT)
 
 
-class IsAdminUser(BasePermission):
-    def has_permission(self, request, view):
-        permission = False
-
-        if request.user.is_authenticated:
-            if request.method != "GET":
-                # Authenticated, and method is modifying records in some way.
-                # Must be staff
-                permission = request.user.is_staff
-            else:
-                # Authenticated, and method is get
-                permission = True
-
-        return permission
-
-
 class PlanViewSet(viewsets.ModelViewSet):
     queryset = Plan.objects.all()
     serializer_class = PlanSerializer
@@ -146,3 +144,12 @@ class InvoiceViewSet(NamespaceMixin,
                      viewsets.ReadOnlyModelViewSet):
     queryset = Invoice.objects.all()
     serializer_class = InvoiceSerializer
+
+
+@require_POST
+@csrf_exempt
+def stripe_invoice_created(request, *args, **kwargs):
+    body = request.body
+    event_json = json.loads(body.decode("utf-8"))
+    handle_stripe_invoice_webhook(event_json)
+    return HttpResponse(status=status.HTTP_200_OK)

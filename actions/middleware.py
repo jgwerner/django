@@ -9,9 +9,10 @@ from rest_framework.views import get_view_name
 from rest_framework_jwt.serializers import VerifyJSONWebTokenSerializer
 from rest_framework.authtoken.models import Token
 
-from .models import Action
+from actions.models import Action
+from triggers.models import Trigger
 
-log = logging.getLogger('projects')
+log = logging.getLogger('actions')
 
 User = get_user_model()
 
@@ -33,7 +34,7 @@ def get_user_from_token_header(request):
     if not token_header or ' ' not in token_header:
         return
     prefix, token = token_header.split()
-    if prefix == 'JWT':
+    if prefix == 'Bearer':
         return get_user_from_jwt(token)
     elif prefix == 'Token':
         return get_user_from_simple_token(token)
@@ -47,29 +48,37 @@ class ActionMiddleware(object):
         start = timezone.now()
         path = request.get_full_path()
         try:
-            body = ujson.loads(request.body)
+            if request.content_type.lower() == "multipart/form-data":
+                body = {}
+            else:
+                body = ujson.loads(request.body)
         except ValueError:
             body = {}
-        filter_kwargs = dict(
-            path=path,
-            user=get_user_from_token_header(request),
-            state=Action.CREATED,
-        )
-        defaults = dict(
-            action=self._get_action_name(request),
-            method=request.method.lower(),
-            user_agent=request.META.get('HTTP_USER_AGENT', ''),
-            start_date=start,
-            payload=body,
-            ip=self._get_client_ip(request),
-            state=Action.PENDING,
-        )
-        action = Action.objects.get_or_create_action(filter_kwargs, defaults)
+        user = get_user_from_token_header(request)
+        trigger_cause = Trigger.objects.filter(
+            cause__path=path,
+            cause__user=user,
+            cause__state=Action.CREATED
+        ).first()
+        if trigger_cause is not None:
+            action = trigger_cause.cause
+        else:
+            action = Action.objects.create(
+                path=path,
+                user=user,
+                method=request.method.lower(),
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                start_date=start,
+                ip=self._get_client_ip(request),
+                payload=body,
+                state=Action.PENDING,
+            )
         request.action = action
 
         response = self.get_response(request)  # type: HttpResponse
 
         action.refresh_from_db()
+        action.action = self._get_action_name(request)
         self._set_action_state(action, response.status_code)
         self._set_action_object(action, request, response)
         action.end_date = timezone.now()
@@ -122,7 +131,7 @@ class ActionMiddleware(object):
 
     @staticmethod
     def _get_model_from_func(view_func):
-        if hasattr(view_func, 'cls') and hasattr(view_func.cls, 'queryset'):
+        if hasattr(view_func, 'cls') and getattr(view_func.cls, 'queryset', None) is not None:
             return view_func.cls.queryset.model
 
     def _get_object_from_url(self, request: HttpRequest):

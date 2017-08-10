@@ -7,7 +7,9 @@ RUN apk update \
  && apk add --no-cache \
     build-base \
     postgresql-dev \
-    libffi-dev
+    libffi-dev \
+    libjpeg \
+    jpeg-dev
 
 RUN pip install virtualenv
 
