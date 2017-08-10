@@ -22,7 +22,9 @@ class CreateAdminCommandTestCase(TestCase):
 
     def test_command(self):
         cmd = Command()
-        cmd.handle()
+        parser = cmd.create_parser(prog_name="manage.py", subcommand="create_admin")
+        # cmd.add_arguments(parser)
+        cmd.handle(options={''})
 
         with transaction.atomic():
             user = User.objects.filter(username="admin",
