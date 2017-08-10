@@ -52,7 +52,6 @@ project_router.register(r'servers/(?P<server_pk>[^/.]+)/triggers', trigger_views
 project_router.register(r'collaborators', project_views.CollaboratorViewSet)
 
 if settings.ENABLE_BILLING:
-    router.register(r'billing/customers', billing_views.CustomerViewSet)
     router.register(r'billing/cards', billing_views.CardViewSet)
     router.register(r'billing/plans', billing_views.PlanViewSet)
     router.register(r'billing/subscriptions', billing_views.SubscriptionViewSet)
@@ -91,8 +90,6 @@ urlpatterns = [
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_pk>[\w-]+)/servers/(?P<pk>[^/.]+)/terminate/$',
         servers_views.terminate, name='server-terminate'),
     url(r'^servers/', include(servers_router.urls)),
-    url(r'(?P<namespace>[\w-]+)/billing/subscription_required/$', billing_views.no_subscription,
-        name="subscription-required"),
     url(r'webhooks/incoming/billing/invoice_created/$', billing_views.stripe_invoice_created,
         name='stripe-invoice-created'),
     url(r'webhooks/incoming/billing/invoice_upcoming/$', billing_views.stripe_invoice_upcoming,

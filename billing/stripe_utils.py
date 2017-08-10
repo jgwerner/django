@@ -244,17 +244,17 @@ def calculate_compute_usage(customer_stripe_id):
         usage_start_time = last_invoice.period_end
     user = User.objects.get(customer__stripe_id=customer_stripe_id)
 
-    # Is there a more efficient way to do these queries?
     projects = user.collaborator_set.filter(owner=True).values_list('project__pk', flat=True)
-    # server_sizes = ServerSize.objects.filter(server__project__pk__in=projects).distinct()
+
     servers = Server.objects.filter(project__pk__in=projects).select_related('server_size')
     total_cost = 0
     for server in servers:
-        this_size_data = get_server_usage([server], begin_measure_time=usage_start_time)
+        this_server_data = get_server_usage([server], begin_measure_time=usage_start_time)
         # server_size.cost_per_second is in _dollars_, we want cents
-        this_size_cost = 100 * server.server_size.cost_per_second * Decimal(this_size_data['duration'].total_seconds())
-        usage_data[server] += this_size_cost
-        total_cost += this_size_cost
+        this_server_cost = (100 * server.server_size.cost_per_second *
+                            Decimal(this_server_data['duration'].total_seconds()))
+        usage_data[server] += this_server_cost
+        total_cost += this_server_cost
 
     usage_data['total'] = total_cost
 
@@ -263,7 +263,7 @@ def calculate_compute_usage(customer_stripe_id):
 
 def create_invoice_item_for_compute_usage(customer_stripe_id, usage_data):
     stripe_invoice_item = stripe.InvoiceItem.create(customer=customer_stripe_id,
-                                                    amount=usage_data['total'],
+                                                    amount=int(usage_data['total']),
                                                     currency="usd",
                                                     description="3Blades Compute Usage")
     converted_data = convert_stripe_object(InvoiceItem, stripe_invoice_item)
