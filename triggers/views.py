@@ -30,6 +30,7 @@ class SlackMessageView(APIView):
 class ServerActionViewSet(NamespaceMixin, viewsets.ModelViewSet):
     queryset = Trigger.objects.all()
     serializer_class = ServerActionSerializer
+    filter_fields = ("name",)
 
     def get_queryset(self):
         server_pk = self.kwargs.get('server_pk')
