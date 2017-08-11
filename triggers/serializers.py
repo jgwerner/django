@@ -170,7 +170,7 @@ class ServerActionSerializer(serializers.ModelSerializer):
         return trigger
 
     def get_operation(self, obj):
-        action_name = obj.cause.action
+        action_name = obj.cause.action if obj.cause else ""
         for op, op_name in self.OPERATIONS:
             if op in action_name:
                 return op
