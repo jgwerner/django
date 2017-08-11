@@ -122,6 +122,16 @@ class SearchTestCase(APITestCase):
         self.assertEqual(len(response.data['users']['results']), 1)
         self.assertEqual(response.data['users']['results'][0]['username'], user.username)
 
+    def test_server_search_returns_project_info(self):
+        project = ProjectFactory(name='AsdfProject')
+        CollaboratorFactory(user=self.user, project=project, owner=True)
+        server = ServerFactory(name='AsdfServer', project=project)
+        response = self.client.get(self.url, {'q': "asdfserver"})
+        self.assertEqual(len(response.data['servers']['results']), 1)
+        project_data = response.data['servers']['results'][0].get("project")
+        self.assertIsNotNone(project_data)
+        self.assertEqual(project_data['id'], str(project.id))
+
     def test_multi_response_partial(self):
         project = ProjectFactory(name='TTTTProject')
         CollaboratorFactory(user=self.user, project=project, owner=True)
@@ -143,7 +153,8 @@ class SearchTestCase(APITestCase):
 
     def test_paginated(self):
         count = 4
-        ServerFactory.create_batch(count)
+        collaborator = CollaboratorFactory(user=self.user)
+        ServerFactory.create_batch(count, project=collaborator.project)
         response = self.client.get(self.url, {'q': "server", 'limit': 1})
         self.assertIn('count', response.data['servers'])
         self.assertIn('next', response.data['servers'])
