@@ -170,8 +170,6 @@ class UserTest(APITestCase):
         self.assertFalse(logged_in)
 
     def test_activation_works_correctly(self):
-        import logging
-        log = logging.getLogger('users')
         self._send_register_request()
         user = User.objects.get(username="test_user")
         self.to_remove.append(user.profile.resource_root())
