@@ -18,11 +18,12 @@ log = logging.getLogger('projects')
 
 class ProjectSerializer(SearchSerializerMixin, serializers.ModelSerializer):
     owner = serializers.CharField(source='get_owner_name', read_only=True)
-    collaborators = serializers.StringRelatedField(many=True, required=False)
+    collaborators = serializers.StringRelatedField(many=True, read_only=True)
 
     class Meta:
         model = Project
         fields = ('id', 'name', 'description', 'private', 'last_updated', 'owner', 'collaborators')
+        read_only_fields = ('collaborators',)
 
     def validate_name(self, value):
         request = self.context['request']
@@ -35,7 +36,6 @@ class ProjectSerializer(SearchSerializerMixin, serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
-        collaborators = validated_data.pop('collaborators', [])
         project = super().create(validated_data)
         request = self.context['request']
         if request.user.is_staff:
