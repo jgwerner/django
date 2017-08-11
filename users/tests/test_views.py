@@ -6,8 +6,9 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core import mail
 from rest_framework import status
-from rest_framework.test import APITestCase
+from rest_framework.test import APITestCase, APIClient
 
 from users.tests.factories import UserFactory, EmailFactory
 from users.tests.utils import generate_random_image
@@ -23,14 +24,24 @@ class UserTest(APITestCase):
         self.user = UserFactory(username='user')
         self.admin_client = self.client_class(HTTP_AUTHORIZATION='Token {}'.format(self.admin.auth_token.key))
         self.user_client = self.client_class(HTTP_AUTHORIZATION='Token {}'.format(self.user.auth_token.key))
-        self.to_remove = None
+        self.to_remove = []
         self.image_files = []
 
     def tearDown(self):
-        if self.to_remove is not None:
-            shutil.rmtree(str(self.to_remove))
+        for user_dir in self.to_remove:
+            shutil.rmtree(user_dir)
         for img_file in self.image_files:
             os.remove(img_file)
+
+    def _send_register_request(self):
+        url = reverse("register")
+        client = APIClient()
+        data = {'username': "test_user",
+                'password': "password",
+                'email': "test_user@example.com",
+                'profile': {}}
+        response = client.post(url, data=data)
+        return response
 
     def test_user_delete_by_admin(self):
         user = UserFactory()
@@ -87,7 +98,7 @@ class UserTest(APITestCase):
         self.assertIsNotNone(new_user_reloaded)
 
         self.assertNotEqual(old_user.pk, new_user_reloaded.pk)
-        self.to_remove = new_user_reloaded.profile.resource_root()
+        self.to_remove.append(new_user_reloaded.profile.resource_root())
 
     def test_creating_user_with_matching_active_user_fails(self):
         url = reverse("user-list", kwargs={'version': settings.DEFAULT_VERSION})
@@ -125,7 +136,7 @@ class UserTest(APITestCase):
                          "{dir}/myavatar.png".format(dir=self.user.username))
         self.assertTrue(filecmp.cmp("/tmp/myavatar.png",
                                     user_reloaded.profile.avatar.path))
-        self.to_remove = user_reloaded.profile.resource_root()
+        self.to_remove.append(user_reloaded.profile.resource_root())
 
     def test_non_post_request_is_rejected(self):
         url = reverse("avatar", kwargs={'version': settings.DEFAULT_VERSION,
@@ -134,6 +145,57 @@ class UserTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         resp_data = json.loads(response.content.decode("utf-8"))
         self.assertEqual(resp_data.get("message"), "Only POST is allowed for this URL.")
+
+    def test_registration_sends_activation_email(self):
+        response = self._send_register_request()
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        user = User.objects.get(username="test_user")
+        self.to_remove.append(user.profile.resource_root())
+        self.assertIsNotNone(user)
+        self.assertFalse(user.is_active)
+
+        self.assertEqual(len(mail.outbox), 1)
+        out_mail = mail.outbox[0]
+        self.assertEqual(len(out_mail.to), 1)
+        self.assertEqual(out_mail.to[0], "test_user@example.com")
+        self.assertEqual(out_mail.subject, "Account activation on 3Blades")
+
+    def test_unconfirmed_user_cannot_login(self):
+        _ = self._send_register_request()
+        user = User.objects.get(username="test_user")
+        self.to_remove.append(user.profile.resource_root())
+
+        client = APIClient()
+        logged_in = client.login(username=user.username,
+                                 password="password")
+        self.assertFalse(logged_in)
+
+    def test_activation_works_correctly(self):
+        import logging
+        log = logging.getLogger('users')
+        self._send_register_request()
+        user = User.objects.get(username="test_user")
+        self.to_remove.append(user.profile.resource_root())
+
+        out_mail = mail.outbox[0]
+        url = list(filter(lambda x: "http" in x and "auth/activate", out_mail.body.splitlines()))[0]
+        _, params = url.split("?")
+        uid_param, token_param = params.split("&")
+        uid = uid_param.split("=")[-1]
+        token = token_param.split("=")[-1]
+
+        activate_url = reverse("activate")
+        client = APIClient()
+        response = client.post(activate_url, data={'uid': uid,
+                                                   'token': token})
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        user_reloaded = User.objects.get(pk=user.pk)
+        self.assertTrue(user_reloaded.is_active)
+
+        logged_in = client.login(username=user_reloaded.username,
+                                 password="password")
+        self.assertTrue(logged_in)
 
 
 class EmailTest(APITestCase):
