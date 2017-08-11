@@ -7,7 +7,7 @@ from rest_framework.serializers import Serializer
 
 from projects.serializers import ProjectSerializer
 from users.serializers import UserSerializer
-from servers.serializers import ServerSerializer
+from servers.serializers import ServerSearchSerializer
 
 
 class SearchView(ListAPIView):
@@ -16,7 +16,7 @@ class SearchView(ListAPIView):
 
     serializers = {
         "projects": ProjectSerializer,
-        "servers": ServerSerializer,
+        "servers": ServerSearchSerializer,
         "users": UserSerializer,
     }
 
