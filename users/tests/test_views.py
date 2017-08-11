@@ -93,8 +93,7 @@ class UserTest(APITestCase):
                 'profile': {}}
         response = self.admin_client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        new_user_reloaded = User.objects.get(username=username,
-                                             is_active=True)
+        new_user_reloaded = User.objects.filter(username=username).exclude(pk=old_user.pk).first()
         self.assertIsNotNone(new_user_reloaded)
 
         self.assertNotEqual(old_user.pk, new_user_reloaded.pk)
