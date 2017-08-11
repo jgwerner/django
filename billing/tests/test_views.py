@@ -1,17 +1,22 @@
 import json
-from django.test import override_settings, Client, TestCase
+from decimal import Decimal, getcontext
+from django.test import Client, TestCase
 from django.urls import reverse
 from django.conf import settings
-from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from billing.models import (Customer, Card,
+from billing.models import (Card,
                             Plan, Subscription,
-                            Invoice, Event)
+                            Invoice, Event, InvoiceItem)
 from users.tests.factories import UserFactory
-from billing.tests.factories import (CustomerFactory, PlanFactory, CardFactory, SubscriptionFactory)
-from billing.stripe_utils import create_stripe_customer_from_user
+from projects.tests.factories import CollaboratorFactory
+from servers.tests.factories import ServerRunStatisticsFactory
+from billing.tests.factories import (PlanFactory,
+                                     CardFactory,
+                                     SubscriptionFactory,
+                                     EventFactory)
+from billing.stripe_utils import create_stripe_customer_from_user, create_plan_in_stripe
 
 
 if settings.MOCK_STRIPE:
@@ -20,6 +25,7 @@ else:
     import stripe
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
+getcontext().prec = 6
 
 
 def create_plan_dict(trial_period=None):
@@ -30,150 +36,6 @@ def create_plan_dict(trial_period=None):
                  if key in [f.name for f in Plan._meta.get_fields()] and key not in ["stripe_id", "created",
                                                                                      "id", "metadata"]}
     return data_dict
-
-
-class CustomerTest(APITestCase):
-    def setUp(self):
-        self.user = UserFactory(is_staff=True)
-        self.token_header = "Token {auth}".format(auth=self.user.auth_token.key)
-        self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
-        self.customers_to_delete = []
-
-    def tearDown(self):
-        for customer in self.customers_to_delete:
-            stripe_obj = stripe.Customer.retrieve(customer.stripe_id)
-            stripe_obj.delete()
-
-    def test_user_first_login_creates_customer(self):
-        self.client.credentials()
-        user = UserFactory(password="foo")
-        self.client.login(username=user.username,
-                          password="foo")
-
-        customer = Customer.objects.filter(user=user)
-        self.customers_to_delete.append(customer.first())
-        # There should be *exactly* one customer for each user
-        self.assertEqual(customer.count(), 1)
-
-    def test_create_customer(self):
-        url = reverse("customer-list", kwargs={'namespace': self.user.username,
-                                               'version': settings.DEFAULT_VERSION})
-        data = {'user': self.user.pk}
-        response = self.client.post(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Customer.objects.count(), 1)
-        self.assertEqual(Customer.objects.get().user, self.user)
-        self.customers_to_delete = [Customer.objects.get()]
-
-    def test_list_customers(self):
-        customers_count = 4
-        _ = CustomerFactory.create_batch(customers_count)
-        my_customer = CustomerFactory(user=self.user)
-        url = reverse("customer-list", kwargs={'namespace': self.user.username,
-                                               'version': settings.DEFAULT_VERSION})
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # Making sure that only "my" customer can be viewed
-        self.assertEqual(len(response.data), 1)
-
-    def test_customer_details(self):
-        customer = CustomerFactory(user=self.user)
-        url = reverse("customer-detail", kwargs={'namespace': self.user.username,
-                                                 'pk': customer.pk,
-                                                 'version': settings.DEFAULT_VERSION})
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(str(customer.pk), response.data.get('id'))
-
-    def test_customer_update(self):
-        customer = create_stripe_customer_from_user(self.user)
-        self.customers_to_delete = [customer]
-        url = reverse("customer-detail", kwargs={'namespace': self.user.username,
-                                                 'pk': customer.pk,
-                                                 'version': settings.DEFAULT_VERSION})
-
-        data = {'account_balance': 5000, 'user': str(self.user.pk)}
-        response = self.client.put(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        customer_reloaded = Customer.objects.get(pk=customer.pk)
-        self.assertEqual(customer_reloaded.account_balance, 5000)
-
-    def test_customer_delete(self):
-        User = get_user_model()
-        pre_del_user_count = User.objects.count()
-
-        # Note that this customer is purposefully not being added to self.customers_to_delete
-        # Deleting it from stripe is part of the test, obviously.
-        customer = create_stripe_customer_from_user(self.user)
-        url = reverse("customer-detail", kwargs={'namespace': self.user.username,
-                                                 'pk': customer.pk,
-                                                 'version': settings.DEFAULT_VERSION})
-        response = self.client.delete(url)
-
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(Customer.objects.count(), 0)
-
-        post_del_user_count = User.objects.count()
-        self.assertEqual(post_del_user_count, pre_del_user_count)
-
-        stripe_response = stripe.Customer.retrieve(customer.stripe_id)
-
-        self.assertTrue(stripe_response['deleted'])
-
-    def test_customer_without_subscription_rejected(self):
-        # We've been bypassing subscription requirement by
-        # making staff users to this point
-        self.user.is_staff = False
-        self.user.save()
-        customer = create_stripe_customer_from_user(self.user)
-        self.customers_to_delete = [customer]
-        url = reverse("project-list", kwargs={'namespace': self.user.username,
-                                              'version': settings.DEFAULT_VERSION})
-        response = self.client.get(url, follow=True)
-        self.assertEqual(response.status_code, status.HTTP_402_PAYMENT_REQUIRED)
-        self.user.is_staff = True
-        self.user.save()
-
-    @override_settings(ENABLE_BILLING=False)
-    def test_billing_disabled_doesnt_reject_user(self):
-        self.user.is_staff = False
-        self.user.save()
-        url = reverse("project-list", kwargs={'namespace': self.user.username,
-                                              'version': settings.DEFAULT_VERSION})
-        response = self.client.get(url, follow=True)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.user.is_staff = True
-        self.user.save()
-
-    def test_updating_customer_default_source(self):
-        customer = create_stripe_customer_from_user(self.user)
-        url = reverse("card-list", kwargs={'namespace': self.user.username,
-                                           'version': settings.DEFAULT_VERSION})
-        data = {'user': str(self.user.pk),
-                'token': 'tok_visa'}
-        self.client.post(url, data)
-        first_card = Card.objects.first()
-
-        # Have to create two card because the first one automatically becomes the default in stripe
-        data['token'] = "tok_mastercard"
-        self.client.post(url, data)
-
-        url = reverse("customer-detail", kwargs={'namespace': self.user.username,
-                                                 'pk': customer.pk,
-                                                 'version': settings.DEFAULT_VERSION})
-        second_card = Card.objects.exclude(pk=first_card.pk).first()
-        data = {'default_source': str(second_card.pk)}
-
-        response = self.client.patch(url, data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        customer_reloaded = Customer.objects.get(pk=customer.pk)
-        self.assertEqual(customer_reloaded.default_source, second_card)
-
-        self.customers_to_delete.append(customer)
 
 
 class PlanTest(APITestCase):
@@ -187,24 +49,6 @@ class PlanTest(APITestCase):
         for plan in self.plans_to_delete:
             stripe_obj = stripe.Plan.retrieve(plan.stripe_id)
             stripe_obj.delete()
-
-    def _create_plan_in_stripe(self):
-        url = reverse("plan-list", kwargs={'namespace': self.user.username,
-                                           'version': settings.DEFAULT_VERSION})
-        plan_data = create_plan_dict()
-        self.client.post(url, plan_data)
-        plan = Plan.objects.get()
-        return plan
-
-    def test_create_plan(self):
-        url = reverse("plan-list", kwargs={'namespace': self.user.username,
-                                           'version': settings.DEFAULT_VERSION})
-        data = create_plan_dict()
-        response = self.client.post(url, data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Plan.objects.count(), 1)
-        plan = Plan.objects.get()
-        self.plans_to_delete = [plan]
 
     def test_list_plans(self):
         plan_count = 4
@@ -223,77 +67,6 @@ class PlanTest(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(str(plan.pk), response.data.get('id'))
-
-    def test_plan_update(self):
-        plan = self._create_plan_in_stripe()
-        self.plans_to_delete = [plan]
-        url = reverse("plan-detail", kwargs={'namespace': self.user.username,
-                                             'pk': plan.pk,
-                                             'version': settings.DEFAULT_VERSION})
-        data = {'name': "Foo"}
-        response = self.client.patch(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        plan_reloaded = Plan.objects.get(pk=plan.pk)
-        self.assertEqual(plan_reloaded.name, "Foo")
-
-    def test_plan_delete(self):
-        pre_del_plan_count = Plan.objects.count()
-        plan = self._create_plan_in_stripe()
-        url = reverse("plan-detail", kwargs={'namespace': self.user.username,
-                                             'pk': plan.pk,
-                                             'version': settings.DEFAULT_VERSION})
-        response = self.client.delete(url)
-
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(Plan.objects.count(), 0)
-
-        post_del_plan_count = Plan.objects.count()
-        self.assertEqual(post_del_plan_count, pre_del_plan_count)
-
-    def test_non_staff_user_cannot_create_plan(self):
-        self.user.is_staff = False
-        self.user.save()
-        url = reverse("plan-list", kwargs={'namespace': self.user.username,
-                                           'version': settings.DEFAULT_VERSION})
-        data = create_plan_dict()
-        response = self.client.post(url, data)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.user.is_staff = True
-        self.user.save()
-
-    def test_non_staff_user_cannot_update_plan(self):
-        plan = self._create_plan_in_stripe()
-        self.plans_to_delete = [plan]
-        self.user.is_staff = False
-        self.user.save()
-        url = reverse("plan-detail", kwargs={'namespace': self.user.username,
-                                             'pk': plan.pk,
-                                             'version': settings.DEFAULT_VERSION})
-        data = {'name': "Foo"}
-        response = self.client.patch(url, data)
-
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.user.is_staff = True
-        self.user.save()
-
-    def test_non_staff_user_cannot_delete_plan(self):
-        plan = self._create_plan_in_stripe()
-        self.plans_to_delete.append(plan)
-        self.user.is_staff = False
-        self.user.save()
-        url = reverse("plan-detail", kwargs={'namespace': self.user.username,
-                                             'pk': plan.pk,
-                                             'version': settings.DEFAULT_VERSION})
-        response = self.client.delete(url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-        plan_reloaded = Plan.objects.filter(pk=plan.pk).first()
-        self.assertIsNotNone(plan_reloaded)
-
-        self.user.is_staff = True
-        self.user.save()
 
 
 class CardTest(APITestCase):
@@ -390,11 +163,9 @@ class SubscriptionTest(APITestCase):
             stripe_obj.delete()
 
     def _create_plan_in_stripe(self, trial_period=None):
-        url = reverse("plan-list", kwargs={'namespace': self.user.username,
-                                           'version': settings.DEFAULT_VERSION})
         plan_data = create_plan_dict(trial_period)
-        self.client.post(url, plan_data)
-        plan = Plan.objects.get()
+        plan = create_plan_in_stripe(plan_data)
+        plan.save()
         self.plans_to_delete.append(plan)
         return plan
 
@@ -416,6 +187,15 @@ class SubscriptionTest(APITestCase):
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Subscription.objects.count(), 1)
+
+    def test_update_subscription_fails(self):
+        subscription = SubscriptionFactory(customer=self.customer,
+                                           status="trialing")
+        url = reverse("subscription-detail", kwargs={'namespace': self.user.username,
+                                                     'pk': subscription.pk,
+                                                     'version': settings.DEFAULT_VERSION})
+        response = self.client.patch(url, data={'status': "active"})
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_list_subscriptions(self):
         not_me_sub_count = 3
@@ -474,11 +254,9 @@ class InvoiceTest(TestCase):
             stripe_obj.delete()
 
     def _create_plan_in_stripe(self, trial_period=None):
-        url = reverse("plan-list", kwargs={'namespace': self.user.username,
-                                           'version': settings.DEFAULT_VERSION})
         plan_data = create_plan_dict(trial_period)
-        self.api_client.post(url, json.dumps(plan_data), content_type="application/json")
-        plan = Plan.objects.get()
+        plan = create_plan_in_stripe(plan_data)
+        plan.save()
         self.plans_to_delete.append(plan)
         return plan
 
@@ -493,7 +271,7 @@ class InvoiceTest(TestCase):
         return subscription
 
     def test_invoice_created_webhook(self):
-        url = reverse("stripe-invoice",
+        url = reverse("stripe-invoice-created",
                       kwargs={'version': settings.DEFAULT_VERSION})
         # Always use Mock stripe for these tests, configuring webhooks for testing is near impossible.
         from billing.tests import mock_stripe
@@ -514,7 +292,7 @@ class InvoiceTest(TestCase):
         self.assertEqual(events.first().event_type, "invoice.created")
 
     def test_invoice_payment_failed_webhook(self):
-        url = reverse("stripe-invoice",
+        url = reverse("stripe-invoice-created",
                       kwargs={'version': settings.DEFAULT_VERSION})
         # Always use Mock stripe for these tests, configuring webhooks for testing is near impossible.
         from billing.tests import mock_stripe
@@ -536,3 +314,56 @@ class InvoiceTest(TestCase):
         sub_reloaded = Subscription.objects.get(pk=subscription.pk)
         stripe_subscription = stripe.Subscription.retrieve(subscription.stripe_id)
         self.assertEqual(sub_reloaded.status, stripe_subscription['status'])
+
+    def test_invoice_upcoming_webhook(self):
+        url = reverse("stripe-invoice-upcoming", kwargs={'version': settings.DEFAULT_VERSION})
+        from billing.tests import mock_stripe
+        subscription = self._create_subscription_in_stripe()
+
+        collaborator = CollaboratorFactory(user=self.user)
+        project = collaborator.project
+        run_stats = ServerRunStatisticsFactory(server__project=project)
+
+        expected_cost = (run_stats.server.server_size.cost_per_second *
+                         Decimal((run_stats.stop - run_stats.start).total_seconds())) * 100
+
+        webhook_data = mock_stripe.Event.get_webhook_event(event_type="invoice.upcoming",
+                                                           customer=self.customer.stripe_id,
+                                                           plan=subscription.plan.stripe_id,
+                                                           subscription=subscription.stripe_id,
+                                                           amount=subscription.plan.amount,
+                                                           interval=subscription.plan.interval,
+                                                           trial_period=subscription.plan.trial_period_days)
+        response = self.client.post(url, json.dumps(webhook_data), content_type="application/json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        events = Event.objects.filter(stripe_id=webhook_data['id'])
+        self.assertEqual(events.count(), 1)
+        self.assertEqual(events.first().event_type, "invoice.upcoming")
+
+        # Note: Normally we would want to ensure that the invoice item was associated with the correct
+        # Invoice, but since the Invoice is still upcoming, it is not stored in our DB, thus the Item
+        # Has no association yet.
+        invoice_items = InvoiceItem.objects.all()
+        self.assertEqual(invoice_items.count(), 1)
+        self.assertEqual(invoice_items.first().amount, expected_cost)
+
+    def test_sending_duplicate_event_does_nothing(self):
+        existing_event = EventFactory()
+        from billing.tests import mock_stripe
+        url = reverse("stripe-invoice-created", kwargs={'version': settings.DEFAULT_VERSION})
+        subscription = self._create_subscription_in_stripe()
+        webhook_data = mock_stripe.Event.get_webhook_event(event_type="invoice.created",
+                                                           customer=self.customer.stripe_id,
+                                                           plan=subscription.plan.stripe_id,
+                                                           subscription=subscription.stripe_id,
+                                                           amount=subscription.plan.amount,
+                                                           interval=subscription.plan.interval,
+                                                           trial_period=subscription.plan.trial_period_days,
+                                                           stripe_id=existing_event.stripe_id)
+        response = self.client.post(url, json.dumps(webhook_data), content_type="application/json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        all_events = Event.objects.all()
+        self.assertEqual(all_events.count(), 1)
+        event_reloaded = all_events.first()
+        self.assertEqual(existing_event.stripe_id, event_reloaded.stripe_id)
+        self.assertEqual(event_reloaded.event_type, existing_event.event_type)

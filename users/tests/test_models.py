@@ -1,6 +1,7 @@
 import shutil
 import os
 from pathlib import Path
+from django.db import IntegrityError
 from django.test import TestCase
 from django.conf import settings
 from users.tests.factories import UserFactory
@@ -24,6 +25,10 @@ class UserProfileTestCase(TestCase):
         with open(str(ssh_path), "r") as ssh_file:
             contents = ssh_file.read()
             self.assertEqual(user_profile.ssh_public_key(), contents)
+
+    def test_duplicate_user_is_rejected(self):
+        user = UserFactory(is_active=True)
+        self.assertRaises(IntegrityError, lambda: UserFactory(username=user.username))
 
 
 class UserTestCase(TestCase):

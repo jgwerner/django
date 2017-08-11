@@ -11,19 +11,32 @@ log = logging.getLogger('users')
 class Command(BaseCommand):
     help = "Create admin user"
 
-    def handle(self, *args, **kwargs):
+    def add_arguments(self, parser):
+        parser.add_argument("--username",
+                            dest="username",
+                            default="admin")
+        parser.add_argument("--email",
+                            dest="email",
+                            default="admin@example.com")
+        parser.add_argument("--password",
+                            dest="password",
+                            default="admin")
+
+    def handle(self, *args, **options):
         User = get_user_model()
         try:
-            admin_exists = User.objects.filter(username="admin", is_active=True).exists()
+            admin_exists = User.objects.filter(username=options.get('username', "admin"), is_active=True).exists()
             if admin_exists:
                 log.info("Admin user already exists. Doing nothing.")
             else:
-                user = User.objects.create_superuser("admin", "admin@example.com", "admin")
+                user = User.objects.create_superuser(options.get('username', "admin"),
+                                                     options.get('email', "admin@example.com"),
+                                                     options.get('password', "admin"))
                 Token.objects.create(user=user)
                 profile, created = UserProfile.objects.get_or_create(user=user)
 
-            if created:
-                log.info("Created a User Profile for the admin user: {prof}".format(prof=profile))
+                if created:
+                    log.info("Created a User Profile for the admin user: {prof}".format(prof=profile))
 
         except Exception as e:
             log.error("There was an error while creating a superuser. Exception stacktrace:")

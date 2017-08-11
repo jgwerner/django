@@ -2,6 +2,7 @@ import random
 import factory
 from django.utils import timezone
 from datetime import timedelta
+from factory import fuzzy
 
 from projects.tests.factories import ProjectFactory
 from servers import models
@@ -16,6 +17,7 @@ class ServerSizeFactory(factory.django.DjangoModelFactory):
     cpu = random.randint(1, 9)
     memory = random.randint(4, 256)
     active = True
+    cost_per_second = fuzzy.FuzzyDecimal(low=0.0, high=0.1)
 
 
 class ServerFactory(factory.django.DjangoModelFactory):
