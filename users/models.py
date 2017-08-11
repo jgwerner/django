@@ -1,9 +1,13 @@
+import logging
 from pathlib import Path
 import django
 from django.conf import settings
-from django.db import models
+from django.db import models, IntegrityError
 from django.contrib.auth.models import AbstractUser, UserManager
 from django.urls import reverse
+
+
+log = logging.getLogger('users')
 
 
 class CustomUserManager(UserManager):
@@ -19,6 +23,16 @@ class User(AbstractUser):
                                 verbose_name='username')
 
     objects = CustomUserManager()
+
+    def save(self, *args, **kwargs):
+        username = self.username
+        existing_user = User.objects.filter(username=username,
+                                            is_active=True).first()
+        if existing_user is not None and existing_user.pk != self.pk:
+            log.info(f"Rejected creating/updating user: {self.pk} due to username conflict.")
+            raise IntegrityError(f"A user with the username {username} already exists.")
+        else:
+            super(User, self).save(*args, **kwargs)
 
     def get_absolute_url(self, version, namespace):
         return reverse('user-detail', kwargs={'version': version, 'pk': str(self.pk)})
