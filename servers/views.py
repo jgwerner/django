@@ -13,6 +13,7 @@ from projects.permissions import ProjectChildPermission
 from .tasks import start_server, stop_server, terminate_server
 from .permissions import ServerChildPermission, ServerActionPermission
 from . import serializers, models
+from .utils import get_server_usage
 
 
 class ServerViewSet(viewsets.ModelViewSet):
@@ -61,12 +62,7 @@ class ServerRunStatisticsViewSet(ProjectMixin, ServerMixin, viewsets.ModelViewSe
     permission_classes = (IsAuthenticated, ServerChildPermission)
 
     def list(self, request, *args, **kwargs):
-        obj = self.queryset.filter(server_id=kwargs.get('server_pk')).aggregate(
-            duration=Sum(Coalesce(F('stop'), Now()) - F('start')),
-            runs=Count('id'),
-            start=Max('start'),
-            stop=Max('stop')
-        )
+        obj = get_server_usage([kwargs.get("server_pk")])
         serializer = serializers.ServerRunStatisticsAggregatedSerializer(obj)
         return Response(serializer.data)
 

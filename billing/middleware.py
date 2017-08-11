@@ -1,4 +1,5 @@
-from django.shortcuts import redirect
+from django.http import HttpResponse
+from rest_framework import status
 from django.urls import resolve
 from django.conf import settings
 from billing.models import Customer
@@ -18,14 +19,7 @@ class SubscriptionMiddleware(object):
                     and not user.is_staff):
                     customer = user.customer
                     if not customer.has_active_subscription():
-                        # Using settings.DEFAULT_VERSION here isn't ideal, but:
-                        # 1.) request is still a WSGIRequest at this point, which doesn't have the version attribute.
-                        # 2.) settings.DEFAULT_VERSION should at least match the major version of the request
-                        #     because each version has its own instance *in theory*
-                        # 3.) subscription-required should very rarely, if ever, change.
-                        return redirect("subscription-required",
-                                        namespace=user.username,
-                                        version=settings.DEFAULT_VERSION)
+                        return HttpResponse(status=status.HTTP_402_PAYMENT_REQUIRED)
         except Customer.DoesNotExist:
             pass
 
