@@ -39,8 +39,8 @@ class User(AbstractUser):
 
 
 def user_directory_path(instance, filename):
-    return "{username}/{filename}".format(username=instance.user.username,
-                                          filename=filename)
+    return "{username}/avatar/{filename}".format(username=instance.user.username,
+                                                 filename=filename)
 
 
 class UserProfile(models.Model):
