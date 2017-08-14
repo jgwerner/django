@@ -131,8 +131,10 @@ class UserTest(APITestCase):
 
         user_reloaded = User.objects.get(pk=self.user.pk)
 
+        avatar_dir = self.user.username + "/avatar/"
+
         self.assertEqual(user_reloaded.profile.avatar.name,
-                         "{dir}/myavatar.png".format(dir=self.user.username))
+                         f"{avatar_dir}myavatar.png")
         self.assertTrue(filecmp.cmp("/tmp/myavatar.png",
                                     user_reloaded.profile.avatar.path))
         self.to_remove.append(user_reloaded.profile.resource_root())
