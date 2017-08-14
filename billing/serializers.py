@@ -27,9 +27,6 @@ class PlanSerializer(serializers.ModelSerializer):
 
 
 class CardSerializer(serializers.Serializer):
-    # TODO: Create some sort of validator that validates that if token is not present, the rest of these are
-    # Note: Tokens are heavily preferred, but CLI Tools require manually passing all arguments.
-    # Hence this mess.
     name = serializers.CharField(max_length=200, required=False)
     address_line1 = serializers.CharField(max_length=255, required=False)
     address_line2 = serializers.CharField(max_length=255, required=False)
@@ -40,7 +37,7 @@ class CardSerializer(serializers.Serializer):
     exp_month = serializers.IntegerField(min_value=1, max_value=12, required=False)
     exp_year = serializers.IntegerField(required=False)
 
-    token = serializers.CharField(max_length=255, required=False)
+    token = serializers.CharField(max_length=255, required=False, allow_blank=True)
 
     # Begin read-only fields
     id = serializers.UUIDField(read_only=True)
