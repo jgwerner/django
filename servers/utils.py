@@ -6,9 +6,8 @@ from servers.models import ServerRunStatistics
 
 def get_server_usage(server_ids, begin_measure_time=None):
     """
-    
     :param server_ids: List of server pks that you want run statistics for.
-    :param begin_measure_time: A datetime.datetime instance that the statistics should start from. 
+    :param begin_measure_time: A datetime.datetime instance that the statistics should start from.
                                Usually for billing purposes.
     :return: A Django aggregate queryset
     """

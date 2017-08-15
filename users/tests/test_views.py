@@ -18,6 +18,17 @@ log = logging.getLogger('users')
 User = get_user_model()
 
 
+def send_register_request():
+    url = reverse("register")
+    client = APIClient()
+    data = {'username': "test_user",
+            'password': "password",
+            'email': "test_user@example.com",
+            'profile': {}}
+    response = client.post(url, data=data)
+    return response
+
+
 class UserTest(APITestCase):
     def setUp(self):
         self.admin = UserFactory(is_staff=True, username='admin')
@@ -32,16 +43,6 @@ class UserTest(APITestCase):
             shutil.rmtree(user_dir)
         for img_file in self.image_files:
             os.remove(img_file)
-
-    def _send_register_request(self):
-        url = reverse("register")
-        client = APIClient()
-        data = {'username': "test_user",
-                'password': "password",
-                'email': "test_user@example.com",
-                'profile': {}}
-        response = client.post(url, data=data)
-        return response
 
     def test_user_delete_by_admin(self):
         user = UserFactory()
@@ -148,7 +149,7 @@ class UserTest(APITestCase):
         self.assertEqual(resp_data.get("message"), "Only POST is allowed for this URL.")
 
     def test_registration_sends_activation_email(self):
-        response = self._send_register_request()
+        response = send_register_request()
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         user = User.objects.get(username="test_user")
         self.to_remove.append(user.profile.resource_root())
@@ -162,7 +163,7 @@ class UserTest(APITestCase):
         self.assertEqual(out_mail.subject, "Account activation on 3Blades")
 
     def test_unconfirmed_user_cannot_login(self):
-        _ = self._send_register_request()
+        _ = send_register_request()
         user = User.objects.get(username="test_user")
         self.to_remove.append(user.profile.resource_root())
 
@@ -172,7 +173,7 @@ class UserTest(APITestCase):
         self.assertFalse(logged_in)
 
     def test_activation_works_correctly(self):
-        self._send_register_request()
+        send_register_request()
         user = User.objects.get(username="test_user")
         self.to_remove.append(user.profile.resource_root())
 
