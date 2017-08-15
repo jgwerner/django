@@ -323,7 +323,7 @@ class ServerDummySpawner(ServerSpawner):
     def status(self) -> str:
         return 'running'
 
-    def start(self, **kwargs):
+    def start(self, *args, **kwargs):
         self.server.status = self.server.RUNNING
         return None
 
