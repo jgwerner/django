@@ -94,7 +94,6 @@ class ProjectFile(models.Model):
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
     project = models.ForeignKey(Project, related_name="project_files")
     file = models.FileField(upload_to=user_project_directory_path)
-    public = models.BooleanField(default=False)
 
     objects = FileQuerySet.as_manager()
 

@@ -149,14 +149,11 @@ class ProjectFileViewSet(ProjectMixin,
         proj_files_to_serialize = []
         project_pk = kwargs.get("project_pk")
 
-        public = request.data.get("public") in ["true", "on", True]
-
         for f in files:
             project = Project.objects.get(pk=project_pk)
             create_data = {'author': self.request.user,
                            'project': project,
-                           'file': f,
-                           'public': public}
+                           'file': f}
             project_file = ProjectFile(**create_data)
 
             project_file.save()
@@ -185,11 +182,9 @@ class ProjectFileViewSet(ProjectMixin,
 
         instance = ProjectFile.objects.get(pk=kwargs.get("pk"))
         project_pk = request.data.get("project")
-        public = request.data.get("public") in ["true", "on", "True"]
         new_file = files[0]
 
         data = {'project': project_pk,
-                'public': public,
                 'file': new_file}
 
         serializer = self.serializer_class(instance, data=data)
