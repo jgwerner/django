@@ -1,3 +1,4 @@
+import logging
 from django.db.models import Sum, Count, Max, F
 from django.db.models.functions import Coalesce, Now
 from rest_framework import status, views, viewsets
@@ -14,6 +15,7 @@ from .tasks import start_server, stop_server, terminate_server
 from .permissions import ServerChildPermission, ServerActionPermission
 from . import serializers, models
 from .utils import get_server_usage
+log = logging.getLogger('servers')
 
 
 class ServerViewSet(viewsets.ModelViewSet):
@@ -86,6 +88,12 @@ class SshTunnelViewSet(ProjectMixin, ServerMixin, viewsets.ModelViewSet):
     queryset = models.SshTunnel.objects.all()
     serializer_class = serializers.SshTunnelSerializer
     permission_classes = (IsAuthenticated, ServerChildPermission)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(server_id=kwargs.get("server_pk"))
+        return Response(status=status.HTTP_201_CREATED, data=serializer.data)
 
 
 class ServerSizeViewSet(UUIDRegexMixin, viewsets.ModelViewSet):
