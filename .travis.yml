@@ -48,6 +48,5 @@ after_success:
 
 notifications:
   slack: 3blades:RouLDGyG58awmaGkjgvh9Yuz
-
 env:
   - $DOCKER_IMAGE_NAME="3blades/app-backend"

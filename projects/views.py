@@ -68,7 +68,7 @@ class ProjectViewSet(NamespaceMixin, viewsets.ModelViewSet):
 class ProjectMixin(object):
     permission_classes = (permissions.IsAuthenticated, ProjectChildPermission)
 
-    def get_queryset(self):
+    def get_queryset(self, *args, **kwargs):
         return super().get_queryset().filter(project_id=self.kwargs.get('project_pk'))
 
 
