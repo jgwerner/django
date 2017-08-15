@@ -416,15 +416,13 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
         uploaded_file = generate_random_file_content("to_update")
         project_file = ProjectFileFactory(author=self.user,
                                           project=self.project,
-                                          file=uploaded_file,
-                                          public=False)
+                                          file=uploaded_file)
         kwargs = self.url_kwargs
         kwargs['pk'] = project_file.pk
         url = reverse('projectfile-detail', kwargs=kwargs)
         new_upload = generate_random_file_content("to_update",
                                                   num_kb=2)
-        data = {'public': True,
-                'file': new_upload}
+        data = {'file': new_upload}
         response = self.client.put(url, data, format="multipart")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         db_project_file = ProjectFile.objects.get(pk=project_file.pk)
