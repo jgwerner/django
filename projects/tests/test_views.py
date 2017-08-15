@@ -442,11 +442,11 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
                                           project=self.project,
                                           file=uploaded_file,
                                           public=False)
-        other_uploaded = generate_random_file_content("to_update")
-        other_proj_file = ProjectFileFactory(author=self.user,
-                                             project=self.project,
-                                             file=uploaded_file,
-                                             public=False)
+        generate_random_file_content("to_update")
+        ProjectFileFactory(author=self.user,
+                           project=self.project,
+                           file=uploaded_file,
+                           public=False)
         kwargs = self.url_kwargs
         kwargs['pk'] = project_file.pk
         url = reverse('projectfile-detail', kwargs=kwargs)
