@@ -64,7 +64,7 @@ class Base64CharField(serializers.CharField):
 class ProjectFileSerializer(serializers.ModelSerializer):
     base64_data = Base64CharField(required=False, write_only=True)
     name = serializers.CharField(required=False)
-    file = serializers.FileField(required=False)
+    file = serializers.FileField(required=False,write_only=True)
     path = serializers.CharField(required=False)
     content = serializers.SerializerMethodField()
 

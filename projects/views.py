@@ -133,8 +133,8 @@ class ProjectFileViewSet(ProjectMixin,
         get_content = self.request.query_params.get('content', "false").lower() == "true"
         serializer = self.serializer_class(queryset, many=True, context={'get_content': get_content})
         data = serializer.data
-        for proj_file in data:
-            proj_file['file'] = request.build_absolute_uri(proj_file['file'])
+        # for proj_file in data:
+        #     proj_file['file'] = request.build_absolute_uri(proj_file['file'])
 
         return Response(data, status=status.HTTP_200_OK)
 
