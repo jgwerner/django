@@ -7,7 +7,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from users.models import User
-from servers.models import Server, ServerSize
+from servers.models import Server
 from servers.utils import get_server_usage
 
 from billing.models import (Customer, Invoice,

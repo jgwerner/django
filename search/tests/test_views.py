@@ -125,7 +125,7 @@ class SearchTestCase(APITestCase):
     def test_server_search_returns_project_info(self):
         project = ProjectFactory(name='AsdfProject')
         CollaboratorFactory(user=self.user, project=project, owner=True)
-        server = ServerFactory(name='AsdfServer', project=project)
+        ServerFactory(name='AsdfServer', project=project)
         response = self.client.get(self.url, {'q': "asdfserver"})
         self.assertEqual(len(response.data['servers']['results']), 1)
         project_data = response.data['servers']['results'][0].get("project")

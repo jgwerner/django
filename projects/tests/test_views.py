@@ -147,9 +147,9 @@ class ProjectTest(ProjectTestMixin, APITestCase):
     def test_non_owner_cannot_delete_project(self):
         owner_collab = CollaboratorFactory()
         project = owner_collab.project
-        collaborator = CollaboratorFactory(user=self.user,
-                                           owner=False,
-                                           project=project)
+        CollaboratorFactory(user=self.user,
+                            owner=False,
+                            project=project)
         assign_perm("write_project", self.user, project)
         url = reverse("project-detail", kwargs={'namespace': self.user.username,
                                                 'pk': project.pk,

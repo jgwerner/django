@@ -103,7 +103,7 @@ class TriggerSerializer(serializers.ModelSerializer):
                 content_object=content_object,
             )
         )
-        logger.debug(f'Action details: {instance.__dict__}')
+        logger.debug(f'Action details: New Instance: {created}\n {instance.__dict__}')
         return instance
 
 

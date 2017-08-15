@@ -36,7 +36,7 @@ class TriggerTest(APILiveServerTestCase):
         self.assertEqual(Project.objects.count(), 2)
 
     def test_launch_object_action(self):
-        server = ServerFactory(project=self.project)
+        ServerFactory(project=self.project)
         token = create_jwt_token(self.user)
         effect = ActionFactory(
             method='post',
