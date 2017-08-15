@@ -37,22 +37,16 @@ install:
   - pip install -U pip setuptools wheel
   - pip install -r requirements/dev.txt
   - pip install codecov
-  - pip install codacy-coverage==1.3.6
 
 script:
   - 'if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then export MOCK_STRIPE=true; fi'
   - coverage run --source='.' manage.py test && coverage report -m
-  - coverage xml
   - bash config/buildDockerImage.sh
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
-  - python-codacy-coverage -r coverage.xml
 
 notifications:
   slack: 3blades:RouLDGyG58awmaGkjgvh9Yuz
 env:
-  matrix:
   - $DOCKER_IMAGE_NAME="3blades/app-backend"
-  global:
-    secure: SKHaGZI4HzjOt4eCDWWi2/rAVnUAXl7mDHcZXk9HYYsuhQ0HoIRpItLmNJWan9IoSihajW6ln8i66Zn1FwwW+cTI/HFJdmNlONBO01UqccJJie076a50RreC/a+a7r8ihqPsKAfEfbMWbn0zhjFw3YUYD7UYk5lEZL+Q+23lcQ8urBX9JURaFTTV8OYOSuwtkygMrL3sLrNZaJEW1UczNDkPFEO6ETC81EISf8j3teLRZxCGDBDwfMN7SqNZKfwSWp+AzUAPnymxGWYkHhI7wQ0H5sXhH+Z7P/Mpdh5/hGF5zYh2DlvlaDUspmQ0KuZOVnVQBtrN9sk5VS3L2tQlFN4bK79Ftlh11GDeZIMdgLSym6wJg8YvEllGZQpPEw7GmoicXxEWLN0C5qoSTios2m5uqIaW7oCXNpf4eIpMyoWNKWvFvc2G1bUjkfq66AzySIuUCsRr1XdOzYwCojz+EDhsC60KzV8rHh0q7FJt3ySb8RlKXE7SucwNIGYlYMmBoNCPgpdiiNWOveTmsVUkZ2cCrfgk61D4owqzF6gfT46YkFjD0vq8CqgHGfx4M3xu5hidWj/jTZ6JmfJffuYwQISev/QFyFxxGETGsOXDzQkNl8kjfxrrPedbjRZIB3WIP84mdc0BAq5X+GT8D8qel746gHZ/1cD3hMc9iGlNqg4=
