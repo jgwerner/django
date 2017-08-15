@@ -12,8 +12,6 @@ from projects.models import (Project, Collaborator,
                              SyncedResource, ProjectFile)
 
 User = get_user_model()
-import logging
-log = logging.getLogger('projects')
 
 
 class ProjectSerializer(SearchSerializerMixin, serializers.ModelSerializer):
@@ -72,7 +70,7 @@ class ProjectFileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProjectFile
-        fields = ("id", "project", "file", "public", "base64_data", "name", "path", "content")
+        fields = ("id", "project", "file", "base64_data", "name", "path", "content")
         read_only_fields = ("author", "project", "content")
 
     def get_content(self, obj):

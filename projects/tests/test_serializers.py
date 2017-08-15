@@ -15,8 +15,7 @@ class ProjectFileSerializerTestCase(TestCase):
         test_file = generate_random_file_content("test.txt")
         validated_data = {'author': self.user,
                           'project': str(self.project.pk),
-                          'file': test_file,
-                          'public': False}
+                          'file': test_file}
         serializer = ProjectFileSerializer()
         # self.assertTrue(serializer.is_valid())
         project_file = serializer.create(validated_data)
@@ -24,7 +23,6 @@ class ProjectFileSerializerTestCase(TestCase):
         self.assertEqual(project_file.file.read(), reread_file.read())
         self.assertEqual(project_file.project, self.project)
         self.assertEqual(project_file.author, self.user)
-        self.assertFalse(project_file.public)
 
 
 class Base64CharFieldTest(TestCase):

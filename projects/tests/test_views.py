@@ -225,8 +225,7 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
     def test_create_file(self):
         url = reverse('projectfile-list', kwargs=self.url_kwargs)
         test_file = open("projects/tests/file_upload_test_1.txt", "rb")
-        data = {'file': test_file,
-                'public': "on"}
+        data = {'file': test_file}
         response = self.client.post(url, data, format="multipart")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
@@ -244,7 +243,6 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
         url = reverse('projectfile-list', kwargs=self.url_kwargs)
         test_file = open("projects/tests/file_upload_test_1.txt", "rb")
         data = {'file': test_file,
-                'public': "on",
                 'path': "my/test/path"}
         response = self.client.post(url, data, format="multipart")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -268,7 +266,6 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
 
         url = reverse('projectfile-list', kwargs=self.url_kwargs)
         data = {'files': files_list,
-                'public': "on",
                 'path': "my/test/path"}
         response = self.client.post(url, data, format="multipart")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -419,15 +416,13 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
         uploaded_file = generate_random_file_content("to_update")
         project_file = ProjectFileFactory(author=self.user,
                                           project=self.project,
-                                          file=uploaded_file,
-                                          public=False)
+                                          file=uploaded_file)
         kwargs = self.url_kwargs
         kwargs['pk'] = project_file.pk
         url = reverse('projectfile-detail', kwargs=kwargs)
         new_upload = generate_random_file_content("to_update",
                                                   num_kb=2)
-        data = {'public': True,
-                'file': new_upload}
+        data = {'file': new_upload}
         response = self.client.put(url, data, format="multipart")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         db_project_file = ProjectFile.objects.get(pk=project_file.pk)
@@ -440,13 +435,11 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
         uploaded_file = generate_random_file_content("to_update")
         project_file = ProjectFileFactory(author=self.user,
                                           project=self.project,
-                                          file=uploaded_file,
-                                          public=False)
+                                          file=uploaded_file)
         generate_random_file_content("to_update")
         ProjectFileFactory(author=self.user,
                            project=self.project,
-                           file=uploaded_file,
-                           public=False)
+                           file=uploaded_file)
         kwargs = self.url_kwargs
         kwargs['pk'] = project_file.pk
         url = reverse('projectfile-detail', kwargs=kwargs)
@@ -454,8 +447,7 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
                                                   num_kb=2)
         other_new_upload = generate_random_file_content("other_update",
                                                         num_kb=2)
-        data = {'public': True,
-                'files': [new_upload, other_new_upload]}
+        data = {'files': [new_upload, other_new_upload]}
         response = self.client.put(url, data, format="multipart")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -463,15 +455,13 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
         uploaded_file = generate_random_file_content("to_update")
         project_file = ProjectFileFactory(author=self.user,
                                           project=self.project,
-                                          file=uploaded_file,
-                                          public=False)
+                                          file=uploaded_file)
         kwargs = self.url_kwargs
         kwargs['pk'] = project_file.pk
         url = reverse('projectfile-detail', kwargs=kwargs)
         b64_content = b"test"
         b64 = base64.b64encode(b64_content)
-        data = {'public': True,
-                'base64_data': b64,
+        data = {'base64_data': b64,
                 'name': project_file.file.name.split("/")[-1]}
         response = self.client.put(url, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -485,15 +475,13 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
         uploaded_file = generate_random_file_content("to_update")
         project_file = ProjectFileFactory(author=self.user,
                                           project=self.project,
-                                          file=uploaded_file,
-                                          public=False)
+                                          file=uploaded_file)
         kwargs = self.url_kwargs
         kwargs['pk'] = project_file.pk
         url = reverse('projectfile-detail', kwargs=kwargs)
         b64_content = b"test"
         b64 = base64.b64encode(b64_content)
-        data = {'public': True,
-                'base64_data': b64}
+        data = {'base64_data': b64}
         response = self.client.put(url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
