@@ -28,8 +28,6 @@ class ProjectViewSet(NamespaceMixin, viewsets.ModelViewSet):
         instance = Project.objects.get(pk=kwargs.get("pk"))
         user = request.user
 
-        has_perm = user.has_perm("projects.write_project", instance)
-
         if not user.has_perm("projects.write_project", instance):
             return Response(data={'message': "Insufficient permissions to modify project"},
                             status=status.HTTP_403_FORBIDDEN)

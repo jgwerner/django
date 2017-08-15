@@ -1,7 +1,7 @@
 import logging
-from django.db.models import Sum, Count, Max, F
+from django.db.models import Sum, Max, F
 from django.db.models.functions import Coalesce, Now
-from rest_framework import status, views, viewsets
+from rest_framework import status, viewsets
 from rest_framework.generics import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -9,7 +9,6 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from base.views import ProjectMixin, UUIDRegexMixin, ServerMixin
 from base.permissions import IsAdminUser
-from projects.models import Project
 from projects.permissions import ProjectChildPermission
 from .tasks import start_server, stop_server, terminate_server
 from .permissions import ServerChildPermission, ServerActionPermission

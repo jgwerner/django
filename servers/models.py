@@ -9,7 +9,6 @@ from django.urls import reverse
 from django.utils.text import slugify
 from django_redis import get_redis_connection
 
-from base.namespace import Namespace
 from servers.managers import ServerQuerySet
 from servers.spawners import DockerSpawner
 

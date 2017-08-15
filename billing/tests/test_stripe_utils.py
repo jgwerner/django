@@ -199,7 +199,7 @@ class TestStripeUtils(TestCase):
             ServerRunStatisticsFactory.create_batch(2, server__project=project,
                                                     server__server_size=server_size)
 
-        run_stats = ServerRunStatistics.objects.filter(server__project=project)
+        _ = ServerRunStatistics.objects.filter(server__project=project)
         usage_data = stripe_utils.calculate_compute_usage(self.customer.stripe_id)
 
         invoice_item = stripe_utils.create_invoice_item_for_compute_usage(self.customer.stripe_id,

@@ -8,7 +8,6 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from django.conf import settings
 from django.core.validators import RegexValidator
-from django.contrib.sites.models import Site
 from django.utils.encoding import force_bytes, force_text
 from django_redis.serializers.base import BaseSerializer
 from rest_framework_jwt.settings import api_settings

@@ -14,7 +14,6 @@ import os
 import dj_database_url
 import datetime
 import uuid
-from django.urls import reverse_lazy
 from appdj.settings import BASE_DIR
 from appdj.settings.tbslog import TBS_LOGGING
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
