@@ -1,53 +1,48 @@
 language: python
 cache:
-  - pip
-  - apt
+- pip
+- apt
 sudo: required
 dist: trusty
 addons:
-  postgresql: "9.6"
+  postgresql: '9.6'
 python:
-  - "3.6"
-# whitelist
+- '3.6'
 branches:
   only:
-    - master
-    - staging
+  - master
+  - staging
 services:
-# enable docker service inside travis
-  - docker
-  - postgresql
-  - redis-server
+- docker
+- postgresql
+- redis-server
 before_script:
-  - echo "listen_addresses = '*'" | sudo tee -a /etc/postgresql/9.*/main/postgresql.conf
-  - echo "host all all 0.0.0.0/0 trust" | sudo tee -a /etc/postgresql/9.*/main/pg_hba.conf
-  - sudo /etc/init.d/postgresql stop
-  - sudo /etc/init.d/postgresql start 9.4
-  - psql template1 -c 'CREATE EXTENSION IF NOT EXISTS hstore;' -U postgres
-  - psql -c 'create database travis_ci_test;' -U postgres
-#  - sleep 10
+- echo "listen_addresses = '*'" | sudo tee -a /etc/postgresql/9.*/main/postgresql.conf
+- echo "host all all 0.0.0.0/0 trust" | sudo tee -a /etc/postgresql/9.*/main/pg_hba.conf
+- sudo /etc/init.d/postgresql stop
+- sudo /etc/init.d/postgresql start 9.4
+- psql template1 -c 'CREATE EXTENSION IF NOT EXISTS hstore;' -U postgres
+- psql -c 'create database travis_ci_test;' -U postgres
 before_install:
-  - docker --version  # document the version travis is using
-  - export PATH=$PATH:$HOME/.local/bin # put aws in the path
-  - export DJANGO_SETTINGS_MODULE="appdj.settings.test"
-  - export REDIS_URL="redis://localhost:6379/0"
-  - export DATABASE_URL="postgres://postgres:@localhost:5432/travis_ci_test"
-# command to install dependencies
+- docker --version
+- export PATH=$PATH:$HOME/.local/bin
+- export DJANGO_SETTINGS_MODULE="appdj.settings.test"
+- export REDIS_URL="redis://localhost:6379/0"
+- export DATABASE_URL="postgres://postgres:@localhost:5432/travis_ci_test"
 install:
-  - pip install -U pip setuptools wheel
-  - pip install -r requirements/dev.txt
-  - pip install codecov
-
+- pip install -U pip setuptools wheel
+- pip install -r requirements/dev.txt
+- pip install codecov
 script:
-  - 'if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then export MOCK_STRIPE=true; fi'
-  - coverage run --source='.' manage.py test && coverage report -m
-  - bash config/buildDockerImage.sh
-
+- if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then export MOCK_STRIPE=true; fi
+- coverage run --source='.' manage.py test && coverage report -m
+- bash config/buildDockerImage.sh
 after_success:
-  - bash <(curl -s https://codecov.io/bash)
-
+- bash <(curl -s https://codecov.io/bash)
 notifications:
   slack: 3blades:RouLDGyG58awmaGkjgvh9Yuz
-
 env:
+  matrix:
   - $DOCKER_IMAGE_NAME="3blades/app-backend"
+  global:
+    secure: SKHaGZI4HzjOt4eCDWWi2/rAVnUAXl7mDHcZXk9HYYsuhQ0HoIRpItLmNJWan9IoSihajW6ln8i66Zn1FwwW+cTI/HFJdmNlONBO01UqccJJie076a50RreC/a+a7r8ihqPsKAfEfbMWbn0zhjFw3YUYD7UYk5lEZL+Q+23lcQ8urBX9JURaFTTV8OYOSuwtkygMrL3sLrNZaJEW1UczNDkPFEO6ETC81EISf8j3teLRZxCGDBDwfMN7SqNZKfwSWp+AzUAPnymxGWYkHhI7wQ0H5sXhH+Z7P/Mpdh5/hGF5zYh2DlvlaDUspmQ0KuZOVnVQBtrN9sk5VS3L2tQlFN4bK79Ftlh11GDeZIMdgLSym6wJg8YvEllGZQpPEw7GmoicXxEWLN0C5qoSTios2m5uqIaW7oCXNpf4eIpMyoWNKWvFvc2G1bUjkfq66AzySIuUCsRr1XdOzYwCojz+EDhsC60KzV8rHh0q7FJt3ySb8RlKXE7SucwNIGYlYMmBoNCPgpdiiNWOveTmsVUkZ2cCrfgk61D4owqzF6gfT46YkFjD0vq8CqgHGfx4M3xu5hidWj/jTZ6JmfJffuYwQISev/QFyFxxGETGsOXDzQkNl8kjfxrrPedbjRZIB3WIP84mdc0BAq5X+GT8D8qel746gHZ/1cD3hMc9iGlNqg4=
