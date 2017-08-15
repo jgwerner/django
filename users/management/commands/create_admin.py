@@ -4,7 +4,6 @@ from django.core.management import BaseCommand
 
 from rest_framework.authtoken.models import Token
 
-from users.models import UserProfile
 log = logging.getLogger('users')
 
 
