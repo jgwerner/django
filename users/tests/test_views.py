@@ -44,6 +44,28 @@ class UserTest(APITestCase):
         for img_file in self.image_files:
             os.remove(img_file)
 
+    def test_user_create_by_admin(self):
+        url = reverse("user-list", kwargs={'version': settings.DEFAULT_VERSION})
+        data = {'username': "foobar",
+                'password': "password",
+                'email': "foobar@example.com",
+                'profile': {}}
+        response = self.admin_client.post(url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        created = User.objects.filter(username="foobar")
+        self.assertEqual(created.count(), 1)
+        self.to_remove.append(created.first().profile.resource_root())
+
+    def test_user_create_by_user(self):
+        url = reverse("user-list", kwargs={'version': settings.DEFAULT_VERSION})
+        data = {'username': "foobar",
+                'password': "password",
+                'email': "foobar@example.com",
+                'profile': {}}
+        response = self.user_client.post(url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
     def test_user_delete_by_admin(self):
         user = UserFactory()
         # For whatever reason, create_ssh_key doesnt seem to be called by the Factory here.
