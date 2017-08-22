@@ -2,6 +2,7 @@ from unittest.mock import patch
 from guardian.shortcuts import assign_perm
 from django.urls import reverse
 from django.conf import settings
+from django.test import override_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -236,6 +237,7 @@ class ServerStatisticsTestCase(APITestCase):
         self.assertDictEqual(response.data, expected)
 
 
+@override_settings(ENABLE_BILLING=False)
 class ServerSizeTestCase(APITestCase):
     def setUp(self):
         self.user = UserFactory()
@@ -252,7 +254,9 @@ class ServerSizeTestCase(APITestCase):
         self.assertEqual(response.data.get("id"), str(self.server_size.pk))
 
     def test_non_staff_cannot_create_server_size(self):
-        non_staff = UserFactory(is_staff=False)
+        non_staff = UserFactory()
+        non_staff.is_staff = False
+        non_staff.save()
         token_header = 'Token {}'.format(non_staff.auth_token.key)
         client = self.client_class(HTTP_AUTHORIZATION=token_header)
 

@@ -50,7 +50,7 @@ class CardFactory(factory.django.DjangoModelFactory):
     metadata = None
     livemode = False
 
-    customer = factory.SubFactory(CustomerFactory)
+    customer = None
     # Note: This will clearly not generate valid addresses.
     # This should be used only for testing our own API, and not requests made to Stripe
     name = fuzzy.FuzzyText(length=200)
@@ -80,7 +80,7 @@ class SubscriptionFactory(factory.django.DjangoModelFactory):
     metadata = None
     livemode = False
 
-    customer = factory.SubFactory(CustomerFactory)
+    customer = None
     plan = factory.SubFactory(PlanFactory)
     application_fee_percent = fuzzy.FuzzyDecimal(low=0, high=1)
     cancel_at_period_end = fuzzy.FuzzyChoice([True, False])

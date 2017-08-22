@@ -10,6 +10,8 @@ from django.core import mail
 from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
 
+from billing.tests.factories import SubscriptionFactory
+from billing.models import Subscription
 from users.tests.factories import UserFactory, EmailFactory
 from users.tests.utils import generate_random_image
 from utils import create_ssh_key
@@ -33,6 +35,11 @@ class UserTest(APITestCase):
     def setUp(self):
         self.admin = UserFactory(is_staff=True, username='admin')
         self.user = UserFactory(username='user')
+        self.user.is_staff = False
+        self.user.save()
+        SubscriptionFactory(customer=self.user.customer,
+                            plan__trial_period_days=7,
+                            status=Subscription.ACTIVE)
         self.admin_client = self.client_class(HTTP_AUTHORIZATION='Token {}'.format(self.admin.auth_token.key))
         self.user_client = self.client_class(HTTP_AUTHORIZATION='Token {}'.format(self.user.auth_token.key))
         self.to_remove = []

@@ -28,8 +28,8 @@ class ActionTest(APITestCase):
 
     def test_list_actions(self):
         ActionFactory(content_object=PlanFactory())
-        ActionFactory(content_object=CardFactory())
-        ActionFactory(content_object=SubscriptionFactory())
+        ActionFactory(content_object=CardFactory(customer=self.user.customer))
+        ActionFactory(content_object=SubscriptionFactory(customer=self.user.customer))
         ActionFactory(content_object=DockerHostFactory())
         ActionFactory(content_object=ProjectFactory())
         ActionFactory(content_object=CollaboratorFactory())
