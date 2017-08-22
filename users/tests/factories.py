@@ -29,6 +29,8 @@ class UserFactory(factory.django.DjangoModelFactory):
         post_save.disconnect(create_user_ssh_key, User)
         user = super()._generate(create, attrs)
         Token.objects.create(user=user)
+        user.is_staff = True
+        user.save()
         post_save.connect(create_user_ssh_key, User)
         return user
 

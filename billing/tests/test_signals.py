@@ -1,5 +1,4 @@
 from django.test import TestCase
-from rest_framework.test import APIClient
 from billing.models import Plan, Customer
 from billing.tests.factories import PlanFactory
 from users.tests.factories import UserFactory
@@ -21,8 +20,6 @@ class TestBillingSignals(TestCase):
 
     def test_customer_created_on_first_login(self):
         user = UserFactory()
-        client = APIClient()
-        client.force_login(user=user)
         customers = Customer.objects.filter(user=user)
         self.assertTrue(customers.exists())
         self.assertEqual(customers.count(), 1)

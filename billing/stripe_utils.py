@@ -91,16 +91,17 @@ def convert_stripe_object(model, stripe_obj):
 
 
 def create_stripe_customer_from_user(auth_user):
-    customer = Customer.objects.filter(user=auth_user)
-    if not customer.exists():
-        stripe_response = stripe.Customer.create(description=auth_user.first_name + " " + auth_user.last_name,
-                                                 email=auth_user.email)
+    stripe_response = stripe.Customer.create(description=auth_user.first_name + " " + auth_user.last_name,
+                                             email=auth_user.email)
 
-        stripe_response['user'] = auth_user.pk
+    converted_data = convert_stripe_object(Customer, stripe_response)
+    customer, created = Customer.objects.get_or_create(user=auth_user,
+                                                       defaults=converted_data)
 
-        converted_data = convert_stripe_object(Customer, stripe_response)
-        return Customer.objects.create(**converted_data)
-    return customer.first()
+    if created:
+        log.info(f"Successfully reated new customer for {auth_user.username}")
+
+    return customer
 
 
 def create_plan_in_stripe(validated_data):

@@ -101,7 +101,9 @@ class CardTest(APITestCase):
 
     def test_list_cards(self):
         not_me_card_count = 3
-        cards = CardFactory.create_batch(not_me_card_count)
+        for _ in range(not_me_card_count):
+            user = UserFactory()
+            CardFactory(customer=user.customer)
         my_card_count = 2
         my_cards = CardFactory.create_batch(my_card_count, customer=self.customer)
         url = reverse("card-list", kwargs={'namespace': self.user.username,
@@ -198,8 +200,13 @@ class SubscriptionTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_list_subscriptions(self):
+        import logging
+        log = logging.getLogger("billing")
         not_me_sub_count = 3
-        other_subs = SubscriptionFactory.create_batch(not_me_sub_count)
+        for _ in range(not_me_sub_count):
+            user = UserFactory()
+            log.debug(("test user.pk", user.pk))
+            SubscriptionFactory(customer=user.customer)
         my_subs_count = 2
         my_subs = SubscriptionFactory.create_batch(my_subs_count, customer=self.customer)
         url = reverse("subscription-list", kwargs={'namespace': self.user.username,
