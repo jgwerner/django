@@ -30,8 +30,6 @@ class Server(models.Model):
     START = 'start'
     TERMINATE = 'terminate'
 
-    CONTAINER_NAME_FORMAT = "server_{}_{}"
-
     SERVER_TYPES = ["jupyter", "restful", "cron"]
 
     objects = ServerQuerySet.as_manager()
@@ -69,7 +67,7 @@ class Server(models.Model):
 
     @property
     def container_name(self):
-        return slugify(self.CONTAINER_NAME_FORMAT.format(self.pk, self.name))
+        return slugify(str(self.pk))
 
     @property
     def volume_path(self):
