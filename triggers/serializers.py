@@ -169,6 +169,12 @@ class ServerActionSerializer(serializers.ModelSerializer):
         trigger.save()
         return trigger
 
+    def update(self, instance, validated_data):
+        for key in validated_data:
+            setattr(instance, key, validated_data[key])
+        instance.save()
+        return instance
+
     def get_operation(self, obj):
         action_name = obj.cause.action if obj.cause else ""
         for op, op_name in self.OPERATIONS:

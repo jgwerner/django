@@ -28,7 +28,7 @@ class User(AbstractUser):
         username = self.username
         existing_user = User.objects.filter(username=username,
                                             is_active=True).first()
-        if existing_user is not None and existing_user.pk != self.pk:
+        if existing_user is not None and str(existing_user.pk) != str(self.pk):
             log.info(f"Rejected creating/updating user: {self.pk} due to username conflict.")
             raise IntegrityError(f"A user with the username {username} already exists.")
         else:

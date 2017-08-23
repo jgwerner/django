@@ -33,6 +33,24 @@ class UserViewSet(UUIDRegexMixin, viewsets.ModelViewSet):
     filter_fields = ('username', 'email')
     permission_classes = (IsAuthenticated, DeleteAdminOnly, PostAdminOnly)
 
+    def _update(self, request, partial, *args, **kwargs):
+        data = request.data
+        primary_key = kwargs.get("pk")
+        user = User.objects.filter(pk=primary_key).first()
+
+        # The given User exists, and there is an attempt to change the username
+        # User could be none if the client is using PUT to create a user.
+        if user is not None and request.data.get("username", user.username) != user.username:
+            return Response(data={'message': "Username cannot be changed after creation."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = self.serializer_class(instance=user, data=data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(id=primary_key)
+
+        return Response(data=serializer.data,
+                        status=status.HTTP_200_OK)
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -42,6 +60,12 @@ class UserViewSet(UUIDRegexMixin, viewsets.ModelViewSet):
         user.save()
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def partial_update(self, request, *args, **kwargs):
+        return self._update(request, True, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        return self._update(request, False, *args, **kwargs)
 
     def perform_destroy(self, instance):
         deactivate_user(instance)
