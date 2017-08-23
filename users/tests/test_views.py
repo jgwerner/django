@@ -2,6 +2,7 @@ import filecmp
 import shutil
 import os
 import json
+from uuid import uuid4
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.conf import settings
@@ -99,6 +100,48 @@ class UserTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         user_reloaded = User.objects.get(pk=user.pk)
         self.assertEqual(user_reloaded.first_name, "Tom")
+
+    def test_patch_updating_username_rejected(self):
+        user = UserFactory()
+        url = reverse("user-detail", kwargs={'pk': user.pk,
+                                             'version': settings.DEFAULT_VERSION})
+        data = {'username': "my_fun_new_username"}
+        response = self.admin_client.patch(url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['message'], "Username cannot be changed after creation.")
+
+    def test_put_updating_username_rejected(self):
+        user = UserFactory()
+        url = reverse("user-detail", kwargs={'pk': user.pk,
+                                             'version': settings.DEFAULT_VERSION})
+        data = {'username': "my_fun_new_username"}
+        response = self.admin_client.put(url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['message'], "Username cannot be changed after creation.")
+
+    def test_put_creating_user_accepts_username(self):
+        data = {"username": "a_new_user",
+                "email": "anewuser@example.com",
+                "first_name": "Anew",
+                "last_name": "User",
+                "password": "password",
+                "profile": {
+                    "bio": "Anew User is an awesome person",
+                    "url": "http://www.example.com/AnewUser",
+                    "location": "Mars",
+                    "company": "Anew Corp",
+                    "timezone": "MARS"
+                    }
+                }
+        new_uuid = uuid4()
+        url = reverse("user-detail", kwargs={'pk': new_uuid,
+                                             'version': settings.DEFAULT_VERSION})
+        response = self.admin_client.put(url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        new_user = User.objects.filter(pk=new_uuid).first()
+        self.assertIsNotNone(new_user)
+        self.to_remove.append(new_user.profile.resource_root())
+        self.assertEqual(new_user.username, data['username'])
 
     def test_user_delete_allows_new_user_with_same_username(self):
         user = UserFactory()
