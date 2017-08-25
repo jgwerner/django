@@ -41,7 +41,7 @@ class Action(models.Model):
         (CREATED, "Created"),
     )
 
-    path = models.CharField(max_length=255, blank=True)
+    path = models.CharField(max_length=1000, blank=True)
     payload = JSONField(default={})
     action = models.CharField(max_length=100, db_index=True)
     method = models.CharField(max_length=7)

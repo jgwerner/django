@@ -67,7 +67,7 @@ servers_router.register("options/server-size", servers_views.ServerSizeViewSet)
 urlpatterns = [
     url(r'^(?P<namespace>[\w-]+)/search/$', SearchView.as_view(), name='search'),
     url(r'^actions/', include('actions.urls')),
-    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_pk>[\w-]+)/servers/(?P<server_pk>[^/.]+)/internal/$',
+    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_pk>[\w-]+)/servers/(?P<server_pk>[^/.]+)/internal/(?P<service>[^/.]+)/$',
         servers_views.server_internal_details, name="server_internal"),
     url(r'^(?P<namespace>[\w-]+)/triggers/send-slack-message/$', trigger_views.SlackMessageView.as_view(),
         name='send-slack-message'),
@@ -95,6 +95,8 @@ urlpatterns = [
         servers_views.server_key_reset, name='server-api-key-reset'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_pk>[\w-]+)/servers/(?P<pk>[^/.]+)/api-key/verify/$',
         servers_views.VerifyJSONWebTokenServer.as_view(), name='server-api-key-verify'),
+    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_pk>[\w-]+)/servers/(?P<pk>[^/.]+)/auth/$',
+        servers_views.check_token, name='server-auth'),
     url(r'^servers/', include(servers_router.urls)),
     url(r'(?P<namespace>[\w-]+)/billing/subscription_required/$', billing_views.no_subscription,
         name="subscription-required"),

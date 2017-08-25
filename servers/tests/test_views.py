@@ -131,18 +131,15 @@ class ServerTest(APITestCase):
     @patch('servers.spawners.DockerSpawner.status')
     def test_server_internal_running(self, server_status):
         server_status.return_value = Server.RUNNING
-        server = ServerFactory(project=self.project)
-        url = reverse('server_internal', kwargs={'server_pk': server.pk, **self.url_kwargs})
-        response = self.client.get(url)
+        server = ServerFactory(project=self.project, config={'ports': {'jupyter': 1234}})
+        server.access_token = create_server_jwt(self.user, str(server.pk))
+        server.save()
+        url = reverse('server_internal', kwargs={'server_pk': server.pk, 'service': 'jupyter', **self.url_kwargs})
+        response = self.client.get(url, {'access_token': server.access_token})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         server_ip = server.get_private_ip()
-        expected = {
-            'server': {
-                service: '%s:%s' % (server_ip, port) for service, port in server.config.get('ports', {}).items()
-            },
-            'container_name': server.container_name
-        }
-        self.assertDictEqual(expected, response.data)
+        expected = f"{server_ip}:1234"
+        self.assertEqual(expected, response.data)
 
     def test_server_stop_perm(self):
         server = ServerFactory(project=self.project)

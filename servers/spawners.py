@@ -89,18 +89,26 @@ class DockerSpawner(ServerSpawner):
             raise  # this is part of celery task, we need to know if it fails
 
     def _get_cmd(self):
-        command = '''/runner -key={token} -ns={server.project.owner.username}
+        command = '''/runner -key={token} -ns={server.project.owner.username} -version={version}
         -projectID={server.project.pk} -serverID={server.pk} -root={domain}'''.format(
             token=create_jwt_token(self.server.project.owner),
             server=self.server,
-            domain=Site.objects.get_current()
+            domain=Site.objects.get_current(),
+            version=settings.DEFAULT_VERSION,
         )
         if 'script' in self.server.config:
             command += " " + "--script=" + self.server.config["script"]
         if 'function' in self.server.config:
             command += " " + "--function=" + self.server.config["function"]
         if ("type" in self.server.config) and (self.server.config["type"] in settings.SERVER_COMMANDS):
-            command += " " + settings.SERVER_COMMANDS[self.server.config["type"]]
+            command += " --type=proxy"
+            version = settings.DEFAULT_VERSION
+            namespace = self.server.project.owner.username
+            project_id = self.server.project.pk
+            server_id = self.server.pk
+            server_type = self.server.config["type"]
+            command += " " + settings.SERVER_COMMANDS[server_type].format(
+                url=f"/{version}/{namespace}/projects/{project_id}/servers/{server_id}/endpoint/{server_type}/")
         elif "type" in self.server.config:
             command += " --type=" + self.server.config["type"]
         elif "command" in self.server.config:
