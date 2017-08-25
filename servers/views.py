@@ -20,10 +20,10 @@ from .tasks import start_server, stop_server, terminate_server
 from .permissions import ServerChildPermission, ServerActionPermission
 from . import serializers, models
 from .utils import get_server_usage
+
 log = logging.getLogger('servers')
 
 
-logger = logging.getLogger("servers")
 jwt_response_payload_handler = api_settings.JWT_RESPONSE_PAYLOAD_HANDLER
 
 
