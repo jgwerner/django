@@ -11,6 +11,7 @@ from rest_framework_jwt.settings import api_settings
 from base.views import ProjectMixin, UUIDRegexMixin, ServerMixin
 from base.permissions import IsAdminUser
 from base.renderers import PlainTextRenderer
+from projects.models import Project
 from projects.permissions import ProjectChildPermission
 from jwt_auth.views import JWTApiView
 from jwt_auth.serializers import VerifyJSONWebTokenServerSerializer
@@ -18,6 +19,8 @@ from jwt_auth.utils import create_server_jwt
 from .tasks import start_server, stop_server, terminate_server
 from .permissions import ServerChildPermission, ServerActionPermission
 from . import serializers, models
+from .utils import get_server_usage
+log = logging.getLogger('servers')
 
 
 logger = logging.getLogger("servers")
@@ -88,12 +91,7 @@ class ServerRunStatisticsViewSet(ProjectMixin, ServerMixin, viewsets.ModelViewSe
     permission_classes = (IsAuthenticated, ServerChildPermission)
 
     def list(self, request, *args, **kwargs):
-        obj = self.queryset.filter(server_id=kwargs.get('server_pk')).aggregate(
-            duration=Sum(Coalesce(F('stop'), Now()) - F('start')),
-            runs=Count('id'),
-            start=Max('start'),
-            stop=Max('stop')
-        )
+        obj = get_server_usage([kwargs.get("server_pk")])
         serializer = serializers.ServerRunStatisticsAggregatedSerializer(obj)
         return Response(serializer.data)
 
@@ -117,6 +115,12 @@ class SshTunnelViewSet(ProjectMixin, ServerMixin, viewsets.ModelViewSet):
     queryset = models.SshTunnel.objects.all()
     serializer_class = serializers.SshTunnelSerializer
     permission_classes = (IsAuthenticated, ServerChildPermission)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(server_id=kwargs.get("server_pk"))
+        return Response(status=status.HTTP_201_CREATED, data=serializer.data)
 
 
 class ServerSizeViewSet(UUIDRegexMixin, viewsets.ModelViewSet):

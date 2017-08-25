@@ -28,6 +28,5 @@ class ProjectFileFactory(factory.django.DjangoModelFactory):
     author = factory.SubFactory(UserFactory)
     # TODO: Does this guarantee the project belongs to the user? I don't think so...
     project = factory.SubFactory(ProjectFactory)
-    public = fuzzy.FuzzyChoice([True, False])
     # file must be passed in
     file = None

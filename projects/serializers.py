@@ -12,17 +12,16 @@ from projects.models import (Project, Collaborator,
                              SyncedResource, ProjectFile)
 
 User = get_user_model()
-import logging
-log = logging.getLogger('projects')
 
 
 class ProjectSerializer(SearchSerializerMixin, serializers.ModelSerializer):
     owner = serializers.CharField(source='get_owner_name', read_only=True)
-    collaborators = serializers.StringRelatedField(many=True, required=False)
+    collaborators = serializers.StringRelatedField(many=True, read_only=True)
 
     class Meta:
         model = Project
         fields = ('id', 'name', 'description', 'private', 'last_updated', 'owner', 'collaborators')
+        read_only_fields = ('collaborators',)
 
     def validate_name(self, value):
         request = self.context['request']
@@ -35,7 +34,6 @@ class ProjectSerializer(SearchSerializerMixin, serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
-        collaborators = validated_data.pop('collaborators', [])
         project = super().create(validated_data)
         request = self.context['request']
         if request.user.is_staff:
@@ -66,13 +64,13 @@ class Base64CharField(serializers.CharField):
 class ProjectFileSerializer(serializers.ModelSerializer):
     base64_data = Base64CharField(required=False, write_only=True)
     name = serializers.CharField(required=False)
-    file = serializers.FileField(required=False)
+    file = serializers.FileField(required=False,write_only=True)
     path = serializers.CharField(required=False)
     content = serializers.SerializerMethodField()
 
     class Meta:
         model = ProjectFile
-        fields = ("id", "project", "file", "public", "base64_data", "name", "path", "content")
+        fields = ("id", "project", "file", "base64_data", "name", "path", "content")
         read_only_fields = ("author", "project", "content")
 
     def get_content(self, obj):

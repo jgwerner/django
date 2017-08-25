@@ -1,5 +1,6 @@
 import os
 from urllib.parse import urlsplit
+from decimal import Decimal
 
 from django.conf import settings
 from django.contrib.postgres.fields import HStoreField, JSONField
@@ -124,6 +125,10 @@ class ServerSize(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     active = models.BooleanField()
     storage_size = models.IntegerField(blank=True, null=True)
+    cost_per_second = models.DecimalField(max_digits=7, decimal_places=6,
+                                          help_text="Price in USD ($) per second it costs "
+                                                    "to run a server of this size.",
+                                          default=Decimal("0.000000"))
 
     def __str__(self):
         return self.name

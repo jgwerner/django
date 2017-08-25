@@ -8,14 +8,14 @@ class ActiveUserBackendTestCase(TestCase):
         self.backend = ActiveUserBackend()
 
     def test_correct_user_is_authenticated(self):
-        active_user = UserFactory(is_active=True,
-                                  password="password")
+        inactive_user = UserFactory(is_active=False,
+                                    password="password")
         # They both have the same password so that the backend won't
         # try to authenticate the incorrect use, only to fail because
         # the password is incorrect.
-        inactive_user = UserFactory(username=active_user.username,
-                                    is_active=False,
-                                    password="password")
+        active_user = UserFactory(username=inactive_user.username,
+                                  is_active=True,
+                                  password="password")
 
         authenticated_user = self.backend.authenticate(request=None,
                                                        username=active_user.username,

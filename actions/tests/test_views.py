@@ -6,7 +6,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from actions.models import Action
-from billing.tests.factories import CustomerFactory, PlanFactory, CardFactory, SubscriptionFactory
+from billing.tests.factories import PlanFactory, CardFactory, SubscriptionFactory
 from infrastructure.tests.factories import DockerHostFactory
 from projects.tests.factories import ProjectFactory, CollaboratorFactory, ProjectFileFactory
 from servers.tests.factories import ServerFactory, ServerSizeFactory
@@ -27,10 +27,9 @@ class ActionTest(APITestCase):
         self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
 
     def test_list_actions(self):
-        ActionFactory(content_object=CustomerFactory())
         ActionFactory(content_object=PlanFactory())
-        ActionFactory(content_object=CardFactory())
-        ActionFactory(content_object=SubscriptionFactory())
+        ActionFactory(content_object=CardFactory(customer=self.user.customer))
+        ActionFactory(content_object=SubscriptionFactory(customer=self.user.customer))
         ActionFactory(content_object=DockerHostFactory())
         ActionFactory(content_object=ProjectFactory())
         ActionFactory(content_object=CollaboratorFactory())

@@ -11,6 +11,15 @@ class DeleteAdminOnly(BasePermission):
             ))
 
 
+class PostAdminOnly(BasePermission):
+    def has_permission(self, request, view):
+        return (
+            request.user and (
+                request.method == 'POST' and request.user.is_staff or
+                request.method != 'POST' and is_authenticated(request.user)
+            ))
+
+
 class IsAdminUser(BasePermission):
     def has_permission(self, request, view):
         permission = False

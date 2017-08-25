@@ -1,3 +1,4 @@
+import logging
 from django.shortcuts import get_object_or_404
 from django.contrib.sites.models import Site
 from rest_framework import viewsets, status
@@ -10,6 +11,7 @@ from base.views import NamespaceMixin
 from triggers.models import Trigger
 from triggers.serializers import TriggerSerializer, SlackMessageSerializer, ServerActionSerializer
 from triggers.tasks import dispatch_trigger
+log = logging.getLogger('triggers')
 
 
 class TriggerViewSet(NamespaceMixin, viewsets.ModelViewSet):
@@ -30,10 +32,11 @@ class SlackMessageView(APIView):
 class ServerActionViewSet(NamespaceMixin, viewsets.ModelViewSet):
     queryset = Trigger.objects.all()
     serializer_class = ServerActionSerializer
+    filter_fields = ("name",)
 
     def get_queryset(self):
         server_pk = self.kwargs.get('server_pk')
-        return super().get_queryset().filter(effect__object_id=server_pk)
+        return super().get_queryset().filter(cause__object_id=server_pk)
 
 
 @api_view(['POST'])

@@ -28,8 +28,6 @@ class ProjectViewSet(NamespaceMixin, viewsets.ModelViewSet):
         instance = Project.objects.get(pk=kwargs.get("pk"))
         user = request.user
 
-        has_perm = user.has_perm("projects.write_project", instance)
-
         if not user.has_perm("projects.write_project", instance):
             return Response(data={'message': "Insufficient permissions to modify project"},
                             status=status.HTTP_403_FORBIDDEN)
@@ -70,7 +68,7 @@ class ProjectViewSet(NamespaceMixin, viewsets.ModelViewSet):
 class ProjectMixin(object):
     permission_classes = (permissions.IsAuthenticated, ProjectChildPermission)
 
-    def get_queryset(self):
+    def get_queryset(self, *args, **kwargs):
         return super().get_queryset().filter(project_id=self.kwargs.get('project_pk'))
 
 
@@ -135,8 +133,8 @@ class ProjectFileViewSet(ProjectMixin,
         get_content = self.request.query_params.get('content', "false").lower() == "true"
         serializer = self.serializer_class(queryset, many=True, context={'get_content': get_content})
         data = serializer.data
-        for proj_file in data:
-            proj_file['file'] = request.build_absolute_uri(proj_file['file'])
+        # for proj_file in data:
+        #     proj_file['file'] = request.build_absolute_uri(proj_file['file'])
 
         return Response(data, status=status.HTTP_200_OK)
 
@@ -151,14 +149,11 @@ class ProjectFileViewSet(ProjectMixin,
         proj_files_to_serialize = []
         project_pk = kwargs.get("project_pk")
 
-        public = request.data.get("public") in ["true", "on", True]
-
         for f in files:
             project = Project.objects.get(pk=project_pk)
             create_data = {'author': self.request.user,
                            'project': project,
-                           'file': f,
-                           'public': public}
+                           'file': f}
             project_file = ProjectFile(**create_data)
 
             project_file.save()
@@ -187,11 +182,9 @@ class ProjectFileViewSet(ProjectMixin,
 
         instance = ProjectFile.objects.get(pk=kwargs.get("pk"))
         project_pk = request.data.get("project")
-        public = request.data.get("public") in ["true", "on", "True"]
         new_file = files[0]
 
         data = {'project': project_pk,
-                'public': public,
                 'file': new_file}
 
         serializer = self.serializer_class(instance, data=data)

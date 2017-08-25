@@ -3,7 +3,6 @@ from unittest.mock import MagicMock
 from urllib.parse import urlparse
 from django.urls import reverse
 from django.conf import settings
-from django.contrib.contenttypes.models import ContentType
 from django.contrib.sites.models import Site
 from rest_framework import status
 from rest_framework.test import APITestCase, APILiveServerTestCase
@@ -104,7 +103,8 @@ class ServerActionTestCase(APILiveServerTestCase):
             state=Action.CREATED,
             is_user_action=False
         )
-        instance = TriggerFactory(cause=cause, effect=effect)
+        TriggerFactory(cause=cause,
+                       effect=effect)
         resp = self.client.post(url, {'name': 'TestProject0'})
         self.assertEqual(resp.status_code, 201)
         self.assertEqual(Project.objects.count(), 4)
@@ -129,7 +129,10 @@ class ServerActionTestCase(APILiveServerTestCase):
             'url': f'{self.live_server_url}{path}',
             'payload': {'token': self.token}
         }
-        instance = TriggerFactory(user=self.user, effect=None, cause=cause, webhook=webhook)
+        TriggerFactory(user=self.user,
+                       effect=None,
+                       cause=cause,
+                       webhook=webhook)
         requests.post = MagicMock()
         self.client.post(url, data={})
         requests.post.assert_called()

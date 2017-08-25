@@ -1,12 +1,18 @@
 import logging
 from datetime import datetime
+from decimal import Decimal, getcontext
+from collections import defaultdict
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
 
+from users.models import User
+from servers.models import Server
+from servers.utils import get_server_usage
+
 from billing.models import (Customer, Invoice,
                             Plan, Subscription,
-                            Card, Event)
+                            Card, Event, InvoiceItem)
 log = logging.getLogger('billing')
 
 if settings.MOCK_STRIPE:
@@ -17,6 +23,7 @@ else:
 
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
+getcontext().prec = 6
 
 
 def handle_foreign_key_field(stripe_data, stripe_field, model_field):
@@ -87,11 +94,14 @@ def create_stripe_customer_from_user(auth_user):
     stripe_response = stripe.Customer.create(description=auth_user.first_name + " " + auth_user.last_name,
                                              email=auth_user.email)
 
-    # Meh.
-    stripe_response['user'] = auth_user.pk
-
     converted_data = convert_stripe_object(Customer, stripe_response)
-    return Customer.objects.create(**converted_data)
+    customer, created = Customer.objects.get_or_create(user=auth_user,
+                                                       defaults=converted_data)
+
+    if created:
+        log.info(f"Successfully reated new customer for {auth_user.username}")
+
+    return customer
 
 
 def create_plan_in_stripe(validated_data):
@@ -105,7 +115,7 @@ def create_plan_in_stripe(validated_data):
                                          trial_period_days=validated_data.get('trial_period_days'))
 
     converted_data = convert_stripe_object(Plan, stripe_response)
-    return Plan.objects.create(**converted_data)
+    return Plan(**converted_data)
 
 
 def create_subscription_in_stripe(validated_data, user=None):
@@ -174,13 +184,9 @@ def sync_invoices_for_customer(customer, stripe_invoices=None):
     customer.save()
 
 
-def handle_stripe_invoice_webhook(stripe_obj):
-    """
-    :param stripe_obj: The Stripe *event* object
-    :return: None
-    """
-    event = Event.objects.filter(stripe_id=stripe_obj['id'])
-    if not event.exists():
+def create_event_from_webhook(stripe_obj):
+    event = Event.objects.filter(stripe_id=stripe_obj['id']).first()
+    if not event:
         # This conversion is *just* custom enough that using the convert method isn't useful
         create_ts = datetime.fromtimestamp(stripe_obj['created'])
         create_ts = timezone.make_aware(create_ts)
@@ -193,6 +199,19 @@ def handle_stripe_invoice_webhook(stripe_obj):
         event.save()
         log.info("Created new stripe event: {event}:{type}".format(event=event.stripe_id,
                                                                    type=event.event_type))
+        return event
+    log.info("Event {event}:{type} already exists. Doing nothing.".format(event=stripe_obj['id'],
+                                                                          type=stripe_obj['type']))
+    return None
+
+
+def handle_stripe_invoice_webhook(stripe_obj):
+    """
+    :param stripe_obj: The Stripe *event* object
+    :return: None
+    """
+    event = create_event_from_webhook(stripe_obj)
+    if event is not None:
         if event.event_type == "invoice.payment_failed":
             # Suspend the subscription...
             sub_stripe_id = stripe_obj['data']['object']['subscription']
@@ -214,6 +233,50 @@ def handle_stripe_invoice_webhook(stripe_obj):
             log.info("Created a new invoice: {invoice}".format(invoice=invoice.pk))
         else:
             log.info("Updated an invoice: {invoice}".format(invoice=invoice.stripe_id))
-    else:
-        log.info("Event {event}:{type} already exists. Doing nothing.".format(event=stripe_obj['id'],
-                                                                              type=stripe_obj['type']))
+
+
+def calculate_compute_usage(customer_stripe_id):
+    usage_data = defaultdict(int)
+
+    usage_start_time = None
+    last_invoice = Invoice.objects.filter(customer__stripe_id=
+                                          customer_stripe_id).order_by("-period_end").first()
+    if last_invoice is not None:
+        usage_start_time = last_invoice.period_end
+    user = User.objects.get(customer__stripe_id=customer_stripe_id)
+
+    projects = user.collaborator_set.filter(owner=True).values_list('project__pk', flat=True)
+
+    servers = Server.objects.filter(project__pk__in=projects).select_related('server_size')
+    total_cost = 0
+    for server in servers:
+        this_server_data = get_server_usage([server], begin_measure_time=usage_start_time)
+        # server_size.cost_per_second is in _dollars_, we want cents
+        this_server_cost = (100 * server.server_size.cost_per_second *
+                            Decimal(this_server_data['duration'].total_seconds()))
+        usage_data[server] += this_server_cost
+        total_cost += this_server_cost
+
+    usage_data['total'] = total_cost
+
+    return usage_data
+
+
+def create_invoice_item_for_compute_usage(customer_stripe_id, usage_data):
+    stripe_invoice_item = stripe.InvoiceItem.create(customer=customer_stripe_id,
+                                                    amount=int(usage_data['total']),
+                                                    currency="usd",
+                                                    description="3Blades Compute Usage")
+    converted_data = convert_stripe_object(InvoiceItem, stripe_invoice_item)
+    converted_data['quantity'] = 1
+    return InvoiceItem.objects.create(**converted_data)
+
+
+def handle_upcoming_invoice(stripe_event):
+    event = create_event_from_webhook(stripe_event)
+    if event is not None:
+        customer_stripe_id = stripe_event['data']['object']['customer']
+        usage_data = calculate_compute_usage(customer_stripe_id)
+        invoice_item = create_invoice_item_for_compute_usage(customer_stripe_id,
+                                                             usage_data)
+        log.info(f"Created a new invoice item for {customer_stripe_id}: {invoice_item.stripe_id}")

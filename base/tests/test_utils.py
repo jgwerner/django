@@ -2,7 +2,6 @@ import shutil
 from uuid import uuid4
 from pathlib import Path
 from django.conf import settings
-from django.contrib.sites.models import Site
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 

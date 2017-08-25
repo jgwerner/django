@@ -3,7 +3,9 @@ from datetime import datetime, timedelta
 from django.utils import timezone
 from factory import fuzzy
 from users.tests.factories import UserFactory
-from billing.models import Customer, Plan, Card, Subscription
+from billing.models import (Customer, Plan, Card,
+                            Subscription, Event,
+                            Invoice, InvoiceItem)
 
 
 class CustomerFactory(factory.django.DjangoModelFactory):
@@ -43,12 +45,12 @@ class CardFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Card
 
-    stripe_id = factory.Sequence(lambda n: "cus_%d" % n)
+    stripe_id = factory.Sequence(lambda n: "card_%d" % n)
     created = fuzzy.FuzzyDateTime(start_dt=timezone.make_aware(datetime.now() - timedelta(days=7)))
     metadata = None
     livemode = False
 
-    customer = factory.SubFactory(CustomerFactory)
+    customer = None
     # Note: This will clearly not generate valid addresses.
     # This should be used only for testing our own API, and not requests made to Stripe
     name = fuzzy.FuzzyText(length=200)
@@ -78,10 +80,67 @@ class SubscriptionFactory(factory.django.DjangoModelFactory):
     metadata = None
     livemode = False
 
-    customer = factory.SubFactory(CustomerFactory)
+    customer = None
     plan = factory.SubFactory(PlanFactory)
     application_fee_percent = fuzzy.FuzzyDecimal(low=0, high=1)
     cancel_at_period_end = fuzzy.FuzzyChoice([True, False])
     quantity = fuzzy.FuzzyInteger(low=1, high=5)
     status = fuzzy.FuzzyChoice([c[0] for c in Subscription.SUBSCRIPTION_STATUS_CHOICES])
 
+
+class EventFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Event
+
+    stripe_id = factory.Sequence(lambda n: "evt_%d" % n)
+    created = fuzzy.FuzzyDateTime(start_dt=timezone.make_aware(datetime.now() - timedelta(days=7)))
+    metadata = None
+    livemode = False
+    api_version = fuzzy.FuzzyText(length=50)
+    pending_webhooks = fuzzy.FuzzyInteger(low=0, high=5)
+    request = fuzzy.FuzzyText(length=100)
+    event_type = fuzzy.FuzzyChoice(["invoice.upcoming", "invoice.created", "invoice.payment_failed"])
+
+
+class InvoiceFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Invoice
+
+    # Note that specifying none of these fields can currently create a lot of invalid
+    # States relating to the period of billing, invoice amount, and payment status
+    # If you want a valid invoice, you should specify all the relevant fields, or generate
+    # One via subscription
+    customer = factory.SubFactory(CustomerFactory)
+    subscription = factory.SubFactory(Subscription)
+    amount_due = fuzzy.FuzzyInteger(low=100, high=5000)
+    application_fee = fuzzy.FuzzyInteger(low=0, high=100)
+    atttempt_count = fuzzy.FuzzyInteger(low=0, high=3)
+    attempted = fuzzy.FuzzyChoice([True, False])
+    closed = fuzzy.FuzzyChoice([True, False])
+    currency = "usd"
+    invoice_date = fuzzy.FuzzyDateTime(start_dt=timezone.make_aware(datetime.now() - timedelta(days=365)))
+    description = fuzzy.FuzzyText(length=100)
+    next_payment_attempt = None
+    paid = fuzzy.FuzzyChoice([True, False])
+    period_start = fuzzy.FuzzyDateTime(start_dt=timezone.make_aware(datetime.now() - timedelta(days=365)))
+    period_end = fuzzy.FuzzyDateTime(start_dt=timezone.make_aware(datetime.now() - timedelta(days=7)))
+    reciept_number = fuzzy.FuzzyText(length=255)
+    starting_balance = 0
+    statement_descriptor = fuzzy.FuzzyText(length=100)
+    subtotal = fuzzy.FuzzyInteger(low=100, high=4000)
+    tax = fuzzy.FuzzyInteger(low=0, high=1000)
+    total = fuzzy.FuzzyInteger(low=100, high=1000)
+
+
+class InvoiceItemFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = InvoiceItem
+
+    invoice = factory.SubFactory(InvoiceFactory)
+    subscription = None
+    amount = fuzzy.FuzzyInteger(low=100, high=1000)
+    currency = "usd"
+    invoice_date = fuzzy.FuzzyDateTime(start_dt=timezone.make_aware(datetime.now() - timedelta(days=365)))
+    proration = fuzzy.FuzzyChoice([True, False])
+    quantity = fuzzy.FuzzyInteger(low=1, high=5)
+    description = fuzzy.FuzzyText(length=200)

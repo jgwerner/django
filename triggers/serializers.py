@@ -103,7 +103,7 @@ class TriggerSerializer(serializers.ModelSerializer):
                 content_object=content_object,
             )
         )
-        logger.debug(f'Action details: {instance.__dict__}')
+        logger.debug(f'Action details: New Instance: {created}\n {instance.__dict__}')
         return instance
 
 
@@ -169,8 +169,14 @@ class ServerActionSerializer(serializers.ModelSerializer):
         trigger.save()
         return trigger
 
+    def update(self, instance, validated_data):
+        for key in validated_data:
+            setattr(instance, key, validated_data[key])
+        instance.save()
+        return instance
+
     def get_operation(self, obj):
-        action_name = obj.cause.action
+        action_name = obj.cause.action if obj.cause else ""
         for op, op_name in self.OPERATIONS:
             if op in action_name:
                 return op

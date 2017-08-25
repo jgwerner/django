@@ -9,6 +9,7 @@ from servers.models import (ServerSize, Server,
                             ServerRunStatistics,
                             ServerStatistics,
                             SshTunnel)
+from projects.serializers import ProjectSerializer
 
 
 class ServerSizeSerializer(serializers.ModelSerializer):
@@ -17,20 +18,28 @@ class ServerSizeSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'cpu', 'memory', 'active')
 
 
-class ServerSerializer(SearchSerializerMixin, serializers.ModelSerializer):
-    endpoint = serializers.SerializerMethodField()
-    logs_url = serializers.SerializerMethodField()
-    status_url = serializers.SerializerMethodField()
+class BaseServerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Server
         fields = ('id', 'name', 'created_at', 'image_name', 'server_size', 'startup_script', 'config',
-                  'status', 'connected', 'host', 'endpoint', 'logs_url', 'status_url')
-        read_only_fields = ('created_at',)
+                  'status', 'connected', 'host')
+        read_only_fields = ('created_at', 'project')
         extra_kwargs = {
             'connected': {'allow_empty': True, 'required': False},
             'server_size': {'allow_empty': True, 'required': False},
         }
+
+
+class ServerSerializer(SearchSerializerMixin, BaseServerSerializer):
+    endpoint = serializers.SerializerMethodField()
+    logs_url = serializers.SerializerMethodField()
+    status_url = serializers.SerializerMethodField()
+
+    class Meta(BaseServerSerializer.Meta):
+        fields = BaseServerSerializer.Meta.fields
+        for fld in ["endpoint", "logs_url", "status_url"]:
+             fields += (fld,)
 
     def validate_config(self, value):
         server_type = value.get("type")
@@ -83,6 +92,13 @@ class ServerSerializer(SearchSerializerMixin, serializers.ModelSerializer):
     @property
     def _is_secure(self):
         return settings.HTTPS
+
+
+class ServerSearchSerializer(SearchSerializerMixin, BaseServerSerializer):
+    project = ProjectSerializer(read_only=True)
+
+    class Meta(BaseServerSerializer.Meta):
+        fields = BaseServerSerializer.Meta.fields + ('project',)
 
 
 class ServerRunStatisticsSerializer(serializers.ModelSerializer):
