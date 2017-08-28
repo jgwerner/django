@@ -1,7 +1,7 @@
 from datetime import datetime
 from django.db.models import Sum, Max, F, Count
 from django.db.models.functions import Coalesce, Now, Greatest
-from servers.models import ServerRunStatistics
+from servers.models import Server, ServerRunStatistics
 
 
 def get_server_usage(server_ids, begin_measure_time=None):
@@ -21,3 +21,7 @@ def get_server_usage(server_ids, begin_measure_time=None):
                                    start=Max('start'),
                                    stop=Max('stop'))
     return usage_data
+
+
+def is_server_token(token):
+    return Server.objects.filter(access_token=token).exists()

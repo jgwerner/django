@@ -180,7 +180,7 @@ class ServerTest(APITestCase):
         url = reverse('server-api-key-verify', kwargs=self.url_kwargs)
         data = {"token": server.access_token}
         resp = self.client.post(url, data)
-        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_ssh_tunnel_create(self):
         server = ServerFactory(project=self.project)

@@ -130,6 +130,7 @@ class ServerSizeViewSet(UUIDRegexMixin, viewsets.ModelViewSet):
 
 
 @api_view(['POST'])
+@permission_classes((AllowAny,))
 def check_token(request, version, project_pk, pk):
     server = models.Server.objects.only('access_token').get(pk=pk)
     auth_header = request.META.get('HTTP_AUTHORIZATION')

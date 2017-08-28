@@ -5,6 +5,7 @@ from rest_framework_jwt.serializers import VerifyJSONWebTokenSerializer, Refresh
 from rest_framework_jwt.settings import api_settings
 from rest_framework_jwt.views import JSONWebTokenAPIView
 
+from servers.utils import is_server_token
 from .serializers import JWTSerializer
 
 jwt_response_payload_handler = api_settings.JWT_RESPONSE_PAYLOAD_HANDLER
@@ -17,6 +18,8 @@ class JWTApiView(JSONWebTokenAPIView):
         if serializer.is_valid():
             user = serializer.object.get('user') or request.user
             token = serializer.object.get('token')
+            if is_server_token(token):
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             response_data = jwt_response_payload_handler(token, user, request)
             response = Response(response_data, status=status.HTTP_201_CREATED)
             if api_settings.JWT_AUTH_COOKIE:
