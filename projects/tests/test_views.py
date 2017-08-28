@@ -90,6 +90,29 @@ class ProjectTest(ProjectTestMixin, APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), projects_count)
 
+    def test_projects_belonging_to_inactive_users_are_not_found(self):
+        collab = CollaboratorFactory()
+        collab.user.is_active = False
+        collab.user.save()
+        collab.user.username = self.user.username
+        collab.user.save()
+        url = reverse('project-list', kwargs={'namespace': self.user.username,
+                                              'version': settings.DEFAULT_VERSION})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 0)
+
+    def test_project_belonging_to_active_user_is_found_correctly(self):
+        inactive_user = UserFactory()
+        inactive_user.is_active = False
+        inactive_user.save()
+        CollaboratorFactory(user=self.user)
+        url = reverse('project-list', kwargs={'namespace': self.user.username,
+                                              'version': settings.DEFAULT_VERSION})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+
     def test_project_details(self):
         collaborator = CollaboratorFactory(user=self.user)
         project = collaborator.project

@@ -10,7 +10,8 @@ class Namespace(object):
     @staticmethod
     def from_name(name):
         ns = Namespace(name=name)
-        ns.object = get_user_model().objects.filter(username=name).first()
+        ns.object = get_user_model().objects.filter(username=name,
+                                                    is_active=True).first()
         if ns.object is not None:
             ns.type = 'user'
         return ns
