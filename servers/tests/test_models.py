@@ -21,7 +21,7 @@ class TestServer(TestCase):
         self.assertEqual(str(instance), instance.name)
 
     def test_container_name(self):
-        expected = "server_00000000-0000-0000-0000-000000000000_test"
+        expected = "00000000-0000-0000-0000-000000000000"
         server = Server(name="test", id=self.pk)
         self.assertEqual(server.container_name, expected)
 
