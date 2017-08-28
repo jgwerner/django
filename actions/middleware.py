@@ -138,7 +138,10 @@ class ActionMiddleware(object):
         model = self._get_model_from_func(request.resolver_match.func)
         if model is not None:
             pk = request.resolver_match.kwargs['pk']
-            return model.objects.filter(pk=pk).first()
+            try:
+                return model.objects.tbs_filter(pk).first()
+            except AttributeError:
+                return model.objects.filter(pk=pk).first()
 
     @staticmethod
     def _get_action_name(request: HttpRequest) -> str:

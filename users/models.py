@@ -6,16 +6,20 @@ from django.db import models, IntegrityError
 from django.contrib.auth.models import AbstractUser, UserManager
 from django.urls import reverse
 
+from base.models import TBSQuerySet
+
 
 log = logging.getLogger('users')
 
 
-class CustomUserManager(UserManager):
+class CustomUserManager(UserManager.from_queryset(TBSQuerySet)):
     def get_by_natural_key(self, username):
         return self.get(username=username, is_active=True)
 
 
 class User(AbstractUser):
+    LOOKUP_FIELD = 'username'
+
     username = models.CharField(error_messages={'unique': 'A user with that username already exists.'},
                                 help_text='Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.',
                                 max_length=150,
