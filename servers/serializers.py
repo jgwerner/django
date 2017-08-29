@@ -1,8 +1,10 @@
+import uuid
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
 from rest_framework import serializers
 
 from base.serializers import SearchSerializerMixin
+from jwt_auth.utils import create_server_jwt
 from servers.models import (ServerSize, Server,
                             ServerRunStatistics,
                             ServerStatistics,
@@ -49,10 +51,14 @@ class ServerSerializer(SearchSerializerMixin, BaseServerSerializer):
         config = validated_data.pop("config", {})
         server_size = (validated_data.pop('server_size', None) or
                        ServerSize.objects.order_by('created_at').first())
-        return Server.objects.create(project_id=self.context['view'].kwargs['project_pk'],
-                                     created_by=self.context['request'].user,
+        user = self.context['request'].user
+        pk = uuid.uuid4()
+        return Server.objects.create(pk=pk,
+                                     project_id=self.context['view'].kwargs['project_pk'],
+                                     created_by=user,
                                      config=config,
                                      server_size=server_size,
+                                     access_token=create_server_jwt(user, str(pk)),
                                      **validated_data)
 
     def update(self, instance, validated_data):

@@ -49,6 +49,7 @@ class Server(models.Model):
     connected = models.ManyToManyField('self', blank=True, related_name='servers')
     image_name = models.CharField(max_length=100, blank=True)
     host = models.ForeignKey('infrastructure.DockerHost', related_name='servers', null=True, blank=True)
+    access_token = models.TextField(blank=True)
 
     def __str__(self):
         return self.name
