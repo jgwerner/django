@@ -12,7 +12,7 @@ def validate_uuid(uuid):
 
 def get_object_or_404(model, val):
     try:
-        obj = model.objects.tbs_filter(val).get()
+        obj = model.objects.filter_by_name_or_id(val).get()
     except model.DoesNotExist:
         raise Http404('No %s matches the given query.' % model._meta.object_name)
     return obj

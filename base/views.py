@@ -37,7 +37,7 @@ class LookupByMultipleFields(object):
     def get_object(self):
         qs = self.filter_queryset(self.get_queryset())
         lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
-        obj = qs.tbs_filter(self.kwargs[lookup_url_kwarg]).get()
+        obj = qs.filter_by_name_or_id(self.kwargs[lookup_url_kwarg]).get()
         self.check_object_permissions(self.request, obj)
         return obj
 

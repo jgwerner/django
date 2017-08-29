@@ -139,7 +139,7 @@ class ActionMiddleware(object):
         if model is not None:
             pk = request.resolver_match.kwargs['pk']
             try:
-                return model.objects.tbs_filter(pk).first()
+                return model.objects.filter_by_name_or_id(pk).first()
             except AttributeError:
                 return model.objects.filter(pk=pk).first()
 

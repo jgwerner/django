@@ -214,7 +214,7 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
         self.url_kwargs = {'namespace': self.user.username,
                            'project_pk': self.project.pk,
                            'version': settings.DEFAULT_VERSION}
-        self.user_dir = Path('/tmp', self.user.username)
+        self.user_dir = Path(settings.RESOURCE_DIR, self.user.username)
         self.project_root = self.user_dir.joinpath(str(self.project.pk))
         self.project_root.mkdir(parents=True)
         self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)

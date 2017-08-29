@@ -18,7 +18,7 @@ class CustomUserManager(UserManager.from_queryset(TBSQuerySet)):
 
 
 class User(AbstractUser):
-    LOOKUP_FIELD = 'username'
+    NATURAL_KEY = 'username'
 
     username = models.CharField(error_messages={'unique': 'A user with that username already exists.'},
                                 help_text='Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.',
