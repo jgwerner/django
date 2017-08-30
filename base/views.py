@@ -1,14 +1,14 @@
-from django.db.models import Q
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 
+
 class UUIDRegexMixin(object):
     lookup_value_regex = '[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
 
 
-class NamespaceMixin(UUIDRegexMixin):
+class NamespaceMixin(object):
     def get_queryset(self):
         return super().get_queryset().namespace(self.request.namespace)
 

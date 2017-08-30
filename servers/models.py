@@ -14,6 +14,7 @@ from servers.spawners import DockerSpawner
 
 
 class Server(models.Model):
+    NATURAL_KEY = "name"
     # statuses
     STOPPED = "Stopped"
     STOPPING = "Stopping"

@@ -7,7 +7,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-from base.views import ProjectMixin, UUIDRegexMixin, ServerMixin
+from base.views import ProjectMixin, UUIDRegexMixin, ServerMixin, LookupByMultipleFields
 from base.permissions import IsAdminUser
 from projects.permissions import ProjectChildPermission
 from .tasks import start_server, stop_server, terminate_server
@@ -17,7 +17,7 @@ from .utils import get_server_usage
 log = logging.getLogger('servers')
 
 
-class ServerViewSet(viewsets.ModelViewSet):
+class ServerViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
     queryset = models.Server.objects.all()
     serializer_class = serializers.ServerSerializer
     permission_classes = (IsAuthenticated, ProjectChildPermission)

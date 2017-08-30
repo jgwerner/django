@@ -3,7 +3,7 @@ from rest_framework import viewsets, status, permissions
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
 
-from base.views import NamespaceMixin
+from base.views import NamespaceMixin, LookupByMultipleFields
 from projects.serializers import (ProjectSerializer,
                                   CollaboratorSerializer,
                                   SyncedResourceSerializer,
@@ -17,7 +17,7 @@ from projects.utils import get_files_from_request
 log = logging.getLogger('projects')
 
 
-class ProjectViewSet(NamespaceMixin, viewsets.ModelViewSet):
+class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
     permission_classes = (permissions.IsAuthenticated, ProjectPermission)
@@ -193,4 +193,3 @@ class ProjectFileViewSet(ProjectMixin,
 
         return Response(data=serializer.data,
                         status=status.HTTP_200_OK)
-

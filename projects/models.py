@@ -7,16 +7,19 @@ from django.urls import reverse
 from guardian.shortcuts import get_perms
 from social_django.models import UserSocialAuth
 
+from base.models import TBSQuerySet
 from base.namespace import Namespace
 from utils import alphanumeric
 
 
-class ProjectQuerySet(models.QuerySet):
+class ProjectQuerySet(TBSQuerySet):
     def namespace(self, namespace):
         return self.filter(collaborator__user=namespace.object)
 
 
 class Project(models.Model):
+    NATURAL_KEY = "name"
+
     name = models.CharField(max_length=50, validators=[alphanumeric])
     description = models.CharField(max_length=400, blank=True)
     private = models.BooleanField(default=True)
