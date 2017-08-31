@@ -37,7 +37,7 @@ class UserViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
     def _update(self, request, partial, *args, **kwargs):
         data = request.data
         url_kwarg = kwargs.get("pk")
-        user = User.objects.filter_by_name_or_id(url_kwarg).first()
+        user = User.objects.tbs_filter(url_kwarg).first()
 
         # The given User exists, and there is an attempt to change the username
         # User could be none if the client is using PUT to create a user.
@@ -81,7 +81,7 @@ def avatar(request, version, user_pk):
 
     if request.method == "POST":
         try:
-            user = User.objects.filter_by_name_or_id(user_pk).get()
+            user = User.objects.tbs_filter(user_pk).get()
             profile = user.profile
             profile.avatar = request.FILES.get("image")
             profile.save()
@@ -157,12 +157,12 @@ class EmailViewSet(viewsets.ModelViewSet):
         return super().get_queryset().filter(Q(user=self.request.user) | Q(public=True))
 
     def list(self, request, *args, **kwargs):
-        emails = self.get_queryset().filter(user=User.objects.filter_by_name_or_id(kwargs.get("user_id")).get())
+        emails = self.get_queryset().filter(user=User.objects.tbs_filter(kwargs.get("user_id")).get())
         serializer = self.get_serializer(emails, many=True)
         return Response(serializer.data)
 
     def retrieve(self, request, *args, **kwargs):
-        email = self.get_queryset().filter(user=User.objects.filter_by_name_or_id(kwargs.get("user_id")).get(),
+        email = self.get_queryset().filter(user=User.objects.tbs_filter(kwargs.get("user_id")).get(),
                                            pk=kwargs.get("pk")).first()
         serializer = self.get_serializer(email)
         data = serializer.data if email is not None else {}

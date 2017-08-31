@@ -206,7 +206,7 @@ class UserTest(APITestCase):
                                              'version': settings.DEFAULT_VERSION})
         response = self.admin_client.put(url, data=data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        new_user = User.objects.filter_by_name_or_id(data['username']).first()
+        new_user = User.objects.tbs_filter(data['username']).first()
         self.assertIsNotNone(new_user)
         self.to_remove.append(new_user.profile.resource_root())
         self.assertEqual(new_user.username, data['username'])

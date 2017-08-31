@@ -4,7 +4,12 @@ from .utils import validate_uuid
 
 
 class TBSQuerySet(QuerySet):
-    def filter_by_name_or_id(self, value, *args, **kwargs):
+    def tbs_filter(self, value, *args, **kwargs):
         if validate_uuid(value):
-            return self.filter(pk=value)
+            return self.filter(*args, pk=value, **kwargs)
         return self.filter(*args, **{self.model.NATURAL_KEY: value}, **kwargs)
+
+    def tbs_get(self, value):
+        if validate_uuid(value):
+            return self.get(pk=value)
+        return self.get(**{self.model.NATURAL_KEY: value})

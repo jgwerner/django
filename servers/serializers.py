@@ -7,6 +7,7 @@ from servers.models import (ServerSize, Server,
                             ServerRunStatistics,
                             ServerStatistics,
                             SshTunnel)
+from projects.models import Project
 from projects.serializers import ProjectSerializer
 
 
@@ -37,7 +38,7 @@ class ServerSerializer(SearchSerializerMixin, BaseServerSerializer):
     class Meta(BaseServerSerializer.Meta):
         fields = BaseServerSerializer.Meta.fields
         for fld in ["endpoint", "logs_url", "status_url"]:
-             fields += (fld,)
+            fields += (fld,)
 
     def validate_config(self, value):
         server_type = value.get("type")
@@ -49,7 +50,8 @@ class ServerSerializer(SearchSerializerMixin, BaseServerSerializer):
         config = validated_data.pop("config", {})
         server_size = (validated_data.pop('server_size', None) or
                        ServerSize.objects.order_by('created_at').first())
-        return Server.objects.create(project_id=self.context['view'].kwargs['project_pk'],
+        project = self.context['view'].kwargs['project_project']
+        return Server.objects.create(project=Project.objects.tbs_get(project),
                                      created_by=self.context['request'].user,
                                      config=config,
                                      server_size=server_size,

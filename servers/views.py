@@ -7,7 +7,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-from base.views import ProjectMixin, UUIDRegexMixin, ServerMixin, LookupByMultipleFields
+from base.views import ProjectMixin, ServerMixin, LookupByMultipleFields
 from base.permissions import IsAdminUser
 from projects.permissions import ProjectChildPermission
 from .tasks import start_server, stop_server, terminate_server
@@ -22,9 +22,7 @@ class ServerViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
     serializer_class = serializers.ServerSerializer
     permission_classes = (IsAuthenticated, ProjectChildPermission)
     filter_fields = ("name",)
-
-    def get_queryset(self):
-        return super().get_queryset().filter(project_id=self.kwargs.get('project_pk'))
+    lookup_url_kwarg = 'server'
 
 
 @api_view(['post'])
@@ -63,7 +61,7 @@ class ServerRunStatisticsViewSet(ProjectMixin, ServerMixin, viewsets.ModelViewSe
     permission_classes = (IsAuthenticated, ServerChildPermission)
 
     def list(self, request, *args, **kwargs):
-        obj = get_server_usage([kwargs.get("server_pk")])
+        obj = get_server_usage([kwargs.get("server_server")])
         serializer = serializers.ServerRunStatisticsAggregatedSerializer(obj)
         return Response(serializer.data)
 
@@ -95,7 +93,7 @@ class SshTunnelViewSet(ProjectMixin, ServerMixin, viewsets.ModelViewSet):
         return Response(status=status.HTTP_201_CREATED, data=serializer.data)
 
 
-class ServerSizeViewSet(UUIDRegexMixin, viewsets.ModelViewSet):
+class ServerSizeViewSet(viewsets.ModelViewSet):
     queryset = models.ServerSize.objects.all()
     serializer_class = serializers.ServerSizeSerializer
     permission_classes = (IsAdminUser,)
