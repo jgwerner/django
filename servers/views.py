@@ -28,10 +28,18 @@ jwt_response_payload_handler = api_settings.JWT_RESPONSE_PAYLOAD_HANDLER
 
 
 class ServerViewSet(viewsets.ModelViewSet):
-    queryset = models.Server.objects.all()
+    queryset = models.Server.objects.filter(is_active=True)
     serializer_class = serializers.ServerSerializer
     permission_classes = (IsAuthenticated, ProjectChildPermission)
     filter_fields = ("name",)
+
+    def perform_destroy(self, instance):
+        terminate_server.apply_async(
+            args=[instance.pk],
+            task_id=str(self.request.action.pk)
+        )
+        instance.is_active = False
+        instance.save()
 
     def get_queryset(self):
         return super().get_queryset().filter(project_id=self.kwargs.get('project_pk'))

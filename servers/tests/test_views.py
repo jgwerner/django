@@ -78,6 +78,16 @@ class ServerTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), servers_count)
 
+    def test_list_servers_respects_is_active(self):
+        ServerFactory.create_batch(2, project=self.project)
+        ServerFactory.create_batch(2,
+                                   project=self.project,
+                                   is_active=False)
+        url = reverse('server-list', kwargs=self.url_kwargs)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+
     def test_server_details(self):
         server = ServerFactory(project=self.project)
         assign_perm('read_project', self.user, self.project)
@@ -127,7 +137,9 @@ class ServerTest(APITestCase):
         url = reverse('server-detail', kwargs=self.url_kwargs)
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertIsNone(Server.objects.filter(pk=server.pk).first())
+        server_reloaded = Server.objects.filter(pk=server.pk).first()
+        self.assertIsNotNone(server_reloaded)
+        self.assertFalse(server_reloaded.is_active)
 
     @patch('servers.spawners.DockerSpawner.status')
     def test_server_internal_running(self, server_status):
