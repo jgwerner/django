@@ -19,7 +19,8 @@ class ProjectMixin(UUIDRegexMixin):
 
 class ServerMixin(UUIDRegexMixin):
     def get_queryset(self):
-        return super().get_queryset().filter(server_id=self.kwargs.get('server_pk'))
+        return super().get_queryset().filter(server_id=self.kwargs.get('server_pk'),
+                                             is_active=True)
 
 
 class RequestUserMixin(object):
