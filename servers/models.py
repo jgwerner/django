@@ -20,6 +20,7 @@ class Server(models.Model):
     RUNNING = "Running"
     PENDING = "Pending"
     LAUNCHING = "Launching"
+    
     ERROR = "Error"
     TERMINATED = "Terminated"
     TERMINATING = "Terminating"
@@ -50,6 +51,7 @@ class Server(models.Model):
     image_name = models.CharField(max_length=100, blank=True)
     host = models.ForeignKey('infrastructure.DockerHost', related_name='servers', null=True, blank=True)
     access_token = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
