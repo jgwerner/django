@@ -31,6 +31,7 @@ class ServerFactory(factory.django.DjangoModelFactory):
     project = factory.SubFactory(ProjectFactory)
     created_by = factory.SubFactory(UserFactory)
     image_name = '3blades/server'
+    is_active = True
 
 
 class ServerRunStatisticsFactory(factory.django.DjangoModelFactory):

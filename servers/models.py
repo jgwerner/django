@@ -20,7 +20,7 @@ class Server(models.Model):
     RUNNING = "Running"
     PENDING = "Pending"
     LAUNCHING = "Launching"
-    
+
     ERROR = "Error"
     TERMINATED = "Terminated"
     TERMINATING = "Terminating"
