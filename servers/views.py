@@ -72,7 +72,8 @@ class ServerStatisticsViewSet(ProjectMixin, ServerMixin, viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, ServerChildPermission)
 
     def list(self, request, *args, **kwargs):
-        obj = self.queryset.filter(server_id=kwargs.get('server_pk')).aggregate(
+        server = kwargs.get('server_server')
+        obj = self.queryset.filter(server=models.Server.objects.tbs_filter(server).first()).aggregate(
             server_time=Sum(Coalesce(F('stop'), Now()) - F('start')),
             start=Max('start'),
             stop=Max('stop')

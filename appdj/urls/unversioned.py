@@ -42,13 +42,13 @@ router.register(r'projects', project_views.ProjectViewSet)
 project_router = routers.NestedSimpleRouter(router, r'projects', lookup='project')
 project_router.register(r'servers', servers_views.ServerViewSet)
 project_router.register(r'project_files', project_views.ProjectFileViewSet)
-project_router.register(r'servers/(?P<server_pk>[^/.]+)/ssh-tunnels',
+project_router.register(r'servers/(?P<server_server>[^/.]+)/ssh-tunnels',
                         servers_views.SshTunnelViewSet)
-project_router.register(r'servers/(?P<server_pk>[^/.]+)/run-stats',
+project_router.register(r'servers/(?P<server_server>[^/.]+)/run-stats',
                         servers_views.ServerRunStatisticsViewSet)
-project_router.register(r'servers/(?P<server_pk>[^/.]+)/stats',
+project_router.register(r'servers/(?P<server_server>[^/.]+)/stats',
                         servers_views.ServerStatisticsViewSet)
-project_router.register(r'servers/(?P<server_pk>[^/.]+)/triggers', trigger_views.ServerActionViewSet)
+project_router.register(r'servers/(?P<server_server>[^/.]+)/triggers', trigger_views.ServerActionViewSet)
 project_router.register(r'collaborators', project_views.CollaboratorViewSet)
 
 if settings.ENABLE_BILLING:
