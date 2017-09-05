@@ -1,5 +1,5 @@
 from collections import Iterable
-from django.db.models import QuerySet
+from django.db.models import QuerySet, Q
 
 from .utils import validate_uuid
 
@@ -12,13 +12,9 @@ class TBSQuerySet(QuerySet):
         :return: Django queryset
         """
         if isinstance(value, str):
-            if validate_uuid(value):
-                return self.filter(*args, pk=value, **kwargs)
-            return self.filter(*args, **{self.model.NATURAL_KEY: value}, **kwargs)
+            return self._tbs_filter_str(value, *args, **kwargs)
         if isinstance(value, Iterable):
-            uuids = [val for val in value if validate_uuid(val)]
-            natural_keys = [val for val in value if not validate_uuid(val)]
-            return self.filter(*args, **{'pk__in': uuids, f'{self.model.NATURAL_KEY}__in': natural_keys}, **kwargs)
+            return self._tbs_filter_iterable(value, *args, **kwargs)
         return self.filter(*args, **kwargs)
 
     def tbs_get(self, value):
@@ -30,3 +26,20 @@ class TBSQuerySet(QuerySet):
         if validate_uuid(value):
             return self.get(pk=value)
         return self.get(**{self.model.NATURAL_KEY: value})
+
+    def _tbs_filter_str(self, value, *args, **kwargs):
+        if validate_uuid(value):
+            return self.filter(*args, pk=value, **kwargs)
+        return self.filter(*args, **{self.model.NATURAL_KEY: value}, **kwargs)
+
+    def _tbs_filter_iterable(self, value, *args, **kwargs):
+        uuids = [val for val in value if validate_uuid(val)]
+        natural_keys = [val for val in value if not validate_uuid(val)]
+        q = Q(pk__in=uuids) | Q(**{f"{self.model.NATURAL_KEY}__in": natural_keys})
+        return self.filter(q, *args, **kwargs)
+
+
+class TBSModelMixin:
+    NATURAL_KEY = 'name'
+
+    objects = TBSQuerySet.as_manager()

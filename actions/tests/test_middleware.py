@@ -89,8 +89,8 @@ class ActionMiddlewareFunctionalTest(TestCase):
         assign_perm('write_project', self.user, server.project)
         url = reverse('server-start', kwargs={
             'namespace': self.user.username,
-            'project_pk': str(server.project.pk),
-            'pk': str(server.pk),
+            'project_project': str(server.project.pk),
+            'server': str(server.pk),
             'version': settings.DEFAULT_VERSION
         })
         request = self.factory.post(url)

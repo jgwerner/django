@@ -2,13 +2,13 @@ import logging
 from django.db.models import Sum, Max, F
 from django.db.models.functions import Coalesce, Now
 from rest_framework import status, viewsets
-from rest_framework.generics import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-from base.views import ProjectMixin, ServerMixin, LookupByMultipleFields
+from base.views import LookupByMultipleFields
 from base.permissions import IsAdminUser
+from base.utils import get_object_or_404
 from projects.permissions import ProjectChildPermission
 from .tasks import start_server, stop_server, terminate_server
 from .permissions import ServerChildPermission, ServerActionPermission
@@ -27,9 +27,9 @@ class ServerViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
 
 @api_view(['post'])
 @permission_classes([IsAuthenticated, ServerActionPermission])
-def start(request, version, project_pk, pk):
+def start(request, version, *args, **kwargs):
     start_server.apply_async(
-        args=[pk],
+        args=[kwargs.get('server')],
         task_id=str(request.action.pk)
     )
     return Response(status=status.HTTP_201_CREATED)
@@ -39,7 +39,7 @@ def start(request, version, project_pk, pk):
 @permission_classes([IsAuthenticated, ServerActionPermission])
 def stop(request, *args, **kwargs):
     stop_server.apply_async(
-        args=[kwargs.get('pk')],
+        args=[kwargs.get('server')],
         task_id=str(request.action.pk)
     )
     return Response(status=status.HTTP_201_CREATED)
@@ -49,13 +49,13 @@ def stop(request, *args, **kwargs):
 @permission_classes([IsAuthenticated, ServerActionPermission])
 def terminate(request, *args, **kwargs):
     terminate_server.apply_async(
-        args=[kwargs.get('pk')],
+        args=[kwargs.get('server')],
         task_id=str(request.action.pk)
     )
     return Response(status=status.HTTP_201_CREATED)
 
 
-class ServerRunStatisticsViewSet(ProjectMixin, ServerMixin, viewsets.ModelViewSet):
+class ServerRunStatisticsViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
     queryset = models.ServerRunStatistics.objects.all()
     serializer_class = serializers.ServerRunStatisticsSerializer
     permission_classes = (IsAuthenticated, ServerChildPermission)
@@ -66,7 +66,7 @@ class ServerRunStatisticsViewSet(ProjectMixin, ServerMixin, viewsets.ModelViewSe
         return Response(serializer.data)
 
 
-class ServerStatisticsViewSet(ProjectMixin, ServerMixin, viewsets.ModelViewSet):
+class ServerStatisticsViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
     queryset = models.ServerStatistics.objects.all()
     serializer_class = serializers.ServerStatisticsSerializer
     permission_classes = (IsAuthenticated, ServerChildPermission)
@@ -82,7 +82,7 @@ class ServerStatisticsViewSet(ProjectMixin, ServerMixin, viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-class SshTunnelViewSet(ProjectMixin, ServerMixin, viewsets.ModelViewSet):
+class SshTunnelViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
     queryset = models.SshTunnel.objects.all()
     serializer_class = serializers.SshTunnelSerializer
     permission_classes = (IsAuthenticated, ServerChildPermission)
@@ -90,20 +90,22 @@ class SshTunnelViewSet(ProjectMixin, ServerMixin, viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save(server_id=kwargs.get("server_pk"))
+        server = models.Server.objects.tbs_filter(kwargs.get('server_server')).first()
+        serializer.save(server=server)
         return Response(status=status.HTTP_201_CREATED, data=serializer.data)
 
 
-class ServerSizeViewSet(viewsets.ModelViewSet):
+class ServerSizeViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
     queryset = models.ServerSize.objects.all()
     serializer_class = serializers.ServerSizeSerializer
     permission_classes = (IsAdminUser,)
+    lookup_url_kwarg = 'size'
 
 
 @api_view(['GET'], exclude_from_schema=True)
 @permission_classes((AllowAny,))
-def server_internal_details(request, version, project_pk, server_pk):
-    server = get_object_or_404(models.Server, pk=server_pk, project_id=project_pk)
+def server_internal_details(request, version, project_project, server_server):
+    server = get_object_or_404(models.Server, server_server)
     data = {'server': '', 'container_name': ''}
     server_ip = server.get_private_ip()
     data = {

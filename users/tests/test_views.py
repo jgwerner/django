@@ -79,7 +79,7 @@ class UserTest(APITestCase):
         # For whatever reason, create_ssh_key doesnt seem to be called by the Factory here.
         # It doesn't matter, we just need the directory to exist.
         create_ssh_key(user)
-        url = reverse('user-detail', kwargs={'pk': str(user.pk),
+        url = reverse('user-detail', kwargs={'user': str(user.pk),
                                              'version': settings.DEFAULT_VERSION})
         response = self.admin_client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
@@ -89,28 +89,28 @@ class UserTest(APITestCase):
         # For whatever reason, create_ssh_key doesnt seem to be called by the Factory here.
         # It doesn't matter, we just need the directory to exist.
         create_ssh_key(user)
-        url = reverse('user-detail', kwargs={'pk': user.username,
+        url = reverse('user-detail', kwargs={'user': user.username,
                                              'version': settings.DEFAULT_VERSION})
         response = self.admin_client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
     def test_user_delete_by_user(self):
         user = UserFactory()
-        url = reverse('user-detail', kwargs={'pk': str(user.pk),
+        url = reverse('user-detail', kwargs={'user': str(user.pk),
                                              'version': settings.DEFAULT_VERSION})
         response = self.user_client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_user_delete_by_user_with_username(self):
         user = UserFactory()
-        url = reverse('user-detail', kwargs={'pk': user.username,
+        url = reverse('user-detail', kwargs={'user': user.username,
                                              'version': settings.DEFAULT_VERSION})
         response = self.user_client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_patch_user_without_profile(self):
         user = UserFactory()
-        url = reverse("user-detail", kwargs={'pk': user.pk,
+        url = reverse("user-detail", kwargs={'user': user.pk,
                                              'version': settings.DEFAULT_VERSION})
         data = {'first_name': "Tom"}
         response = self.admin_client.patch(url, data=data)
@@ -120,7 +120,7 @@ class UserTest(APITestCase):
 
     def test_patch_user_without_profile_with_username(self):
         user = UserFactory()
-        url = reverse("user-detail", kwargs={'pk': user.username,
+        url = reverse("user-detail", kwargs={'user': user.username,
                                              'version': settings.DEFAULT_VERSION})
         data = {'first_name': "Tom"}
         response = self.admin_client.patch(url, data=data)
@@ -130,7 +130,7 @@ class UserTest(APITestCase):
 
     def test_patch_updating_username_rejected(self):
         user = UserFactory()
-        url = reverse("user-detail", kwargs={'pk': user.pk,
+        url = reverse("user-detail", kwargs={'user': user.pk,
                                              'version': settings.DEFAULT_VERSION})
         data = {'username': "my_fun_new_username"}
         response = self.admin_client.patch(url, data=data)
@@ -139,7 +139,7 @@ class UserTest(APITestCase):
 
     def test_patch_updating_username_rejected_with_username(self):
         user = UserFactory()
-        url = reverse("user-detail", kwargs={'pk': user.username,
+        url = reverse("user-detail", kwargs={'user': user.username,
                                              'version': settings.DEFAULT_VERSION})
         data = {'username': "my_fun_new_username"}
         response = self.admin_client.patch(url, data=data)
@@ -148,7 +148,7 @@ class UserTest(APITestCase):
 
     def test_put_updating_username_rejected(self):
         user = UserFactory()
-        url = reverse("user-detail", kwargs={'pk': user.pk,
+        url = reverse("user-detail", kwargs={'user': user.pk,
                                              'version': settings.DEFAULT_VERSION})
         data = {'username': "my_fun_new_username"}
         response = self.admin_client.put(url, data=data)
@@ -157,7 +157,7 @@ class UserTest(APITestCase):
 
     def test_put_updating_username_rejected_with_username(self):
         user = UserFactory()
-        url = reverse("user-detail", kwargs={'pk': user.username,
+        url = reverse("user-detail", kwargs={'user': user.username,
                                              'version': settings.DEFAULT_VERSION})
         data = {'username': "my_fun_new_username"}
         response = self.admin_client.put(url, data=data)
@@ -179,7 +179,7 @@ class UserTest(APITestCase):
                     }
                 }
         new_uuid = uuid4()
-        url = reverse("user-detail", kwargs={'pk': new_uuid,
+        url = reverse("user-detail", kwargs={'user': new_uuid,
                                              'version': settings.DEFAULT_VERSION})
         response = self.admin_client.put(url, data=data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -202,7 +202,7 @@ class UserTest(APITestCase):
                     "timezone": "MARS"
                     }
                 }
-        url = reverse("user-detail", kwargs={'pk': data['username'],
+        url = reverse("user-detail", kwargs={'user': data['username'],
                                              'version': settings.DEFAULT_VERSION})
         response = self.admin_client.put(url, data=data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -216,7 +216,7 @@ class UserTest(APITestCase):
         create_ssh_key(user)
 
         username = user.username
-        url = reverse('user-detail', kwargs={'pk': str(user.pk),
+        url = reverse('user-detail', kwargs={'user': str(user.pk),
                                              'version': settings.DEFAULT_VERSION})
         response = self.admin_client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
@@ -245,7 +245,7 @@ class UserTest(APITestCase):
         create_ssh_key(user)
 
         username = user.username
-        url = reverse('user-detail', kwargs={'pk': user.username,
+        url = reverse('user-detail', kwargs={'user': user.username,
                                              'version': settings.DEFAULT_VERSION})
         response = self.admin_client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
@@ -470,7 +470,7 @@ class EmailTest(APITestCase):
         self.assertEqual(len(response.data), 0)
 
     def test_retrieve_doesnt_get_private_emails_with_username(self):
-        other_email_private = EmailFactory(public=False,)
+        other_email_private = EmailFactory(public=False)
 
         url = reverse("email-detail", kwargs={'user_id': other_email_private.user.username,
                                               'pk': other_email_private.pk,

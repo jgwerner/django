@@ -39,7 +39,7 @@ class User(AbstractUser):
             super(User, self).save(*args, **kwargs)
 
     def get_absolute_url(self, version, namespace):
-        return reverse('user-detail', kwargs={'version': version, 'pk': str(self.pk)})
+        return reverse('user-detail', kwargs={'version': version, 'user': str(self.pk)})
 
 
 def user_directory_path(instance, filename):

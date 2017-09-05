@@ -67,7 +67,7 @@ def convert_field_to_stripe(model, stripe_field, stripe_data):
     # Will have to think about how to clean it up.
     # I'm guessing it's also not very performant
     if (model_field is not None and
-        (model_field.is_relation and not model_field.many_to_many)):
+            (model_field.is_relation and not model_field.many_to_many)):
 
         value = handle_foreign_key_field(stripe_data,
                                          stripe_field,
@@ -239,8 +239,8 @@ def calculate_compute_usage(customer_stripe_id):
     usage_data = defaultdict(int)
 
     usage_start_time = None
-    last_invoice = Invoice.objects.filter(customer__stripe_id=
-                                          customer_stripe_id).order_by("-period_end").first()
+    last_invoice = Invoice.objects.filter(
+        customer__stripe_id=customer_stripe_id).order_by("-period_end").first()
     if last_invoice is not None:
         usage_start_time = last_invoice.period_end
     user = User.objects.get(customer__stripe_id=customer_stripe_id)
@@ -250,7 +250,7 @@ def calculate_compute_usage(customer_stripe_id):
     servers = Server.objects.filter(project__pk__in=projects).select_related('server_size')
     total_cost = 0
     for server in servers:
-        this_server_data = get_server_usage([server], begin_measure_time=usage_start_time)
+        this_server_data = get_server_usage([str(server.pk)], begin_measure_time=usage_start_time)
         # server_size.cost_per_second is in _dollars_, we want cents
         this_server_cost = (100 * server.server_size.cost_per_second *
                             Decimal(this_server_data['duration'].total_seconds()))

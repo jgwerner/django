@@ -33,10 +33,11 @@ class UserViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
     serializer_class = UserSerializer
     filter_fields = ('username', 'email')
     permission_classes = (IsAuthenticated, DeleteAdminOnly, PostAdminOnly)
+    lookup_url_kwarg = 'user'
 
     def _update(self, request, partial, *args, **kwargs):
         data = request.data
-        url_kwarg = kwargs.get("pk")
+        url_kwarg = kwargs.get(self.lookup_url_kwarg)
         user = User.objects.tbs_filter(url_kwarg).first()
 
         # The given User exists, and there is an attempt to change the username
