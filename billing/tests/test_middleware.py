@@ -4,6 +4,7 @@ from django.test import override_settings
 from rest_framework.test import APITestCase
 from users.tests.factories import UserFactory
 from rest_framework import status
+from billing.models import Subscription
 from billing.tests.factories import SubscriptionFactory
 
 
@@ -12,6 +13,9 @@ class TestMiddleware(APITestCase):
         self.user = UserFactory()
         self.user.is_staff = False
         self.user.save()
+        trial_sub = Subscription.objects.get(customer=self.user.customer)
+        trial_sub.status = Subscription.CANCELED
+        trial_sub.save()
         self.token_header = "Token {auth}".format(auth=self.user.auth_token.key)
         self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
         self.customer = self.user.customer

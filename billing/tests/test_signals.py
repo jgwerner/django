@@ -1,5 +1,5 @@
 from django.test import TestCase
-from billing.models import Plan, Customer
+from billing.models import Plan, Customer, Subscription
 from billing.tests.factories import PlanFactory
 from users.tests.factories import UserFactory
 
@@ -23,3 +23,17 @@ class TestBillingSignals(TestCase):
         customers = Customer.objects.filter(user=user)
         self.assertTrue(customers.exists())
         self.assertEqual(customers.count(), 1)
+
+    def test_free_plan_is_created_and_user_is_subscribed(self):
+        user = UserFactory()
+
+        plan = Plan.objects.filter(name="Threeblades Free Plan").first()
+        import logging
+        log = logging.getLogger('billing')
+        log.debug(())
+        self.assertIsNotNone(plan)
+        self.assertEqual(plan.amount, 0)
+
+        subscription = Subscription.objects.filter(customer=user.customer,
+                                                   plan=plan)
+        self.assertEqual(subscription.count(), 1)

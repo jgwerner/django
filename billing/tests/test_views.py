@@ -51,13 +51,14 @@ class PlanTest(APITestCase):
             stripe_obj.delete()
 
     def test_list_plans(self):
+        pre_create_plan_count = Plan.objects.count()
         plan_count = 4
         plans = PlanFactory.create_batch(plan_count)
         url = reverse("plan-list", kwargs={'namespace': self.user.username,
                                            'version': settings.DEFAULT_VERSION})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), plan_count)
+        self.assertEqual(len(response.data), plan_count + pre_create_plan_count)
 
     def test_plan_details(self):
         plan = PlanFactory()
@@ -178,17 +179,18 @@ class SubscriptionTest(APITestCase):
         data = {'plan': plan.pk}
         self.client.post(url, data)
 
-        subscription = Subscription.objects.get()
+        subscription = Subscription.objects.get(plan=plan)
         return subscription
 
     def test_subscription_create(self):
+        pre_test_sub_count = Subscription.objects.count()
         plan = self._create_plan_in_stripe(trial_period=7)
         url = reverse("subscription-list", kwargs={'namespace': self.user.username,
                                                    'version': settings.DEFAULT_VERSION})
         data = {'plan': plan.pk}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Subscription.objects.count(), 1)
+        self.assertEqual(Subscription.objects.count(), pre_test_sub_count + 1)
 
     def test_update_subscription_fails(self):
         subscription = SubscriptionFactory(customer=self.customer,
@@ -200,21 +202,19 @@ class SubscriptionTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_list_subscriptions(self):
-        import logging
-        log = logging.getLogger("billing")
+        pre_existing_subs = Subscription.objects.count()
         not_me_sub_count = 3
         for _ in range(not_me_sub_count):
-            user = UserFactory()
-            log.debug(("test user.pk", user.pk))
-            SubscriptionFactory(customer=user.customer)
+            UserFactory()
+            # Dont need to create a Subscription, one is created to the free plan automatically
         my_subs_count = 2
         my_subs = SubscriptionFactory.create_batch(my_subs_count, customer=self.customer)
         url = reverse("subscription-list", kwargs={'namespace': self.user.username,
                                                    'version': settings.DEFAULT_VERSION})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(Subscription.objects.count(), not_me_sub_count + my_subs_count)
-        self.assertEqual(len(response.data), my_subs_count)
+        self.assertEqual(Subscription.objects.filter(plan__amount__gt=0).count(), my_subs_count)
+        self.assertEqual(len(response.data), my_subs_count + pre_existing_subs)
 
     def test_subscription_details(self):
         sub = SubscriptionFactory(customer=self.customer)
@@ -226,14 +226,15 @@ class SubscriptionTest(APITestCase):
         self.assertEqual(str(sub.pk), response.data.get('id'))
 
     def test_subscription_cancel(self):
+        pre_test_sub_count = Subscription.objects.count()
         subscription = self._create_subscription_in_stripe()
         url = reverse("subscription-detail", kwargs={'namespace': self.user.username,
                                                      'pk': subscription.pk,
                                                      'version': settings.DEFAULT_VERSION})
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(Subscription.objects.count(), 1)
-        sub_reloaded = Subscription.objects.get()
+        self.assertEqual(Subscription.objects.count(), pre_test_sub_count + 1)
+        sub_reloaded = Subscription.objects.get(pk=subscription.pk)
         self.assertEqual(sub_reloaded.status, Subscription.CANCELED)
         self.assertIsNotNone(sub_reloaded.canceled_at)
         self.assertIsNotNone(sub_reloaded.ended_at)
@@ -274,7 +275,7 @@ class InvoiceTest(TestCase):
         data = {'plan': str(plan.pk)}
         self.api_client.post(url, json.dumps(data), content_type="application/json")
 
-        subscription = Subscription.objects.get()
+        subscription = Subscription.objects.get(plan=plan)
         return subscription
 
     def test_invoice_created_webhook(self):

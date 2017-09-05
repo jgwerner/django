@@ -105,6 +105,7 @@ def create_stripe_customer_from_user(auth_user):
 
 
 def create_plan_in_stripe(validated_data):
+    log.info(f"Creating plan f{validated_data.get('name')} in Stripe.")
     stripe_response = stripe.Plan.create(id=validated_data.get('name').lower().replace(" ", "-"),
                                          amount=validated_data.get('amount'),
                                          currency=validated_data.get('currency'),
@@ -280,3 +281,36 @@ def handle_upcoming_invoice(stripe_event):
         invoice_item = create_invoice_item_for_compute_usage(customer_stripe_id,
                                                              usage_data)
         log.info(f"Created a new invoice item for {customer_stripe_id}: {invoice_item.stripe_id}")
+
+
+def assign_customer_to_free_plan(customer):
+    existing_sub = Subscription.objects.filter(customer=customer)
+    if not existing_sub.exists():
+        log.info(f"Creating subscription to free plan for {customer.user.username}.")
+        free_plan = Plan.objects.filter(amount=0).first()
+        if not free_plan:
+            log.info("No free plan exists yet. Creating one.")
+            try:
+                log.info("First make sure it doesn't exist in Stripe already...")
+                stripe_resp = stripe.Plan.retrieve("threeblades-free-plan")
+
+                log.info("Free plan already exists in Stripe. Creating it in local database.")
+                converted_data = convert_stripe_object(Plan, stripe_resp)
+
+                free_plan = Plan(**converted_data)
+                free_plan.save()
+            except stripe.error.InvalidRequestError:
+                log.info("Free plan did NOT exist in Stripe...creating it there and in local database.")
+                plan_data = {'name': "Threeblades Free Plan",
+                             'amount': 0,
+                             'currency': "usd",
+                             'interval': "month",
+                             'interval_count': 1,
+                             'trial_period_days': 14}
+                free_plan = create_plan_in_stripe(plan_data)
+                free_plan.save()
+        sub_data = {'customer': customer,
+                    'plan': free_plan}
+        create_subscription_in_stripe(sub_data)
+        log.info("Finished creating default subscription.")
+
