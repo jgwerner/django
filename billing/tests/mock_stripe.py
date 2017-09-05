@@ -79,11 +79,14 @@ class Plan:
 
     @classmethod
     def retrieve(cls, stripe_id):
+        if stripe_id == "threeblades-free-plan":
+            raise error.InvalidRequestError
+        name = stripe_id.replace("-", " ").title()
         if cls.plan is None:
-            cls.plan = cls.create(id="foo",
+            cls.plan = cls.create(id=stripe_id,
                                   object="plan",
-                                  name="foo",
-                                  amount=100,
+                                  name=name,
+                                  amount=0,
                                   currency="usd",
                                   interval="month",
                                   interval_count=1)
@@ -434,3 +437,8 @@ class Event:
         if kwargs.get("stripe_id") is not None:
             json['id'] = kwargs.get("stripe_id")
         return json
+
+
+class error:
+    class InvalidRequestError(BaseException):
+        pass

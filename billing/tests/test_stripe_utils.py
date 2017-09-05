@@ -1,4 +1,3 @@
-import logging
 from decimal import Decimal, getcontext
 from datetime import datetime
 from django.conf import settings
@@ -17,7 +16,6 @@ else:
     import stripe
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
-log = logging.getLogger('billing')
 getcontext().prec = 6
 
 
@@ -80,9 +78,9 @@ class TestStripeUtils(TestCase):
 
         stripe_utils.sync_invoices_for_customer(self.customer, stripe_invoices=mock_invoices)
 
-        self.assertEqual(Invoice.objects.count(), 1)
+        self.assertEqual(Invoice.objects.filter(amount_due__gt=0).count(), 1)
 
-        invoice = Invoice.objects.get()
+        invoice = Invoice.objects.get(amount_due__gt=0)
         self.assertEqual(invoice.total, plan.amount)
         self.assertEqual(invoice.customer, self.customer)
         self.assertEqual(invoice.subscription, subscription)
