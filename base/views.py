@@ -5,9 +5,6 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 
-from projects.models import Project
-from servers.models import Server, ServerRunStatistics
-
 
 class NamespaceMixin:
     def get_queryset(self):
