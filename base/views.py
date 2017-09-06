@@ -40,7 +40,7 @@ class LookupByMultipleFields:
             parent_model = getattr(qs.model, parent_arg).field.related_model
             parent_object = parent_model.objects.tbs_filter(prepare_kwargs[parent_arg]).first()
             filter_kwargs[parent_arg] = parent_object
-        return qs.filter(**filter_kwargs)
+        return qs.filter(**filter_kwargs) if filter_kwargs else qs
 
     def get_object(self):
         qs = self.filter_queryset(self.get_queryset())
@@ -51,12 +51,6 @@ class LookupByMultipleFields:
             raise Http404
         self.check_object_permissions(self.request, obj)
         return obj
-
-    def _get_parent_model(self, model):
-        parent_attr = next((x for x in self.kwargs.keys() if hasattr(model, x)), None)
-        if parent_attr:
-            parent = getattr(model, parent_attr)
-            return parent.field.related_model
 
 
 @api_view(["GET"])
