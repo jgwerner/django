@@ -82,7 +82,7 @@ def avatar(request, version, user_pk):
 
     if request.method == "POST":
         try:
-            user = User.objects.tbs_filter(user_pk).get()
+            user = User.objects.tbs_get(user_pk)
             profile = user.profile
             profile.avatar = request.FILES.get("image")
             profile.save()
@@ -158,12 +158,12 @@ class EmailViewSet(viewsets.ModelViewSet):
         return super().get_queryset().filter(Q(user=self.request.user) | Q(public=True))
 
     def list(self, request, *args, **kwargs):
-        emails = self.get_queryset().filter(user=User.objects.tbs_filter(kwargs.get("user_id")).get())
+        emails = self.get_queryset().filter(user=User.objects.tbs_get(kwargs.get("user_id")))
         serializer = self.get_serializer(emails, many=True)
         return Response(serializer.data)
 
     def retrieve(self, request, *args, **kwargs):
-        email = self.get_queryset().filter(user=User.objects.tbs_filter(kwargs.get("user_id")).get(),
+        email = self.get_queryset().filter(user=User.objects.tbs_get(kwargs.get("user_id")),
                                            pk=kwargs.get("pk")).first()
         serializer = self.get_serializer(email)
         data = serializer.data if email is not None else {}

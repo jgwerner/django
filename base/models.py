@@ -33,8 +33,13 @@ class TBSQuerySet(QuerySet):
         return self.filter(*args, **{self.model.NATURAL_KEY: value}, **kwargs)
 
     def _tbs_filter_iterable(self, value, *args, **kwargs):
-        uuids = [val for val in value if validate_uuid(val)]
-        natural_keys = [val for val in value if not validate_uuid(val)]
+        uuids = []
+        natural_keys = []
+        for val in value:
+            if validate_uuid(val):
+                uuids.append(val)
+            else:
+                natural_keys.append(val)
         q = Q(pk__in=uuids) | Q(**{f"{self.model.NATURAL_KEY}__in": natural_keys})
         return self.filter(q, *args, **kwargs)
 
