@@ -46,7 +46,16 @@ class UserViewSet(UUIDRegexMixin, viewsets.ModelViewSet):
 
         serializer = self.serializer_class(instance=user, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
-        serializer.save(id=primary_key)
+        if user is None:
+            # We're creating a user via PUT
+            self.perform_create(serializer)
+            user = serializer.instance
+            user.is_active = True
+            user.save()
+            response_status = status.HTTP_201_CREATED
+        else:
+            serializer.update(instance=user, validated_data=data)
+            response_status = status.HTTP_200_OK
 
         return Response(data=serializer.data,
                         status=status.HTTP_200_OK)
