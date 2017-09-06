@@ -6,8 +6,8 @@ from django.test import override_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from jwt_auth.utils import create_server_jwt
 from projects.tests.factories import CollaboratorFactory
-
 from servers.models import Server, SshTunnel
 from users.tests.factories import UserFactory
 from servers.tests.factories import (ServerSizeFactory,
@@ -78,6 +78,16 @@ class ServerTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), servers_count)
 
+    def test_list_servers_respects_is_active(self):
+        ServerFactory.create_batch(2, project=self.project)
+        ServerFactory.create_batch(2,
+                                   project=self.project,
+                                   is_active=False)
+        url = reverse('server-list', kwargs=self.url_kwargs)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+
     def test_server_details(self):
         server = ServerFactory(project=self.project)
         assign_perm('read_project', self.user, self.project)
@@ -127,23 +137,22 @@ class ServerTest(APITestCase):
         url = reverse('server-detail', kwargs=self.url_kwargs)
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertIsNone(Server.objects.filter(pk=server.pk).first())
+        server_reloaded = Server.objects.filter(pk=server.pk).first()
+        self.assertIsNotNone(server_reloaded)
+        self.assertFalse(server_reloaded.is_active)
 
     @patch('servers.spawners.DockerSpawner.status')
     def test_server_internal_running(self, server_status):
         server_status.return_value = Server.RUNNING
-        server = ServerFactory(project=self.project)
-        url = reverse('server_internal', kwargs={'server_server': server.pk, **self.url_kwargs})
-        response = self.client.get(url)
+        server = ServerFactory(project=self.project, config={'ports': {'jupyter': '1234'}})
+        url = reverse('server_internal', kwargs={'server_server': server.pk, 'service': 'jupyter', **self.url_kwargs})
+        server.access_token = create_server_jwt(self.user, str(server.pk))
+        server.save()
+        response = self.client.get(url, {'access_token': server.access_token})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         server_ip = server.get_private_ip()
-        expected = {
-            'server': {
-                service: '%s:%s' % (server_ip, port) for service, port in server.config.get('ports', {}).items()
-            },
-            'container_name': server.container_name
-        }
-        self.assertDictEqual(expected, response.data)
+        expected = f"{server_ip}:1234"
+        self.assertEqual(expected, response.data)
 
     def test_server_stop_perm(self):
         server = ServerFactory(project=self.project)
@@ -156,6 +165,34 @@ class ServerTest(APITestCase):
         assign_perm('write_project', self.user, self.project)
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_server_api_key(self):
+        server = ServerFactory(project=self.project)
+        server.access_token = create_server_jwt(self.user, str(server.pk))
+        server.save()
+        self.url_kwargs.update({'server': str(server.pk)})
+        url = reverse('server-api-key', kwargs=self.url_kwargs)
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertTrue('token' in resp.data)
+
+    def test_server_api_key_reset(self):
+        server = ServerFactory(project=self.project)
+        self.url_kwargs.update({'server': str(server.pk)})
+        url = reverse('server-api-key-reset', kwargs=self.url_kwargs)
+        resp = self.client.post(url)
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertNotEqual(resp.data['token'], server.access_token)
+
+    def test_server_api_key_verify(self):
+        server = ServerFactory(project=self.project)
+        server.access_token = create_server_jwt(self.user, str(server.pk))
+        server.save()
+        self.url_kwargs.update({'server': str(server.pk)})
+        url = reverse('server-api-key-verify', kwargs=self.url_kwargs)
+        data = {"token": server.access_token}
+        resp = self.client.post(url, data)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_ssh_tunnel_create(self):
         server = ServerFactory(project=self.project)
@@ -287,23 +324,21 @@ class ServerTestWithName(APITestCase):
         url = reverse('server-detail', kwargs=self.url_kwargs)
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertIsNone(Server.objects.filter(pk=server.pk).first())
+        self.assertIsNone(Server.objects.filter(pk=server.pk, is_active=True).first())
 
     @patch('servers.spawners.DockerSpawner.status')
     def test_server_internal_running(self, server_status):
         server_status.return_value = Server.RUNNING
-        server = ServerFactory(project=self.project)
-        url = reverse('server_internal', kwargs={'server_server': server.name, **self.url_kwargs})
-        response = self.client.get(url)
+        server = ServerFactory(project=self.project, config={'ports': {'jupyter': '1234'}})
+        url = reverse('server_internal', kwargs={
+            'server_server': server.name, 'service': 'jupyter', **self.url_kwargs})
+        server.access_token = create_server_jwt(self.user, str(server.pk))
+        server.save()
+        response = self.client.get(url, {'access_token': server.access_token})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         server_ip = server.get_private_ip()
-        expected = {
-            'server': {
-                service: '%s:%s' % (server_ip, port) for service, port in server.config.get('ports', {}).items()
-            },
-            'container_name': server.container_name
-        }
-        self.assertDictEqual(expected, response.data)
+        expected = f"{server_ip}:1234"
+        self.assertEqual(expected, response.data)
 
     def test_server_stop_perm(self):
         server = ServerFactory(project=self.project)
@@ -316,6 +351,34 @@ class ServerTestWithName(APITestCase):
         assign_perm('write_project', self.user, self.project)
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_server_api_key(self):
+        server = ServerFactory(project=self.project)
+        server.access_token = create_server_jwt(self.user, server.name)
+        server.save()
+        self.url_kwargs.update({'server': str(server.pk)})
+        url = reverse('server-api-key', kwargs=self.url_kwargs)
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertTrue('token' in resp.data)
+
+    def test_server_api_key_reset(self):
+        server = ServerFactory(project=self.project)
+        self.url_kwargs.update({'server': server.name})
+        url = reverse('server-api-key-reset', kwargs=self.url_kwargs)
+        resp = self.client.post(url)
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertNotEqual(resp.data['token'], server.access_token)
+
+    def test_server_api_key_verify(self):
+        server = ServerFactory(project=self.project)
+        server.access_token = create_server_jwt(self.user, str(server.pk))
+        server.save()
+        self.url_kwargs.update({'server': server.name})
+        url = reverse('server-api-key-verify', kwargs=self.url_kwargs)
+        data = {"token": server.access_token}
+        resp = self.client.post(url, data)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_ssh_tunnel_create(self):
         server = ServerFactory(project=self.project)

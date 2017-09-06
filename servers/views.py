@@ -1,20 +1,28 @@
 import logging
-from django.db.models import Sum, Max, F
+from django.db.models import Sum, Count, Max, F
 from django.db.models.functions import Coalesce, Now
 from rest_framework import status, viewsets
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, renderer_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework_jwt.settings import api_settings
 
 from base.views import LookupByMultipleFields
 from base.permissions import IsAdminUser
 from base.utils import get_object_or_404
+from base.renderers import PlainTextRenderer
+from projects.models import Project
 from projects.permissions import ProjectChildPermission
+from jwt_auth.views import JWTApiView
+from jwt_auth.serializers import VerifyJSONWebTokenServerSerializer
+from jwt_auth.utils import create_server_jwt
 from .tasks import start_server, stop_server, terminate_server
 from .permissions import ServerChildPermission, ServerActionPermission
 from . import serializers, models
 from .utils import get_server_usage
+
 log = logging.getLogger('servers')
+jwt_response_payload_handler = api_settings.JWT_RESPONSE_PAYLOAD_HANDLER
 
 
 class ServerViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
@@ -23,6 +31,14 @@ class ServerViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, ProjectChildPermission)
     filter_fields = ("name",)
     lookup_url_kwarg = 'server'
+
+    def perform_destroy(self, instance):
+        terminate_server.apply_async(
+            args=[instance.pk],
+            task_id=str(self.request.action.pk)
+        )
+        instance.is_active = False
+        instance.save()
 
 
 @api_view(['post'])
@@ -53,6 +69,24 @@ def terminate(request, *args, **kwargs):
         task_id=str(request.action.pk)
     )
     return Response(status=status.HTTP_201_CREATED)
+
+
+@api_view(['get'])
+def server_key(request, *args, **kwargs):
+    server = get_object_or_404(models.Server, kwargs.get('server'))
+    return Response(data=jwt_response_payload_handler(server.access_token))
+
+
+@api_view(['post'])
+def server_key_reset(request, *args, **kwargs):
+    server = get_object_or_404(models.Server, kwargs.get('server'))
+    server.access_token = create_server_jwt(request.user, str(server.pk))
+    server.save()
+    return Response(data=jwt_response_payload_handler(server.access_token), status=status.HTTP_201_CREATED)
+
+
+class VerifyJSONWebTokenServer(JWTApiView):
+    serializer_class = VerifyJSONWebTokenServerSerializer
 
 
 class ServerRunStatisticsViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
@@ -102,14 +136,22 @@ class ServerSizeViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
     lookup_url_kwarg = 'size'
 
 
+@api_view(['POST'])
+@permission_classes((AllowAny,))
+def check_token(request, version, project_project, server):
+    server = models.Server.objects.only('access_token').tbs_get(server)
+    auth_header = request.META.get('HTTP_AUTHORIZATION')
+    if auth_header and auth_header.startswith('Bearer'):
+        token = auth_header.split()[1]
+        return Response() if token == server.access_token else Response(status=status.HTTP_401_UNAUTHORIZED)
+    return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+
 @api_view(['GET'], exclude_from_schema=True)
 @permission_classes((AllowAny,))
-def server_internal_details(request, version, project_project, server_server):
+@renderer_classes((PlainTextRenderer,))
+def server_internal_details(request, version, project_project, server_server, service):
     server = get_object_or_404(models.Server, server_server)
-    data = {'server': '', 'container_name': ''}
     server_ip = server.get_private_ip()
-    data = {
-        'server': {service: '%s:%s' % (server_ip, port) for service, port in server.config.get('ports', {}).items()},
-        'container_name': (server.container_name or '')
-    }
-    return Response(data)
+    port = server.config.get('ports', {}).get(service)
+    return Response(f"{server_ip}:{port}")

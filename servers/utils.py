@@ -21,3 +21,7 @@ def get_server_usage(server_ids, begin_measure_time=None):
                                    start=Max('start'),
                                    stop=Max('stop'))
     return usage_data
+
+
+def is_server_token(token):
+    return Server.objects.filter(access_token=token).exists()

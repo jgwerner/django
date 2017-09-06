@@ -14,7 +14,7 @@ class NamespaceMixin:
         return super().get_queryset().namespace(self.request.namespace)
 
 
-class RequestUserMixin:
+class RequestUserMixin(object):
     def _get_request_user(self):
         return self.context['request'].user
 
@@ -34,13 +34,16 @@ def get_endswith(dic, key):
 class LookupByMultipleFields:
     def get_queryset(self):
         qs = super().get_queryset()
+        filter_kwargs = {}
+        if hasattr(qs.model, 'is_active'):
+            filter_kwargs['is_active'] = True
         prepare_kwargs = {k.split('_')[-1] if '_' in k else k: v for k, v in self.kwargs.items()}
         parent_arg = next((x for x in prepare_kwargs if hasattr(qs.model, x)), None)
         if parent_arg:
             parent_model = getattr(qs.model, parent_arg).field.related_model
             parent_object = parent_model.objects.tbs_filter(prepare_kwargs[parent_arg]).first()
-            qs = qs.filter(**{parent_arg: parent_object})
-        return qs
+            filter_kwargs[parent_arg] = parent_object
+        return qs.filter(**filter_kwargs)
 
     def get_object(self):
         qs = self.filter_queryset(self.get_queryset())

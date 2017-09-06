@@ -22,6 +22,7 @@ class Server(models.Model):
     RUNNING = "Running"
     PENDING = "Pending"
     LAUNCHING = "Launching"
+
     ERROR = "Error"
     TERMINATED = "Terminated"
     TERMINATING = "Terminating"
@@ -31,8 +32,6 @@ class Server(models.Model):
     STOP = 'stop'
     START = 'start'
     TERMINATE = 'terminate'
-
-    CONTAINER_NAME_FORMAT = "server_{}_{}"
 
     SERVER_TYPES = ["jupyter", "restful", "cron"]
 
@@ -53,6 +52,8 @@ class Server(models.Model):
     connected = models.ManyToManyField('self', blank=True, related_name='servers')
     image_name = models.CharField(max_length=100, blank=True)
     host = models.ForeignKey('infrastructure.DockerHost', related_name='servers', null=True, blank=True)
+    access_token = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
@@ -71,7 +72,7 @@ class Server(models.Model):
 
     @property
     def container_name(self):
-        return slugify(self.CONTAINER_NAME_FORMAT.format(self.pk, self.name))
+        return slugify(str(self.pk))
 
     @property
     def volume_path(self):
