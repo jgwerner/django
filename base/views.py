@@ -21,13 +21,6 @@ class RequestUserMixin(object):
         return instance
 
 
-def get_endswith(dic, key):
-    keys = [k for k in dic.keys() if k.endswith(key)]
-    if len(keys) > 1:
-        raise KeyError(f"Multiple values for key: {key}")
-    return dic[keys[0]]
-
-
 class LookupByMultipleFields:
     def get_queryset(self):
         qs = super().get_queryset()
