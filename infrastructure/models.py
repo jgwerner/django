@@ -11,6 +11,8 @@ logger = logging.getLogger("infrastructure")
 
 
 class DockerHost(models.Model):
+    NATURAL_KEY = 'name'
+
     AVAILABLE = 'Available'
     NOT_AVAILABLE = 'Not Available'
     ERROR = 'Error'
@@ -28,7 +30,7 @@ class DockerHost(models.Model):
 
     def get_absolute_url(self, version, namespace):
         return reverse('dockerhost-detail', kwargs={
-            'namespace': namespace.name, 'version': version, 'pk': str(self.pk)})
+            'namespace': namespace.name, 'version': version, 'host': str(self.pk)})
 
     @property
     def url(self):

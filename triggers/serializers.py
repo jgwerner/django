@@ -148,7 +148,7 @@ class ServerActionSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         content_type = ContentType.objects.filter(model='server').first()
-        server = Server.objects.get(pk=self.context['view'].kwargs['server_pk'])
+        server = Server.objects.get(pk=self.context['view'].kwargs['server_server'])
         namespace = self.context['request'].namespace
         action = Action.objects.create(
             method='POST',

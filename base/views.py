@@ -1,26 +1,14 @@
+from django.core.exceptions import ObjectDoesNotExist
+from django.http import Http404
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 
-class UUIDRegexMixin(object):
-    lookup_value_regex = '[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
 
-
-class NamespaceMixin(UUIDRegexMixin):
+class NamespaceMixin:
     def get_queryset(self):
         return super().get_queryset().namespace(self.request.namespace)
-
-
-class ProjectMixin(UUIDRegexMixin):
-    def get_queryset(self):
-        return super().get_queryset().filter(server__project_id=self.kwargs.get('project_pk'))
-
-
-class ServerMixin(UUIDRegexMixin):
-    def get_queryset(self):
-        return super().get_queryset().filter(server_id=self.kwargs.get('server_pk'),
-                                             is_active=True)
 
 
 class RequestUserMixin(object):
@@ -31,6 +19,31 @@ class RequestUserMixin(object):
         instance = self.Meta.model(user=self._get_request_user(), **validated_data)
         instance.save()
         return instance
+
+
+class LookupByMultipleFields:
+    def get_queryset(self):
+        qs = super().get_queryset()
+        filter_kwargs = {}
+        if hasattr(qs.model, 'is_active'):
+            filter_kwargs['is_active'] = True
+        prepare_kwargs = {k.split('_')[-1] if '_' in k else k: v for k, v in self.kwargs.items()}
+        parent_arg = next((x for x in prepare_kwargs if hasattr(qs.model, x)), None)
+        if parent_arg:
+            parent_model = getattr(qs.model, parent_arg).field.related_model
+            parent_object = parent_model.objects.tbs_filter(prepare_kwargs[parent_arg]).first()
+            filter_kwargs[parent_arg] = parent_object
+        return qs.filter(**filter_kwargs) if filter_kwargs else qs
+
+    def get_object(self):
+        qs = self.filter_queryset(self.get_queryset())
+        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+        try:
+            obj = qs.tbs_get(self.kwargs[lookup_url_kwarg])
+        except ObjectDoesNotExist:
+            raise Http404
+        self.check_object_permissions(self.request, obj)
+        return obj
 
 
 @api_view(["GET"])

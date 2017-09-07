@@ -10,13 +10,12 @@ from social_django.models import UserSocialAuth
 from base.namespace import Namespace
 from utils import alphanumeric
 
-
-class ProjectQuerySet(models.QuerySet):
-    def namespace(self, namespace):
-        return self.filter(collaborator__user=namespace.object)
+from .managers import ProjectQuerySet, CollaboratorQuerySet, FileQuerySet, SyncedResourceQuerySet
 
 
 class Project(models.Model):
+    NATURAL_KEY = "name"
+
     name = models.CharField(max_length=50, validators=[alphanumeric])
     description = models.CharField(max_length=400, blank=True)
     private = models.BooleanField(default=True)
@@ -42,7 +41,7 @@ class Project(models.Model):
         return reverse(
             'project-{}'.format(action),
             kwargs={'namespace': namespace.name,
-                    'pk': str(self.id),
+                    'project': str(self.id),
                     'version': version}
         )
 
@@ -57,31 +56,24 @@ class Project(models.Model):
         return Path(settings.RESOURCE_DIR, self.get_owner_name(), str(self.pk))
 
 
-class ProjectUsersQuerySet(models.QuerySet):
-    def namespace(self, namespace):
-        return self.filter(user=namespace.object)
-
-
 class Collaborator(models.Model):
     project = models.ForeignKey(Project, models.CASCADE)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE)
     joined = models.DateTimeField(auto_now_add=True)
     owner = models.BooleanField(default=False)
 
-    objects = ProjectUsersQuerySet.as_manager()
+    objects = CollaboratorQuerySet.as_manager()
 
     def get_absolute_url(self, version, namespace):
-        return ""
+        return reverse(
+            "collaborator-detail",
+            kwargs={'namespace': namespace.name, 'version': version, 'project_project': str(self.project.pk),
+                    'pk': str(self.pk)})
 
     @property
     def permissions(self):
         project_perms = dict(Project._meta.permissions)
         return [perm for perm in get_perms(self.user, self.project) if perm in project_perms]
-
-
-class FileQuerySet(models.QuerySet):
-    def namespace(self, namespace):
-        return self.filter(author__username=namespace.name)
 
 
 def user_project_directory_path(instance, filename):
@@ -91,6 +83,8 @@ def user_project_directory_path(instance, filename):
 
 
 class ProjectFile(models.Model):
+    NATURAL_KEY = 'file'
+
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
     project = models.ForeignKey(Project, related_name="project_files")
     file = models.FileField(upload_to=user_project_directory_path)
@@ -116,19 +110,16 @@ class ProjectFile(models.Model):
 
     def get_absolute_url(self, version, namespace):
         return reverse('projectfile-detail', kwargs={'namespace': namespace.name, 'version': version,
-                       'project_pk': str(self.project.pk), 'pk': str(self.pk)})
+                       'project_project': str(self.project.pk), 'pk': str(self.pk)})
 
     def delete(self, using=None, keep_parents=False):
         self.file.delete()
         return super().delete(using, keep_parents)
 
 
-class SyncedResourceQuerySet(models.QuerySet):
-    def namespace(self, namespace):
-        return self.filter(project__collaborator__user=namespace.object)
-
-
 class SyncedResource(models.Model):
+    NATURAL_KEY = 'integration'
+
     project = models.ForeignKey(Project, models.CASCADE, related_name='synced_resources')
     integration = models.ForeignKey(UserSocialAuth, models.CASCADE)
     folder = models.CharField(max_length=50)

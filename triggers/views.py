@@ -7,7 +7,8 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from base.views import NamespaceMixin
+from base.views import NamespaceMixin, LookupByMultipleFields
+from servers.models import Server
 from triggers.models import Trigger
 from triggers.serializers import TriggerSerializer, SlackMessageSerializer, ServerActionSerializer
 from triggers.tasks import dispatch_trigger
@@ -29,14 +30,15 @@ class SlackMessageView(APIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-class ServerActionViewSet(NamespaceMixin, viewsets.ModelViewSet):
+class ServerActionViewSet(NamespaceMixin, LookupByMultipleFields, viewsets.ModelViewSet):
     queryset = Trigger.objects.all()
     serializer_class = ServerActionSerializer
     filter_fields = ("name",)
+    lookup_url_kwarg = 'trigger'
 
     def get_queryset(self):
-        server_pk = self.kwargs.get('server_pk')
-        return super().get_queryset().filter(cause__object_id=server_pk)
+        server = self.kwargs.get('server_server')
+        return super().get_queryset().filter(cause__object=Server.objects.tbs_filter(server).first())
 
 
 @api_view(['POST'])

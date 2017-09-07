@@ -2,14 +2,14 @@ import logging
 from django.db.models import Sum, Count, Max, F
 from django.db.models.functions import Coalesce, Now
 from rest_framework import status, viewsets
-from rest_framework.generics import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes, renderer_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_jwt.settings import api_settings
 
-from base.views import ProjectMixin, UUIDRegexMixin, ServerMixin
+from base.views import LookupByMultipleFields
 from base.permissions import IsAdminUser
+from base.utils import get_object_or_404
 from base.renderers import PlainTextRenderer
 from projects.models import Project
 from projects.permissions import ProjectChildPermission
@@ -22,16 +22,15 @@ from . import serializers, models
 from .utils import get_server_usage
 
 log = logging.getLogger('servers')
-
-
 jwt_response_payload_handler = api_settings.JWT_RESPONSE_PAYLOAD_HANDLER
 
 
-class ServerViewSet(viewsets.ModelViewSet):
-    queryset = models.Server.objects.filter(is_active=True)
+class ServerViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
+    queryset = models.Server.objects.all()
     serializer_class = serializers.ServerSerializer
     permission_classes = (IsAuthenticated, ProjectChildPermission)
     filter_fields = ("name",)
+    lookup_url_kwarg = 'server'
 
     def perform_destroy(self, instance):
         terminate_server.apply_async(
@@ -41,15 +40,12 @@ class ServerViewSet(viewsets.ModelViewSet):
         instance.is_active = False
         instance.save()
 
-    def get_queryset(self):
-        return super().get_queryset().filter(project_id=self.kwargs.get('project_pk'))
-
 
 @api_view(['post'])
 @permission_classes([IsAuthenticated, ServerActionPermission])
-def start(request, version, project_pk, pk):
+def start(request, version, *args, **kwargs):
     start_server.apply_async(
-        args=[pk],
+        args=[kwargs.get('server')],
         task_id=str(request.action.pk)
     )
     return Response(status=status.HTTP_201_CREATED)
@@ -59,7 +55,7 @@ def start(request, version, project_pk, pk):
 @permission_classes([IsAuthenticated, ServerActionPermission])
 def stop(request, *args, **kwargs):
     stop_server.apply_async(
-        args=[kwargs.get('pk')],
+        args=[kwargs.get('server')],
         task_id=str(request.action.pk)
     )
     return Response(status=status.HTTP_201_CREATED)
@@ -69,7 +65,7 @@ def stop(request, *args, **kwargs):
 @permission_classes([IsAuthenticated, ServerActionPermission])
 def terminate(request, *args, **kwargs):
     terminate_server.apply_async(
-        args=[kwargs.get('pk')],
+        args=[kwargs.get('server')],
         task_id=str(request.action.pk)
     )
     return Response(status=status.HTTP_201_CREATED)
@@ -77,13 +73,13 @@ def terminate(request, *args, **kwargs):
 
 @api_view(['get'])
 def server_key(request, *args, **kwargs):
-    server = get_object_or_404(models.Server, pk=kwargs.get('pk'))
+    server = get_object_or_404(models.Server, kwargs.get('server'))
     return Response(data=jwt_response_payload_handler(server.access_token))
 
 
 @api_view(['post'])
 def server_key_reset(request, *args, **kwargs):
-    server = get_object_or_404(models.Server, pk=kwargs.get('pk'))
+    server = get_object_or_404(models.Server, kwargs.get('server'))
     server.access_token = create_server_jwt(request.user, str(server.pk))
     server.save()
     return Response(data=jwt_response_payload_handler(server.access_token), status=status.HTTP_201_CREATED)
@@ -93,24 +89,25 @@ class VerifyJSONWebTokenServer(JWTApiView):
     serializer_class = VerifyJSONWebTokenServerSerializer
 
 
-class ServerRunStatisticsViewSet(ProjectMixin, ServerMixin, viewsets.ModelViewSet):
+class ServerRunStatisticsViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
     queryset = models.ServerRunStatistics.objects.all()
     serializer_class = serializers.ServerRunStatisticsSerializer
     permission_classes = (IsAuthenticated, ServerChildPermission)
 
     def list(self, request, *args, **kwargs):
-        obj = get_server_usage([kwargs.get("server_pk")])
+        obj = get_server_usage([kwargs.get("server_server")])
         serializer = serializers.ServerRunStatisticsAggregatedSerializer(obj)
         return Response(serializer.data)
 
 
-class ServerStatisticsViewSet(ProjectMixin, ServerMixin, viewsets.ModelViewSet):
+class ServerStatisticsViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
     queryset = models.ServerStatistics.objects.all()
     serializer_class = serializers.ServerStatisticsSerializer
     permission_classes = (IsAuthenticated, ServerChildPermission)
 
     def list(self, request, *args, **kwargs):
-        obj = self.queryset.filter(server_id=kwargs.get('server_pk')).aggregate(
+        server = kwargs.get('server_server')
+        obj = self.queryset.filter(server=models.Server.objects.tbs_filter(server).first()).aggregate(
             server_time=Sum(Coalesce(F('stop'), Now()) - F('start')),
             start=Max('start'),
             stop=Max('stop')
@@ -119,7 +116,7 @@ class ServerStatisticsViewSet(ProjectMixin, ServerMixin, viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-class SshTunnelViewSet(ProjectMixin, ServerMixin, viewsets.ModelViewSet):
+class SshTunnelViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
     queryset = models.SshTunnel.objects.all()
     serializer_class = serializers.SshTunnelSerializer
     permission_classes = (IsAuthenticated, ServerChildPermission)
@@ -127,20 +124,22 @@ class SshTunnelViewSet(ProjectMixin, ServerMixin, viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save(server_id=kwargs.get("server_pk"))
+        server = models.Server.objects.tbs_filter(kwargs.get('server_server')).first()
+        serializer.save(server=server)
         return Response(status=status.HTTP_201_CREATED, data=serializer.data)
 
 
-class ServerSizeViewSet(UUIDRegexMixin, viewsets.ModelViewSet):
+class ServerSizeViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
     queryset = models.ServerSize.objects.all()
     serializer_class = serializers.ServerSizeSerializer
     permission_classes = (IsAdminUser,)
+    lookup_url_kwarg = 'size'
 
 
 @api_view(['POST'])
 @permission_classes((AllowAny,))
-def check_token(request, version, project_pk, pk):
-    server = models.Server.objects.only('access_token').get(pk=pk)
+def check_token(request, version, project_project, server):
+    server = models.Server.objects.only('access_token').tbs_get(server)
     auth_header = request.META.get('HTTP_AUTHORIZATION')
     if auth_header and auth_header.startswith('Bearer'):
         token = auth_header.split()[1]
@@ -151,8 +150,8 @@ def check_token(request, version, project_pk, pk):
 @api_view(['GET'], exclude_from_schema=True)
 @permission_classes((AllowAny,))
 @renderer_classes((PlainTextRenderer,))
-def server_internal_details(request, version, project_pk, server_pk, service):
-    server = get_object_or_404(models.Server, pk=server_pk, project_id=project_pk)
+def server_internal_details(request, version, project_project, server_server, service):
+    server = get_object_or_404(models.Server, server_server)
     server_ip = server.get_private_ip()
     port = server.config.get('ports', {}).get(service)
     return Response(f"{server_ip}:{port}")

@@ -8,7 +8,7 @@ class DockerHostFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = DockerHost
 
-    name = factory.Faker('name')
+    name = factory.Sequence(lambda n: f'resource_{n}')
     ip = '127.0.0.1'
     port = 2375
     owner = factory.SubFactory(UserFactory)

@@ -3,9 +3,9 @@ from .base import *
 
 SECRET_KEY = 'test'
 
-RESOURCE_DIR = '/tmp'
+RESOURCE_DIR = '/tmp/3blades'
 INACTIVE_RESOURCE_DIR = "/tmp/inactive"
-MEDIA_ROOT = "/tmp"
+MEDIA_ROOT = "/tmp/3blades"
 
 CACHES['default']['OPTIONS']['REDIS_CLIENT_CLASS'] = "fakeredis.FakeStrictRedis"
 
