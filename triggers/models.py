@@ -7,18 +7,21 @@ from django.contrib.postgres.fields import JSONField
 from django.urls import reverse
 
 from actions.models import Action
+from base.models import TBSQuerySet
 from utils import copy_model
 
 
 logger = logging.getLogger('triggers')
 
 
-class TriggerQuerySet(models.QuerySet):
+class TriggerQuerySet(TBSQuerySet):
     def namespace(self, namespace):
         return self.filter(user=namespace.object)
 
 
 class Trigger(models.Model):
+    NATURAL_KEY = 'name'
+
     name = models.CharField(max_length=50, blank=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='triggers')
     cause = models.ForeignKey('actions.Action', related_name='cause_triggers', blank=True, null=True)
