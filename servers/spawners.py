@@ -170,7 +170,10 @@ class DockerSpawner(ServerSpawner):
             host_config=self.client.create_host_config(**self._get_host_config()),
             ports=[self.container_port],
             cpu_shares=0,
-            
+            volume_driver='nvidia-docker',
+            volumes={'nvidia_driver_375.82': {'bind': '/usr/local/nvidia', 'mode': 'ro'}},
+            devices=['/dev/nvidiactl:/dev/nvidiactl:rwm', '/dev/nvidia-uvm:/dev/nvidia-uvm:rwm',
+                     '/dev/nvidia0:/dev/nvidia0:rwm']
         )
         if self._is_swarm:
             config['networking_config'] = self._create_network_config()

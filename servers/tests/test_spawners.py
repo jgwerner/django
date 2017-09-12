@@ -105,7 +105,12 @@ class TestDockerSpawnerForModel(TransactionTestCase):
             'name': self.server.container_name,
             'host_config': self.spawner.client.create_host_config(**{}),
             'ports': ['8000'],
-            'cpu_shares': 0
+            'cpu_shares': 0,
+            'volume_driver': 'nvidia-docker',
+            'volumes': {'nvidia_driver_375.82': {'bind': '/usr/local/nvidia', 'mode': 'ro'}},
+            'devices': ['/dev/nvidiactl:/dev/nvidiactl:rwm',
+                        '/dev/nvidia-uvm:/dev/nvidia-uvm:rwm',
+                        '/dev/nvidia0:/dev/nvidia0:rwm']
         }
         self.assertDictEqual(self.spawner._create_container_config(), expected)
 
