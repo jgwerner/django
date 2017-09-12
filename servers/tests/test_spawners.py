@@ -116,9 +116,6 @@ class TestDockerSpawnerForModel(TransactionTestCase):
 
     def test_get_container_success(self):
         self.spawner._get_container()
-        import logging
-        log = logging.getLogger('servers')
-        log.debug("self.spawner.container_id", self.spawner.container_id)
         self.assertEqual(self.spawner.container_id, FAKE_CONTAINER_ID)
 
     def test_terminate(self):
