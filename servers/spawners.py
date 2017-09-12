@@ -9,7 +9,9 @@ from pathlib import Path
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.utils.functional import cached_property
-from docker import from_env
+import docker
+# from docker import from_env
+# from docker.api
 from docker.errors import APIError
 
 from utils import create_jwt_token
@@ -50,7 +52,7 @@ class ServerSpawner(object):
 class DockerSpawner(ServerSpawner):
     def __init__(self, server, client=None):
         super().__init__(server)
-        self.client = client or (server.host.client if server.host else from_env())
+        self.client = client or (server.host.client if server.host else docker.from_env())
         self.container_port = self.server.config.get('port') or settings.SERVER_PORT
         self.container_id = ''
         self.cmd = None
@@ -79,7 +81,7 @@ class DockerSpawner(ServerSpawner):
             try:
                 self.client.start(self.server.container_name)
             except APIError as e:
-                logger.info(e.response.content)
+                logger.error(e.response.content)
                 raise
 
             self._set_ip_and_port()
@@ -168,6 +170,7 @@ class DockerSpawner(ServerSpawner):
             host_config=self.client.create_host_config(**self._get_host_config()),
             ports=[self.container_port],
             cpu_shares=0,
+            
         )
         if self._is_swarm:
             config['networking_config'] = self._create_network_config()
