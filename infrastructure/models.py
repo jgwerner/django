@@ -3,7 +3,6 @@ from django.conf import settings
 from django.db import models
 from django.urls import reverse
 import docker
-# from docker import Client
 
 from .managers import DockerHostQuerySet
 

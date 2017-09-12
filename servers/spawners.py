@@ -10,8 +10,6 @@ from django.conf import settings
 from django.contrib.sites.models import Site
 from django.utils.functional import cached_property
 import docker
-# from docker import from_env
-# from docker.api
 from docker.errors import APIError
 
 from utils import create_jwt_token
