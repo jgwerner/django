@@ -2,6 +2,7 @@ import logging
 from django.http import JsonResponse
 from django.db.models import Q
 from django.contrib.auth import get_user_model
+from django.views.decorators.csrf import csrf_exempt
 from haystack.query import SearchQuerySet, EmptySearchQuerySet
 from social_django.models import UserSocialAuth
 from rest_framework import viewsets, status
@@ -77,6 +78,7 @@ class UserViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
         instance.save()
 
 
+@csrf_exempt
 def avatar(request, version, user_pk):
     status_code = status.HTTP_200_OK
 
