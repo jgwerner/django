@@ -125,11 +125,16 @@ class DockerSpawner(ServerSpawner):
                 str(Path(self.server.volume_path).joinpath(self.server.startup_script))))
         ports = {port: None for port in self._get_exposed_ports()}
         ports[self.container_port] = None
+
+        devices=['/dev/nvidiactl:/dev/nvidiactl:rwm', '/dev/nvidia-uvm:/dev/nvidia-uvm:rwm',
+                 '/dev/nvidia0:/dev/nvidia0:rwm']
+
         config = dict(
             mem_limit='{}m'.format(self.server.server_size.memory),
             port_bindings=ports,
             binds=binds,
             restart_policy=self.restart,
+            devices=devices
         )
         if not self._is_swarm:
             config['links'] = self._connected_links()
@@ -171,8 +176,6 @@ class DockerSpawner(ServerSpawner):
             cpu_shares=0,
             volume_driver='nvidia-docker',
             volumes={'nvidia_driver_375.82': {'bind': '/usr/local/nvidia', 'mode': 'ro'}},
-            devices=['/dev/nvidiactl:/dev/nvidiactl:rwm', '/dev/nvidia-uvm:/dev/nvidia-uvm:rwm',
-                     '/dev/nvidia0:/dev/nvidia0:rwm']
         )
         if self._is_swarm:
             config['networking_config'] = self._create_network_config()
