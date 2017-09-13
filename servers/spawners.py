@@ -117,6 +117,7 @@ class DockerSpawner(ServerSpawner):
 
     def _get_host_config(self):
         binds = ['{}:{}'.format(self.server.volume_path, settings.SERVER_RESOURCE_DIR)]
+        binds.append("/var/lib/nvidia-docker/volumes/nvidia_driver/375.82:/usr/local/nvidia:ro")
         ssh_path = self._get_ssh_path()
         if ssh_path:
             binds.append('{}:{}/.ssh'.format(ssh_path, settings.SERVER_RESOURCE_DIR))
@@ -154,7 +155,6 @@ class DockerSpawner(ServerSpawner):
     def _create_container(self):
         try:
             docker_resp = self.client.api.create_container(**self._create_container_config())
-            logger.debug(("docker resp", docker_resp, vars(docker_resp)))
         except APIError as e:
             logger.info(e.response.content)
             raise
@@ -175,7 +175,7 @@ class DockerSpawner(ServerSpawner):
             ports=[self.container_port],
             cpu_shares=0,
             volume_driver='nvidia-docker',
-            volumes={'nvidia_driver_375.82': {'bind': '/usr/local/nvidia', 'mode': 'ro'}},
+            volumes=["/usr/local/nvidia/"], 
         )
         if self._is_swarm:
             config['networking_config'] = self._create_network_config()
@@ -199,7 +199,6 @@ class DockerSpawner(ServerSpawner):
         container = None
         try:
             container = self.client.api.inspect_container(self.server.container_name)
-            logger.debug(("container", container, vars(container)))
             self.container_id = container['Id']
             logger.info("Found existing container to the name: '%s'" % self.server.container_name)
         except APIError as e:
