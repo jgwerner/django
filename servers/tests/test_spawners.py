@@ -110,8 +110,8 @@ class TestDockerSpawnerForModel(TransactionTestCase):
             'host_config': self.spawner.client.api.create_host_config(**{}),
             'ports': ['8000'],
             'cpu_shares': 0,
-            'volume_driver': 'nvidia-docker',
-            'volumes': ['/usr/local/nvidia/']
+            'volume_driver': None,
+            'volumes': None
         }
         created_config = self.spawner._create_container_config()
         self.assertDictEqual(created_config, expected)
