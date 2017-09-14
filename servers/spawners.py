@@ -115,9 +115,8 @@ class DockerSpawner(ServerSpawner):
             command += " " + self.server.config["command"]
         return command
 
-    def _get_host_config(self):
+    def _get_host_config(self, nvidia_driver):
         binds = ['{}:{}'.format(self.server.volume_path, settings.SERVER_RESOURCE_DIR)]
-        binds.append("/var/lib/nvidia-docker/volumes/nvidia_driver/375.82:/usr/local/nvidia:ro")
         ssh_path = self._get_ssh_path()
         if ssh_path:
             binds.append('{}:{}/.ssh'.format(ssh_path, settings.SERVER_RESOURCE_DIR))
@@ -127,16 +126,20 @@ class DockerSpawner(ServerSpawner):
         ports = {port: None for port in self._get_exposed_ports()}
         ports[self.container_port] = None
 
-        devices = ['/dev/nvidiactl:/dev/nvidiactl:rwm', '/dev/nvidia-uvm:/dev/nvidia-uvm:rwm',
-                   '/dev/nvidia0:/dev/nvidia0:rwm']
 
         config = dict(
             mem_limit='{}m'.format(self.server.server_size.memory),
             port_bindings=ports,
-            binds=binds,
-            restart_policy=self.restart,
-            devices=devices
+            restart_policy=self.restart
         )
+
+        if nvidia_driver is not None and nvidia_driver.exists():
+            binds.append(str(nvidia_driver) + ":/usr/local/nvidia:ro")
+            config['devices'] = ['/dev/nvidiactl:/dev/nvidiactl:rwm',
+                                 '/dev/nvidia-uvm:/dev/nvidia-uvm:rwm',
+                                 '/dev/nvidia0:/dev/nvidia0:rwm']
+        config['binds'] = binds
+
         if not self._is_swarm:
             config['links'] = self._connected_links()
         return config
@@ -166,16 +169,28 @@ class DockerSpawner(ServerSpawner):
         logger.info("Container created '{}', id:{}".format(self.server.container_name, self.container_id))
 
     def _create_container_config(self):
+
+        volume_config = {'volume_driver': None,
+                         'volumes': None}
+
+        nvidia_driver = Path(settings.NVIDIA_DRIVER_PATH)
+        if nvidia_driver.exists():
+            logger.info("Found Nvidia drivers, creating a GPU enabled container.")
+            volume_config['volume_driver'] = "nvidia-docker"
+            volume_config['volumes'] = ["/usr/local/nvidia"]
+        else:
+            logger.info(f"Nvidia drivers were not found a path {settings.NVIDIA_DRIVER_PATH}.\n"
+                        f"Creating a non-GPU enabled container.")
+
         config = dict(
             image=self.server.image_name,
             command=self.cmd,
             environment=self._get_envs(),
             name=self.server.container_name,
-            host_config=self.client.api.create_host_config(**self._get_host_config()),
+            host_config=self.client.api.create_host_config(**self._get_host_config(nvidia_driver)),
             ports=[self.container_port],
             cpu_shares=0,
-            volume_driver='nvidia-docker',
-            volumes=["/usr/local/nvidia/"], 
+            **volume_config
         )
         if self._is_swarm:
             config['networking_config'] = self._create_network_config()
