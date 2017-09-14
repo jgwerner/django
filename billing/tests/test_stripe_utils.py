@@ -185,6 +185,34 @@ class TestStripeUtils(TestCase):
 
         self.assertEqual(usage_data['total'], expected_cost)
 
+    def test_inactive_servers_are_included(self):
+        collaborator = CollaboratorFactory(user=self.user)
+        project = collaborator.project
+        run_stats = ServerRunStatisticsFactory(server__project=project)
+        server_size = run_stats.server.server_size
+        _ = ServerRunStatisticsFactory.create_batch(2,
+                                                    server__project=project,
+                                                    server__server_size=server_size,
+                                                    server__is_active=False)
+
+        plan_dict = create_plan_dict()
+        plan = stripe_utils.create_plan_in_stripe(plan_dict)
+        plan.save()
+        self.plans_to_delete.append(plan)
+        stripe_utils.create_subscription_in_stripe({'customer': self.customer,
+                                                    'plan': plan})
+
+        usage_data = stripe_utils.calculate_compute_usage(self.customer.stripe_id)
+
+        server_run_stats = ServerRunStatistics.objects.filter(server__project=project)
+
+        total_time = Decimal("0.0")
+        for stats in server_run_stats:
+            total_time += Decimal((stats.stop - stats.start).total_seconds())
+
+        expected_cost = server_size.cost_per_second * total_time * 100
+        self.assertEqual(usage_data['total'], expected_cost)
+
     def test_create_invoice_item_for_usage(self):
         collaborator = CollaboratorFactory(user=self.user)
         project = collaborator.project
