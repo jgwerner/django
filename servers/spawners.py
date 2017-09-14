@@ -127,8 +127,8 @@ class DockerSpawner(ServerSpawner):
         ports = {port: None for port in self._get_exposed_ports()}
         ports[self.container_port] = None
 
-        devices=['/dev/nvidiactl:/dev/nvidiactl:rwm', '/dev/nvidia-uvm:/dev/nvidia-uvm:rwm',
-                 '/dev/nvidia0:/dev/nvidia0:rwm']
+        devices = ['/dev/nvidiactl:/dev/nvidiactl:rwm', '/dev/nvidia-uvm:/dev/nvidia-uvm:rwm',
+                   '/dev/nvidia0:/dev/nvidia0:rwm']
 
         config = dict(
             mem_limit='{}m'.format(self.server.server_size.memory),

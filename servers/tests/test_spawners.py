@@ -82,8 +82,12 @@ class TestDockerSpawnerForModel(TransactionTestCase):
             'mem_limit': '512m',
             'port_bindings': {'8000': None},
             'binds': [
-                '{}:/resources'.format(self.server.volume_path)
+                '{}:/resources'.format(self.server.volume_path),
+                '/var/lib/nvidia-docker/volumes/nvidia_driver/375.82:/usr/local/nvidia:ro'
             ],
+            'devices': ['/dev/nvidiactl:/dev/nvidiactl:rwm',
+                        '/dev/nvidia-uvm:/dev/nvidia-uvm:rwm',
+                        '/dev/nvidia0:/dev/nvidia0:rwm'],
             'restart_policy': None
         }
         self.assertDictEqual(expected, self.spawner._get_host_config())
@@ -103,16 +107,14 @@ class TestDockerSpawnerForModel(TransactionTestCase):
             'command': 'test',
             'environment': {},
             'name': self.server.container_name,
-            'host_config': self.spawner.client.create_host_config(**{}),
+            'host_config': self.spawner.client.api.create_host_config(**{}),
             'ports': ['8000'],
             'cpu_shares': 0,
             'volume_driver': 'nvidia-docker',
-            'volumes': {'nvidia_driver_375.82': {'bind': '/usr/local/nvidia', 'mode': 'ro'}},
-            'devices': ['/dev/nvidiactl:/dev/nvidiactl:rwm',
-                        '/dev/nvidia-uvm:/dev/nvidia-uvm:rwm',
-                        '/dev/nvidia0:/dev/nvidia0:rwm']
+            'volumes': ['/usr/local/nvidia/']
         }
-        self.assertDictEqual(self.spawner._create_container_config(), expected)
+        created_config = self.spawner._create_container_config()
+        self.assertDictEqual(created_config, expected)
 
     def test_get_container_success(self):
         self.spawner._get_container()
