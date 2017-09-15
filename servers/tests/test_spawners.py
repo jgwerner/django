@@ -86,7 +86,7 @@ class TestDockerSpawnerForModel(TransactionTestCase):
             ],
             'restart_policy': None
         }
-        self.assertDictEqual(expected, self.spawner._get_host_config())
+        self.assertDictEqual(expected, self.spawner._get_host_config(nvidia_driver=None))
 
     def test_create_container(self):
         self.spawner._create_container()
@@ -103,11 +103,14 @@ class TestDockerSpawnerForModel(TransactionTestCase):
             'command': 'test',
             'environment': {},
             'name': self.server.container_name,
-            'host_config': self.spawner.client.create_host_config(**{}),
+            'host_config': self.spawner.client.api.create_host_config(**{}),
             'ports': ['8000'],
-            'cpu_shares': 0
+            'cpu_shares': 0,
+            'volume_driver': None,
+            'volumes': None
         }
-        self.assertDictEqual(self.spawner._create_container_config(), expected)
+        created_config = self.spawner._create_container_config()
+        self.assertDictEqual(created_config, expected)
 
     def test_get_container_success(self):
         self.spawner._get_container()

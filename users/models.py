@@ -6,16 +6,20 @@ from django.db import models, IntegrityError
 from django.contrib.auth.models import AbstractUser, UserManager
 from django.urls import reverse
 
+from base.models import TBSQuerySet
+
 
 log = logging.getLogger('users')
 
 
-class CustomUserManager(UserManager):
+class CustomUserManager(UserManager.from_queryset(TBSQuerySet)):
     def get_by_natural_key(self, username):
         return self.get(username=username, is_active=True)
 
 
 class User(AbstractUser):
+    NATURAL_KEY = 'username'
+
     username = models.CharField(error_messages={'unique': 'A user with that username already exists.'},
                                 help_text='Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.',
                                 max_length=150,
@@ -35,7 +39,7 @@ class User(AbstractUser):
             super(User, self).save(*args, **kwargs)
 
     def get_absolute_url(self, version, namespace):
-        return reverse('user-detail', kwargs={'version': version, 'pk': str(self.pk)})
+        return reverse('user-detail', kwargs={'version': version, 'user': str(self.pk)})
 
 
 def user_directory_path(instance, filename):

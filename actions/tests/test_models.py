@@ -17,6 +17,6 @@ class TestAction(TestCase):
         action = Action(content_object=content_object, content_type=content_type)
         namespace = Namespace.from_name(user.username)
         expected = reverse('project-detail', kwargs={'namespace': user.username,
-                                                     'pk': str(content_object.pk),
+                                                     'project': str(content_object.pk),
                                                      'version': settings.DEFAULT_VERSION})
         self.assertEqual(action.content_object_url(settings.DEFAULT_VERSION, namespace), expected)

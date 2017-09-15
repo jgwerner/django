@@ -1,9 +1,10 @@
 import logging
+from django.contrib.auth import get_user_model
 from rest_framework import viewsets, status, permissions
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
 
-from base.views import NamespaceMixin
+from base.views import NamespaceMixin, LookupByMultipleFields
 from projects.serializers import (ProjectSerializer,
                                   CollaboratorSerializer,
                                   SyncedResourceSerializer,
@@ -14,18 +15,21 @@ from projects.tasks import sync_github
 from projects.models import ProjectFile
 from projects.utils import get_files_from_request
 
+User = get_user_model()
+
 log = logging.getLogger('projects')
 
 
-class ProjectViewSet(NamespaceMixin, viewsets.ModelViewSet):
+class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
     permission_classes = (permissions.IsAuthenticated, ProjectPermission)
     filter_fields = ('private', 'name')
     ordering_fields = ('name',)
+    lookup_url_kwarg = 'project'
 
     def _update(self, request, partial,  *args, **kwargs):
-        instance = Project.objects.get(pk=kwargs.get("pk"))
+        instance = Project.objects.tbs_get(kwargs.get("project"))
         user = request.user
 
         if not user.has_perm("projects.write_project", instance):
@@ -51,7 +55,7 @@ class ProjectViewSet(NamespaceMixin, viewsets.ModelViewSet):
         return self._update(request, True, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
-        instance = Project.objects.get(pk=kwargs.get("pk"))
+        instance = Project.objects.tbs_get(kwargs.get("project"))
         user = request.user
         is_owner = Collaborator.objects.filter(project=instance,
                                                user=user,
@@ -65,11 +69,8 @@ class ProjectViewSet(NamespaceMixin, viewsets.ModelViewSet):
                         status=status.HTTP_204_NO_CONTENT)
 
 
-class ProjectMixin(object):
+class ProjectMixin(LookupByMultipleFields):
     permission_classes = (permissions.IsAuthenticated, ProjectChildPermission)
-
-    def get_queryset(self, *args, **kwargs):
-        return super().get_queryset().filter(project_id=self.kwargs.get('project_pk'))
 
 
 class CollaboratorViewSet(ProjectMixin, viewsets.ModelViewSet):
@@ -102,27 +103,25 @@ class ProjectFileViewSet(ProjectMixin,
     parser_classes = (MultiPartParser, FormParser, JSONParser)
 
     def get_queryset(self, *args, **kwargs):
-        project_pk = kwargs.get("project_pk")
-        queryset = ProjectFile.objects.filter(project__pk=project_pk)
+        queryset = super().get_queryset()
+        project = Project.objects.tbs_get(self.kwargs.get('project_project'))
         filename = self.request.query_params.get("filename", None)
         if filename is not None:
             complete_filename = "{usr}/{proj}/{file}".format(usr=self.request.user.username,
-                                                             proj=project_pk,
+                                                             proj=str(project.pk),
                                                              file=filename)
             queryset = queryset.filter(file=complete_filename)
         return queryset
 
     def retrieve(self, request, *args, **kwargs):
-        instance = ProjectFile.objects.get(project__pk=kwargs.get("project_pk"),
-                                           pk=kwargs.get("pk"))
+        instance = self.get_object()
         get_content = self.request.query_params.get('content', "false").lower() == "true"
         serializer = self.serializer_class(instance,
                                            context={'get_content': get_content})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def destroy(self, request, *args, **kwargs):
-        instance = ProjectFile.objects.get(project__pk=kwargs.get("project_pk"),
-                                           pk=kwargs.get("pk"))
+        instance = self.get_object()
         data = {'id': instance.pk}
         instance.delete()
         data['deleted'] = True
@@ -147,10 +146,10 @@ class ProjectFileViewSet(ProjectMixin,
             return Response(data=data, status=status.HTTP_400_BAD_REQUEST)
 
         proj_files_to_serialize = []
-        project_pk = kwargs.get("project_pk")
+        project_pk = kwargs.get("project_project")
 
         for f in files:
-            project = Project.objects.get(pk=project_pk)
+            project = Project.objects.tbs_get(project_pk)
             create_data = {'author': self.request.user,
                            'project': project,
                            'file': f}
@@ -193,4 +192,3 @@ class ProjectFileViewSet(ProjectMixin,
 
         return Response(data=serializer.data,
                         status=status.HTTP_200_OK)
-

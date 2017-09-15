@@ -9,7 +9,7 @@ from pathlib import Path
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.utils.functional import cached_property
-from docker import from_env
+import docker
 from docker.errors import APIError
 
 from utils import create_jwt_token
@@ -50,7 +50,7 @@ class ServerSpawner(object):
 class DockerSpawner(ServerSpawner):
     def __init__(self, server, client=None):
         super().__init__(server)
-        self.client = client or (server.host.client if server.host else from_env())
+        self.client = client or (server.host.client if server.host else docker.from_env())
         self.container_port = self.server.config.get('port') or settings.SERVER_PORT
         self.container_id = ''
         self.cmd = None
@@ -77,9 +77,9 @@ class DockerSpawner(ServerSpawner):
                 self._create_container()
 
             try:
-                self.client.start(self.server.container_name)
+                self.client.api.start(self.server.container_name)
             except APIError as e:
-                logger.info(e.response.content)
+                logger.error(e.response.content)
                 raise
 
             self._set_ip_and_port()
@@ -115,7 +115,7 @@ class DockerSpawner(ServerSpawner):
             command += " " + self.server.config["command"]
         return command
 
-    def _get_host_config(self):
+    def _get_host_config(self, nvidia_driver):
         binds = ['{}:{}'.format(self.server.volume_path, settings.SERVER_RESOURCE_DIR)]
         ssh_path = self._get_ssh_path()
         if ssh_path:
@@ -125,12 +125,21 @@ class DockerSpawner(ServerSpawner):
                 str(Path(self.server.volume_path).joinpath(self.server.startup_script))))
         ports = {port: None for port in self._get_exposed_ports()}
         ports[self.container_port] = None
+
+
         config = dict(
             mem_limit='{}m'.format(self.server.server_size.memory),
             port_bindings=ports,
-            binds=binds,
-            restart_policy=self.restart,
+            restart_policy=self.restart
         )
+
+        if nvidia_driver is not None and nvidia_driver.exists():
+            binds.append(str(nvidia_driver) + ":/usr/local/nvidia:ro")
+            config['devices'] = ['/dev/nvidiactl:/dev/nvidiactl:rwm',
+                                 '/dev/nvidia-uvm:/dev/nvidia-uvm:rwm',
+                                 '/dev/nvidia0:/dev/nvidia0:rwm']
+        config['binds'] = binds
+
         if not self._is_swarm:
             config['links'] = self._connected_links()
         return config
@@ -148,7 +157,7 @@ class DockerSpawner(ServerSpawner):
 
     def _create_container(self):
         try:
-            docker_resp = self.client.create_container(**self._create_container_config())
+            docker_resp = self.client.api.create_container(**self._create_container_config())
         except APIError as e:
             logger.info(e.response.content)
             raise
@@ -160,14 +169,28 @@ class DockerSpawner(ServerSpawner):
         logger.info("Container created '{}', id:{}".format(self.server.container_name, self.container_id))
 
     def _create_container_config(self):
+
+        volume_config = {'volume_driver': None,
+                         'volumes': None}
+
+        nvidia_driver = Path(settings.NVIDIA_DRIVER_PATH)
+        if nvidia_driver.exists():
+            logger.info("Found Nvidia drivers, creating a GPU enabled container.")
+            volume_config['volume_driver'] = "nvidia-docker"
+            volume_config['volumes'] = ["/usr/local/nvidia"]
+        else:
+            logger.info(f"Nvidia drivers were not found a path {settings.NVIDIA_DRIVER_PATH}.\n"
+                        f"Creating a non-GPU enabled container.")
+
         config = dict(
             image=self.server.image_name,
             command=self.cmd,
             environment=self._get_envs(),
             name=self.server.container_name,
-            host_config=self.client.create_host_config(**self._get_host_config()),
+            host_config=self.client.api.create_host_config(**self._get_host_config(nvidia_driver)),
             ports=[self.container_port],
             cpu_shares=0,
+            **volume_config
         )
         if self._is_swarm:
             config['networking_config'] = self._create_network_config()
@@ -179,8 +202,8 @@ class DockerSpawner(ServerSpawner):
         config = {'aliases': [self.server.name]}
         if self.server.connected.exists():
             config['links'] = self._connected_links()
-        return self.client.create_networking_config({
-            self.network_name: self.client.create_endpoint_config(
+        return self.client.api.create_networking_config({
+            self.network_name: self.client.api.create_endpoint_config(
                 **config
             )
         })
@@ -190,7 +213,7 @@ class DockerSpawner(ServerSpawner):
         self.container_id = ''
         container = None
         try:
-            container = self.client.inspect_container(self.server.container_name)
+            container = self.client.api.inspect_container(self.server.container_name)
             self.container_id = container['Id']
             logger.info("Found existing container to the name: '%s'" % self.server.container_name)
         except APIError as e:
@@ -203,7 +226,7 @@ class DockerSpawner(ServerSpawner):
         if container is not None:
             if not self._compare_container_env(container):
                 try:
-                    self.client.remove_container(self.server.container_name)
+                    self.client.api.remove_container(self.server.container_name)
                 except APIError as e:
                     if e.response.status_code == 404:
                         pass
@@ -216,7 +239,7 @@ class DockerSpawner(ServerSpawner):
         return container
 
     def _set_ip_and_port(self):
-        resp = self.client.inspect_container(self.server.container_name)
+        resp = self.client.api.inspect_container(self.server.container_name)
         if resp is None:
             raise RuntimeError("Failed to get port info for %s" % self.server.container_name)
         network_settings = resp.get("NetworkSettings", {})
@@ -234,7 +257,7 @@ class DockerSpawner(ServerSpawner):
 
         try:
             # if the container has a state, then it exists
-            self.client.remove_container(self.server.container_name)
+            self.client.api.remove_container(self.server.container_name, force=True)
         except APIError as e:
             if e.response.status_code == 404:
                 logger.info("Container '%s' does not exist. It will be removed from db",
@@ -246,7 +269,7 @@ class DockerSpawner(ServerSpawner):
     def stop(self) -> None:
         # try to stop the container by docker client
         try:
-            self.client.stop(self.server.container_name)
+            self.client.api.stop(self.server.container_name)
         except APIError as de:
             if de.response.status_code != 404:
                 raise
@@ -256,7 +279,7 @@ class DockerSpawner(ServerSpawner):
 
     def status(self):
         try:
-            result = self.client.inspect_container(self.server.container_name)
+            result = self.client.api.inspect_container(self.server.container_name)
         except APIError as e:
             if e.response.status_code == 404:
                 return self.server.STOPPED
@@ -297,7 +320,7 @@ class DockerSpawner(ServerSpawner):
 
     def _create_network(self):
         try:
-            self.client.create_network(self.network_name, 'overlay')
+            self.client.api.create_network(self.network_name, 'overlay')
         except APIError:
             logger.exception("Create network exception")
             raise
@@ -320,7 +343,7 @@ class DockerSpawner(ServerSpawner):
     def _get_exposed_ports(self):
         result = [self.container_port]
         try:
-            resp = self.client.inspect_image(self.server.image_name)
+            resp = self.client.api.inspect_image(self.server.image_name)
         except APIError:
             return result
         result.extend([k.split('/')[0] for k in resp["Config"]["ExposedPorts"]])

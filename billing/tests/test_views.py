@@ -15,7 +15,9 @@ from servers.tests.factories import ServerRunStatisticsFactory
 from billing.tests.factories import (PlanFactory,
                                      CardFactory,
                                      SubscriptionFactory,
-                                     EventFactory)
+                                     EventFactory,
+                                     InvoiceFactory,
+                                     InvoiceItemFactory)
 from billing.stripe_utils import create_stripe_customer_from_user, create_plan_in_stripe
 
 
@@ -277,6 +279,40 @@ class InvoiceTest(TestCase):
 
         subscription = Subscription.objects.get(plan=plan)
         return subscription
+
+    def test_invoice_items_list_is_scoped_by_invoice(self):
+        first_invoice = InvoiceFactory(customer=self.customer)
+        InvoiceItemFactory.create_batch(3, invoice=first_invoice)
+
+        second_invoice = InvoiceFactory(customer=self.customer)
+        InvoiceItemFactory.create_batch(2, invoice=second_invoice)
+
+        url = reverse("invoiceitem-list", kwargs={'namespace': self.user.username,
+                                                  'version': settings.DEFAULT_VERSION,
+                                                  'invoice_id': str(second_invoice.id)})
+        response = self.api_client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+
+        for item in response.data:
+            self.assertEqual(item['invoice'], second_invoice.id)
+
+    def test_invoice_item_retrieve(self):
+        first_invoice = InvoiceFactory(customer=self.customer)
+        InvoiceItemFactory.create_batch(3, invoice=first_invoice)
+
+        second_invoice = InvoiceFactory(customer=self.customer)
+        item = InvoiceItemFactory(invoice=second_invoice)
+
+        url = reverse("invoiceitem-detail", kwargs={'namespace': self.user.username,
+                                                    'version': settings.DEFAULT_VERSION,
+                                                    'invoice_id': str(second_invoice.id),
+                                                    'pk': str(item.id)})
+        response = self.api_client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['id'], str(item.id))
 
     def test_invoice_created_webhook(self):
         url = reverse("stripe-invoice-created",

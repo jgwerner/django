@@ -2,20 +2,22 @@ import logging
 from django.http import JsonResponse
 from django.db.models import Q
 from django.contrib.auth import get_user_model
+from django.views.decorators.csrf import csrf_exempt
 from haystack.query import SearchQuerySet, EmptySearchQuerySet
 from social_django.models import UserSocialAuth
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
-from rest_framework.generics import get_object_or_404, CreateAPIView
+from rest_framework.generics import CreateAPIView
 from rest_framework.mixins import ListModelMixin
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from base.permissions import DeleteAdminOnly, PostAdminOnly
-from base.views import UUIDRegexMixin
+from base.views import LookupByMultipleFields
 from utils import create_ssh_key, deactivate_user, create_jwt_token
 
+from base.utils import get_object_or_404, validate_uuid
 from users.filters import UserSearchFilter
 from users.models import Email
 from users.serializers import (UserSerializer,
@@ -27,16 +29,17 @@ log = logging.getLogger("users")
 User = get_user_model()
 
 
-class UserViewSet(UUIDRegexMixin, viewsets.ModelViewSet):
+class UserViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
     queryset = User.objects.filter(is_active=True).select_related('profile')
     serializer_class = UserSerializer
     filter_fields = ('username', 'email')
     permission_classes = (IsAuthenticated, DeleteAdminOnly, PostAdminOnly)
+    lookup_url_kwarg = 'user'
 
     def _update(self, request, partial, *args, **kwargs):
         data = request.data
-        primary_key = kwargs.get("pk")
-        user = User.objects.filter(pk=primary_key).first()
+        url_kwarg = kwargs.get(self.lookup_url_kwarg)
+        user = User.objects.tbs_filter(url_kwarg).first()
 
         # The given User exists, and there is an attempt to change the username
         # User could be none if the client is using PUT to create a user.
@@ -47,8 +50,12 @@ class UserViewSet(UUIDRegexMixin, viewsets.ModelViewSet):
         serializer = self.serializer_class(instance=user, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
         if user is None:
-            # We're creating a user via PUT
-            self.perform_create(serializer)
+            # A user is being created via PUT
+            if validate_uuid(url_kwarg):
+                serializer.save(id=url_kwarg)
+            else:
+                serializer.save(username=url_kwarg)
+
             user = serializer.instance
             user.is_active = True
             user.save()
@@ -58,7 +65,7 @@ class UserViewSet(UUIDRegexMixin, viewsets.ModelViewSet):
             response_status = status.HTTP_200_OK
 
         return Response(data=serializer.data,
-                        status=status.HTTP_200_OK)
+                        status=response_status)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -81,12 +88,13 @@ class UserViewSet(UUIDRegexMixin, viewsets.ModelViewSet):
         instance.save()
 
 
+@csrf_exempt
 def avatar(request, version, user_pk):
     status_code = status.HTTP_200_OK
 
     if request.method == "POST":
         try:
-            user = User.objects.get(pk=user_pk)
+            user = User.objects.tbs_get(user_pk)
             profile = user.profile
             profile.avatar = request.FILES.get("image")
             profile.save()
@@ -136,22 +144,23 @@ class RegisterView(CreateAPIView):
 
 @api_view(['GET'])
 def ssh_key(request, version, user_pk):
-    user = get_object_or_404(User, pk=user_pk)
+    user = get_object_or_404(User, user_pk)
     return Response(data={'key': user.profile.ssh_public_key()})
 
 
 @api_view(['POST'])
 def reset_ssh_key(request, version, user_pk):
-    user = get_object_or_404(User, pk=user_pk)
+    user = get_object_or_404(User, user_pk)
     create_ssh_key(user)
     return Response(data={'key': user.profile.ssh_public_key()})
 
 
 @api_view(['GET'])
 def api_key(request, version, user_pk):
-    user = get_object_or_404(User, pk=user_pk)
+    user = get_object_or_404(User, user_pk)
     token = create_jwt_token(user)
     return Response(data={'token': token})
+
 
 class EmailViewSet(viewsets.ModelViewSet):
     queryset = Email.objects.all()
@@ -161,12 +170,12 @@ class EmailViewSet(viewsets.ModelViewSet):
         return super().get_queryset().filter(Q(user=self.request.user) | Q(public=True))
 
     def list(self, request, *args, **kwargs):
-        emails = self.get_queryset().filter(user__pk=kwargs.get("user_id"))
+        emails = self.get_queryset().filter(user=User.objects.tbs_get(kwargs.get("user_id")))
         serializer = self.get_serializer(emails, many=True)
         return Response(serializer.data)
 
     def retrieve(self, request, *args, **kwargs):
-        email = self.get_queryset().filter(user__pk=kwargs.get("user_id"),
+        email = self.get_queryset().filter(user=User.objects.tbs_get(kwargs.get("user_id")),
                                            pk=kwargs.get("pk")).first()
         serializer = self.get_serializer(email)
         data = serializer.data if email is not None else {}
@@ -194,6 +203,7 @@ class ObtainAuthToken(APIView):
     serializer_class = AuthTokenSerializer
 
     def post(self, request, *args, **kwargs):
+        from rest_framework.authtoken.models import Token
         serializer = self.get_serializer()
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']

@@ -110,11 +110,15 @@ class InvoiceFactory(factory.django.DjangoModelFactory):
     # States relating to the period of billing, invoice amount, and payment status
     # If you want a valid invoice, you should specify all the relevant fields, or generate
     # One via subscription
+    stripe_id = factory.Sequence(lambda n: "inv_%d" % n)
+    created = fuzzy.FuzzyDateTime(start_dt=timezone.make_aware(datetime.now() - timedelta(days=7)))
+    metadata = None
+    livemode = False
     customer = factory.SubFactory(CustomerFactory)
-    subscription = factory.SubFactory(Subscription)
+    subscription = None
     amount_due = fuzzy.FuzzyInteger(low=100, high=5000)
     application_fee = fuzzy.FuzzyInteger(low=0, high=100)
-    atttempt_count = fuzzy.FuzzyInteger(low=0, high=3)
+    attempt_count = fuzzy.FuzzyInteger(low=0, high=3)
     attempted = fuzzy.FuzzyChoice([True, False])
     closed = fuzzy.FuzzyChoice([True, False])
     currency = "usd"
@@ -136,6 +140,10 @@ class InvoiceItemFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = InvoiceItem
 
+    stripe_id = factory.Sequence(lambda n: "inv_item_%d" % n)
+    created = fuzzy.FuzzyDateTime(start_dt=timezone.make_aware(datetime.now() - timedelta(days=7)))
+    metadata = None
+    livemode = False
     invoice = factory.SubFactory(InvoiceFactory)
     subscription = None
     amount = fuzzy.FuzzyInteger(low=100, high=1000)
