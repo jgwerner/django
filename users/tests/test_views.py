@@ -65,6 +65,18 @@ class UserTest(APITestCase):
         self.assertEqual(created.count(), 1)
         self.to_remove.append(created.first().profile.resource_root())
 
+    def test_user_create_without_profile(self):
+        url = reverse("user-list", kwargs={'version': settings.DEFAULT_VERSION})
+        data = {'username': "foobar",
+                'password': "password",
+                'email': "foobar@example.com"}
+        response = self.admin_client.post(url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        created = User.objects.filter(username="foobar")
+        self.assertEqual(created.count(), 1)
+        self.to_remove.append(created.first().profile.resource_root())
+
     def test_user_create_by_user(self):
         url = reverse("user-list", kwargs={'version': settings.DEFAULT_VERSION})
         data = {'username': "foobar",
