@@ -13,7 +13,7 @@ class CollaboratorQuerySet(TBSQuerySet):
 
     def tbs_get(self, value):
         if validate_uuid(value):
-            return self.get(user_id=value)
+            return self.get(pk=value)
         return self.get(user__username=value)
 
     def _tbs_filter_str(self, value, *args, **kwargs):

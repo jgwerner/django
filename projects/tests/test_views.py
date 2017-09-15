@@ -17,7 +17,8 @@ from projects.tests.factories import (CollaboratorFactory,
 from projects.tests.utils import generate_random_file_content
 from users.tests.factories import UserFactory
 from projects.models import Project, ProjectFile
-
+import logging
+log = logging.getLogger('projects')
 
 class ProjectTestMixin(object):
     @classmethod
@@ -973,3 +974,62 @@ class ProjectFileTestWithName(ProjectTestMixin, APITestCase):
         self.assertIsNotNone(created_file)
         content = created_file.file.read()
         self.assertEqual(content, b64_content)
+
+
+class CollaboratorTest(ProjectTestMixin, APITestCase):
+    def setUp(self):
+        self.user = UserFactory()
+        self.token_header = 'Token {}'.format(self.user.auth_token.key)
+        self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+
+    def test_create_collaborator(self):
+        # Implicitly create project
+        me_collab = CollaboratorFactory(user=self.user)
+
+        url = reverse("collaborator-list", kwargs={'version': settings.DEFAULT_VERSION,
+                                                   'project_project': me_collab.project.name,
+                                                   'namespace': self.user.username})
+
+        other_user = UserFactory()
+
+        data = {'owner': False,
+                'member': other_user.username,
+                'permissions': ['read_project']}
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        log.debug(response.data)
+        self.assertEqual(response.data['username'], other_user.username)
+
+    def test_get_collaborator(self):
+        collab = CollaboratorFactory(user=self.user)
+        assign_perm('write_project', self.user, collab.project)
+        assign_perm('read_project', self.user, collab.project)
+
+        url = reverse("collaborator-detail", kwargs={'version': settings.DEFAULT_VERSION,
+                                                     'project_project': collab.project.pk,
+                                                     'namespace': self.user.username,
+                                                     'pk': str(collab.pk)})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['username'], self.user.username)
+        self.assertEqual(response.data['id'], str(collab.id))
+
+    def test_delete_collaborator(self):
+        my_collab = CollaboratorFactory(user=self.user)
+        proj = my_collab.project
+        assign_perm('write_project', self.user, proj)
+        assign_perm('read_project', self.user, proj)
+
+        other_collab = CollaboratorFactory(project=proj,
+                                           owner=False)
+        assign_perm("read_project", other_collab.user, proj)
+
+        url = reverse("collaborator-detail", kwargs={'version': settings.DEFAULT_VERSION,
+                                                     'project_project': proj.pk,
+                                                     'namespace': self.user.username,
+                                                     'pk': str(other_collab.pk)})
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
