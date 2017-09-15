@@ -334,12 +334,8 @@ MIGRATION_MODULES = {
 # Server settings
 SERVER_RESOURCE_DIR = os.environ.get("SERVER_RESOURCE_DIR", "/resources")
 SERVER_PORT = os.environ.get("SERVER_PORT", '8000')
-SERVER_PORT_MAPPING = {'8080': "jupyter", '6006': "tensorflow",
-                       '8000': 'restful', '8888': "jupyter"}
-SERVER_ENDPOINT_URLS = {'jupyter': '/jupyter/tree', 'restful': '/restfull/'}
-SERVER_COMMANDS = {
-    "jupyter": "jupyter notebook --no-browser --allow-root --NotebookApp.token='' --NotebookApp.base_url={url}",
-}
+SERVER_PORT_MAPPING = {'8080': "proxy", '6006': "tensorflow", '8000': 'restful'}
+SERVER_ENDPOINT_URLS = {'jupyter': '/jupyter/tree', 'restful': '/restfull/', 'proxy': '/proxy/'}
 
 # slack
 

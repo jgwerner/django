@@ -33,7 +33,7 @@ class Server(models.Model):
     START = 'start'
     TERMINATE = 'terminate'
 
-    SERVER_TYPES = ["jupyter", "restful", "cron"]
+    SERVER_TYPES = ["jupyter", "restful", "cron", "proxy"]
 
     objects = ServerQuerySet.as_manager()
 

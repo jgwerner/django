@@ -97,21 +97,12 @@ class DockerSpawner(ServerSpawner):
             version=settings.DEFAULT_VERSION,
         )
         if 'script' in self.server.config:
-            command += " " + "--script=" + self.server.config["script"]
+            command += " " + "-script=" + self.server.config["script"]
         if 'function' in self.server.config:
-            command += " " + "--function=" + self.server.config["function"]
-        if ("type" in self.server.config) and (self.server.config["type"] in settings.SERVER_COMMANDS):
-            command += " --type=proxy"
-            version = settings.DEFAULT_VERSION
-            namespace = self.server.project.owner.username
-            project_id = self.server.project.pk
-            server_id = self.server.pk
-            server_type = self.server.config["type"]
-            command += " " + settings.SERVER_COMMANDS[server_type].format(
-                url=f"/{version}/{namespace}/projects/{project_id}/servers/{server_id}/endpoint/{server_type}/")
-        elif "type" in self.server.config:
-            command += " --type=" + self.server.config["type"]
-        elif "command" in self.server.config:
+            command += " " + "-function=" + self.server.config["function"]
+        if "type" in self.server.config:
+            command += " -type=" + self.server.config["type"]
+        if "command" in self.server.config:
             command += " " + self.server.config["command"]
         return command
 
@@ -226,7 +217,9 @@ class DockerSpawner(ServerSpawner):
         self.server.config['ports'] = {}
         for port, mapping in ports.items():
             port = port.split("/")[0]
-            self.server.config['ports'][settings.SERVER_PORT_MAPPING[port]] = mapping[0]["HostPort"]
+            service = settings.SERVER_PORT_MAPPING.get(port)
+            if service:
+                self.server.config['ports'][service] = mapping[0]["HostPort"]
         self.server.private_ip = mapping[0]["HostIp"]
         self.server.save()
 
