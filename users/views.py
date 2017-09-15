@@ -6,7 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from haystack.query import SearchQuerySet, EmptySearchQuerySet
 from social_django.models import UserSocialAuth
 from rest_framework import viewsets, status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.generics import CreateAPIView
 from rest_framework.mixins import ListModelMixin
 from rest_framework.permissions import IsAuthenticated
@@ -134,7 +134,8 @@ class RegisterView(CreateAPIView):
 
 @api_view(['GET'])
 def me(request, version):
-    log.debug(("request.user", request.user))
+    serialized_data = UserSerializer(request.user).data
+    return Response(data=serialized_data, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
 def ssh_key(request, version, user_pk):
