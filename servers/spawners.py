@@ -257,7 +257,7 @@ class DockerSpawner(ServerSpawner):
 
         try:
             # if the container has a state, then it exists
-            self.client.api.remove_container(self.server.container_name)
+            self.client.api.remove_container(self.server.container_name, force=True)
         except APIError as e:
             if e.response.status_code == 404:
                 logger.info("Container '%s' does not exist. It will be removed from db",
