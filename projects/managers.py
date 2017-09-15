@@ -1,7 +1,5 @@
 from base.models import TBSQuerySet
 from base.utils import validate_uuid
-import logging
-log = logging.getLogger('projects')
 
 
 class ProjectQuerySet(TBSQuerySet):
