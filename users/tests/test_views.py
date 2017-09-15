@@ -194,14 +194,14 @@ class UserTest(APITestCase):
         url = reverse("user-detail", kwargs={'user': new_uuid,
                                              'version': settings.DEFAULT_VERSION})
         response = self.admin_client.put(url, data=data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         new_user = User.objects.filter(pk=new_uuid).first()
         self.assertIsNotNone(new_user)
         self.to_remove.append(new_user.profile.resource_root())
         self.assertEqual(new_user.username, data['username'])
 
     def test_put_creating_user_accepts_username_with_username(self):
-        data = {"username": "a_new_user",
+        data = {"username": "another_new_user",
                 "email": "anewuser@example.com",
                 "first_name": "Anew",
                 "last_name": "User",
@@ -217,7 +217,7 @@ class UserTest(APITestCase):
         url = reverse("user-detail", kwargs={'user': data['username'],
                                              'version': settings.DEFAULT_VERSION})
         response = self.admin_client.put(url, data=data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         new_user = User.objects.tbs_filter(data['username']).first()
         self.assertIsNotNone(new_user)
         self.to_remove.append(new_user.profile.resource_root())
