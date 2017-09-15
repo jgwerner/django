@@ -133,6 +133,10 @@ class RegisterView(CreateAPIView):
 
 
 @api_view(['GET'])
+def me(request, version):
+    log.debug(("request.user", request.user))
+
+@api_view(['GET'])
 def ssh_key(request, version, user_pk):
     user = get_object_or_404(User, user_pk)
     return Response(data={'key': user.profile.ssh_public_key()})
