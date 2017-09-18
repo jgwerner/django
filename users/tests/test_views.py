@@ -399,6 +399,13 @@ class UserTest(APITestCase):
                                  password="password")
         self.assertTrue(logged_in)
 
+    def test_me_endpoint(self):
+        url = reverse("me", kwargs={'version': settings.DEFAULT_VERSION})
+        response = self.admin_client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['id'], str(self.admin.id))
+        self.assertEqual(response.data['username'], self.admin.username)
+
 
 class EmailTest(APITestCase):
     def setUp(self):

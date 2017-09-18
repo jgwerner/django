@@ -63,6 +63,7 @@ servers_router.register("options/server-size", servers_views.ServerSizeViewSet)
 
 
 urlpatterns = [
+    url(r'^me/$', user_views.me, name="me"),
     url(r'^(?P<namespace>[\w-]+)/search/$', SearchView.as_view(), name='search'),
     url(r'^actions/', include('actions.urls')),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server_server>[^/.]+)/internal/(?P<service>[^/.]+)/$',
