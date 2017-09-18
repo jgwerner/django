@@ -49,9 +49,19 @@ class CardViewSet(mixins.CreateModelMixin,
         serializer = self.serializer_class(data=request.data,
                                            context={'request': request})
         serializer.is_valid(raise_exception=True)
-        instance = serializer.create(validated_data=request.data)
-        return Response(data=self.serializer_class(instance).data,
-                        status=status.HTTP_201_CREATED)
+        try:
+            serializer.create(validated_data=request.data)
+            data = serializer.data
+            ret_status = status.HTTP_201_CREATED
+        except stripe.error.StripeError as e:
+            body = e.json_body
+            error = body.get('error', {})
+            log.exception(error)
+            ret_status = e.http_status
+            data = error
+
+        return Response(data=data,
+                        status=ret_status)
 
     def list(self, request, *args, **kwargs):
         cards = Card.objects.filter(customer__user=request.user)
