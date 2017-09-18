@@ -6,7 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from haystack.query import SearchQuerySet, EmptySearchQuerySet
 from social_django.models import UserSocialAuth
 from rest_framework import viewsets, status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view
 from rest_framework.generics import CreateAPIView
 from rest_framework.mixins import ListModelMixin
 from rest_framework.permissions import IsAuthenticated
