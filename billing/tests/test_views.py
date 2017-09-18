@@ -102,6 +102,18 @@ class CardTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Card.objects.count(), 1)
 
+    def test_stripe_errors_do_not_produce_500_error(self):
+        url = reverse("card-list", kwargs={'namespace': self.user.username,
+                                           'version': settings.DEFAULT_VERSION})
+        data = {'token': "tok_cvcCheckFail"}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_402_PAYMENT_REQUIRED)
+        expected_error_data = {'message': "Your card's security code is incorrect.",
+                               'type': 'card_error',
+                               'param': 'cvc',
+                               'code': 'incorrect_cvc'}
+        self.assertDictEqual(response.data, expected_error_data)
+
     def test_list_cards(self):
         not_me_card_count = 3
         for _ in range(not_me_card_count):
