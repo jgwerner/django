@@ -1,5 +1,6 @@
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from billing.models import Plan, Customer, Subscription
+from billing.stripe_utils import create_plan_in_stripe
 from billing.tests.factories import PlanFactory
 from users.tests.factories import UserFactory
 
@@ -28,12 +29,27 @@ class TestBillingSignals(TestCase):
         user = UserFactory()
 
         plan = Plan.objects.filter(name="Threeblades Free Plan").first()
-        import logging
-        log = logging.getLogger('billing')
-        log.debug(())
         self.assertIsNotNone(plan)
         self.assertEqual(plan.amount, 0)
 
         subscription = Subscription.objects.filter(customer=user.customer,
                                                    plan=plan)
         self.assertEqual(subscription.count(), 1)
+
+    @override_settings(DEFAULT_STRIPE_PLAN_ID="testing-plan")
+    def test_configurable_default_plan(self):
+        plan_data = {'name': "Testing Plan",
+                     'amount': 100,
+                     'currency': "usd",
+                     'interval': "month",
+                     'interval_count': 1,
+                     'statement_descriptor': "Unit Test Plan",
+                     'trial_period_days': 30}
+        plan = create_plan_in_stripe(plan_data)
+        plan.save()
+        UserFactory()
+
+        plan_count = Plan.objects.count()
+        self.assertEqual(plan_count, 1)
+        db_plan = Plan.objects.all().first()
+        self.assertEqual(db_plan.pk, plan.pk)
