@@ -1,11 +1,25 @@
 from django.test import TestCase, override_settings
+from django.conf import settings
 from billing.models import Plan, Customer, Subscription
 from billing.stripe_utils import create_plan_in_stripe
 from billing.tests.factories import PlanFactory
 from users.tests.factories import UserFactory
+if settings.MOCK_STRIPE:
+    from billing.tests import mock_stripe as stripe
+else:
+    import stripe
 
 
 class TestBillingSignals(TestCase):
+    def setUp(self):
+        self.plans_to_delete = []
+
+    def tearDown(self):
+        for plan in self.plans_to_delete:
+            stripe_obj = stripe.Plan.retrieve(plan.stripe_id)
+            stripe_obj.delete()
+            plan.delete()
+
     def test_admin_create_plan(self):
         plan_pre_save = PlanFactory.build()
         plan_pre_save.stripe_id = ""
@@ -49,7 +63,7 @@ class TestBillingSignals(TestCase):
         plan.save()
         UserFactory()
 
-        plan_count = Plan.objects.count()
-        self.assertEqual(plan_count, 1)
-        db_plan = Plan.objects.all().first()
+        db_plan = Plan.objects.filter(name="Testing Plan").first()
+        self.assertIsNotNone(db_plan)
         self.assertEqual(db_plan.pk, plan.pk)
+        self.plans_to_delete.append(plan)
