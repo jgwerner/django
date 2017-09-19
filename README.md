@@ -124,6 +124,7 @@ Modify environment variables located in `env` file with your local settings. You
     DATABASE_URL=postgres://postgres:@db:5432/postgres/
     DEBUG=True
     DEFAULT_FROM_EMAIL=
+    DEFAULT_STRIPE_PLAN_ID=
     DJANGO_SETTINGS_MODULE=appdj.settings.prod
     DOCKER_DOMAIN=172.17.0.1
     DOCKER_EVENTS_URL=http://events:8000
