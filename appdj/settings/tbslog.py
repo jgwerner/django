@@ -15,8 +15,8 @@ handlers = {}
 loggers = {}
 
 for app in ['actions', 'base', 'billing', 'infrastructure',
-            'jwt_auth', 'projects', 'servers', 'triggers',
-            'users']:
+            'jwt_auth', 'notifications', 'projects',
+            'servers', 'triggers', 'users']:
     app_handler = {'level': "DEBUG",
                    'filename': os.path.join(check_and_make_dir(app), app + ".log"),
                    'formatter': "verbose",

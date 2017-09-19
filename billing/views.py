@@ -18,7 +18,7 @@ from billing.serializers import (PlanSerializer, CardSerializer,
                                  InvoiceSerializer,
                                  InvoiceItemSerializer)
 from billing.stripe_utils import handle_stripe_invoice_webhook, handle_upcoming_invoice
-
+from .signals import subscription_cancelled
 
 log = logging.getLogger('billing')
 
@@ -113,6 +113,10 @@ class SubscriptionViewSet(NamespaceMixin,
         instance.ended_at = timezone.now()
         instance.status = stripe_response['status']
         instance.save()
+
+        subscription_cancelled.send(sender=Subscription,
+                                    user=instance.customer.user,
+                                    actor=request.user)
 
         data = {'stripe_id': stripe_response['id'], 'deleted': True}
         return Response(data=data, status=status.HTTP_204_NO_CONTENT)

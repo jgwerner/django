@@ -1,10 +1,11 @@
 import logging
+from django import dispatch
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db.models.signals import post_save
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
-from billing.models import Customer, Plan, Event
+from billing.models import Customer, Plan
 from billing.stripe_utils import (create_stripe_customer_from_user,
                                   create_plan_in_stripe,
                                   assign_customer_to_free_plan)
@@ -40,7 +41,4 @@ def create_plan_in_stripe_from_admin(sender, instance, **kwargs):
             value = getattr(duplicate_plan, attr)
             setattr(instance, attr, value)
 
-
-@receiver(post_save, sender=Event)
-def handle_events_that_generate_notifications(sender, instance, created, **kwargs):
-    pass
+subscription_cancelled = dispatch.Signal(providing_args=['user', 'actor'])
