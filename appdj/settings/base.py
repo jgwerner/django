@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     'triggers',
     'jwt_auth',
     'search',
+    'notifications'
 ]
 
 MIDDLEWARE = [
