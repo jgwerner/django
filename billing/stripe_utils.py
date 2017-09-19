@@ -295,7 +295,7 @@ def assign_customer_to_default_plan(customer):
                 log.warning("Since the default plan did not exist in the DB, the system will now add the "
                             "user to a free plan to avoid failure.")
                 log.info("First make sure it doesn't exist in Stripe already...")
-                stripe_resp = stripe.Plan.retrieve(settings.DEFAULT_STRIPE_PLAN_ID)
+                stripe_resp = stripe.Plan.retrieve("threeblades-free-plan")
 
                 log.info("Free plan already exists in Stripe. Creating it in local database.")
                 converted_data = convert_stripe_object(Plan, stripe_resp)
