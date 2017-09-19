@@ -7,7 +7,7 @@ from django.dispatch import receiver
 from billing.models import Customer, Plan
 from billing.stripe_utils import (create_stripe_customer_from_user,
                                   create_plan_in_stripe,
-                                  assign_customer_to_free_plan)
+                                  assign_customer_to_default_plan)
 log = logging.getLogger("billing")
 
 
@@ -21,7 +21,7 @@ def check_if_customer_exists_for_user(sender, instance, created, **kwargs):
             log.info("No stripe customer exists for user {uname}. "
                      "Creating one.".format(uname=user.username))
             customer = create_stripe_customer_from_user(user)
-            assign_customer_to_free_plan(customer)
+            assign_customer_to_default_plan(customer)
 
 
 @receiver(pre_save, sender=Plan)
