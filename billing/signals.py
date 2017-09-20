@@ -41,4 +41,4 @@ def create_plan_in_stripe_from_admin(sender, instance, **kwargs):
             value = getattr(duplicate_plan, attr)
             setattr(instance, attr, value)
 
-subscription_cancelled = dispatch.Signal(providing_args=['user', 'actor'])
+subscription_cancelled = dispatch.Signal(providing_args=['user', 'actor', 'subscription'])

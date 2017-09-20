@@ -93,7 +93,7 @@ class SubscriptionViewSet(NamespaceMixin,
                           mixins.ListModelMixin,
                           mixins.RetrieveModelMixin,
                           viewsets.GenericViewSet):
-    queryset = Subscription.objects.all()
+    queryset = Subscription.objects.all().exclude(status=Subscription.CANCELED)
     serializer_class = SubscriptionSerializer
 
     def create(self, request, *args, **kwargs):
@@ -109,14 +109,12 @@ class SubscriptionViewSet(NamespaceMixin,
         stripe_obj = stripe.Subscription.retrieve(instance.stripe_id)
 
         stripe_response = stripe_obj.delete()
-        instance.canceled_at = timezone.now()
-        instance.ended_at = timezone.now()
-        instance.status = stripe_response['status']
-        instance.save()
+        instance.delete(new_status=stripe_response['status'])
 
         subscription_cancelled.send(sender=Subscription,
                                     user=instance.customer.user,
-                                    actor=request.user)
+                                    actor=request.user,
+                                    instance=instance)
 
         data = {'stripe_id': stripe_response['id'], 'deleted': True}
         return Response(data=data, status=status.HTTP_204_NO_CONTENT)

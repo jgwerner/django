@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'django_ses',
 
     'base',
+    'notifications',
     'users',
     'billing',
     'projects',
@@ -66,7 +67,6 @@ INSTALLED_APPS = [
     'triggers',
     'jwt_auth',
     'search',
-    'notifications'
 ]
 
 MIDDLEWARE = [
