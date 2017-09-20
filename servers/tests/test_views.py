@@ -14,8 +14,6 @@ from servers.tests.factories import (ServerSizeFactory,
                                      ServerStatisticsFactory,
                                      ServerRunStatisticsFactory,
                                      ServerFactory)
-import logging
-log = logging.getLogger('servers')
 
 
 class ServerTest(APITestCase):
@@ -44,11 +42,13 @@ class ServerTest(APITestCase):
         db_server = Server.objects.get()
         self.assertEqual(
             response.data['endpoint'],
-            'http://example.com/{version}/{namespace}/projects/{project_id}/servers/{server_id}/endpoint/jupyter/tree'.format(
+            ('http://example.com/{version}/{namespace}/projects/{project_id}'
+             '/servers/{server_id}/endpoint/jupyter/tree?access_token={server_token}').format(
                 version=settings.DEFAULT_VERSION,
                 namespace=self.user.username,
                 project_id=self.project.pk,
-                server_id=db_server.id
+                server_id=db_server.id,
+                server_token=db_server.access_token
             )
         )
         self.assertEqual(Server.objects.count(), 1)
@@ -241,11 +241,13 @@ class ServerTestWithName(APITestCase):
         db_server = Server.objects.get()
         self.assertEqual(
             response.data['endpoint'],
-            'http://example.com/{version}/{namespace}/projects/{project_id}/servers/{server_id}/endpoint/jupyter/tree'.format(
+            ('http://example.com/{version}/{namespace}/projects/{project_id}'
+             '/servers/{server_id}/endpoint/jupyter/tree?access_token={server_token}').format(
                 version=settings.DEFAULT_VERSION,
                 namespace=self.user.username,
                 project_id=self.project.pk,
-                server_id=db_server.id
+                server_id=db_server.id,
+                server_token=db_server.access_token
             )
         )
         self.assertEqual(Server.objects.count(), 1)

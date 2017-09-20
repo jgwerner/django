@@ -54,7 +54,7 @@ if settings.ENABLE_BILLING:
     router.register(r'billing/plans', billing_views.PlanViewSet)
     router.register(r'billing/subscriptions', billing_views.SubscriptionViewSet)
     router.register(r'billing/invoices', billing_views.InvoiceViewSet)
-    router.register(r'billing/invoice-items', billing_views.InvoiceViewSet)
+    router.register(r'billing/(?P<invoice_id>[\w-]+)/invoice-items', billing_views.InvoiceItemViewSet)
 
 router.register(r'service/(?P<server>[^/.]+)/trigger', trigger_views.ServerActionViewSet)
 
@@ -63,6 +63,7 @@ servers_router.register("options/server-size", servers_views.ServerSizeViewSet)
 
 
 urlpatterns = [
+    url(r'^me/$', user_views.me, name="me"),
     url(r'^(?P<namespace>[\w-]+)/search/$', SearchView.as_view(), name='search'),
     url(r'^actions/', include('actions.urls')),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server_server>[^/.]+)/internal/(?P<service>[^/.]+)/$',

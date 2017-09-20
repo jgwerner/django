@@ -381,3 +381,7 @@ MOCK_STRIPE = os.environ.get("MOCK_STRIPE", "false").lower() == "true"
 DATA_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024 * int(os.getenv("MAX_FILE_UPLOAD_SIZE", 15))
 
 SILENCED_SYSTEM_CHECKS = ["auth.W004"]
+
+NVIDIA_DRIVER_PATH = "/var/lib/nvidia-docker/volumes/nvidia_driver/375.82"
+
+DEFAULT_STRIPE_PLAN_ID = os.getenv("DEFAULT_STRIPE_PLAN_ID", "threeblades-free-plan")

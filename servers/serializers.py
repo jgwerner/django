@@ -1,4 +1,5 @@
 import uuid
+import logging
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
 from rest_framework import serializers
@@ -11,6 +12,7 @@ from servers.models import (ServerSize, Server,
                             SshTunnel)
 from projects.models import Project
 from projects.serializers import ProjectSerializer
+log = logging.getLogger('servers')
 
 
 class ServerSizeSerializer(serializers.ModelSerializer):
@@ -70,8 +72,14 @@ class ServerSerializer(SearchSerializerMixin, BaseServerSerializer):
         return super().update(instance, validated_data)
 
     def get_endpoint(self, obj):
-        return self._get_url(obj, scheme='https' if self._is_secure else 'http', url='/endpoint{}'.format(
+        base_url = self._get_url(obj, scheme='https' if self._is_secure else 'http', url='/endpoint{}'.format(
             settings.SERVER_ENDPOINT_URLS.get(obj.config.get('type'), '/')))
+
+        if obj.access_token == "":
+            log.info(f"Server {obj.pk} doesn't have an access token. Not appending anything to the endpoint.")
+            return base_url
+        base_url += f"?access_token={obj.access_token}"
+        return base_url
 
     def get_logs_url(self, obj):
         return self._get_url(obj, scheme='wss' if self._is_secure else 'ws', url='/logs/')

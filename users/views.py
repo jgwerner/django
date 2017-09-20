@@ -2,6 +2,7 @@ import logging
 from django.http import JsonResponse
 from django.db.models import Q
 from django.contrib.auth import get_user_model
+from django.views.decorators.csrf import csrf_exempt
 from haystack.query import SearchQuerySet, EmptySearchQuerySet
 from social_django.models import UserSocialAuth
 from rest_framework import viewsets, status
@@ -39,6 +40,7 @@ class UserViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
         data = request.data
         url_kwarg = kwargs.get(self.lookup_url_kwarg)
         user = User.objects.tbs_filter(url_kwarg).first()
+        log.debug(user)
 
         # The given User exists, and there is an attempt to change the username
         # User could be none if the client is using PUT to create a user.
@@ -48,13 +50,23 @@ class UserViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
 
         serializer = self.serializer_class(instance=user, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
+        if user is None:
+            # A user is being created via PUT
+            response_status = status.HTTP_201_CREATED
+        else:
+            response_status = status.HTTP_200_OK
+
         if validate_uuid(url_kwarg):
             serializer.save(id=url_kwarg)
         else:
             serializer.save(username=url_kwarg)
 
+        user = serializer.instance
+        user.is_active = True
+        user.save()
+
         return Response(data=serializer.data,
-                        status=status.HTTP_200_OK)
+                        status=response_status)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -77,6 +89,7 @@ class UserViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
         instance.save()
 
 
+@csrf_exempt
 def avatar(request, version, user_pk):
     status_code = status.HTTP_200_OK
 
@@ -129,6 +142,11 @@ class RegisterView(CreateAPIView):
     permission_classes = ()
     authentication_classes = ()
 
+
+@api_view(['GET'])
+def me(request, version):
+    serialized_data = UserSerializer(request.user).data
+    return Response(data=serialized_data, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
 def ssh_key(request, version, user_pk):

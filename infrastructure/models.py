@@ -2,7 +2,7 @@ import logging
 from django.conf import settings
 from django.db import models
 from django.urls import reverse
-from docker import Client
+import docker
 
 from .managers import DockerHostQuerySet
 
@@ -38,7 +38,7 @@ class DockerHost(models.Model):
 
     @property
     def client(self):
-        return Client(base_url=self.url, timeout=3)
+        return docker.client.APIClient(base_url=self.url, timeout=3)
 
     @property
     def status(self):

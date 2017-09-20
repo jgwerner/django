@@ -1,3 +1,4 @@
+import logging
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from rest_framework.authtoken.serializers import AuthTokenSerializer as RestAuthTokenSerializer
@@ -7,6 +8,7 @@ from base.views import RequestUserMixin
 from base.serializers import SearchSerializerMixin
 from users.models import UserProfile, Email
 User = get_user_model()
+log = logging.getLogger('users')
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -17,7 +19,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(SearchSerializerMixin, serializers.ModelSerializer):
-    profile = UserProfileSerializer()
+    profile = UserProfileSerializer(required=False)
 
     class Meta:
         model = User
@@ -32,7 +34,9 @@ class UserSerializer(SearchSerializerMixin, serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
-        profile_data = validated_data.pop('profile')
+        profile_data = {}
+        if "profile" in validated_data:
+            profile_data = validated_data.pop('profile')
         password = validated_data.pop('password')
         user = User(**validated_data, is_active=False)
         user.set_password(password)
@@ -43,15 +47,26 @@ class UserSerializer(SearchSerializerMixin, serializers.ModelSerializer):
         return user
 
     def update(self, instance, validated_data):
-        profile_data = validated_data.get('profile')
-        if profile_data is not None:
-            validated_data.pop('profile')
-            profile = UserProfile(user=instance, **profile_data)
-            profile.save()
+        if "profile" in validated_data:
+            log.info("Profile information found in update request. Setting information accordingly.")
+            profile_data = validated_data.pop('profile')
+            user_profile = UserProfile.objects.get(user=instance)
+
+            for field in profile_data:
+                setattr(user_profile, field, profile_data[field])
+
+            user_profile.save()
+
         password = validated_data.pop('password', None)
         if password is not None:
             instance.set_password(password)
-        return super().update(instance, validated_data)
+
+        for field in validated_data:
+            setattr(instance, field, validated_data[field])
+
+        instance.save()
+
+        return instance
 
 
 class EmailSerializer(RequestUserMixin, serializers.ModelSerializer):
