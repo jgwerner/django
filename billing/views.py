@@ -2,7 +2,6 @@ import logging
 import json
 
 from django.http import HttpResponse
-from django.utils import timezone
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
@@ -18,7 +17,8 @@ from billing.serializers import (PlanSerializer, CardSerializer,
                                  InvoiceSerializer,
                                  InvoiceItemSerializer)
 from billing.stripe_utils import handle_stripe_invoice_webhook, handle_upcoming_invoice
-from .signals import subscription_cancelled
+from .signals import (subscription_cancelled,
+                      subscription_created)
 
 log = logging.getLogger('billing')
 
@@ -101,6 +101,10 @@ class SubscriptionViewSet(NamespaceMixin,
                                            context={'request': request})
         serializer.is_valid(raise_exception=True)
         instance = serializer.create(validated_data=request.data)
+        subscription_created.send(sender=Subscription,
+                                  user=instance.customer.user,
+                                  actor=request.user,
+                                  instance=instance)
         return Response(data=self.serializer_class(instance).data,
                         status=status.HTTP_201_CREATED)
 
