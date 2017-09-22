@@ -206,11 +206,7 @@ def create_event_from_webhook(stripe_obj):
     return None
 
 
-def handle_stripe_invoice_webhook(stripe_obj):
-    """
-    :param stripe_obj: The Stripe *event* object
-    :return: None
-    """
+def handle_stripe_invoice_payment_failed(stripe_obj):
     event = create_event_from_webhook(stripe_obj)
     if event is not None:
         if event.event_type == "invoice.payment_failed":
@@ -225,6 +221,14 @@ def handle_stripe_invoice_webhook(stripe_obj):
             subscription.save()
             log.debug("Updated subscription {sub} after payment failure.".format(sub=subscription.stripe_id))
 
+
+def handle_stripe_invoice_created(stripe_obj):
+    """
+    :param stripe_obj: The Stripe *event* object
+    :return: None
+    """
+    event = create_event_from_webhook(stripe_obj)
+    if event is not None:
         stripe_invoice = stripe_obj['data']['object']
         stripe_invoice['invoice_date'] = stripe_invoice['date']
         converted = convert_stripe_object(Invoice, stripe_invoice)

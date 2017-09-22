@@ -44,3 +44,7 @@ def create_plan_in_stripe_from_admin(sender, instance, **kwargs):
 subscription_cancelled = dispatch.Signal(providing_args=['user', 'actor', 'subscription'])
 
 subscription_created = dispatch.Signal(providing_args=['user', 'actor', 'subscription'])
+
+invoice_payment_success = dispatch.Signal(providing_args=[])
+
+invoice_payment_failure = dispatch.Signal(providing_args=[])

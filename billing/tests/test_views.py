@@ -216,19 +216,18 @@ class SubscriptionTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_list_subscriptions(self):
-        pre_existing_subs = Subscription.objects.count()
         not_me_sub_count = 3
         for _ in range(not_me_sub_count):
             UserFactory()
             # Dont need to create a Subscription, one is created to the free plan automatically
         my_subs_count = 2
-        my_subs = SubscriptionFactory.create_batch(my_subs_count, customer=self.customer)
+        SubscriptionFactory.create_batch(my_subs_count, customer=self.customer)
         url = reverse("subscription-list", kwargs={'namespace': self.user.username,
                                                    'version': settings.DEFAULT_VERSION})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(Subscription.objects.filter(plan__amount__gt=0).count(), my_subs_count)
-        self.assertEqual(len(response.data), my_subs_count + pre_existing_subs)
+        self.assertEqual(len(response.data), my_subs_count)
 
     def test_subscription_details(self):
         sub = SubscriptionFactory(customer=self.customer)

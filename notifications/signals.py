@@ -2,7 +2,9 @@ import logging
 from django.dispatch import receiver
 from billing.models import Subscription
 from billing.signals import (subscription_cancelled,
-                             subscription_created)
+                             subscription_created,
+                             invoice_payment_success,
+                             invoice_payment_failure)
 from .models import Notification, NotificationType
 log = logging.getLogger('notifications')
 
@@ -35,3 +37,13 @@ def sub_created_handler(sender, **kwargs):
                                 type=notif_type)
     notification.save()
     log.debug("Created the notification")
+
+
+@receiver(invoice_payment_success)
+def charge_successful_handler(sender, **kwargs):
+    pass
+
+
+@receiver(invoice_payment_failure)
+def invoice_payment_failure_handler(sender, **kwargs):
+    pass

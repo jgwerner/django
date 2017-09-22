@@ -16,7 +16,9 @@ from billing.serializers import (PlanSerializer, CardSerializer,
                                  SubscriptionSerializer,
                                  InvoiceSerializer,
                                  InvoiceItemSerializer)
-from billing.stripe_utils import handle_stripe_invoice_webhook, handle_upcoming_invoice
+from billing.stripe_utils import (handle_stripe_invoice_created,
+                                  handle_upcoming_invoice,
+                                  handle_stripe_invoice_payment_failed)
 from .signals import (subscription_cancelled,
                       subscription_created)
 
@@ -155,12 +157,29 @@ class InvoiceItemViewSet(NamespaceMixin,
         data = serializer.data
         return Response(data, status=status.HTTP_200_OK)
 
+
 @require_POST
 @csrf_exempt
 def stripe_invoice_created(request, *args, **kwargs):
     body = request.body
     event_json = json.loads(body.decode("utf-8"))
-    handle_stripe_invoice_webhook(event_json)
+    handle_stripe_invoice_created(event_json)
+    return HttpResponse(status=status.HTTP_200_OK)
+
+
+@require_POST
+@csrf_exempt
+def stripe_invoice_payment_success(request, *args, **kwargs):
+    body = request.body
+    event_json = json.loads(body.decode("utf-8"))
+    return HttpResponse(status=status.HTTP_200_OK)
+
+@require_POST
+@csrf_exempt
+def stripe_invoice_payment_failed(request, *args, **kwargs):
+    body = request.body
+    event_json = json.loads(body.decode('utf-8'))
+    handle_stripe_invoice_payment_failed(event_json)
     return HttpResponse(status=status.HTTP_200_OK)
 
 
