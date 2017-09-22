@@ -45,6 +45,6 @@ subscription_cancelled = dispatch.Signal(providing_args=['user', 'actor', 'subsc
 
 subscription_created = dispatch.Signal(providing_args=['user', 'actor', 'subscription'])
 
-invoice_payment_success = dispatch.Signal(providing_args=[])
+invoice_payment_success = dispatch.Signal(providing_args=['subscription', 'invoice'])
 
 invoice_payment_failure = dispatch.Signal(providing_args=['subscription', 'invoice'])

@@ -40,8 +40,16 @@ def sub_created_handler(sender, **kwargs):
 
 
 @receiver(invoice_payment_success)
-def charge_successful_handler(sender, **kwargs):
-    pass
+def invoice_payment_successful_handler(sender, **kwargs):
+    subscription = kwargs.get('subscription')
+    invoice = kwargs.get('invoice')
+    notif_type, _ = NotificationType.objects.get_or_create(name="invoice.payment_succeeded",
+                                                           defaults={'entity': "billing"})
+    notification = Notification(user=invoice.customer.user,
+                                actor=subscription,
+                                target=invoice,
+                                type=notif_type)
+    notification.save()
 
 
 @receiver(invoice_payment_failure)
