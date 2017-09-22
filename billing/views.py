@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from base.views import NamespaceMixin
 from base.permissions import IsAdminUser
 from billing.models import (Plan, Card, Subscription,
-                            Invoice, InvoiceItem)
+                            Invoice, InvoiceItem, Event)
 from billing.serializers import (PlanSerializer, CardSerializer,
                                  SubscriptionSerializer,
                                  InvoiceSerializer,
@@ -20,7 +20,8 @@ from billing.stripe_utils import (handle_stripe_invoice_created,
                                   handle_upcoming_invoice,
                                   handle_stripe_invoice_payment_failed)
 from .signals import (subscription_cancelled,
-                      subscription_created)
+                      subscription_created,
+                      invoice_payment_failure)
 
 log = logging.getLogger('billing')
 
@@ -174,12 +175,19 @@ def stripe_invoice_payment_success(request, *args, **kwargs):
     event_json = json.loads(body.decode("utf-8"))
     return HttpResponse(status=status.HTTP_200_OK)
 
+
 @require_POST
 @csrf_exempt
 def stripe_invoice_payment_failed(request, *args, **kwargs):
     body = request.body
     event_json = json.loads(body.decode('utf-8'))
-    handle_stripe_invoice_payment_failed(event_json)
+
+    # Not sure I like this design
+    signal_data = handle_stripe_invoice_payment_failed(event_json)
+
+    if signal_data is not None:
+        invoice_payment_failure.send(sender=Event, **signal_data)
+
     return HttpResponse(status=status.HTTP_200_OK)
 
 

@@ -207,7 +207,9 @@ def create_event_from_webhook(stripe_obj):
 
 
 def handle_stripe_invoice_payment_failed(stripe_obj):
+    signal_data = None
     event = create_event_from_webhook(stripe_obj)
+
     if event is not None:
         if event.event_type == "invoice.payment_failed":
             # Suspend the subscription...
@@ -215,11 +217,20 @@ def handle_stripe_invoice_payment_failed(stripe_obj):
             stripe_subscription = stripe.Subscription.retrieve(sub_stripe_id)
             converted_data = convert_stripe_object(Subscription, stripe_subscription)
             subscription = Subscription.objects.get(stripe_id=sub_stripe_id)
+
+            invoice_stripe_id = stripe_obj['data']['object']['id']
+            invoice = Invoice.objects.get(stripe_id=invoice_stripe_id)
+
+            signal_data = {'subscription': subscription,
+                           'invoice': invoice}
+
             for key in converted_data:
                 if key not in ["customer", "plan"]:
                     setattr(subscription, key, converted_data[key])
             subscription.save()
             log.debug("Updated subscription {sub} after payment failure.".format(sub=subscription.stripe_id))
+
+    return signal_data
 
 
 def handle_stripe_invoice_created(stripe_obj):
