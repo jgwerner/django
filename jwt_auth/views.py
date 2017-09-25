@@ -8,6 +8,8 @@ from rest_framework_jwt.views import JSONWebTokenAPIView
 from servers.utils import is_server_token
 from .serializers import JWTSerializer
 
+from users.signals import user_authenticated
+
 jwt_response_payload_handler = api_settings.JWT_RESPONSE_PAYLOAD_HANDLER
 
 
@@ -29,6 +31,7 @@ class JWTApiView(JSONWebTokenAPIView):
                                     response.data['token'],
                                     expires=expiration,
                                     httponly=True)
+            user_authenticated.send()
             return response
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -1,5 +1,9 @@
 import logging
+import pytz
+from datetime import datetime
 from django.dispatch import receiver
+from django.conf import settings
+from users.signals import user_authenticated
 from billing.models import Subscription
 from billing.signals import (subscription_cancelled,
                              subscription_created,
@@ -63,3 +67,26 @@ def invoice_payment_failure_handler(sender, **kwargs):
                                 target=invoice,
                                 type=notif_type)
     notification.save()
+
+
+@receiver(user_authenticated)
+def handle_trial_about_to_expire(sender, user):
+    if settings.ENABLE_BILLING and not user.is_staff:
+        # Assume only one such subscription I suppose?
+        trial_sub = Subscription.objects.filter(customer=user.customer,
+                                                status=Subscription.TRIAL).first()
+        if trial_sub is not None:
+            pass
+            try:
+                trial_days_left = trial_sub.trial_end.replace(tzinfo=None) - datetime.now()
+                if trial_days_left.days < 7:
+                    notif_type, _ = NotificationType.objects.get_or_create(name="subscription.trial_will_end",
+                                                                           defaults={'entity': "billing"})
+                    notification = Notification(user=user,
+                                                actor=trial_sub,
+                                                target=user,
+                                                type=notif_type)
+                    notification.save()
+            except TypeError as e:
+                log.warning(f"Subscription.trial_end was None for sub {trial_sub.pk}. Look into this.")
+                log.exception(e)

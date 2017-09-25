@@ -86,6 +86,8 @@ class SubscriptionFactory(factory.django.DjangoModelFactory):
     cancel_at_period_end = fuzzy.FuzzyChoice([True, False])
     quantity = fuzzy.FuzzyInteger(low=1, high=5)
     status = fuzzy.FuzzyChoice([c[0] for c in Subscription.SUBSCRIPTION_STATUS_CHOICES])
+    trial_start = datetime.now()
+    trial_end = factory.LazyAttribute(lambda obj: obj.trial_start + timedelta(days=obj.plan.trial_period_days))
 
 
 class EventFactory(factory.django.DjangoModelFactory):
