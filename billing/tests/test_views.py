@@ -221,7 +221,8 @@ class SubscriptionTest(APITestCase):
             UserFactory()
             # Dont need to create a Subscription, one is created to the free plan automatically
         my_subs_count = 2
-        SubscriptionFactory.create_batch(my_subs_count, customer=self.customer)
+        SubscriptionFactory.create_batch(my_subs_count, customer=self.customer,
+                                         status=Subscription.ACTIVE)
         url = reverse("subscription-list", kwargs={'namespace': self.user.username,
                                                    'version': settings.DEFAULT_VERSION})
         response = self.client.get(url)

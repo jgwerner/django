@@ -18,4 +18,4 @@ def create_user_ssh_key(sender, instance, created, **kwargs):
         create_ssh_key(instance)
 
 
-user_authenticated = dispatch.Signal(providing_args=[])
+user_authenticated = dispatch.Signal(providing_args=['user'])

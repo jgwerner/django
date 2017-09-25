@@ -70,7 +70,8 @@ def invoice_payment_failure_handler(sender, **kwargs):
 
 
 @receiver(user_authenticated)
-def handle_trial_about_to_expire(sender, user):
+def handle_trial_about_to_expire(sender, **kwargs):
+    user = kwargs.get('user')
     if settings.ENABLE_BILLING and not user.is_staff:
         # Assume only one such subscription I suppose?
         trial_sub = Subscription.objects.filter(customer=user.customer,
