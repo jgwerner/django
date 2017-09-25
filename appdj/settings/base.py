@@ -14,6 +14,7 @@ import os
 import dj_database_url
 import datetime
 import uuid
+from urllib.parse import urlparse
 from appdj.settings import BASE_DIR
 from appdj.settings.tbslog import TBS_LOGGING
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -370,11 +371,16 @@ MEDIA_URL = "/media/"
 
 HAYSTACK_CONNECTIONS = {
     "default": {
-        'ENGINE': 'haystack.backends.elasticsearch2_backend.Elasticsearch2SearchEngine',
-        'URL': os.environ.get("ELASTICSEARCH_URL", "http://search:9200/"),
+        'ENGINE': 'haystack_elasticsearch.elasticsearch5.Elasticsearch5SearchEngine',
+        'URL': os.environ.get("ELASTICSEARCH_URL",  "http://search:9200/"),
         'INDEX_NAME': '3blades',
+        'KWARGS': {
+            'http_auth': (os.getenv("ELASTICSEARCH_USER"), os.getenv("ELASTICSEARCH_PASSWORD")),
+            'use_ssl': True,
+        }
     }
 }
+
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
 
 HTTPS = os.environ.get("TBS_HTTPS", "false").lower() == "true"
