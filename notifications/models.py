@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
-from users.models import User
+from users.models import User, Email
 
 
 class NotificationQuerySet(models.query.QuerySet):
@@ -73,6 +73,8 @@ class NotificationType(models.Model):
     entity = models.CharField(max_length=25)
     name = models.CharField(max_length=50)
     description = models.TextField()
+    subject = models.CharField(max_length=75)
+    template_name = models.CharField(max_length=100)
 
 
 # Create your models here.
@@ -93,13 +95,6 @@ class Notification(models.Model):
     target_object_id = models.UUIDField(blank=True, null=True)
     target = GenericForeignKey('target_content_type', 'target_object_id')
 
-    # Is also what they did?
-    # Not sure these should actually be here
-    action_object_content_type = models.ForeignKey(ContentType, blank=True, null=True,
-                                                   related_name='notify_action_object')
-    action_object_object_id = models.UUIDField(blank=True, null=True)
-    action_object = GenericForeignKey('action_object_content_type', 'action_object_object_id')
-
     timestamp = models.DateTimeField(default=timezone.now)
 
     public = models.BooleanField(default=True)
@@ -115,7 +110,6 @@ class Notification(models.Model):
 
     def __str__(self):
         parts = [self.actor, self.type,
-                 self.action_object,
                  self.target, self.timesince()]
         return ";".join(map(str, parts))
 
@@ -136,3 +130,16 @@ class Notification(models.Model):
         if not self.unread:
             self.unread = True
             self.save()
+
+
+class NotificationSettings(models.Model):
+    user = models.ForeignKey(User)
+    entity = models.CharField(max_length=50)
+
+    object_content_type = models.ForeignKey(ContentType, null=True)
+    object_id = models.UUIDField(null=True)
+    object = GenericForeignKey('object_content_type', 'object_id')
+
+    enabled = models.BooleanField(default=True)
+    emails_enabled = models.BooleanField(default=True)
+    email_address = models.ForeignKey(Email, null=True)
