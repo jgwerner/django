@@ -107,7 +107,8 @@ class SubscriptionViewSet(NamespaceMixin,
         subscription_created.send(sender=Subscription,
                                   user=instance.customer.user,
                                   actor=request.user,
-                                  instance=instance)
+                                  target=instance,
+                                  notif_type="subscription.created")
         return Response(data=self.serializer_class(instance).data,
                         status=status.HTTP_201_CREATED)
 
@@ -121,7 +122,8 @@ class SubscriptionViewSet(NamespaceMixin,
         subscription_cancelled.send(sender=Subscription,
                                     user=instance.customer.user,
                                     actor=request.user,
-                                    instance=instance)
+                                    target=instance,
+                                    notif_type="subscription.canceled")
 
         data = {'stripe_id': stripe_response['id'], 'deleted': True}
         return Response(data=data, status=status.HTTP_204_NO_CONTENT)
@@ -185,7 +187,7 @@ def stripe_invoice_payment_failed(request, *args, **kwargs):
     # Not sure I like this design
     signal_data = handle_stripe_invoice_payment_failed(event_json)
 
-    if signal_data is not None:
+    if signal_data:
         invoice_payment_failure.send(sender=Event, **signal_data)
 
     return HttpResponse(status=status.HTTP_200_OK)

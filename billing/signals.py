@@ -41,10 +41,10 @@ def create_plan_in_stripe_from_admin(sender, instance, **kwargs):
             value = getattr(duplicate_plan, attr)
             setattr(instance, attr, value)
 
-subscription_cancelled = dispatch.Signal(providing_args=['user', 'actor', 'subscription'])
+subscription_cancelled = dispatch.Signal(providing_args=['user', 'actor', 'target', 'notif_type'])
 
-subscription_created = dispatch.Signal(providing_args=['user', 'actor', 'subscription'])
+subscription_created = dispatch.Signal(providing_args=['user', 'actor', 'target', 'notif_type'])
 
-invoice_payment_success = dispatch.Signal(providing_args=['subscription', 'invoice'])
+invoice_payment_success = dispatch.Signal(providing_args=['user', 'actor', 'target', 'notif_type'])
 
-invoice_payment_failure = dispatch.Signal(providing_args=['subscription', 'invoice'])
+invoice_payment_failure = dispatch.Signal(providing_args=['user', 'actor', 'target', 'notif_type'])

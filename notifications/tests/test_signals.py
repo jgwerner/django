@@ -19,8 +19,10 @@ class TestNotificationSignals(TestCase):
         invoice = InvoiceFactory(customer=customer,
                                  subscription=subscription)
         invoice_payment_failure_handler(sender=Event,
-                                        subscription=subscription,
-                                        invoice=invoice)
+                                        user=user,
+                                        actor=subscription,
+                                        target=invoice,
+                                        notif_type="invoice.payment_failed")
         notif = Notification.objects.all().first()
         self.assertIsNotNone(notif)
         self.assertEqual(notif.actor, subscription)
@@ -34,8 +36,10 @@ class TestNotificationSignals(TestCase):
         invoice = InvoiceFactory(customer=customer,
                                  subscription=subscription)
         invoice_payment_successful_handler(sender=Event,
-                                           subscription=subscription,
-                                           invoice=invoice)
+                                           user=user,
+                                           actor=subscription,
+                                           target=invoice,
+                                           notif_type="invoice.payment_succeeded")
         notif = Notification.objects.all().first()
         self.assertIsNotNone(notif)
         self.assertEqual(notif.actor, subscription)
@@ -50,7 +54,8 @@ class TestNotificationSignals(TestCase):
         subscription = SubscriptionFactory(customer=customer,
                                            plan__trial_period_days=3,
                                            status=Subscription.TRIAL)
-        handle_trial_about_to_expire(sender=User, user=user)
+        handle_trial_about_to_expire(sender=User,
+                                     user=user)
 
         notif = Notification.objects.all().first()
         self.assertIsNotNone(notif)

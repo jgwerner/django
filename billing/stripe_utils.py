@@ -207,7 +207,7 @@ def create_event_from_webhook(stripe_obj):
 
 
 def handle_stripe_invoice_payment_failed(stripe_obj):
-    signal_data = None
+    signal_data = {}
     event = create_event_from_webhook(stripe_obj)
 
     if event is not None:
@@ -221,8 +221,10 @@ def handle_stripe_invoice_payment_failed(stripe_obj):
             invoice_stripe_id = stripe_obj['data']['object']['id']
             invoice = Invoice.objects.get(stripe_id=invoice_stripe_id)
 
-            signal_data = {'subscription': subscription,
-                           'invoice': invoice}
+            signal_data = {'user': subscription.customer.user,
+                           'actor': subscription,
+                           'target': invoice,
+                           'notif_type': "invoice.payment_failed"}
 
             for key in converted_data:
                 if key not in ["customer", "plan"]:
