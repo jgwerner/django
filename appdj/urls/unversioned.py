@@ -27,6 +27,7 @@ from infrastructure import views as infra_views
 from triggers import views as trigger_views
 from billing import views as billing_views
 from search.views import SearchView
+from notifications import views as notification_views
 
 router = routers.DefaultRouter()
 
@@ -57,6 +58,7 @@ if settings.ENABLE_BILLING:
     router.register(r'billing/(?P<invoice_id>[\w-]+)/invoice-items', billing_views.InvoiceItemViewSet)
 
 router.register(r'service/(?P<server>[^/.]+)/trigger', trigger_views.ServerActionViewSet)
+router.register(r'notifications/(?P<entity>[\w-]+)', notification_views.NotificationViewSet)
 
 servers_router = routers.SimpleRouter()
 servers_router.register("options/server-size", servers_views.ServerSizeViewSet)

@@ -98,7 +98,7 @@ class Notification(models.Model):
     timestamp = models.DateTimeField(default=timezone.now)
 
     public = models.BooleanField(default=True)
-    deleted = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
     emailed = models.BooleanField(default=False)
 
     objects = NotificationQuerySet.as_manager()
