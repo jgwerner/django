@@ -231,7 +231,8 @@ class SubscriptionTest(APITestCase):
         self.assertEqual(len(response.data), my_subs_count)
 
     def test_subscription_details(self):
-        sub = SubscriptionFactory(customer=self.customer)
+        sub = SubscriptionFactory(customer=self.customer,
+                                  status=Subscription.ACTIVE)
         url = reverse("subscription-detail", kwargs={'namespace': self.user.username,
                                                      'pk': sub.pk,
                                                      'version': settings.DEFAULT_VERSION})
