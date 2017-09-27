@@ -152,6 +152,7 @@ Modify environment variables located in `env` file with your local settings. You
     RESOURCE_DIR=
     SERVER_RESOURCE_DIR=
     SECRET_KEY=
+    SENTRY_DSN=
     SLACK_KEY=
     SLACK_SECRET=
     STRIPE_SECRET_KEY=
