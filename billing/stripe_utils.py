@@ -303,7 +303,7 @@ def assign_customer_to_default_plan(customer):
                 log.info("First make sure it doesn't exist in Stripe already...")
                 stripe_resp = stripe.Plan.retrieve("threeblades-free-plan")
 
-                free_plan_data['created'] = datetime.now()
+                free_plan_data['created'] = timezone.now()
                 default_plan, created = Plan.objects.get_or_create(stripe_id=stripe_resp['id'],
                                                                    defaults=free_plan_data)
 
