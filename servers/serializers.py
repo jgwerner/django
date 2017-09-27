@@ -46,8 +46,8 @@ class ServerSerializer(SearchSerializerMixin, BaseServerSerializer):
 
     def validate_config(self, value):
         server_type = value.get("type")
-        if server_type not in Server.SERVER_TYPES:
-            raise serializers.ValidationError("{type} is not a valid server type".format(type=server_type))
+        if server_type not in settings.SERVER_TYPES and server_type not in settings.SERVER_TYPE_MAPPING:
+            raise serializers.ValidationError(f"{server_type} is not a valid server type")
         return value
 
     def create(self, validated_data):
@@ -73,7 +73,7 @@ class ServerSerializer(SearchSerializerMixin, BaseServerSerializer):
 
     def get_endpoint(self, obj):
         base_url = self._get_url(obj, scheme='https' if self._is_secure else 'http', url='/endpoint{}'.format(
-            settings.SERVER_ENDPOINT_URLS.get(obj.config.get('type'), '/')))
+            settings.SERVER_ENDPOINT_URLS.get(obj.get_type(), '/')))
 
         if obj.access_token == "":
             log.info(f"Server {obj.pk} doesn't have an access token. Not appending anything to the endpoint.")

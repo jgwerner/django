@@ -43,7 +43,7 @@ class ServerTest(APITestCase):
         self.assertEqual(
             response.data['endpoint'],
             ('http://example.com/{version}/{namespace}/projects/{project_id}'
-             '/servers/{server_id}/endpoint/jupyter/tree?access_token={server_token}').format(
+             '/servers/{server_id}/endpoint/proxy/tree?access_token={server_token}').format(
                 version=settings.DEFAULT_VERSION,
                 namespace=self.user.username,
                 project_id=self.project.pk,
@@ -242,7 +242,7 @@ class ServerTestWithName(APITestCase):
         self.assertEqual(
             response.data['endpoint'],
             ('http://example.com/{version}/{namespace}/projects/{project_id}'
-             '/servers/{server_id}/endpoint/jupyter/tree?access_token={server_token}').format(
+             '/servers/{server_id}/endpoint/proxy/tree?access_token={server_token}').format(
                 version=settings.DEFAULT_VERSION,
                 namespace=self.user.username,
                 project_id=self.project.pk,

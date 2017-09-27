@@ -33,8 +33,6 @@ class Server(models.Model):
     START = 'start'
     TERMINATE = 'terminate'
 
-    SERVER_TYPES = ["jupyter", "restful", "cron", "proxy"]
-
     objects = ServerQuerySet.as_manager()
 
     private_ip = models.CharField(max_length=19)
@@ -117,6 +115,12 @@ class Server(models.Model):
         if self.private_ip != "0.0.0.0":
             return self.private_ip
         return urlsplit(os.environ.get("DOCKER_HOST")).hostname
+
+    def get_type(self):
+        if self.config['type'] in settings.SERVER_TYPES:
+            return self.config['type']
+        if self.config['type'] in settings.SERVER_TYPE_MAPPING:
+            return settings.SERVER_TYPE_MAPPING[self.config['type']]
 
 
 class ServerSize(models.Model):
