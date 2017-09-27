@@ -34,12 +34,12 @@ def create_notification(user, actor, target, notif_type, signal=None):
         notification.save()
         log.info(f"Created notification {notification}")
 
-        log.debug(("emails enabled?", settings.emails_enabled))
         if settings.emails_enabled:
             # send_mail(subject="3Blades notification",
             #           message=str(notification),
             #           from_email=django_settings.DEFAULT_FROM_EMAIL,
             #           recipient_list=[settings.email_address.address])
+            log.debug(("notif type", vars(notif_type)))
             plaintext = get_template(f"notifications/{notif_type.template_name}.txt")
             html_text = get_template(f"notifications/{notif_type.template_name}.html")
 
@@ -48,7 +48,6 @@ def create_notification(user, actor, target, notif_type, signal=None):
             from_email = django_settings.DEFAULT_FROM_EMAIL
             to = [settings.email_address.address]
 
-            log.debug(("subject", subject, "from", from_email, "to", to))
             text_content = plaintext.render(context)
             html_content = html_text.render(context)
 

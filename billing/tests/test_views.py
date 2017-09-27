@@ -9,7 +9,7 @@ from rest_framework.test import APITestCase
 from billing.models import (Card,
                             Plan, Subscription,
                             Invoice, Event, InvoiceItem)
-from users.tests.factories import UserFactory
+from users.tests.factories import UserFactory, EmailFactory
 from projects.tests.factories import CollaboratorFactory
 from servers.tests.factories import ServerRunStatisticsFactory
 from billing.tests.factories import (PlanFactory,
@@ -162,10 +162,14 @@ class CardTest(APITestCase):
 
 
 class SubscriptionTest(APITestCase):
+    fixtures = ['notification_types.json']
+
     def setUp(self):
         self.user = UserFactory(first_name="Foo",
                                 last_name="Bar",
                                 is_staff=True)
+        EmailFactory(user=self.user,
+                     address=self.user.email)
         self.customer = create_stripe_customer_from_user(self.user)
         self.token_header = "Token {auth}".format(auth=self.user.auth_token.key)
         self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)

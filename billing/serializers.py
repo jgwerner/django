@@ -71,8 +71,6 @@ class CardSerializer(serializers.Serializer):
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):
-    plan = PlanSerializer()
-
     class Meta:
         model = Subscription
         fields = ("id", "plan", 'stripe_id', 'created', 'livemode', 'application_fee_percent',
