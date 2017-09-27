@@ -38,11 +38,12 @@ django-cors-headers==2.0.2
 django-guardian==1.4.8
 Pillow==4.2.1
 stripe==1.55.2
-django-haystack==2.6.1
-elasticsearch<3.0.0
+django-haystack-elasticsearch==0.1.0
+elasticsearch>=5.0.0,<6.0.0
 drf-haystack==1.6.1
 Pillow==4.2.1
 djoser==0.6.0
 boto==2.48.0
 django-ses==0.8.2
 google-compute-engine==2.4.1
+raven==6.2.1

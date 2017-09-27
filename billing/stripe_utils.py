@@ -291,26 +291,28 @@ def assign_customer_to_default_plan(customer):
         if not default_plan:
             log.error(f"Selected default plan {settings.DEFAULT_STRIPE_PLAN_ID} does not exist in DB. "
                       f"Make sure this setting is correct, and that everything is synchronized with Stripe!")
+            free_plan_data = {'name': "Threeblades Free Plan",
+                              'amount': 0,
+                              'currency': "usd",
+                              'interval': "month",
+                              'interval_count': 1,
+                              'trial_period_days': 14}
             try:
                 log.warning("Since the default plan did not exist in the DB, the system will now add the "
                             "user to a free plan to avoid failure.")
                 log.info("First make sure it doesn't exist in Stripe already...")
                 stripe_resp = stripe.Plan.retrieve("threeblades-free-plan")
 
-                log.info("Free plan already exists in Stripe. Creating it in local database.")
-                converted_data = convert_stripe_object(Plan, stripe_resp)
+                free_plan_data['created'] = datetime.now()
+                default_plan, created = Plan.objects.get_or_create(stripe_id=stripe_resp['id'],
+                                                                   defaults=free_plan_data)
 
-                default_plan = Plan(**converted_data)
-                default_plan.save()
+                if created:
+                    log.info("Free plan existed in Stripe, but not the local database, so it "
+                             " was created.")
             except stripe.error.InvalidRequestError:
                 log.info("Free plan did NOT exist in Stripe...creating it there and in local database.")
-                plan_data = {'name': "Threeblades Free Plan",
-                             'amount': 0,
-                             'currency': "usd",
-                             'interval': "month",
-                             'interval_count': 1,
-                             'trial_period_days': 14}
-                default_plan = create_plan_in_stripe(plan_data)
+                default_plan = create_plan_in_stripe(free_plan_data)
                 default_plan.save()
         sub_data = {'customer': customer,
                     'plan': default_plan}

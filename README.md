@@ -131,6 +131,8 @@ Modify environment variables located in `env` file with your local settings. You
     DOCKER_PORT=2375
     DOCKER_HOST=tcp://172.17.0.1:2375/
     ELASTICSEARCH_URL=http://search:9200/
+    ELASTICSEARCH_USER=
+    ELASTICSEARCH_PASSWORD=
     EMAIL_HOST=
     EMAIL_PORT=
     EMAIL_HOST_USER=
@@ -150,6 +152,7 @@ Modify environment variables located in `env` file with your local settings. You
     RESOURCE_DIR=
     SERVER_RESOURCE_DIR=
     SECRET_KEY=
+    SENTRY_DSN=
     SLACK_KEY=
     SLACK_SECRET=
     STRIPE_SECRET_KEY=
