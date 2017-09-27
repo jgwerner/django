@@ -70,7 +70,7 @@ class NotificationQuerySet(models.query.QuerySet):
 
 
 class NotificationType(models.Model):
-    entity = models.CharField(max_length=25)
+    entity = models.CharField(max_length=50)
     name = models.CharField(max_length=50)
     description = models.TextField()
     subject = models.CharField(max_length=75)

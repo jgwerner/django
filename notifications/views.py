@@ -1,6 +1,8 @@
+import logging
 from rest_framework import viewsets
 from .models import Notification
 from .serializers import NotificationSerializer
+log = logging.getLogger('notifications')
 
 
 class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
@@ -17,12 +19,12 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
         else:
             statuses = [False]
 
-        entity = self.kwargs['entity']
-
         qs = Notification.objects.filter(user=self.request.user,
                                          read__in=statuses,
                                          is_active=True)
-        if entity.lower() != "all":
+
+        entity = self.kwargs.get('entity')
+        if entity is not None:
             qs = qs.filter(type__entity=entity)
 
         return qs
