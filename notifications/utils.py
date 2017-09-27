@@ -39,12 +39,13 @@ def create_notification(user, actor, target, notif_type, signal=None):
             #           message=str(notification),
             #           from_email=django_settings.DEFAULT_FROM_EMAIL,
             #           recipient_list=[settings.email_address.address])
-            log.debug(("notif type", vars(notif_type)))
-            plaintext = get_template(f"notifications/{notif_type.template_name}.txt")
-            html_text = get_template(f"notifications/{notif_type.template_name}.html")
+            log.debug(("this notification type", notif_type))
+            template_name_str = f"notifications/{notif_type.template_name}."
+            log.debug(("template name type", template_name_str))
+            plaintext = get_template(template_name_str + "txt")
+            html_text = get_template(template_name_str + "html")
 
             context = {'username': user.username}
-            subject = "Notification from 3Blades"
             from_email = django_settings.DEFAULT_FROM_EMAIL
             to = [settings.email_address.address]
 
