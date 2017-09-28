@@ -369,14 +369,18 @@ SUBSCRIPTION_EXEMPT_URLS += [view + "-detail" for view in ["customer", "card",
 MEDIA_ROOT = "/workspaces/"
 MEDIA_URL = "/media/"
 
+
+es_url = os.environ.get("ELASTICSEARCH_URL",  "http://search:9200/")
+es_use_ssl = "https://" in es_url
+
 HAYSTACK_CONNECTIONS = {
     "default": {
         'ENGINE': 'haystack_elasticsearch.elasticsearch5.Elasticsearch5SearchEngine',
-        'URL': os.environ.get("ELASTICSEARCH_URL",  "http://search:9200/"),
+        'URL': es_url,
         'INDEX_NAME': '3blades',
         'KWARGS': {
             'http_auth': (os.getenv("ELASTICSEARCH_USER"), os.getenv("ELASTICSEARCH_PASSWORD")),
-            'use_ssl': False,
+            'use_ssl': es_use_ssl,
         }
     }
 }
