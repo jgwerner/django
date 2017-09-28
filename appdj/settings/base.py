@@ -368,13 +368,22 @@ SUBSCRIPTION_EXEMPT_URLS += [view + "-detail" for view in ["customer", "card",
 MEDIA_ROOT = "/workspaces/"
 MEDIA_URL = "/media/"
 
+
+es_url = os.environ.get("ELASTICSEARCH_URL",  "http://search:9200/")
+es_use_ssl = "https://" in es_url
+
 HAYSTACK_CONNECTIONS = {
     "default": {
-        'ENGINE': 'haystack.backends.elasticsearch2_backend.Elasticsearch2SearchEngine',
-        'URL': os.environ.get("ELASTICSEARCH_URL", "http://search:9200/"),
+        'ENGINE': 'haystack_elasticsearch.elasticsearch5.Elasticsearch5SearchEngine',
+        'URL': es_url,
         'INDEX_NAME': '3blades',
+        'KWARGS': {
+            'http_auth': (os.getenv("ELASTICSEARCH_USER"), os.getenv("ELASTICSEARCH_PASSWORD")),
+            'use_ssl': es_use_ssl,
+        }
     }
 }
+
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
 
 HTTPS = os.environ.get("TBS_HTTPS", "false").lower() == "true"
@@ -385,3 +394,7 @@ MOCK_STRIPE = os.environ.get("MOCK_STRIPE", "false").lower() == "true"
 DATA_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024 * int(os.getenv("MAX_FILE_UPLOAD_SIZE", 15))
 
 SILENCED_SYSTEM_CHECKS = ["auth.W004"]
+
+NVIDIA_DRIVER_PATH = "/var/lib/nvidia-docker/volumes/nvidia_driver/375.82"
+
+DEFAULT_STRIPE_PLAN_ID = os.getenv("DEFAULT_STRIPE_PLAN_ID", "threeblades-free-plan")

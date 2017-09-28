@@ -67,7 +67,7 @@ def convert_field_to_stripe(model, stripe_field, stripe_data):
     # Will have to think about how to clean it up.
     # I'm guessing it's also not very performant
     if (model_field is not None and
-        (model_field.is_relation and not model_field.many_to_many)):
+            (model_field.is_relation and not model_field.many_to_many)):
 
         value = handle_foreign_key_field(stripe_data,
                                          stripe_field,
@@ -240,8 +240,8 @@ def calculate_compute_usage(customer_stripe_id):
     usage_data = defaultdict(int)
 
     usage_start_time = None
-    last_invoice = Invoice.objects.filter(customer__stripe_id=
-                                          customer_stripe_id).order_by("-period_end").first()
+    last_invoice = Invoice.objects.filter(
+        customer__stripe_id=customer_stripe_id).order_by("-period_end").first()
     if last_invoice is not None:
         usage_start_time = last_invoice.period_end
     user = User.objects.get(customer__stripe_id=customer_stripe_id)
@@ -251,7 +251,7 @@ def calculate_compute_usage(customer_stripe_id):
     servers = Server.objects.filter(project__pk__in=projects).select_related('server_size')
     total_cost = 0
     for server in servers:
-        this_server_data = get_server_usage([server], begin_measure_time=usage_start_time)
+        this_server_data = get_server_usage([str(server.pk)], begin_measure_time=usage_start_time)
         # server_size.cost_per_second is in _dollars_, we want cents
         this_server_cost = (100 * server.server_size.cost_per_second *
                             Decimal(this_server_data['duration'].total_seconds()))
@@ -283,34 +283,39 @@ def handle_upcoming_invoice(stripe_event):
         log.info(f"Created a new invoice item for {customer_stripe_id}: {invoice_item.stripe_id}")
 
 
-def assign_customer_to_free_plan(customer):
+def assign_customer_to_default_plan(customer):
     existing_sub = Subscription.objects.filter(customer=customer)
     if not existing_sub.exists():
         log.info(f"Creating subscription to free plan for {customer.user.username}.")
-        free_plan = Plan.objects.filter(amount=0).first()
-        if not free_plan:
-            log.info("No free plan exists yet. Creating one.")
+        default_plan = Plan.objects.filter(stripe_id=settings.DEFAULT_STRIPE_PLAN_ID).first()
+        if not default_plan:
+            log.error(f"Selected default plan {settings.DEFAULT_STRIPE_PLAN_ID} does not exist in DB. "
+                      f"Make sure this setting is correct, and that everything is synchronized with Stripe!")
+            free_plan_data = {'name': "Threeblades Free Plan",
+                              'amount': 0,
+                              'currency': "usd",
+                              'interval': "month",
+                              'interval_count': 1,
+                              'trial_period_days': 14}
             try:
+                log.warning("Since the default plan did not exist in the DB, the system will now add the "
+                            "user to a free plan to avoid failure.")
                 log.info("First make sure it doesn't exist in Stripe already...")
                 stripe_resp = stripe.Plan.retrieve("threeblades-free-plan")
 
-                log.info("Free plan already exists in Stripe. Creating it in local database.")
-                converted_data = convert_stripe_object(Plan, stripe_resp)
+                free_plan_data['created'] = timezone.now()
+                default_plan, created = Plan.objects.get_or_create(stripe_id=stripe_resp['id'],
+                                                                   defaults=free_plan_data)
 
-                free_plan = Plan(**converted_data)
-                free_plan.save()
+                if created:
+                    log.info("Free plan existed in Stripe, but not the local database, so it "
+                             " was created.")
             except stripe.error.InvalidRequestError:
                 log.info("Free plan did NOT exist in Stripe...creating it there and in local database.")
-                plan_data = {'name': "Threeblades Free Plan",
-                             'amount': 0,
-                             'currency': "usd",
-                             'interval': "month",
-                             'interval_count': 1,
-                             'trial_period_days': 14}
-                free_plan = create_plan_in_stripe(plan_data)
-                free_plan.save()
+                default_plan = create_plan_in_stripe(free_plan_data)
+                default_plan.save()
         sub_data = {'customer': customer,
-                    'plan': free_plan}
+                    'plan': default_plan}
         create_subscription_in_stripe(sub_data)
         log.info("Finished creating default subscription.")
 

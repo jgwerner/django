@@ -26,7 +26,7 @@ class ServerFactory(factory.django.DjangoModelFactory):
 
     private_ip = '127.0.0.1'
     public_ip = '127.0.0.1'
-    name = factory.Faker('name')
+    name = factory.Sequence(lambda n: f'server_{n}')
     server_size = factory.SubFactory(ServerSizeFactory)
     project = factory.SubFactory(ProjectFactory)
     created_by = factory.SubFactory(UserFactory)

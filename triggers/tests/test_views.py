@@ -68,7 +68,8 @@ class ServerActionTestCase(APILiveServerTestCase):
         self.server = ServerFactory()
         self.url_kwargs = {
             'namespace': self.user.username,
-            'server_pk': str(self.server.pk),
+            'project_project': str(self.project.pk),
+            'server_server': str(self.server.pk),
             'version': settings.DEFAULT_VERSION
         }
 
@@ -114,8 +115,8 @@ class ServerActionTestCase(APILiveServerTestCase):
         url = reverse('server-start', kwargs={
             'namespace': self.user.username,
             'version': settings.DEFAULT_VERSION,
-            'project_pk': str(self.project.pk),
-            'pk': str(self.server.pk)
+            'project_project': str(self.project.pk),
+            'server': str(self.server.pk)
         })
         cause = ActionFactory(
             path=url,

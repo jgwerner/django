@@ -2,7 +2,7 @@ import logging
 from django.conf import settings
 from django.db import models
 from django.urls import reverse
-from docker import Client
+import docker
 
 from .managers import DockerHostQuerySet
 
@@ -11,6 +11,8 @@ logger = logging.getLogger("infrastructure")
 
 
 class DockerHost(models.Model):
+    NATURAL_KEY = 'name'
+
     AVAILABLE = 'Available'
     NOT_AVAILABLE = 'Not Available'
     ERROR = 'Error'
@@ -28,7 +30,7 @@ class DockerHost(models.Model):
 
     def get_absolute_url(self, version, namespace):
         return reverse('dockerhost-detail', kwargs={
-            'namespace': namespace.name, 'version': version, 'pk': str(self.pk)})
+            'namespace': namespace.name, 'version': version, 'host': str(self.pk)})
 
     @property
     def url(self):
@@ -36,7 +38,7 @@ class DockerHost(models.Model):
 
     @property
     def client(self):
-        return Client(base_url=self.url, timeout=3)
+        return docker.client.APIClient(base_url=self.url, timeout=3)
 
     @property
     def status(self):

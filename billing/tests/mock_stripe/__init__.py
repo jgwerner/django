@@ -2,6 +2,8 @@ import time
 import random
 import string
 import logging
+from rest_framework import status
+from .error import CardError
 log = logging.getLogger("billing")
 
 
@@ -99,6 +101,16 @@ class Card:
 
     @classmethod
     def create(cls, *args, **kwargs):
+        log.debug(("args", args, "kwargs", kwargs))
+        if kwargs.get("source") == "tok_cvcCheckFail":
+            raise CardError(message="Your card's security code is incorrect.",
+                            param="cvc_code",
+                            code="incorrect_cvc",
+                            http_status=status.HTTP_402_PAYMENT_REQUIRED,
+                            json_body={'error': {'message': "Your card's security code is incorrect.",
+                                                 'type': 'card_error',
+                                                 'param': 'cvc',
+                                                 'code': 'incorrect_cvc'}})
         mock_response = {"object": "card",
                          "address_city": None,
                          "address_country": None,
@@ -437,8 +449,3 @@ class Event:
         if kwargs.get("stripe_id") is not None:
             json['id'] = kwargs.get("stripe_id")
         return json
-
-
-class error:
-    class InvalidRequestError(BaseException):
-        pass

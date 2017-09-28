@@ -81,6 +81,6 @@ class ActionTest(APITestCase):
         self.assertEqual(response.status_code, 201)
         project_delete_path = reverse(
             'project-detail', kwargs={'namespace': self.user.username,
-                                      'pk': str(action_content_object.pk),
+                                      'project': str(action_content_object.pk),
                                       'version': settings.DEFAULT_VERSION})
         self.assertEqual(response.data['path'], project_delete_path)

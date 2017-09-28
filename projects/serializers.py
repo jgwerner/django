@@ -64,7 +64,7 @@ class Base64CharField(serializers.CharField):
 class ProjectFileSerializer(serializers.ModelSerializer):
     base64_data = Base64CharField(required=False, write_only=True)
     name = serializers.CharField(required=False)
-    file = serializers.FileField(required=False,write_only=True)
+    file = serializers.FileField(required=False, write_only=True)
     path = serializers.CharField(required=False)
     content = serializers.SerializerMethodField()
 
@@ -118,15 +118,15 @@ class CollaboratorSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         permissions = validated_data.pop('permissions', ['read_project'])
         member = validated_data.pop('member')
-        project_id = self.context['view'].kwargs['project_pk']
-        project = Project.objects.get(pk=project_id)
+        project_id = self.context['view'].kwargs['project_project']
+        project = Project.objects.tbs_get(project_id)
         owner = validated_data.get("owner", False)
         if owner is True:
-            Collaborator.objects.filter(project_id=project_id).update(owner=False)
+            Collaborator.objects.filter(project=project).update(owner=False)
         user = User.objects.filter(Q(username=member) | Q(email=member), is_active=True).first()
         for permission in permissions:
             assign_perm(permission, user, project)
-        return Collaborator.objects.create(user=user, project_id=project_id, **validated_data)
+        return Collaborator.objects.create(user=user, project=project, **validated_data)
 
 
 class SyncedResourceSerializer(serializers.ModelSerializer):
