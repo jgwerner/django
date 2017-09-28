@@ -4,6 +4,7 @@ from django.db.models.functions import Coalesce, Now
 from rest_framework import status, viewsets
 from rest_framework.decorators import api_view, permission_classes, renderer_classes
 from rest_framework.response import Response
+from rest_framework.renderers import JSONRenderer
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_jwt.settings import api_settings
 
@@ -149,7 +150,7 @@ def check_token(request, version, project_project, server):
 
 @api_view(['GET'], exclude_from_schema=True)
 @permission_classes((AllowAny,))
-@renderer_classes((PlainTextRenderer,))
+@renderer_classes((PlainTextRenderer, JSONRenderer))
 def server_internal_details(request, version, project_project, server_server, service):
     server = get_object_or_404(models.Server, server_server)
     server_ip = server.get_private_ip()

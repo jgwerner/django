@@ -51,7 +51,6 @@ class DockerSpawner(ServerSpawner):
     def __init__(self, server, client=None):
         super().__init__(server)
         self.client = client or (server.host.client if server.host else docker.from_env())
-        self.container_port = self.server.config.get('port') or settings.SERVER_PORT
         self.container_id = ''
         self.cmd = None
         self.entry_point = None
@@ -69,24 +68,17 @@ class DockerSpawner(ServerSpawner):
 
     def start(self, *args, **kwargs) -> None:
         self.cmd = self._get_cmd()
-        if self._is_swarm and not self._is_network_exists():
+        if not self._is_network_exists():
             self._create_network()
+        # get the container by container_name (if exists)
+        if not self._get_container():
+            self._create_container()
+
         try:
-            # get the container by container_name (if exists)
-            if not self._get_container():
-                self._create_container()
-
-            try:
-                self.client.api.start(self.server.container_name)
-            except APIError as e:
-                logger.error(e.response.content)
-                raise
-
-            self._set_ip_and_port()
-
-        except Exception:
-            self.server.status = self.server.ERROR
-            raise  # this is part of celery task, we need to know if it fails
+            self.client.api.start(self.server.container_name)
+        except APIError as e:
+            logger.error(e.response.content)
+            raise
 
     def _get_cmd(self):
         command = '''/runner -key={token} -ns={server.project.owner.username} -version={version}
@@ -97,21 +89,15 @@ class DockerSpawner(ServerSpawner):
             version=settings.DEFAULT_VERSION,
         )
         if 'script' in self.server.config:
-            command += " " + "--script=" + self.server.config["script"]
+            command += " " + "-script=" + self.server.config["script"]
         if 'function' in self.server.config:
-            command += " " + "--function=" + self.server.config["function"]
-        if ("type" in self.server.config) and (self.server.config["type"] in settings.SERVER_COMMANDS):
-            command += " --type=proxy"
-            version = settings.DEFAULT_VERSION
-            namespace = self.server.project.owner.username
-            project_id = self.server.project.pk
-            server_id = self.server.pk
-            server_type = self.server.config["type"]
-            command += " " + settings.SERVER_COMMANDS[server_type].format(
-                url=f"/{version}/{namespace}/projects/{project_id}/servers/{server_id}/endpoint/{server_type}/")
-        elif "type" in self.server.config:
-            command += " --type=" + self.server.config["type"]
-        elif "command" in self.server.config:
+            command += " " + "-function=" + self.server.config["function"]
+        if "type" in self.server.config:
+            command += " -type=" + self.server.get_type()
+        if self.server.config['type'] in settings.SERVER_COMMANDS:
+            command += " " + settings.SERVER_COMMANDS[self.server.config['type']].format(
+                server=self.server, version=settings.DEFAULT_VERSION)
+        if "command" in self.server.config:
             command += " " + self.server.config["command"]
         return command
 
@@ -123,13 +109,9 @@ class DockerSpawner(ServerSpawner):
         if self.server.startup_script:
             binds.append('{}:/start.sh'.format(
                 str(Path(self.server.volume_path).joinpath(self.server.startup_script))))
-        ports = {port: None for port in self._get_exposed_ports()}
-        ports[self.container_port] = None
-
 
         config = dict(
             mem_limit='{}m'.format(self.server.server_size.memory),
-            port_bindings=ports,
             restart_policy=self.restart
         )
 
@@ -188,24 +170,37 @@ class DockerSpawner(ServerSpawner):
             environment=self._get_envs(),
             name=self.server.container_name,
             host_config=self.client.api.create_host_config(**self._get_host_config(nvidia_driver)),
-            ports=[self.container_port],
+            labels=self._get_traefik_labels(),
             cpu_shares=0,
             **volume_config
         )
-        if self._is_swarm:
-            config['networking_config'] = self._create_network_config()
+        config['networking_config'] = self._create_network_config()
         if self.entry_point:
             config.update(dict(entrypoint=self.entry_point))
         return config
+
+    def _get_traefik_labels(self):
+        labels = {}
+        server_uri = f"/{settings.DEFAULT_VERSION}/{self.server.project.owner.username}/projects/{self.server.project_id}/servers/{self.server.id}/endpoint/"
+        domain = Site.objects.get_current().domain
+        scheme = 'https' if settings.HTTPS else 'http'
+        for port in self._get_exposed_ports():
+            endpoint = settings.SERVER_PORT_MAPPING.get(port)
+            if endpoint:
+                service_name = f"{self.server.id}-{endpoint}"
+                labels[f"traefik.{service_name}-path.port"] = port
+                labels[f"traefik.{service_name}-header.port"] = port
+                labels[f"traefik.{service_name}-path.frontend.rule"] = f"PathPrefix:{server_uri}{endpoint}"
+                labels[f"traefik.{service_name}-header.frontend.rule"] = \
+                    f"HeadersRegexp: Referer, {scheme}://{domain}{server_uri}{endpoint}.*"
+        return labels
 
     def _create_network_config(self):
         config = {'aliases': [self.server.name]}
         if self.server.connected.exists():
             config['links'] = self._connected_links()
         return self.client.api.create_networking_config({
-            self.network_name: self.client.api.create_endpoint_config(
-                **config
-            )
+            settings.DOCKER_NET: self.client.api.create_endpoint_config()
         })
 
     def _get_container(self):
@@ -237,21 +232,6 @@ class DockerSpawner(ServerSpawner):
                     raise
                 container = None
         return container
-
-    def _set_ip_and_port(self):
-        resp = self.client.api.inspect_container(self.server.container_name)
-        if resp is None:
-            raise RuntimeError("Failed to get port info for %s" % self.server.container_name)
-        network_settings = resp.get("NetworkSettings", {})
-        ports = network_settings.get("Ports")
-        if ports is None:
-            return
-        self.server.config['ports'] = {}
-        for port, mapping in ports.items():
-            port = port.split("/")[0]
-            self.server.config['ports'][settings.SERVER_PORT_MAPPING[port]] = mapping[0]["HostPort"]
-        self.server.private_ip = mapping[0]["HostIp"]
-        self.server.save()
 
     def terminate(self) -> None:
 
@@ -305,7 +285,10 @@ class DockerSpawner(ServerSpawner):
 
     def _get_user_timezone(self):
         tz = 'UTC'
-        owner_profile = self.server.project.owner.profile
+        try:
+            owner_profile = self.server.project.owner.profile
+        except self.server.project.owner._meta.model.profile.RelatedObjectDoesNotExist:
+            return tz
         if owner_profile and owner_profile.timezone:
             tz = owner_profile.timezone
         return tz
@@ -319,15 +302,16 @@ class DockerSpawner(ServerSpawner):
         return links
 
     def _create_network(self):
+        driver = 'overlay' if self._is_swarm() else 'bridge'
         try:
-            self.client.api.create_network(self.network_name, 'overlay')
+            self.client.api.create_network(settings.DOCKER_NET, driver)
         except APIError:
             logger.exception("Create network exception")
             raise
 
     def _is_network_exists(self):
         try:
-            return bool(self.client.networks(names=[self.network_name]))
+            return bool(self.client.api.networks(names=[settings.DOCKER_NET]))
         except APIError:
             logger.exception("Check network exception")
             raise
@@ -341,7 +325,7 @@ class DockerSpawner(ServerSpawner):
         return "swarm" in resp.get("Version", "")
 
     def _get_exposed_ports(self):
-        result = [self.container_port]
+        result = []
         try:
             resp = self.client.api.inspect_image(self.server.image_name)
         except APIError:

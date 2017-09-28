@@ -333,14 +333,15 @@ MIGRATION_MODULES = {
 
 # Server settings
 SERVER_RESOURCE_DIR = os.environ.get("SERVER_RESOURCE_DIR", "/resources")
-SERVER_PORT = os.environ.get("SERVER_PORT", '8000')
-SERVER_PORT_MAPPING = {'8080': "jupyter", '6006': "tensorflow",
-                       '8000': 'restful', '8888': "jupyter"}
-SERVER_ENDPOINT_URLS = {'jupyter': '/jupyter/tree', 'restful': '/restfull/'}
+SERVER_PORT_MAPPING = {'8080': "proxy", '6006': 'restful'}
+SERVER_TYPES = {"restful", "cron", "proxy"}
+SERVER_TYPE_MAPPING = {'jupyter': 'proxy', 'rstudio': 'proxy'}
+SERVER_ENDPOINT_URLS = {'restful': '/restfull/', 'proxy': '/proxy/'}
 SERVER_COMMANDS = {
-    "jupyter": "jupyter notebook --no-browser --allow-root --NotebookApp.token='' --NotebookApp.base_url={url}",
+    'jupyter': 'jupyter notebook --NotebookApp.base_url=' + \
+    '"/{version}/{server.project.owner.username}/projects/{server.project.pk}/servers/{server.pk}/endpoint/proxy"',
+    'rstudio': '/init',
 }
-
 # slack
 
 SOCIAL_AUTH_SLACK_KEY = os.environ.get('SLACK_KEY')
@@ -387,6 +388,7 @@ HAYSTACK_CONNECTIONS = {
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
 
 HTTPS = os.environ.get("TBS_HTTPS", "false").lower() == "true"
+DOCKER_NET = os.environ.get('DOCKER_NET', 'tbs-net')
 
 MOCK_STRIPE = os.environ.get("MOCK_STRIPE", "false").lower() == "true"
 

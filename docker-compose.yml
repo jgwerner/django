@@ -12,6 +12,10 @@ services:
       - cache
       - broker
       - search
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=api"
+      - "traefik.frontend.rule=PathPrefix:/"
   celery:
     build: .
     command: /srv/env/bin/celery -A appdj worker -l info
@@ -34,7 +38,7 @@ services:
     ports:
       - "5672:5672"
   search:
-    image: elasticsearch:2-alpine
+    image: elasticsearch:5-alpine
     ports:
       - "9200:9200"
   cache:
@@ -42,17 +46,27 @@ services:
     ports:
       - "6379:6379"
   server:
-    image: 3blades/openresty:latest
-    command: -p '' -c nginx.conf -g 'daemon off;'
-    env_file: env
+    image: 3blades/traefik
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "5000:80"
+      - "8081:8080"
     depends_on:
       - api
-    volumes_from:
-      - api
+      - events
   events:
     image: 3blades/docker-events
     env_file: env
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=events"
+      - "traefik.status.frontend.rule=Path:/{version}/{namespace}/projects/{project}/servers/{server}/status/"
+      - "traefik.logs.frontend.rule=Path:/{version}/{namespace}/projects/{project}/servers/{server}/logs/"
     ports:
       - "8000:8000"
+
+networks:
+  default:
+    external:
+      name: tbs-net

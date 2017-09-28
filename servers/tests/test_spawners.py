@@ -23,6 +23,7 @@ class TestDockerSpawnerForModel(TransactionTestCase):
             env_vars={'test': 'test'},
             project=collaborator.project,
             config={
+                'type': 'proxy',
                 'function': 'test',
                 'script': 'test.py'
             }
@@ -66,7 +67,8 @@ class TestDockerSpawnerForModel(TransactionTestCase):
 
     def test_get_command_generic(self):
         self.server.config = {
-            'command': 'python run.py'
+            'command': 'python run.py',
+            'type': 'proxy'
         }
         cmd = self.spawner._get_cmd()
         self.assertIn("runner", cmd)
@@ -80,7 +82,6 @@ class TestDockerSpawnerForModel(TransactionTestCase):
         _is_swarm.return_value = False
         expected = {
             'mem_limit': '512m',
-            'port_bindings': {'8000': None},
             'binds': [
                 '{}:/resources'.format(self.server.volume_path)
             ],
@@ -104,13 +105,13 @@ class TestDockerSpawnerForModel(TransactionTestCase):
             'environment': {},
             'name': self.server.container_name,
             'host_config': self.spawner.client.api.create_host_config(**{}),
-            'ports': ['8000'],
-            'cpu_shares': 0,
-            'volume_driver': None,
-            'volumes': None
         }
         created_config = self.spawner._create_container_config()
-        self.assertDictEqual(created_config, expected)
+        for k, v in expected.items():
+            if isinstance(v, dict):
+                self.assertDictEqual(expected[k], v)
+            else:
+                self.assertEqual(expected[k], v)
 
     def test_get_container_success(self):
         self.spawner._get_container()
