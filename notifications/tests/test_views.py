@@ -57,5 +57,27 @@ class NotificationsViewTest(APITestCase):
                                                      'pk': str(notif.pk)})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        log.debug(("response.data", response.data))
         self.assertEqual(response.data[0]['id'], str(notif.pk))
+
+    def test_get_notification_detail_with_entity(self):
+        notif = NotificationFactory(user=self.user,
+                                    actor=self.user,
+                                    target=self.user)
+        url = reverse("notification-detail", kwargs={'version': settings.DEFAULT_VERSION,
+                                                     'namespace': self.user.username,
+                                                     'entity': notif.type.entity,
+                                                     'pk': str(notif.pk)})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['id'], str(notif.pk))
+
+    def test_get_notification_detail_with_different_entity_is_not_found(self):
+        notif = NotificationFactory(user=self.user,
+                                    actor=self.user,
+                                    target=self.user)
+        url = reverse("notification-detail", kwargs={'version': settings.DEFAULT_VERSION,
+                                                     'namespace': self.user.username,
+                                                     'entity': "foo",
+                                                     'pk': str(notif.pk)})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
