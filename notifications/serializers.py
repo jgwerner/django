@@ -4,7 +4,7 @@ from users.serializers import UserSerializer
 from users.models import User
 from billing.models import Subscription, Invoice
 from billing.serializers import SubscriptionSerializer, InvoiceSerializer
-from .models import Notification, NotificationType
+from .models import Notification, NotificationType, NotificationSettings
 log = logging.getLogger('notifications')
 
 
@@ -45,5 +45,12 @@ class NotificationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Notification
-        fields = ('id', 'read', 'type', 'timestamp', 'public', 'actor', 'target')
+        fields = ('id', 'actor', 'target', 'type', 'timestamp', 'public', 'read')
         read_only_fields = ('timestamp',)
+
+
+class NotificationSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NotificationSettings
+        fields = ('id', 'entity', 'object', 'enabled', 'emails_enabled', 'email_address')
+

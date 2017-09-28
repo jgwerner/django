@@ -5,70 +5,6 @@ from django.utils import timezone
 from users.models import User, Email
 
 
-class NotificationQuerySet(models.query.QuerySet):
-
-    def unsent(self):
-        return self.filter(emailed=False)
-
-    def sent(self):
-        return self.filter(emailed=True)
-
-    def unread(self, include_deleted=False):
-        """Return only unread items in the current queryset"""
-        if not include_deleted:
-            return self.filter(unread=True, deleted=False)
-        else:
-            """ when SOFT_DELETE=False, developers are supposed NOT to touch 'deleted' field.
-            In this case, to improve query performance, don't filter by 'deleted' field
-            """
-            return self.filter(unread=True)
-
-    def read(self, include_deleted=False):
-        """Return only read items in the current queryset"""
-        if not include_deleted:
-            return self.filter(unread=False, deleted=False)
-        else:
-            """ when SOFT_DELETE=False, developers are supposed NOT to touch 'deleted' field.
-            In this case, to improve query performance, don't filter by 'deleted' field
-            """
-            return self.filter(unread=False)
-
-    def mark_all_as_read(self, recipient=None):
-        """Mark as read any unread messages in the current queryset.
-        Optionally, filter these by recipient first.
-        """
-        # We want to filter out read ones, as later we will store
-        # the time they were marked as read.
-        qs = self.unread(True)
-        if recipient:
-            qs = qs.filter(recipient=recipient)
-
-        return qs.update(unread=False)
-
-    def mark_all_as_unread(self, recipient=None):
-        """Mark as unread any read messages in the current queryset.
-        Optionally, filter these by recipient first.
-        """
-        qs = self.read(True)
-
-        if recipient:
-            qs = qs.filter(recipient=recipient)
-
-        return qs.update(unread=True)
-
-    def mark_as_unsent(self, recipient=None):
-        qs = self.sent()
-        if recipient:
-            qs = self.filter(recipient=recipient)
-        return qs.update(emailed=False)
-
-    def mark_as_sent(self, recipient=None):
-        qs = self.unsent()
-        if recipient:
-            qs = self.filter(recipient=recipient)
-        return qs.update(emailed=True)
-
-
 class NotificationType(models.Model):
     entity = models.CharField(max_length=50)
     name = models.CharField(max_length=50)
@@ -104,8 +40,6 @@ class Notification(models.Model):
     is_active = models.BooleanField(default=True)
     emailed = models.BooleanField(default=False)
 
-    objects = NotificationQuerySet.as_manager()
-
     class Meta:
         # Do we really want a default ordering? I'm not sure
         ordering = ('-timestamp', )
@@ -123,16 +57,6 @@ class Notification(models.Model):
         """
         from django.utils.timesince import timesince as timesince_
         return timesince_(self.timestamp, now)
-
-    def mark_as_read(self):
-        if self.unread:
-            self.unread = False
-            self.save()
-
-    def mark_as_unread(self):
-        if not self.unread:
-            self.unread = True
-            self.save()
 
 
 class NotificationSettings(models.Model):
