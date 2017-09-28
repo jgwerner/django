@@ -82,11 +82,12 @@ class DockerSpawner(ServerSpawner):
 
     def _get_cmd(self):
         command = '''/runner -key={token} -ns={server.project.owner.username} -version={version}
-        -projectID={server.project.pk} -serverID={server.pk} -root={domain}'''.format(
+        -projectID={server.project.pk} -serverID={server.pk} -root={domain} -secret={secret}'''.format(
             token=create_jwt_token(self.server.project.owner),
             server=self.server,
             domain=Site.objects.get_current(),
             version=settings.DEFAULT_VERSION,
+            secret=settings.SECRET_KEY,
         )
         if 'script' in self.server.config:
             command += " " + "-script=" + self.server.config["script"]
