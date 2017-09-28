@@ -285,7 +285,10 @@ class DockerSpawner(ServerSpawner):
 
     def _get_user_timezone(self):
         tz = 'UTC'
-        owner_profile = self.server.project.owner.profile
+        try:
+            owner_profile = self.server.project.owner.profile
+        except self.server.project.owner._meta.model.profile.RelatedObjectDoesNotExist:
+            return tz
         if owner_profile and owner_profile.timezone:
             tz = owner_profile.timezone
         return tz

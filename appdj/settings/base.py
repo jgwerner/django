@@ -376,7 +376,7 @@ HAYSTACK_CONNECTIONS = {
         'INDEX_NAME': '3blades',
         'KWARGS': {
             'http_auth': (os.getenv("ELASTICSEARCH_USER"), os.getenv("ELASTICSEARCH_PASSWORD")),
-            'use_ssl': True,
+            'use_ssl': False,
         }
     }
 }

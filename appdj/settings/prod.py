@@ -11,3 +11,5 @@ RAVEN_CONFIG = {
     'dsn': f'https://{os.getenv("SENTRY_DSN")}@sentry.io/85124',
     'release': raven.fetch_git_sha(os.path.dirname(os.pardir)),
 }
+
+HAYSTACK_CONNECTIONS['default']['KWARGS']['use_ssl'] = True
