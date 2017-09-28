@@ -32,6 +32,7 @@ class ServerFactory(factory.django.DjangoModelFactory):
     created_by = factory.SubFactory(UserFactory)
     image_name = '3blades/server'
     is_active = True
+    config = {'type': 'proxy'}
 
 
 class ServerRunStatisticsFactory(factory.django.DjangoModelFactory):
