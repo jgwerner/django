@@ -302,7 +302,7 @@ class DockerSpawner(ServerSpawner):
         return links
 
     def _create_network(self):
-        driver = 'overlay' if self._is_swarm() else 'bridge'
+        driver = 'overlay' if self._is_swarm else 'bridge'
         try:
             self.client.api.create_network(settings.DOCKER_NET, driver)
         except APIError:
