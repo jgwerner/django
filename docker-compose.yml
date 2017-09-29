@@ -55,6 +55,7 @@ services:
     depends_on:
       - api
       - events
+      - nginx
   events:
     image: 3blades/docker-events
     env_file: env
@@ -65,6 +66,15 @@ services:
       - "traefik.logs.frontend.rule=Path:/{version}/{namespace}/projects/{project}/servers/{server}/logs/"
     ports:
       - "8000:8000"
+  nginx:
+    image: 3blades/nginx
+    command: /nginx/sbin/nginx -p '' -g 'daemon off;'
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=nginx"
+      - "traefik.nginx.frontend.rule=PathPrefix:/media"
+    volumes:
+      - /workspaces:/workspaces
 
 networks:
   default:
