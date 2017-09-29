@@ -35,13 +35,8 @@ def create_notification(user, actor, target, notif_type, signal=None):
         log.info(f"Created notification {notification}")
 
         if settings.emails_enabled:
-            # send_mail(subject="3Blades notification",
-            #           message=str(notification),
-            #           from_email=django_settings.DEFAULT_FROM_EMAIL,
-            #           recipient_list=[settings.email_address.address])
-            log.debug(("this notification type", notif_type))
+            log.info("Settings have enabled emails. Emailing notification.")
             template_name_str = f"notifications/{notif_type.template_name}."
-            log.debug(("template name type", template_name_str))
             plaintext = get_template(template_name_str + "txt")
             html_text = get_template(template_name_str + "html")
 
@@ -54,4 +49,11 @@ def create_notification(user, actor, target, notif_type, signal=None):
 
             message = EmailMultiAlternatives(notif_type.subject, text_content, from_email, to)
             message.attach_alternative(html_content, "text/html")
-            message.send(fail_silently=False)
+            try:
+                message.send(fail_silently=False)
+                notification.emailed = True
+                notification.save()
+                log.info(f"Emailed notification.")
+            except Exception as e:
+                log.error(f"Unable to email notification: {notification}. Exception stacktrace:")
+                log.exception(e)

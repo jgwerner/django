@@ -35,7 +35,6 @@ class NotificationFactory(factory.django.DjangoModelFactory):
     type = factory.SubFactory(NotificationTypeFactory)
 
     timestamp = fuzzy.FuzzyDateTime(start_dt=(timezone.now() - timedelta(days=7)))
-    public = fuzzy.FuzzyChoice([True, True, True, False])
     is_active = True
     emailed = fuzzy.FuzzyChoice([True, False])
 

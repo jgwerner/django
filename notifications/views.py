@@ -31,8 +31,8 @@ class NotificationViewSet(viewsets.GenericViewSet,
                                          is_active=True)
 
         entity = self.kwargs.get('entity')
-        log.debug(("entity", entity))
         if entity is not None:
+            log.info(f"Filtering by entity: {entity}")
             if not validate_uuid(entity):
                 qs = qs.filter(type__entity=entity)
 
@@ -43,8 +43,6 @@ class NotificationViewSet(viewsets.GenericViewSet,
 
     @list_route(methods=['patch'])
     def partial_update(self, request, *args, **kwargs):
-        log.debug("in partial update")
-        log.debug((request.data, args, kwargs))
         if "notifications" in request.data:
             notif_ids = request.data.pop("notifications")
         elif "pk" in kwargs:
@@ -53,8 +51,9 @@ class NotificationViewSet(viewsets.GenericViewSet,
             notif_ids = []
 
         if notif_ids:
+            log.info(f"About to update the following notifications: \n{notif_ids}\n"
+                     f"With this data: {request.data}")
             notifications = self.get_queryset().filter(pk__in=notif_ids)
-            log.debug(("instance", notifications.count()))
             notifications.update(**request.data)
             serializer = self.serializer_class(notifications, many=True)
             data = serializer.data

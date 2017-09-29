@@ -36,7 +36,6 @@ class Notification(models.Model):
 
     timestamp = models.DateTimeField(default=timezone.now)
 
-    public = models.BooleanField(default=True)
     is_active = models.BooleanField(default=True)
     emailed = models.BooleanField(default=False)
 

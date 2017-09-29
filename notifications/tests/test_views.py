@@ -12,7 +12,7 @@ log = logging.getLogger('notifications')
 
 
 class NotificationsViewTest(APITestCase):
-    maxDiff = None
+
     def setUp(self):
         self.user = UserFactory()
         self.token_header = "Token {auth}".format(auth=self.user.auth_token.key)
@@ -117,7 +117,6 @@ class NotificationsViewTest(APITestCase):
         url = reverse("notification-with-entity-list", kwargs={'version': settings.DEFAULT_VERSION,
                                                                'namespace': self.user.username,
                                                                'entity': notif.type.entity})
-        log.debug(("url", url))
         data = {'read': True,
                 'notifications': list(map(str, to_update))}
         response = self.client.patch(url, data=data)
@@ -131,3 +130,43 @@ class NotificationsViewTest(APITestCase):
         unread_notifs = Notification.objects.filter(user=self.user,
                                                     read=False)
         self.assertEqual(unread_notifs.count(), 5)
+
+    def test_updating_single_notification_without_entity(self):
+        notif = NotificationFactory(user=self.user,
+                                    actor=self.user,
+                                    target=self.user,
+                                    read=True)
+        url = reverse("notification-detail", kwargs={'version': settings.DEFAULT_VERSION,
+                                                     'namespace': self.user.username,
+                                                     'pk': str(notif.pk)})
+        data = {'read': False}
+        response = self.client.patch(url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        notif_reloaded = Notification.objects.get(pk=notif.pk)
+        self.assertFalse(notif_reloaded.read)
+
+    def test_updating_list_of_notifications_without_entity(self):
+        notifs = NotificationFactory.create_batch(3,
+                                                  user=self.user,
+                                                  actor=self.user,
+                                                  target=self.user,
+                                                  read=True)
+        to_update = [str(n.pk) for n in notifs]
+        NotificationFactory.create_batch(5,
+                                         user=self.user,
+                                         actor=self.user,
+                                         target=self.user,
+                                         read=True)
+        url = reverse("notification-list", kwargs={'version': settings.DEFAULT_VERSION,
+                                                   'namespace': self.user.username})
+        data = {'read': False,
+                'notifications': to_update}
+        response = self.client.patch(url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        read_notifs = Notification.objects.filter(user=self.user,
+                                                  read=True)
+        self.assertEqual(read_notifs.count(), 5)
+
+        unread_notifs = Notification.objects.filter(user=self.user,
+                                                    read=False)
+        self.assertEqual(unread_notifs.count(), 3)
