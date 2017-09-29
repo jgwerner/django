@@ -1,7 +1,7 @@
 import logging
 from rest_framework import serializers
 from users.serializers import UserSerializer
-from users.models import User
+from users.models import User, Email
 from billing.models import Subscription, Invoice
 from billing.serializers import SubscriptionSerializer, InvoiceSerializer
 from .models import Notification, NotificationType, NotificationSettings
@@ -50,7 +50,26 @@ class NotificationSerializer(serializers.ModelSerializer):
 
 
 class NotificationSettingsSerializer(serializers.ModelSerializer):
+    email_address = serializers.PrimaryKeyRelatedField(required=False,
+                                                       queryset=Email.objects.all())
+
+    def validate_email_address(self, value):
+        user = self.context['user']
+        if value.user != user:
+            log.info(f"User {user} attempting to create notification emails for email "
+                     f"{value.pk}, which does not beling to them.")
+            raise serializers.ValidationError(f"Email {value} not found for user {user}")
+        return value
+
+    def create(self, validated_data):
+        if "email_address" in validated_data:
+            validated_data['email_address'] = Email.objects.get(pk=validated_data['email_address'])
+        instance = NotificationSettings(**validated_data)
+        instance.save()
+        return instance
+
     class Meta:
         model = NotificationSettings
-        fields = ('id', 'entity', 'object', 'enabled', 'emails_enabled', 'email_address')
+        fields = ('id', 'entity', 'enabled', 'emails_enabled', 'email_address')
+        read_only_fields = ('id', 'entity')
 

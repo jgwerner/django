@@ -27,7 +27,6 @@ from infrastructure import views as infra_views
 from triggers import views as trigger_views
 from billing import views as billing_views
 from search.views import SearchView
-from notifications import views as notification_views
 
 router = routers.DefaultRouter()
 

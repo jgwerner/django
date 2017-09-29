@@ -69,3 +69,4 @@ class NotificationSettings(models.Model):
     enabled = models.BooleanField(default=True)
     emails_enabled = models.BooleanField(default=True)
     email_address = models.ForeignKey(Email, null=True)
+

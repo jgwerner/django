@@ -69,3 +69,40 @@ class NotificationViewSet(viewsets.GenericViewSet,
 class NotificationSettingsViewset(viewsets.ModelViewSet):
     serializer_class = NotificationSettingsSerializer
     queryset = NotificationSettings.objects.all()
+
+    def get_object(self):
+        qs = NotificationSettings.objects.filter(user=self.request.user)
+        entity = self.kwargs.get('entity', "global")
+        instance = qs.filter(entity=entity).first()
+        return instance
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance is None:
+            resp_data = {'message': "NotificationSettings not found"}
+            resp_status = status.HTTP_404_NOT_FOUND
+        else:
+            serializer = self.serializer_class(instance)
+            resp_data = serializer.data
+            resp_status = status.HTTP_200_OK
+
+        return Response(data=resp_data, status=resp_status)
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+
+        data['user'] = request.user
+        data['entity'] = kwargs.get('entity', "global")
+        serializer = self.serializer_class(data=data,
+                                           context={'user': request.user})
+        if serializer.is_valid():
+            instance = serializer.create(data)
+            log.info(f"Created Notification Settings {instance} for user {request.user}")
+            resp_data = self.serializer_class(instance).data
+            resp_status = status.HTTP_201_CREATED
+        else:
+            resp_data = serializer.errors
+            resp_status = status.HTTP_400_BAD_REQUEST
+
+        return Response(data=resp_data, status=resp_status)
+

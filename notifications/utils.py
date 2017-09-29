@@ -9,6 +9,8 @@ log = logging.getLogger('notifications')
 
 
 def create_notification(user, actor, target, notif_type, signal=None):
+    # TODO: Once we add more notification types, we will need to properly resolve
+    # TODO: settings precedence
     settings, created = NotificationSettings.objects.get_or_create(user=user,
                                                                    entity="global",
                                                                    defaults={'enabled': True,

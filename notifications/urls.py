@@ -1,7 +1,18 @@
 from django.conf.urls import url
-from .views import NotificationViewSet
+from .views import NotificationViewSet, NotificationSettingsViewset
+
 
 urlpatterns = [
+    url(r'^settings/$', NotificationSettingsViewset.as_view({'post': 'create',
+                                                             'patch': 'partial_update',
+                                                             'delete': 'destroy',
+                                                             'get': 'retrieve'}),
+        name='notification-settings'),
+    url(r'^settings/(?P<entity>[\w-]+)/$', NotificationSettingsViewset.as_view({'post': 'create',
+                                                                                'patch': 'partial_update',
+                                                                                'delete': 'destroy',
+                                                                                'get': 'retrieve'}),
+        name='notification-settings-with-entity'),
     url(r'^$',
         NotificationViewSet.as_view({'get': 'list', 'patch': 'partial_update'}),
         name='notification-list'),
