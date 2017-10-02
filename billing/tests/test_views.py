@@ -19,10 +19,8 @@ from billing.tests.factories import (PlanFactory,
                                      InvoiceFactory,
                                      InvoiceItemFactory)
 from billing.stripe_utils import create_stripe_customer_from_user, create_plan_in_stripe
-from notifications.models import *
-import logging
+from notifications.models import NotificationType
 
-log = logging.getLogger('notifications')
 
 if settings.MOCK_STRIPE:
     from billing.tests import mock_stripe as stripe
@@ -248,8 +246,6 @@ class SubscriptionTest(APITestCase):
         self.assertEqual(str(sub.pk), response.data.get('id'))
 
     def test_subscription_cancel(self):
-        notif_types = NotificationType.objects.all()
-        log.debug(("notif types", notif_types))
         pre_test_sub_count = Subscription.objects.count()
         subscription = self._create_subscription_in_stripe()
         url = reverse("subscription-detail", kwargs={'namespace': self.user.username,

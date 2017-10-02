@@ -184,7 +184,6 @@ def stripe_invoice_payment_failed(request, *args, **kwargs):
     body = request.body
     event_json = json.loads(body.decode('utf-8'))
 
-    # Not sure I like this design
     signal_data = handle_stripe_invoice_payment_failed(event_json)
 
     if signal_data:
@@ -198,7 +197,6 @@ def stripe_invoice_payment_failed(request, *args, **kwargs):
 def stripe_invoice_upcoming(request, *args, **kwargs):
     body = request.body
     event_json = json.loads(body.decode("utf-8"))
-    # TODO: Think about how to return 200 OK before doing this calculation
     handle_upcoming_invoice(event_json)
 
     return HttpResponse(status=status.HTTP_200_OK)

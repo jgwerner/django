@@ -57,8 +57,6 @@ if settings.ENABLE_BILLING:
     router.register(r'billing/(?P<invoice_id>[\w-]+)/invoice-items', billing_views.InvoiceItemViewSet)
 
 router.register(r'service/(?P<server>[^/.]+)/trigger', trigger_views.ServerActionViewSet)
-# router.register(r'notifications/(?P<entity>[\w-]+)', notification_views.NotificationViewSet)
-# router.register(r'notifications', notification_views.NotificationViewSet)
 
 servers_router = routers.SimpleRouter()
 servers_router.register("options/server-size", servers_views.ServerSizeViewSet)
