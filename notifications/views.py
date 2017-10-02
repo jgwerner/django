@@ -38,9 +38,6 @@ class NotificationViewSet(viewsets.GenericViewSet,
 
         return qs
 
-    def update(self, request, *args, **kwargs):
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
     @list_route(methods=['patch'])
     def partial_update(self, request, *args, **kwargs):
         if "notifications" in request.data:

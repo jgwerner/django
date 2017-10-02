@@ -30,6 +30,40 @@ class NotificationsViewTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 3)
 
+    def test_list_read_notifications(self):
+        NotificationFactory.create_batch(3, user=self.user,
+                                         actor=self.user,
+                                         target=self.user,
+                                         read=False)
+        NotificationFactory.create_batch(4, user=self.user,
+                                         actor=self.user,
+                                         target=self.user,
+                                         read=True)
+        url = reverse("notification-list", kwargs={'version': settings.DEFAULT_VERSION,
+                                                   'namespace': self.user.username})
+        response = self.client.get(url, data={'read': True})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 4)
+        for notif in response.data:
+            self.assertTrue(notif.get('read'))
+
+    def test_list_unread_notifications(self):
+        NotificationFactory.create_batch(3, user=self.user,
+                                         actor=self.user,
+                                         target=self.user,
+                                         read=False)
+        NotificationFactory.create_batch(4, user=self.user,
+                                         actor=self.user,
+                                         target=self.user,
+                                         read=True)
+        url = reverse("notification-list", kwargs={'version': settings.DEFAULT_VERSION,
+                                                   'namespace': self.user.username})
+        response = self.client.get(url, data={'read': False})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 3)
+        for notif in response.data:
+            self.assertFalse(notif.get('read'))
+
     def test_list_notifications_filter_by_entity(self):
         NotificationFactory.create_batch(2, user=self.user,
                                          actor=self.user,
@@ -97,6 +131,18 @@ class NotificationsViewTest(APITestCase):
         notif_reloaded = Notification.objects.get(pk=notif.pk)
         self.assertTrue(notif_reloaded.read)
 
+    def test_put_returns_method_not_allowed(self):
+        notif = NotificationFactory(user=self.user,
+                                    actor=self.user,
+                                    target=self.user)
+        url = reverse("notification-with-entity-detail", kwargs={'version': settings.DEFAULT_VERSION,
+                                                                 'namespace': self.user.username,
+                                                                 'entity': notif.type.entity,
+                                                                 'pk': str(notif.pk)})
+        data = {'read': True}
+        response = self.client.put(url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
     def test_marking_list_of_notifications_read(self):
         notif = NotificationFactory(user=self.user,
                                     actor=self.user,
@@ -130,6 +176,16 @@ class NotificationsViewTest(APITestCase):
         unread_notifs = Notification.objects.filter(user=self.user,
                                                     read=False)
         self.assertEqual(unread_notifs.count(), 5)
+
+    def test_no_pk_and_no_list_returns_bad_request(self):
+        url = reverse("notification-list", kwargs={'version': settings.DEFAULT_VERSION,
+                                                   'namespace': self.user.username})
+        data = {'read': True}
+        response = self.client.patch(url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        expected_message = ("Either a list of notifications must be passed in the request payload," 
+                            " or a single notification ID must be part of the URL.")
+        self.assertEqual(response.data['message'], expected_message)
 
     def test_updating_single_notification_without_entity(self):
         notif = NotificationFactory(user=self.user,
@@ -230,3 +286,10 @@ class NotificationSettingsViewTest(APITestCase):
 
         notif_settings_count = NotificationSettings.objects.filter(user=self.user).count()
         self.assertEqual(notif_settings_count, 0)
+
+    def test_getting_invalid_entity_returns_not_found(self):
+        url = reverse("notification-settings-with-entity", kwargs={'version': settings.DEFAULT_VERSION,
+                                                                   'namespace': self.user.username,
+                                                                   'entity': "foo"})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

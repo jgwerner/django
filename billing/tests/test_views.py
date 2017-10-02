@@ -19,8 +19,7 @@ from billing.tests.factories import (PlanFactory,
                                      InvoiceFactory,
                                      InvoiceItemFactory)
 from billing.stripe_utils import create_stripe_customer_from_user, create_plan_in_stripe
-from notifications.models import NotificationType
-
+from notifications.models import Notification
 
 if settings.MOCK_STRIPE:
     from billing.tests import mock_stripe as stripe
@@ -211,6 +210,10 @@ class SubscriptionTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Subscription.objects.count(), pre_test_sub_count + 1)
 
+        notification = Notification.objects.filter(user=self.user,
+                                                   type__name="subscription.created").first()
+        self.assertIsNotNone(notification)
+
     def test_update_subscription_fails(self):
         subscription = SubscriptionFactory(customer=self.customer,
                                            status="trialing")
@@ -258,6 +261,10 @@ class SubscriptionTest(APITestCase):
         self.assertEqual(sub_reloaded.status, Subscription.CANCELED)
         self.assertIsNotNone(sub_reloaded.canceled_at)
         self.assertIsNotNone(sub_reloaded.ended_at)
+
+        notification = Notification.objects.filter(user=self.user,
+                                                   type__name="subscription.canceled").first()
+        self.assertIsNotNone(notification)
 
 
 class InvoiceTest(TestCase):
