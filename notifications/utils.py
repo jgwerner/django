@@ -1,8 +1,7 @@
 import logging
 from django.conf import settings as django_settings
-from django.core.mail import send_mail, EmailMultiAlternatives
+from django.core.mail import EmailMultiAlternatives
 from django.template.loader import get_template
-from django.template import Context
 from users.models import Email
 from .models import Notification, NotificationType, NotificationSettings
 log = logging.getLogger('notifications')

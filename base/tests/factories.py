@@ -1,4 +1,3 @@
-import factory
 import random
 import string
 from factory import fuzzy

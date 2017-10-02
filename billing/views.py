@@ -18,7 +18,7 @@ from billing.serializers import (PlanSerializer, CardSerializer,
                                  InvoiceItemSerializer)
 from billing.stripe_utils import (handle_stripe_invoice_created,
                                   handle_upcoming_invoice,
-                                  handle_stripe_invoice_payment_failed)
+                                  handle_stripe_invoice_payment_status_change)
 from .signals import (subscription_cancelled,
                       subscription_created,
                       invoice_payment_failure)
@@ -175,6 +175,11 @@ def stripe_invoice_created(request, *args, **kwargs):
 def stripe_invoice_payment_success(request, *args, **kwargs):
     body = request.body
     event_json = json.loads(body.decode("utf-8"))
+    signal_data = handle_stripe_invoice_payment_status_change(event_json)
+
+    if signal_data:
+        invoice_payment_failure.send(sender=Event, **signal_data)
+
     return HttpResponse(status=status.HTTP_200_OK)
 
 
@@ -184,7 +189,7 @@ def stripe_invoice_payment_failed(request, *args, **kwargs):
     body = request.body
     event_json = json.loads(body.decode('utf-8'))
 
-    signal_data = handle_stripe_invoice_payment_failed(event_json)
+    signal_data = handle_stripe_invoice_payment_status_change(event_json)
 
     if signal_data:
         invoice_payment_failure.send(sender=Event, **signal_data)

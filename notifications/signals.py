@@ -40,7 +40,6 @@ def handle_trial_about_to_expire(sender, **kwargs):
         trial_sub = Subscription.objects.filter(customer=user.customer,
                                                 status=Subscription.TRIAL).first()
         if trial_sub is not None:
-            pass
             try:
                 trial_days_left = trial_sub.trial_end.replace(tzinfo=None) - datetime.now()
                 if trial_days_left.days < 7:
