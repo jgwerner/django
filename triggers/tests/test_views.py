@@ -7,7 +7,6 @@ from django.contrib.sites.models import Site
 from rest_framework import status
 from rest_framework.test import APITestCase, APILiveServerTestCase
 
-from utils import create_jwt_token
 from base.namespace import Namespace
 from actions.models import Action
 from actions.tests.factories import ActionFactory
@@ -17,6 +16,7 @@ from triggers.tests.factories import TriggerFactory
 from projects.models import Project
 from projects.tests.factories import CollaboratorFactory
 from servers.tests.factories import ServerFactory
+from jwt_auth.utils import create_auth_jwt
 import logging
 log = logging.getLogger('triggers')
 
@@ -26,8 +26,8 @@ class TriggerTest(APITestCase):
         collaborator = CollaboratorFactory()
         self.user = collaborator.user
         self.project = collaborator.project
-        self.token_header = 'Token {}'.format(self.user.auth_token.key)
-        self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+        token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
     def test_create_trigger(self):
         server = ServerFactory(project=self.project)
@@ -62,9 +62,8 @@ class ServerActionTestCase(APILiveServerTestCase):
         collaborator = CollaboratorFactory()
         self.user = collaborator.user
         self.project = collaborator.project
-        self.token = create_jwt_token(self.user)
-        self.token_header = f'Bearer {self.token}'
-        self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+        self.token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {self.token}')
         self.server = ServerFactory()
         self.url_kwargs = {
             'namespace': self.user.username,

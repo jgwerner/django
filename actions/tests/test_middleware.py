@@ -14,8 +14,9 @@ from actions.views import ActionList
 from appdj.celery import set_action_state
 from servers.tests.factories import ServerFactory
 from users.tests.factories import UserFactory
+from jwt_auth.utils import create_auth_jwt
 from .factories import ActionFactory
-from ..middleware import ActionMiddleware, get_user_from_jwt, get_user_from_simple_token, get_user_from_token_header
+from ..middleware import ActionMiddleware, get_user_from_jwt, get_user_from_token_header
 from ..models import Action
 
 
@@ -27,8 +28,8 @@ from ..models import Action
 class ActionMiddlewareFunctionalTest(TestCase):
     def setUp(self):
         self.user = UserFactory()
-        self.token_header = 'Token {}'.format(self.user.auth_token.key)
-        self.factory = APIRequestFactory(HTTP_AUTHORIZATION=self.token_header)
+        token = create_auth_jwt(self.user)
+        self.factory = APIRequestFactory(HTTP_AUTHORIZATION=f'Bearer {token}')
         base_handler = BaseHandler()
         base_handler.load_middleware()
         self.middleware = ActionMiddleware(get_response=base_handler.get_response)
@@ -108,8 +109,8 @@ class ActionMiddlewareFunctionalTest(TestCase):
 class ActionMiddlewareTest(TestCase):
     def setUp(self):
         self.user = UserFactory()
-        self.token_header = 'Token {}'.format(self.user.auth_token.key)
-        self.factory = APIRequestFactory(HTTP_AUTHORIZATION=self.token_header)
+        token = create_auth_jwt(self.user)
+        self.factory = APIRequestFactory(HTTP_AUTHORIZATION=f'Bearer {token}')
         base_handler = BaseHandler()
         base_handler.load_middleware()
         self.middleware = ActionMiddleware(get_response=base_handler.get_response)
@@ -226,7 +227,6 @@ jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
 class GetUserTestCase(TestCase):
     def setUp(self):
         self.user = UserFactory()
-        self.simple_token = self.user.auth_token.key
         payload = jwt_payload_handler(self.user)
         self.jwt = jwt_encode_handler(payload)
         self.factory = APIRequestFactory()
@@ -235,18 +235,8 @@ class GetUserTestCase(TestCase):
         user = get_user_from_jwt(self.jwt)
         self.assertEqual(self.user.pk, user.pk)
 
-    def test_get_user_from_simple_token(self):
-        user = get_user_from_simple_token(self.simple_token)
-        self.assertEqual(self.user.pk, user.pk)
-
     def test_get_user_from_token_heder_jwt(self):
         request = self.factory.request()
         request.META['HTTP_AUTHORIZATION'] = 'Bearer {}'.format(self.jwt)
-        user = get_user_from_token_header(request)
-        self.assertEqual(self.user.pk, user.pk)
-
-    def test_get_user_from_token_heder_simple(self):
-        request = self.factory.request()
-        request.META['HTTP_AUTHORIZATION'] = 'Token {}'.format(self.simple_token)
         user = get_user_from_token_header(request)
         self.assertEqual(self.user.pk, user.pk)

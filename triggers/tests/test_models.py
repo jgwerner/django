@@ -11,7 +11,7 @@ from projects.tests.factories import CollaboratorFactory
 from servers.tests.factories import ServerFactory
 from triggers.models import Trigger
 from triggers.tests.factories import TriggerFactory
-from utils import create_jwt_token
+from jwt_auth.utils import create_auth_jwt
 
 
 class TriggerTest(APILiveServerTestCase):
@@ -19,8 +19,8 @@ class TriggerTest(APILiveServerTestCase):
         collaborator = CollaboratorFactory()
         self.user = collaborator.user
         self.project = collaborator.project
-        self.token_header = 'Token {}'.format(self.user.auth_token.key)
-        self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+        token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
     def test_launch_action(self):
         effect = ActionFactory(
@@ -37,7 +37,7 @@ class TriggerTest(APILiveServerTestCase):
 
     def test_launch_object_action(self):
         ServerFactory(project=self.project)
-        token = create_jwt_token(self.user)
+        token = create_auth_jwt(self.user)
         effect = ActionFactory(
             method='post',
             state=Action.CREATED,
