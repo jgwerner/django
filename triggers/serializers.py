@@ -6,9 +6,9 @@ from social_django.models import UserSocialAuth
 
 from actions.models import Action
 from servers.models import Server
-from triggers.models import Trigger
-from triggers.slack import send_message
-
+from .models import Trigger
+from .slack import send_message
+from .utils import create_beat_entry
 
 logger = logging.getLogger("triggers")
 
@@ -70,6 +70,8 @@ class TriggerSerializer(serializers.ModelSerializer):
             **validated_data,
         )
         instance.save()
+        if instance.schedule:
+            create_beat_entry(self.context['request'], instance)
         return instance
 
     def create_action(self, validated_data):
