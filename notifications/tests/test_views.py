@@ -240,8 +240,7 @@ class NotificationSettingsViewTest(APITestCase):
         url = reverse("notification-settings", kwargs={'version': settings.DEFAULT_VERSION,
                                                        'namespace': self.user.username})
         data = {'enabled': True,
-                'emails_enabled': True,
-                'email_address': str(self.email.pk)}
+                'emails_enabled': True}
         response = self.client.post(url, data=data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         notif_settings = NotificationSettings.objects.filter(user=self.user,
