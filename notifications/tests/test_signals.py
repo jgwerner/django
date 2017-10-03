@@ -73,7 +73,9 @@ class TestNotificationSignals(TestCase):
         self.user.save()
         notif_settings = NotificationSettings(user=self.user,
                                               entity="global",
-                                              enabled=False)
+                                              enabled=False,
+                                              emails_enabled=False,
+                                              email_address=self.email)
         notif_settings.save()
 
         SubscriptionFactory(customer=self.customer,
@@ -81,7 +83,7 @@ class TestNotificationSignals(TestCase):
                             status=Subscription.TRIAL)
         handle_trial_about_to_expire(sender=User,
                                      user=self.user)
-        notif_count = Notification.objects.count()
+        notif_count = Notification.objects.filter(is_active=True).count()
         self.assertEqual(notif_count, 0)
 
     def test_email_is_sent(self):

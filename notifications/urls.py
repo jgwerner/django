@@ -8,10 +8,10 @@ urlpatterns = [
                                                              'delete': 'destroy',
                                                              'get': 'retrieve'}),
         name='notification-settings'),
-    url(r'^settings/(?P<entity>[\w-]+)/$', NotificationSettingsViewset.as_view({'post': 'create',
-                                                                                'patch': 'partial_update',
-                                                                                'delete': 'destroy',
-                                                                                'get': 'retrieve'}),
+    url(r'^settings/entity/(?P<entity>[\w-]+)/$', NotificationSettingsViewset.as_view({'post': 'create',
+                                                                                       'patch': 'partial_update',
+                                                                                       'delete': 'destroy',
+                                                                                       'get': 'retrieve'}),
         name='notification-settings-with-entity'),
     url(r'^$',
         NotificationViewSet.as_view({'get': 'list', 'patch': 'partial_update'}),
@@ -19,12 +19,9 @@ urlpatterns = [
     url(r'^(?P<pk>[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12})/$',
         NotificationViewSet.as_view({'get': 'retrieve', 'patch': 'partial_update'}),
         name='notification-detail'),
-    url(r'^(?P<entity>[\w-]+)/$',
+    url(r'^entity/(?P<entity>[\w-]+)/$',
         NotificationViewSet.as_view({'get': 'list', 'patch': 'partial_update'}),
         name='notification-with-entity-list'),
-    url(r'^(?P<entity>[\w-]+)/(?P<pk>[^/.]+)/$',
-        NotificationViewSet.as_view({'get': 'retrieve', 'patch': 'partial_update'}),
-        name='notification-with-entity-detail'),
 
 
 ]
