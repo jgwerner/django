@@ -7,6 +7,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.sites.models import Site
 from django.core import mail
 from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
@@ -315,7 +316,12 @@ class UserTest(APITestCase):
         self.image_files.append("/tmp/myavatar.png")
 
         user_reloaded = User.objects.get(pk=self.user.pk)
+        request = response.wsgi_request
+        full_url = (request.environ['wsgi.url_scheme'] + "://" +
+                    request.environ['SERVER_NAME'] +
+                    user_reloaded.profile.avatar.url)
 
+        self.assertEqual(response.json()['profile']['avatar'], full_url)
         avatar_dir = self.user.username + "/avatar/"
 
         self.assertEqual(user_reloaded.profile.avatar.name,
