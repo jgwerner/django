@@ -100,6 +100,7 @@ def avatar(request, version, user_pk):
             profile.save()
             log.info("Updated avatar for user: {user}".format(user=user.username))
             data = UserSerializer(instance=user).data
+            data['profile']['avatar'] = request.build_absolute_uri(data['profile']['avatar'])
         except Exception as e:
             data = {'message': str(e)}
             log.exception(e)
