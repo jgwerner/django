@@ -8,15 +8,15 @@ from users.tests.factories import UserFactory, EmailFactory
 
 from notifications.models import Notification, NotificationSettings
 from .factories import NotificationFactory, NotificationSettingsFactory
-log = logging.getLogger('notifications')
+from jwt_auth.utils import create_auth_jwt
 
 
 class NotificationsViewTest(APITestCase):
 
     def setUp(self):
         self.user = UserFactory()
-        self.token_header = "Token {auth}".format(auth=self.user.auth_token.key)
-        self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+        token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f"Bearer {token}")
 
     def test_list_notifications_no_params(self):
         # It's obviously nonsensical to have the actor and target both be
@@ -197,8 +197,8 @@ class NotificationSettingsViewTest(APITestCase):
         self.user = UserFactory()
         self.email = EmailFactory(user=self.user,
                                   address=self.user.email)
-        self.token_header = "Token {auth}".format(auth=self.user.auth_token.key)
-        self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+        token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f"Bearer {token}")
 
     def test_create_notification_settings(self):
         url = reverse("notification-settings", kwargs={'version': settings.DEFAULT_VERSION,
