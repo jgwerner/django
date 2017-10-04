@@ -7,7 +7,6 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.views import get_view_name
 from rest_framework_jwt.serializers import VerifyJSONWebTokenSerializer
-from rest_framework.authtoken.models import Token
 
 from actions.models import Action
 from triggers.models import Trigger
@@ -23,12 +22,6 @@ def get_user_from_jwt(token):
         return serializer.validated_data.get('user')
 
 
-def get_user_from_simple_token(token):
-    token_obj = Token.objects.filter(key=token).first()
-    if token_obj:
-        return token_obj.user
-
-
 def get_user_from_token_header(request):
     token_header = request.META.get('HTTP_AUTHORIZATION')
     if not token_header or ' ' not in token_header:
@@ -36,8 +29,6 @@ def get_user_from_token_header(request):
     prefix, token = token_header.split()
     if prefix == 'Bearer':
         return get_user_from_jwt(token)
-    elif prefix == 'Token':
-        return get_user_from_simple_token(token)
 
 
 class ActionMiddleware(object):

@@ -12,7 +12,7 @@ from django.utils.functional import cached_property
 import docker
 from docker.errors import APIError
 
-from utils import create_jwt_token
+from jwt_auth.utils import create_auth_jwt
 
 
 logger = logging.getLogger("servers")
@@ -82,11 +82,12 @@ class DockerSpawner(ServerSpawner):
 
     def _get_cmd(self):
         command = '''/runner -key={token} -ns={server.project.owner.username} -version={version}
-        -projectID={server.project.pk} -serverID={server.pk} -root={domain}'''.format(
-            token=create_jwt_token(self.server.project.owner),
+        -projectID={server.project.pk} -serverID={server.pk} -root={domain} -secret={secret}'''.format(
+            token=create_auth_jwt(self.server.project.owner),
             server=self.server,
             domain=Site.objects.get_current(),
             version=settings.DEFAULT_VERSION,
+            secret=settings.SECRET_KEY,
         )
         if 'script' in self.server.config:
             command += " " + "-script=" + self.server.config["script"]
@@ -302,7 +303,7 @@ class DockerSpawner(ServerSpawner):
         return links
 
     def _create_network(self):
-        driver = 'overlay' if self._is_swarm() else 'bridge'
+        driver = 'overlay' if self._is_swarm else 'bridge'
         try:
             self.client.api.create_network(settings.DOCKER_NET, driver)
         except APIError:

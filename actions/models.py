@@ -7,7 +7,7 @@ from django.urls import reverse
 from requests import Session, Request
 
 from base.namespace import Namespace
-from utils import create_jwt_token
+from jwt_auth.utils import create_auth_jwt
 
 
 class ActionQuerySet(models.QuerySet):
@@ -79,7 +79,7 @@ class Action(models.Model):
     def dispatch(self, url='http://localhost'):
         url = '{}{}'.format(url, self.path)
         s = Session()
-        token = create_jwt_token(self.user)
+        token = create_auth_jwt(self.user)
         headers = {'AUTHORIZATION': 'Bearer {}'.format(token)}
         request = Request(self.method.upper(), url, json=self.payload, headers=headers).prepare()
         resp = s.send(request)

@@ -12,6 +12,7 @@ from projects.tests.factories import ProjectFactory, CollaboratorFactory, Projec
 from servers.tests.factories import ServerFactory, ServerSizeFactory
 from triggers.tests.factories import TriggerFactory
 from users.tests.factories import UserFactory
+from jwt_auth.utils import create_auth_jwt
 from .factories import ActionFactory
 
 
@@ -23,8 +24,8 @@ from .factories import ActionFactory
 class ActionTest(APITestCase):
     def setUp(self):
         self.user = UserFactory()
-        self.token_header = 'Token {}'.format(self.user.auth_token.key)
-        self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+        token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
     def test_list_actions(self):
         ActionFactory(content_object=PlanFactory())

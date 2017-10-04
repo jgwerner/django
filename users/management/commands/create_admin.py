@@ -2,8 +2,6 @@ import logging
 from django.contrib.auth import get_user_model
 from django.core.management import BaseCommand
 
-from rest_framework.authtoken.models import Token
-
 log = logging.getLogger('users')
 
 
@@ -28,7 +26,6 @@ class Command(BaseCommand):
         if admin_exists:
             log.info("Admin user already exists. Doing nothing.")
         else:
-            user = User.objects.create_superuser(options.get('username', "admin"),
-                                                 options.get('email', "admin@example.com"),
-                                                 options.get('password', "admin"))
-            Token.objects.create(user=user)
+            User.objects.create_superuser(options.get('username', "admin"),
+                                          options.get('email', "admin@example.com"),
+                                          options.get('password', "admin"))

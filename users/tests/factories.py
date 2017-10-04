@@ -2,7 +2,6 @@ import factory
 from factory import fuzzy
 from django.db.models.signals import post_save
 from django.contrib.auth import get_user_model
-from rest_framework.authtoken.models import Token
 
 from base.tests.factories import FuzzyEmail
 from users.models import UserProfile, Email
@@ -29,7 +28,6 @@ class UserFactory(factory.django.DjangoModelFactory):
     def _generate(cls, create, attrs):
         post_save.disconnect(create_user_ssh_key, User)
         user = super()._generate(create, attrs)
-        Token.objects.create(user=user)
         user.is_staff = True
         user.save()
         post_save.connect(create_user_ssh_key, User)

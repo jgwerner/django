@@ -19,6 +19,8 @@ from billing.tests.factories import (PlanFactory,
                                      InvoiceFactory,
                                      InvoiceItemFactory)
 from billing.stripe_utils import create_stripe_customer_from_user, create_plan_in_stripe
+from jwt_auth.utils import create_auth_jwt
+
 from notifications.models import Notification
 
 if settings.MOCK_STRIPE:
@@ -43,8 +45,8 @@ def create_plan_dict(trial_period=None):
 class PlanTest(APITestCase):
     def setUp(self):
         self.user = UserFactory(is_staff=True)
-        self.token_header = "Token {auth}".format(auth=self.user.auth_token.key)
-        self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+        token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
         self.plans_to_delete = []
 
     def tearDown(self):
@@ -55,7 +57,7 @@ class PlanTest(APITestCase):
     def test_list_plans(self):
         pre_create_plan_count = Plan.objects.count()
         plan_count = 4
-        plans = PlanFactory.create_batch(plan_count)
+        PlanFactory.create_batch(plan_count)
         url = reverse("plan-list", kwargs={'namespace': self.user.username,
                                            'version': settings.DEFAULT_VERSION})
         response = self.client.get(url)
@@ -78,8 +80,8 @@ class CardTest(APITestCase):
                                 last_name="Bar",
                                 is_staff=True)
         self.customer = create_stripe_customer_from_user(self.user)
-        self.token_header = "Token {auth}".format(auth=self.user.auth_token.key)
-        self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+        token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
     def tearDown(self):
         stripe_obj = stripe.Customer.retrieve(self.customer.stripe_id)
@@ -120,7 +122,7 @@ class CardTest(APITestCase):
             user = UserFactory()
             CardFactory(customer=user.customer)
         my_card_count = 2
-        my_cards = CardFactory.create_batch(my_card_count, customer=self.customer)
+        CardFactory.create_batch(my_card_count, customer=self.customer)
         url = reverse("card-list", kwargs={'namespace': self.user.username,
                                            'version': settings.DEFAULT_VERSION})
         response = self.client.get(url)
@@ -171,8 +173,8 @@ class SubscriptionTest(APITestCase):
         EmailFactory(user=self.user,
                      address=self.user.email)
         self.customer = create_stripe_customer_from_user(self.user)
-        self.token_header = "Token {auth}".format(auth=self.user.auth_token.key)
-        self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+        token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
         self.plans_to_delete = []
 
     def tearDown(self):
@@ -229,8 +231,7 @@ class SubscriptionTest(APITestCase):
             UserFactory()
             # Dont need to create a Subscription, one is created to the free plan automatically
         my_subs_count = 2
-        SubscriptionFactory.create_batch(my_subs_count, customer=self.customer,
-                                         status=Subscription.ACTIVE)
+        SubscriptionFactory.create_batch(my_subs_count, customer=self.customer)
         url = reverse("subscription-list", kwargs={'namespace': self.user.username,
                                                    'version': settings.DEFAULT_VERSION})
         response = self.client.get(url)
@@ -278,9 +279,8 @@ class InvoiceTest(TestCase):
         EmailFactory(user=self.user,
                      address=self.user.email)
         self.customer = create_stripe_customer_from_user(self.user)
-        self.token_header = "Token {auth}".format(auth=self.user.auth_token.key)
-        self.token_header = "Token {auth}".format(auth=self.user.auth_token.key)
-        self.api_client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+        token = create_auth_jwt(self.user)
+        self.api_client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
         self.client = Client()
         self.plans_to_delete = []
 

@@ -38,10 +38,11 @@ class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewS
 
         update_data = request.data
 
+        context = self.get_serializer_context()
+        context.update({'pk': instance.pk})
         serializer = self.serializer_class(instance, data=update_data,
                                            partial=partial,
-                                           context={'request': request,
-                                                    'pk': instance.pk})
+                                           context=context)
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
@@ -116,8 +117,9 @@ class ProjectFileViewSet(ProjectMixin,
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         get_content = self.request.query_params.get('content', "false").lower() == "true"
-        serializer = self.serializer_class(instance,
-                                           context={'get_content': get_content})
+        context = self.get_serializer_context()
+        context.update({'get_content': get_content})
+        serializer = self.serializer_class(instance, context=context)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def destroy(self, request, *args, **kwargs):
@@ -130,7 +132,9 @@ class ProjectFileViewSet(ProjectMixin,
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset(*args, **kwargs)
         get_content = self.request.query_params.get('content', "false").lower() == "true"
-        serializer = self.serializer_class(queryset, many=True, context={'get_content': get_content})
+        context = self.get_serializer_context()
+        context.update({'get_content': get_content})
+        serializer = self.serializer_class(queryset, many=True, context=context)
         data = serializer.data
         # for proj_file in data:
         #     proj_file['file'] = request.build_absolute_uri(proj_file['file'])
@@ -161,9 +165,8 @@ class ProjectFileViewSet(ProjectMixin,
 
         proj_files = ProjectFile.objects.filter(pk__in=proj_files_to_serialize)
 
-        serializer = self.serializer_class(proj_files,
-                                           context={'request': request},
-                                           many=True)
+        context = self.get_serializer_context()
+        serializer = self.serializer_class(proj_files, context=context, many=True)
         return Response(data=serializer.data,
                         status=status.HTTP_201_CREATED)
 
@@ -186,7 +189,8 @@ class ProjectFileViewSet(ProjectMixin,
         data = {'project': project_pk,
                 'file': new_file}
 
-        serializer = self.serializer_class(instance, data=data)
+        context = self.get_serializer_context()
+        serializer = self.serializer_class(instance, data=data, context=context)
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
