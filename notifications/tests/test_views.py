@@ -235,7 +235,6 @@ class NotificationSettingsViewTest(APITestCase):
                                                        'namespace': self.user.username})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        log.debug(response.data)
         self.assertEqual(response.data['id'], str(notif_settings.pk))
 
     def test_notification_settings_delete(self):
