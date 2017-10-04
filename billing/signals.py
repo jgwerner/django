@@ -1,4 +1,5 @@
 import logging
+from django import dispatch
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db.models.signals import post_save
@@ -39,3 +40,11 @@ def create_plan_in_stripe_from_admin(sender, instance, **kwargs):
         for attr in ["stripe_id", "created", "metadata", "livemode"]:
             value = getattr(duplicate_plan, attr)
             setattr(instance, attr, value)
+
+subscription_cancelled = dispatch.Signal(providing_args=['user', 'actor', 'target', 'notif_type'])
+
+subscription_created = dispatch.Signal(providing_args=['user', 'actor', 'target', 'notif_type'])
+
+invoice_payment_success = dispatch.Signal(providing_args=['user', 'actor', 'target', 'notif_type'])
+
+invoice_payment_failure = dispatch.Signal(providing_args=['user', 'actor', 'target', 'notif_type'])

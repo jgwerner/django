@@ -9,7 +9,7 @@ from rest_framework.test import APITestCase
 from billing.models import (Card,
                             Plan, Subscription,
                             Invoice, Event, InvoiceItem)
-from users.tests.factories import UserFactory
+from users.tests.factories import UserFactory, EmailFactory
 from projects.tests.factories import CollaboratorFactory
 from servers.tests.factories import ServerRunStatisticsFactory
 from billing.tests.factories import (PlanFactory,
@@ -21,6 +21,7 @@ from billing.tests.factories import (PlanFactory,
 from billing.stripe_utils import create_stripe_customer_from_user, create_plan_in_stripe
 from jwt_auth.utils import create_auth_jwt
 
+from notifications.models import Notification
 
 if settings.MOCK_STRIPE:
     from billing.tests import mock_stripe as stripe
@@ -163,10 +164,14 @@ class CardTest(APITestCase):
 
 
 class SubscriptionTest(APITestCase):
+    fixtures = ['notification_types.json']
+
     def setUp(self):
         self.user = UserFactory(first_name="Foo",
                                 last_name="Bar",
                                 is_staff=True)
+        EmailFactory(user=self.user,
+                     address=self.user.email)
         self.customer = create_stripe_customer_from_user(self.user)
         token = create_auth_jwt(self.user)
         self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
@@ -207,6 +212,10 @@ class SubscriptionTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Subscription.objects.count(), pre_test_sub_count + 1)
 
+        notification = Notification.objects.filter(user=self.user,
+                                                   type__name="subscription.created").first()
+        self.assertIsNotNone(notification)
+
     def test_update_subscription_fails(self):
         subscription = SubscriptionFactory(customer=self.customer,
                                            status="trialing")
@@ -217,7 +226,6 @@ class SubscriptionTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_list_subscriptions(self):
-        pre_existing_subs = Subscription.objects.count()
         not_me_sub_count = 3
         for _ in range(not_me_sub_count):
             UserFactory()
@@ -229,10 +237,11 @@ class SubscriptionTest(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(Subscription.objects.filter(plan__amount__gt=0).count(), my_subs_count)
-        self.assertEqual(len(response.data), my_subs_count + pre_existing_subs)
+        self.assertEqual(len(response.data), my_subs_count)
 
     def test_subscription_details(self):
-        sub = SubscriptionFactory(customer=self.customer)
+        sub = SubscriptionFactory(customer=self.customer,
+                                  status=Subscription.ACTIVE)
         url = reverse("subscription-detail", kwargs={'namespace': self.user.username,
                                                      'pk': sub.pk,
                                                      'version': settings.DEFAULT_VERSION})
@@ -254,13 +263,21 @@ class SubscriptionTest(APITestCase):
         self.assertIsNotNone(sub_reloaded.canceled_at)
         self.assertIsNotNone(sub_reloaded.ended_at)
 
+        notification = Notification.objects.filter(user=self.user,
+                                                   type__name="subscription.canceled").first()
+        self.assertIsNotNone(notification)
+
 
 class InvoiceTest(TestCase):
+
+    fixtures = ['notification_types.json']
 
     def setUp(self):
         self.user = UserFactory(first_name="Foo",
                                 last_name="Bar",
                                 is_staff=True)
+        EmailFactory(user=self.user,
+                     address=self.user.email)
         self.customer = create_stripe_customer_from_user(self.user)
         token = create_auth_jwt(self.user)
         self.api_client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')

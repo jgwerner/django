@@ -206,25 +206,40 @@ def create_event_from_webhook(stripe_obj):
     return None
 
 
-def handle_stripe_invoice_webhook(stripe_obj):
+def handle_stripe_invoice_payment_status_change(stripe_obj):
+    signal_data = {}
+    event = create_event_from_webhook(stripe_obj)
+
+    if event is not None:
+        sub_stripe_id = stripe_obj['data']['object']['subscription']
+        stripe_subscription = stripe.Subscription.retrieve(sub_stripe_id)
+        converted_data = convert_stripe_object(Subscription, stripe_subscription)
+        subscription = Subscription.objects.get(stripe_id=sub_stripe_id)
+
+        invoice_stripe_id = stripe_obj['data']['object']['id']
+        invoice = Invoice.objects.get(stripe_id=invoice_stripe_id)
+
+        signal_data = {'user': subscription.customer.user,
+                       'actor': subscription,
+                       'target': invoice,
+                       'notif_type': event.event_type}
+
+        for key in converted_data:
+            if key not in ["customer", "plan"]:
+                setattr(subscription, key, converted_data[key])
+        subscription.save()
+        log.info(f"Updated subscription {subscription} after {event.event_type}.")
+
+    return signal_data
+
+
+def handle_stripe_invoice_created(stripe_obj):
     """
     :param stripe_obj: The Stripe *event* object
     :return: None
     """
     event = create_event_from_webhook(stripe_obj)
     if event is not None:
-        if event.event_type == "invoice.payment_failed":
-            # Suspend the subscription...
-            sub_stripe_id = stripe_obj['data']['object']['subscription']
-            stripe_subscription = stripe.Subscription.retrieve(sub_stripe_id)
-            converted_data = convert_stripe_object(Subscription, stripe_subscription)
-            subscription = Subscription.objects.get(stripe_id=sub_stripe_id)
-            for key in converted_data:
-                if key not in ["customer", "plan"]:
-                    setattr(subscription, key, converted_data[key])
-            subscription.save()
-            log.debug("Updated subscription {sub} after payment failure.".format(sub=subscription.stripe_id))
-
         stripe_invoice = stripe_obj['data']['object']
         stripe_invoice['invoice_date'] = stripe_invoice['date']
         converted = convert_stripe_object(Invoice, stripe_invoice)
