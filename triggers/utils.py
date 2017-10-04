@@ -9,8 +9,9 @@ from users.models import UserProfile
 
 
 def get_beat_entry(trigger):
+    key = f'{app.redbeat_conf.key_prefix}dispatch_{trigger.pk}'
     try:
-        entry = RedBeatSchedulerEntry.from_key(f'dispatch_{trigger.pk}', app=app)
+        entry = RedBeatSchedulerEntry.from_key(key, app=app)
     except KeyError:
         return
     return entry

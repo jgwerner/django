@@ -8,7 +8,6 @@ from djoser import views as djoser_views
 from oauth2_provider import views as oauth2_views
 from jwt_auth import views as jwt_views
 from base.views import tbs_status
-from users import views as user_views
 
 
 urlpatterns = [
@@ -36,7 +35,6 @@ if settings.DEBUG:
 
     schema_view = get_swagger_view(title='3blades API', url=settings.FORCE_SCRIPT_NAME or '/')
     urlpatterns += [
-        url(r'^auth/simple-token-auth/$', user_views.ObtainAuthToken.as_view()),
         url(r'^__debug__/', include(debug_toolbar.urls)),
         url(r'^swagger/$', schema_view),
     ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

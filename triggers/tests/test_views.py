@@ -13,6 +13,7 @@ from actions.tests.factories import ActionFactory
 from triggers.models import Trigger
 from triggers.serializers import ServerActionSerializer
 from triggers.tests.factories import TriggerFactory
+from triggers.utils import get_beat_entry
 from projects.models import Project
 from projects.tests.factories import CollaboratorFactory
 from servers.tests.factories import ServerFactory
@@ -55,6 +56,20 @@ class TriggerTest(APITestCase):
         self.assertEqual(qs.count(), 2)
         for action in qs:
             self.assertIsNot(action.path, '')
+
+    def test_schedule(self):
+        trigger = TriggerFactory(cause=None)
+        kwargs = {'version': settings.DEFAULT_VERSION, 'namespace': self.user.username, 'trigger': str(trigger.pk)}
+        start_url = reverse('trigger-start', kwargs=kwargs)
+        stop_url = reverse('trigger-stop', kwargs=kwargs)
+        resp = self.client.post(start_url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        entry = get_beat_entry(trigger)
+        self.assertIsNotNone(entry)
+        resp = self.client.post(stop_url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        entry = get_beat_entry(trigger)
+        self.assertIsNone(entry)
 
 
 class ServerActionTestCase(APILiveServerTestCase):

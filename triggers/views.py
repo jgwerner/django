@@ -54,8 +54,8 @@ def call_trigger(request, **kwargs):
 
 
 @api_view(['POST'])
-def stop(request, pk):
-    trigger = get_object_or_404(Trigger, pk=pk)
+def stop(request, **kwargs):
+    trigger = get_object_or_404(Trigger, pk=kwargs['trigger'])
     entry = get_beat_entry(trigger)
     if entry:
         entry.delete()
@@ -64,7 +64,7 @@ def stop(request, pk):
 
 
 @api_view(['POST'])
-def start(request, pk):
-    trigger = get_object_or_404(Trigger, pk=pk)
+def start(request, **kwargs):
+    trigger = get_object_or_404(Trigger, pk=kwargs['trigger'])
     create_beat_entry(request, trigger)
     return Response({'message': 'OK'})
