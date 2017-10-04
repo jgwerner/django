@@ -1,4 +1,5 @@
 import logging
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.contrib.sites.models import Site
 from rest_framework import viewsets, status
@@ -9,9 +10,10 @@ from rest_framework.views import APIView
 
 from base.views import NamespaceMixin, LookupByMultipleFields
 from servers.models import Server
-from triggers.models import Trigger
-from triggers.serializers import TriggerSerializer, SlackMessageSerializer, ServerActionSerializer
-from triggers.tasks import dispatch_trigger
+from .models import Trigger
+from .serializers import TriggerSerializer, SlackMessageSerializer, ServerActionSerializer
+from .tasks import dispatch_trigger
+from .utils import get_beat_entry, create_beat_entry
 log = logging.getLogger('triggers')
 
 
@@ -49,3 +51,20 @@ def call_trigger(request, **kwargs):
     url = '{}://{}'.format(request.scheme, Site.objects.get_current().domain)
     dispatch_trigger.delay(trigger.pk, url=url)
     return Response({'message': 'OK'}, status=status.HTTP_202_ACCEPTED)
+
+
+@api_view(['POST'])
+def stop(request, **kwargs):
+    trigger = get_object_or_404(Trigger, pk=kwargs['trigger'])
+    entry = get_beat_entry(trigger)
+    if entry:
+        entry.delete()
+        return Response({'message': 'OK'})
+    raise Http404
+
+
+@api_view(['POST'])
+def start(request, **kwargs):
+    trigger = get_object_or_404(Trigger, pk=kwargs['trigger'])
+    create_beat_entry(request, trigger)
+    return Response({'message': 'OK'})

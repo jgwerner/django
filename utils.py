@@ -10,11 +10,7 @@ from django.conf import settings
 from django.core.validators import RegexValidator
 from django.utils.encoding import force_bytes, force_text
 from django_redis.serializers.base import BaseSerializer
-from rest_framework_jwt.settings import api_settings
 log = logging.getLogger(__name__)
-
-jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
-jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
 
 
 def google_access_token_decoder(resp_str):
@@ -80,8 +76,3 @@ def copy_model(model):
 
 
 alphanumeric = RegexValidator(r'^[0-9a-zA-Z-]*$', "You can use only alphanumeric characters.")
-
-
-def create_jwt_token(user):
-    payload = jwt_payload_handler(user)
-    return jwt_encode_handler(payload)

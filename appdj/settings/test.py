@@ -7,8 +7,6 @@ RESOURCE_DIR = '/tmp/3blades'
 INACTIVE_RESOURCE_DIR = "/tmp/inactive"
 MEDIA_ROOT = "/tmp/3blades"
 
-CACHES['default']['OPTIONS']['REDIS_CLIENT_CLASS'] = "fakeredis.FakeStrictRedis"
-
 
 PASSWORD_HASHERS = (
     'django.contrib.auth.hashers.MD5PasswordHasher',
@@ -26,10 +24,6 @@ CELERY_EAGER_PROPAGATES_EXCEPTIONS = True
 CELERY_BROKER_URL = 'memory://localhost/'
 CELERY_RESULT_BACKEND = None
 CELERY_CACHE_BACKEND = 'memory'
-
-INSTALLED_APPS += (
-    'rest_framework.authtoken',
-)
 
 #MIDDLEWARE = [
 #    'django.middleware.security.SecurityMiddleware',

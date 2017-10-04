@@ -16,6 +16,7 @@ from billing.models import Subscription
 from users.tests.factories import UserFactory, EmailFactory
 from users.tests.utils import generate_random_image
 from utils import create_ssh_key
+from jwt_auth.utils import create_auth_jwt
 import logging
 log = logging.getLogger('users')
 User = get_user_model()
@@ -41,8 +42,10 @@ class UserTest(APITestCase):
         SubscriptionFactory(customer=self.user.customer,
                             plan__trial_period_days=7,
                             status=Subscription.ACTIVE)
-        self.admin_client = self.client_class(HTTP_AUTHORIZATION='Token {}'.format(self.admin.auth_token.key))
-        self.user_client = self.client_class(HTTP_AUTHORIZATION='Token {}'.format(self.user.auth_token.key))
+        admin_token = create_auth_jwt(self.admin)
+        user_token = create_auth_jwt(self.user)
+        self.admin_client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {admin_token}')
+        self.user_client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {user_token}')
         self.to_remove = []
         self.image_files = []
 
@@ -377,7 +380,7 @@ class UserTest(APITestCase):
         self.assertEqual(out_mail.subject, "Account activation on 3Blades")
 
     def test_unconfirmed_user_cannot_login(self):
-        _ = send_register_request()
+        send_register_request()
         user = User.objects.get(username="test_user")
         self.to_remove.append(user.profile.resource_root())
 
@@ -422,7 +425,8 @@ class UserTest(APITestCase):
 class EmailTest(APITestCase):
     def setUp(self):
         self.user = UserFactory()
-        self.client = self.client_class(HTTP_AUTHORIZATION='Token {}'.format(self.user.auth_token.key))
+        token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
     def test_list_has_access_to_all_my_emails(self):
         EmailFactory(public=True, user=self.user)
@@ -502,7 +506,8 @@ class EmailTest(APITestCase):
 class UserIntegrationTest(APITestCase):
     def setUp(self):
         self.user = UserFactory()
-        self.client = self.client_class(HTTP_AUTHORIZATION='Token {}'.format(self.user.auth_token.key))
+        token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
     def test_creating_integration(self):
         url = reverse("usersocialauth-list", kwargs={'version': settings.DEFAULT_VERSION})

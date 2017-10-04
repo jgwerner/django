@@ -80,7 +80,7 @@ class ProjectFileSerializer(serializers.ModelSerializer):
         return encoded
 
     def create(self, validated_data):
-        project = Project.objects.get(pk=validated_data.pop("project"))
+        project = Project.objects.get(pk=validated_data.pop('project'))
         proj_file = ProjectFile(project=project,
                                 **validated_data)
         proj_file.save()

@@ -17,8 +17,10 @@ from projects.tests.factories import (CollaboratorFactory,
 from projects.tests.utils import generate_random_file_content
 from users.tests.factories import UserFactory
 from projects.models import Project, ProjectFile
+from jwt_auth.utils import create_auth_jwt
 import logging
 log = logging.getLogger('projects')
+
 
 class ProjectTestMixin(object):
     @classmethod
@@ -36,8 +38,8 @@ class ProjectTestMixin(object):
 class ProjectTest(ProjectTestMixin, APITestCase):
     def setUp(self):
         self.user = UserFactory()
-        self.token_header = 'Token {}'.format(self.user.auth_token.key)
-        self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+        token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
     def test_create_project(self):
         url = reverse('project-list', kwargs={'namespace': self.user.username,
@@ -53,8 +55,8 @@ class ProjectTest(ProjectTestMixin, APITestCase):
 
     def test_create_project_with_different_user(self):
         staff_user = UserFactory(is_staff=True)
-        token_header = 'Token {}'.format(staff_user.auth_token.key)
-        client = self.client_class(HTTP_AUTHORIZATION=token_header)
+        token = create_auth_jwt(staff_user)
+        client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
         url = reverse('project-list', kwargs={'namespace': self.user.username,
                                               'version': settings.DEFAULT_VERSION})
         data = dict(
@@ -230,8 +232,8 @@ class ProjectTest(ProjectTestMixin, APITestCase):
 class ProjectTestWithName(ProjectTestMixin, APITestCase):
     def setUp(self):
         self.user = UserFactory()
-        self.token_header = 'Token {}'.format(self.user.auth_token.key)
-        self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+        token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
     def test_project_details(self):
         collaborator = CollaboratorFactory(user=self.user)
@@ -350,7 +352,6 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
     def setUp(self):
         collaborator = CollaboratorFactory()
         self.user = collaborator.user
-        self.token_header = 'Token {}'.format(self.user.auth_token.key)
         self.project = collaborator.project
         assign_perm('read_project', self.user, self.project)
         assign_perm('write_project', self.user, self.project)
@@ -360,7 +361,8 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
         self.user_dir = Path(settings.RESOURCE_DIR, self.user.username)
         self.project_root = self.user_dir.joinpath(str(self.project.pk))
         self.project_root.mkdir(parents=True)
-        self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+        token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
     def tearDown(self):
         shutil.rmtree(str(self.user_dir))
@@ -665,7 +667,6 @@ class ProjectFileTestWithName(ProjectTestMixin, APITestCase):
     def setUp(self):
         collaborator = CollaboratorFactory()
         self.user = collaborator.user
-        self.token_header = 'Token {}'.format(self.user.auth_token.key)
         self.project = collaborator.project
         assign_perm('read_project', self.user, self.project)
         assign_perm('write_project', self.user, self.project)
@@ -675,7 +676,8 @@ class ProjectFileTestWithName(ProjectTestMixin, APITestCase):
         self.user_dir = Path(settings.RESOURCE_DIR, self.user.username)
         self.project_root = self.user_dir.joinpath(str(self.project.pk))
         self.project_root.mkdir(parents=True)
-        self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+        token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
     def tearDown(self):
         shutil.rmtree(str(self.user_dir))
@@ -979,8 +981,8 @@ class ProjectFileTestWithName(ProjectTestMixin, APITestCase):
 class CollaboratorTest(ProjectTestMixin, APITestCase):
     def setUp(self):
         self.user = UserFactory()
-        self.token_header = 'Token {}'.format(self.user.auth_token.key)
-        self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+        token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
     def test_create_collaborator(self):
         # Implicitly create project

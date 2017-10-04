@@ -11,19 +11,18 @@ from rest_framework.generics import CreateAPIView
 from rest_framework.mixins import ListModelMixin
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
 from base.permissions import DeleteAdminOnly, PostAdminOnly
 from base.views import LookupByMultipleFields
-from utils import create_ssh_key, deactivate_user, create_jwt_token
+from utils import create_ssh_key, deactivate_user
 
 from base.utils import get_object_or_404, validate_uuid
 from users.filters import UserSearchFilter
 from users.models import Email
 from users.serializers import (UserSerializer,
                                EmailSerializer,
-                               IntegrationSerializer,
-                               AuthTokenSerializer)
+                               IntegrationSerializer)
+from jwt_auth.utils import create_auth_jwt
 
 log = logging.getLogger("users")
 User = get_user_model()
@@ -148,6 +147,7 @@ def me(request, version):
     serialized_data = UserSerializer(request.user).data
     return Response(data=serialized_data, status=status.HTTP_200_OK)
 
+
 @api_view(['GET'])
 def ssh_key(request, version, user_pk):
     user = get_object_or_404(User, user_pk)
@@ -164,7 +164,7 @@ def reset_ssh_key(request, version, user_pk):
 @api_view(['GET'])
 def api_key(request, version, user_pk):
     user = get_object_or_404(User, user_pk)
-    token = create_jwt_token(user)
+    token = create_auth_jwt(user)
     return Response(data={'token': token})
 
 
@@ -201,24 +201,3 @@ class IntegrationViewSet(viewsets.ModelViewSet):
         instance = serializer.create(validated_data=data)
         return Response(data=self.serializer_class(instance).data,
                         status=status.HTTP_201_CREATED)
-
-
-class ObtainAuthToken(APIView):
-    throttle_classes = ()
-    permission_classes = ()
-    serializer_class = AuthTokenSerializer
-
-    def post(self, request, *args, **kwargs):
-        from rest_framework.authtoken.models import Token
-        serializer = self.get_serializer()
-        serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data['user']
-        token, created = Token.objects.get_or_create(user=user)
-
-        if created:
-            log.info("Created a new token for {user}".format(user=user.username))
-
-        return Response({'token': token.key}, status=201)
-
-    def get_serializer(self):
-        return self.serializer_class(data=self.request.data)

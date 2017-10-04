@@ -313,6 +313,9 @@ CELERY_BROKER_CONNECTION_TIMEOUT = 30  # May require a long timeout due to Linux
 CELERY_SEND_EVENTS = False  # Will not create celeryev.* queues
 CELERY_EVENT_QUEUE_EXPIRES = 60  # Will delete all celeryev. queues without consumers after 1 minute.
 CELERY_BROKER_URL = os.environ.get('RABBITMQ_URL')
+CELERY_REDBEAT_REDIS_URL = os.environ.get('REDIS_URL')
+CELERY_BEAT_SCHEDULER = 'redbeat:RedBeatScheduler'
+CELERY_BEAT_MAX_LOOP_INTERVAL = 60
 
 USE_X_FORWARDED_HOST = True
 
@@ -338,7 +341,7 @@ SERVER_TYPES = {"restful", "cron", "proxy"}
 SERVER_TYPE_MAPPING = {'jupyter': 'proxy', 'rstudio': 'proxy'}
 SERVER_ENDPOINT_URLS = {'restful': '/restfull/', 'proxy': '/proxy/'}
 SERVER_COMMANDS = {
-    'jupyter': 'jupyter notebook --NotebookApp.base_url=' + \
+    'jupyter': 'jupyter notebook --NotebookApp.base_url=' +
     '"/{version}/{server.project.owner.username}/projects/{server.project.pk}/servers/{server.pk}/endpoint/proxy"',
     'rstudio': '/init',
 }

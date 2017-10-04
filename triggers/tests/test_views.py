@@ -7,16 +7,17 @@ from django.contrib.sites.models import Site
 from rest_framework import status
 from rest_framework.test import APITestCase, APILiveServerTestCase
 
-from utils import create_jwt_token
 from base.namespace import Namespace
 from actions.models import Action
 from actions.tests.factories import ActionFactory
 from triggers.models import Trigger
 from triggers.serializers import ServerActionSerializer
 from triggers.tests.factories import TriggerFactory
+from triggers.utils import get_beat_entry
 from projects.models import Project
 from projects.tests.factories import CollaboratorFactory
 from servers.tests.factories import ServerFactory
+from jwt_auth.utils import create_auth_jwt
 import logging
 log = logging.getLogger('triggers')
 
@@ -26,8 +27,8 @@ class TriggerTest(APITestCase):
         collaborator = CollaboratorFactory()
         self.user = collaborator.user
         self.project = collaborator.project
-        self.token_header = 'Token {}'.format(self.user.auth_token.key)
-        self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+        token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
     def test_create_trigger(self):
         server = ServerFactory(project=self.project)
@@ -56,15 +57,28 @@ class TriggerTest(APITestCase):
         for action in qs:
             self.assertIsNot(action.path, '')
 
+    def test_schedule(self):
+        trigger = TriggerFactory(cause=None)
+        kwargs = {'version': settings.DEFAULT_VERSION, 'namespace': self.user.username, 'trigger': str(trigger.pk)}
+        start_url = reverse('trigger-start', kwargs=kwargs)
+        stop_url = reverse('trigger-stop', kwargs=kwargs)
+        resp = self.client.post(start_url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        entry = get_beat_entry(trigger)
+        self.assertIsNotNone(entry)
+        resp = self.client.post(stop_url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        entry = get_beat_entry(trigger)
+        self.assertIsNone(entry)
+
 
 class ServerActionTestCase(APILiveServerTestCase):
     def setUp(self):
         collaborator = CollaboratorFactory()
         self.user = collaborator.user
         self.project = collaborator.project
-        self.token = create_jwt_token(self.user)
-        self.token_header = f'Bearer {self.token}'
-        self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+        self.token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {self.token}')
         self.server = ServerFactory()
         self.url_kwargs = {
             'namespace': self.user.username,

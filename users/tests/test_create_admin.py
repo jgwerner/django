@@ -6,7 +6,6 @@ from django.contrib.auth import get_user_model
 from django.conf import settings
 from users.management.commands.create_admin import Command
 from users.tests.factories import UserFactory
-from rest_framework.authtoken.models import Token
 from users.models import UserProfile
 User = get_user_model()
 
@@ -32,9 +31,6 @@ class CreateAdminCommandTestCase(TestCase):
         self.assertIsNotNone(user)
         self.user = user
 
-        token = Token.objects.filter(user=user).first()
-        self.assertIsNotNone(token)
-
         profile = UserProfile.objects.filter(user=user).first()
         self.assertIsNotNone(profile)
 
@@ -51,9 +47,6 @@ class CreateAdminCommandTestCase(TestCase):
 
             self.assertIsNotNone(user)
             self.user = user
-
-            token = Token.objects.filter(user=user).first()
-            self.assertIsNotNone(token)
 
             profile = UserProfile.objects.filter(user=user).first()
             self.assertIsNotNone(profile)
