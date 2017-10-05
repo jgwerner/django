@@ -185,6 +185,13 @@ class Customer:
         return cls.customer
 
 
+class DummySubscription(DummyStripeObj):
+    def delete(self):
+        self.json['deleted'] = True
+        self.json['status'] = "canceled"
+        return self
+
+
 class Subscription:
     subscription = None
 
@@ -216,12 +223,12 @@ class Subscription:
                          "plan": {'id': kwargs.get("plan")},
                          "quantity": 1,
                          "start": start,
-                         "status": "canceled",
+                         "status": "trialing",
                          "tax_percent": None,
                          "trial_end": int(start * 1.05),
                          "trial_start": start
                          }
-        Subscription.subscription = DummyStripeObj("subscription", mock_response)
+        Subscription.subscription = DummySubscription("subscription", mock_response)
         return Subscription.subscription
 
     @classmethod
