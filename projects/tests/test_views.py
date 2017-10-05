@@ -14,9 +14,11 @@ from rest_framework.test import APITestCase
 
 from projects.tests.factories import (CollaboratorFactory,
                                       ProjectFileFactory)
+from servers.models import Server
+from servers.tests.factories import ServerFactory
 from projects.tests.utils import generate_random_file_content
 from users.tests.factories import UserFactory
-from projects.models import Project, ProjectFile
+from projects.models import Project, ProjectFile, Collaborator
 from jwt_auth.utils import create_auth_jwt
 import logging
 log = logging.getLogger('projects')
@@ -52,6 +54,90 @@ class ProjectTest(ProjectTestMixin, APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Project.objects.count(), 1)
         self.assertEqual(Project.objects.get().name, data['name'])
+
+    def test_copy_public_project(self):
+        proj = CollaboratorFactory(project__private=False,
+                                   project__copying_enabled=True).project
+
+        uploaded_file = generate_random_file_content("foo")
+        old_file = ProjectFileFactory(author=proj.owner,
+                                      project=proj,
+                                      file=uploaded_file)
+        old_server = ServerFactory(project=proj)
+        url = reverse("project-copy", kwargs={'version': settings.DEFAULT_VERSION,
+                                              'namespace': self.user.username})
+        data = {'project': str(proj.pk)}
+        response = self.client.post(url, data=data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        copied_project = Project.objects.filter(id=str(response.data['id'])).first()
+        self.assertIsNotNone(copied_project)
+
+        # The approach to copying file for projects is simply to move them to the new project's
+        # resource root, and let the file watcher pick them up and create them in the database.
+        # So we simply check to see if the file exists on disk, and assume the file watcher will handle the rest.
+        # After all, it has its own unit tests ;)
+        expected_file_path = str(copied_project.resource_root()) + "/" + old_file.file.name.split("/")[-1]
+        path_obj = Path(expected_file_path)
+        self.assertTrue(path_obj.is_file())
+
+        new_server = Server.objects.filter(project=copied_project).first()
+        self.assertIsNotNone(new_server)
+        self.assertEqual(old_server.name, new_server.name)
+
+    def test_copying_public_project_disabled_fails(self):
+        proj = CollaboratorFactory(project__private=False,
+                                   project__copying_enabled=False).project
+        url = reverse("project-copy", kwargs={'version': settings.DEFAULT_VERSION,
+                                              'namespace': self.user.username})
+        data = {'project': str(proj.pk)}
+        response = self.client.post(url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        collab = Collaborator.objects.filter(user=self.user,
+                                             project__name=proj.name).first()
+        self.assertIsNone(collab)
+
+    def test_copying_private_project_disabled_fails(self):
+        proj = CollaboratorFactory(project__private=True,
+                                   project__copying_enabled=False).project
+        url = reverse("project-copy", kwargs={'version': settings.DEFAULT_VERSION,
+                                              'namespace': self.user.username})
+        data = {'project': str(proj.pk)}
+        response = self.client.post(url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        collab = Collaborator.objects.filter(user=self.user,
+                                             project__name=proj.name).first()
+        self.assertIsNone(collab)
+
+    def test_copying_private_project_enabled_not_a_collaborator(self):
+        proj = CollaboratorFactory(project__private=True,
+                                   project__copying_enabled=True).project
+        url = reverse("project-copy", kwargs={'version': settings.DEFAULT_VERSION,
+                                              'namespace': self.user.username})
+        data = {'project': str(proj.pk)}
+        response = self.client.post(url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        collab = Collaborator.objects.filter(user=self.user,
+                                             project__name=proj.name).first()
+        self.assertIsNone(collab)
+
+    def test_copying_private_project_enabled_as_a_collaborator(self):
+        proj = CollaboratorFactory(project__private=True,
+                                   project__copying_enabled=True).project
+        uploaded_file = generate_random_file_content("foo")
+        old_file = ProjectFileFactory(author=proj.owner,
+                                      project=proj,
+                                      file=uploaded_file)
+        CollaboratorFactory(user=self.user,
+                            project=proj,
+                            owner=False)
+        url = reverse("project-copy", kwargs={'version': settings.DEFAULT_VERSION,
+                                              'namespace': self.user.username})
+        data = {'project': str(proj.pk)}
+        response = self.client.post(url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        copied_project = Project.objects.filter(id=str(response.data['id'])).first()
+        self.assertIsNotNone(copied_project)
 
     def test_create_project_with_different_user(self):
         staff_user = UserFactory(is_staff=True)
