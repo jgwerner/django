@@ -81,7 +81,7 @@ def perform_project_copy(user, project_id):
         new_proj.save()
 
         create_ancillary_project_stuff(user, new_proj)
-        copy_tree(proj_to_copy.resource_root(), new_proj.resource_root())
+        copy_tree(str(proj_to_copy.resource_root()), str(new_proj.resource_root()))
         copy_servers(proj_to_copy, new_proj)
 
     return new_proj
