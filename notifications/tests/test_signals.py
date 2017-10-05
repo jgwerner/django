@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from django.test import TestCase
 from django.core import mail
 from billing.models import Event
@@ -56,9 +57,11 @@ class TestNotificationSignals(TestCase):
     def test_trial_about_to_expire(self):
         self.user.is_staff = False
         self.user.save()
-        subscription = SubscriptionFactory(customer=self.customer,
-                                           plan__trial_period_days=3,
-                                           status=Subscription.TRIAL)
+        subscription = Subscription.objects.filter(customer=self.customer,
+                                                   status=Subscription.TRIAL).first()
+        self.assertIsNotNone(subscription)
+        subscription.trial_end = datetime.now() + timedelta(days=1)
+        subscription.save()
         handle_trial_about_to_expire(sender=User,
                                      user=self.user)
 
@@ -88,12 +91,11 @@ class TestNotificationSignals(TestCase):
 
     def test_email_is_sent(self):
         self.user.is_staff = False
-
-        customer = create_stripe_customer_from_user(self.user)
-
-        SubscriptionFactory(customer=customer,
-                            plan__trial_period_days=3,
-                            status=Subscription.TRIAL)
+        subscription = Subscription.objects.filter(customer=self.customer,
+                                                   status=Subscription.TRIAL).first()
+        self.assertIsNotNone(subscription)
+        subscription.trial_end = datetime.now() + timedelta(days=1)
+        subscription.save()
         handle_trial_about_to_expire(sender=User,
                                      user=self.user)
         self.assertEqual(len(mail.outbox), 1)
@@ -113,9 +115,11 @@ class TestNotificationSignals(TestCase):
                                               email_address=self.email)
         notif_settings.save()
 
-        subscription = SubscriptionFactory(customer=self.customer,
-                                           plan__trial_period_days=3,
-                                           status=Subscription.TRIAL)
+        subscription = Subscription.objects.filter(customer=self.customer,
+                                                   status=Subscription.TRIAL).first()
+        self.assertIsNotNone(subscription)
+        subscription.trial_end = datetime.now() + timedelta(days=1)
+        subscription.save()
         handle_trial_about_to_expire(sender=User,
                                      user=self.user)
         notif = Notification.objects.all().first()

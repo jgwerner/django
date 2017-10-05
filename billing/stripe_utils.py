@@ -301,7 +301,7 @@ def handle_upcoming_invoice(stripe_event):
 def assign_customer_to_default_plan(customer):
     existing_sub = Subscription.objects.filter(customer=customer)
     if not existing_sub.exists():
-        log.info(f"Creating subscription to free plan for {customer.user.username}.")
+        log.info(f"Creating subscription to default plan for {customer.user.username}.")
         default_plan = Plan.objects.filter(stripe_id=settings.DEFAULT_STRIPE_PLAN_ID).first()
         if not default_plan:
             log.error(f"Selected default plan {settings.DEFAULT_STRIPE_PLAN_ID} does not exist in DB. "
