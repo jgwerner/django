@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'django_ses',
 
     'base',
+    'notifications',
     'users',
     'billing',
     'projects',

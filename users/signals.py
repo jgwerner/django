@@ -1,3 +1,4 @@
+from django import dispatch
 from django.contrib.auth import get_user_model
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -15,3 +16,6 @@ def create_user_profile(sender, instance, created, **kwargs):
 def create_user_ssh_key(sender, instance, created, **kwargs):
     if created:
         create_ssh_key(instance)
+
+
+user_authenticated = dispatch.Signal(providing_args=['user'])

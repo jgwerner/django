@@ -3,6 +3,7 @@ from factory import fuzzy
 from django.db.models.signals import post_save
 from django.contrib.auth import get_user_model
 
+from base.tests.factories import FuzzyEmail
 from users.models import UserProfile, Email
 from users.signals import create_user_ssh_key
 
@@ -20,7 +21,7 @@ class UserFactory(factory.django.DjangoModelFactory):
         django_get_or_create = ('username', 'email')
 
     username = factory.Sequence(lambda o: 'user{}'.format(o))
-    email = factory.Sequence(lambda o: 'user{}@a.pl'.format(o))
+    email = FuzzyEmail()
     password = factory.PostGenerationMethodCall('set_password', 'default')
 
     @classmethod
@@ -37,6 +38,6 @@ class EmailFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Email
     user = factory.SubFactory(UserFactory)
-    address = fuzzy.FuzzyText(length=255)
+    address = FuzzyEmail()
     public = fuzzy.FuzzyChoice([True, False])
     unsubscribed = fuzzy.FuzzyChoice([True, False])

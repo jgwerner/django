@@ -2,6 +2,7 @@ from django.contrib.postgres.fields import JSONField
 from django.db import models
 from django.conf import settings
 from django.urls import reverse
+from django.utils import timezone
 
 
 class BillingAddress(models.Model):
@@ -172,6 +173,12 @@ class Subscription(StripeModel):
     def get_absolute_url(self, version, namespace):
         return reverse('subscription-detail', kwargs={
             'namespace': namespace.name, 'version': version, 'pk': str(self.pk)})
+
+    def delete(self, using=None, keep_parents=False, new_status=CANCELED):
+        self.canceled_at = timezone.now()
+        self.ended_at = timezone.now()
+        self.status = new_status
+        self.save(update_fields=['canceled_at', 'ended_at', 'status'])
 
 
 class InvoiceQuerySet(models.QuerySet):

@@ -103,10 +103,16 @@ urlpatterns = [
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/auth/$',
         servers_views.check_token, name='server-auth'),
     url(r'^servers/', include(servers_router.urls)),
-    url(r'webhooks/incoming/billing/invoice_created/$', billing_views.stripe_invoice_created,
+    url(r'^webhooks/incoming/billing/invoice_created/$', billing_views.stripe_invoice_created,
         name='stripe-invoice-created'),
-    url(r'webhooks/incoming/billing/invoice_upcoming/$', billing_views.stripe_invoice_upcoming,
+    url(r'^webhooks/incoming/billing/invoice_upcoming/$', billing_views.stripe_invoice_upcoming,
         name='stripe-invoice-upcoming'),
+    url(r'^webhooks/incoming/billing/invoice_payment_failed/$', billing_views.stripe_invoice_payment_failed,
+        name='stripe-invoice-payment-failed'),
+    url(r'^webhooks/incoming/billing/invoice_payment_success/$', billing_views.stripe_invoice_payment_success,
+        name='stripe-invoice-payment-success'),
+    url(r'^(?P<namespace>[\w-]+)/notifications/', include("notifications.urls"))
+
 ]
 
 
