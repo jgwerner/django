@@ -26,15 +26,28 @@ class ProjectSerializer(SearchSerializerMixin, serializers.ModelSerializer):
     def validate_name(self, value):
         request = self.context['request']
         existing_pk = self.context.get("pk")
-        if Project.objects.filter(name=value,
-                                  collaborator__user=request.user,
-                                  collaborator__user__is_active=True,
-                                  collaborator__owner=True).exclude(pk=existing_pk).exists():
+        qs = Project.objects.filter(name=value).exclude(pk=existing_pk)
+        if request.namespace.type == 'user':
+            qs = qs.filter(
+                collaborator__user=request.user,
+                collaborator__owner=True)
+        else:
+            qs = qs.filter(team=request.namespace.object)
+        if qs.exists():
             raise serializers.ValidationError("You can have only one project named %s" % value)
         return value
 
     def create(self, validated_data):
         project = super().create(validated_data)
+        request = self.context['request']
+        if request.namespace.type == 'user':
+            self._assign_to_user(project)
+        else:
+            self._assign_to_team(project)
+        Path(settings.RESOURCE_DIR, project.get_owner_name(), str(project.pk)).mkdir(parents=True, exist_ok=True)
+        return project
+
+    def _assign_to_user(self, project):
         request = self.context['request']
         if request.user.is_staff:
             user = request.namespace.object
@@ -42,8 +55,11 @@ class ProjectSerializer(SearchSerializerMixin, serializers.ModelSerializer):
             user = request.user
         Collaborator.objects.create(project=project, owner=True, user=user)
         assign_perm('write_project', request.user, project)
-        Path(settings.RESOURCE_DIR, project.get_owner_name(), str(project.pk)).mkdir(parents=True, exist_ok=True)
-        return project
+
+    def _assign_to_team(self, project):
+        request = self.context['request']
+        project.team = request.namespace.object
+        project.save()
 
 
 class FileAuthorSerializer(serializers.ModelSerializer):

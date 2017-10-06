@@ -1,7 +1,6 @@
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers
 
-from base.namespace import Namespace
 from .models import Action
 
 
@@ -31,10 +30,8 @@ class ActionSerializer(serializers.ModelSerializer):
         if content_type and 'object_id' in validated_data:
             content_type_obj = ContentType.objects.filter(**content_type).first()
             if not path:
-                namespace = Namespace.from_name(user.username)
                 obj = content_type_obj.get_object_for_this_type(pk=validated_data['object_id'])
                 path = obj.get_action_url(self.context['request'].version,
-                                          namespace,
                                           action_name)
         filter_kwargs = dict(
             path=path,
@@ -51,7 +48,7 @@ class ActionSerializer(serializers.ModelSerializer):
         return instance
 
     def get_object_url(self, obj):
-        return obj.get_absolute_url(self.context['request'].version, self.context['request'].namespace)
+        return obj.get_absolute_url(self.context['request'].version)
 
     def content_object_url(self, obj):
-        return obj.content_object_url(self.context['request'].version, self.context['request'].namespace)
+        return obj.content_object_url(self.context['request'].version)

@@ -6,11 +6,12 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from actions.models import Action
-from billing.tests.factories import PlanFactory, CardFactory, SubscriptionFactory
+from billing.tests.factories import CardFactory, SubscriptionFactory
 from infrastructure.tests.factories import DockerHostFactory
-from projects.tests.factories import ProjectFactory, CollaboratorFactory, ProjectFileFactory
+from projects.tests.factories import CollaboratorFactory, ProjectFileFactory
 from servers.tests.factories import ServerFactory, ServerSizeFactory
 from triggers.tests.factories import TriggerFactory
+from teams.tests.factories import TeamFactory
 from users.tests.factories import UserFactory
 from jwt_auth.utils import create_auth_jwt
 from .factories import ActionFactory
@@ -28,16 +29,19 @@ class ActionTest(APITestCase):
         self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
     def test_list_actions(self):
-        ActionFactory(content_object=PlanFactory())
+        sub = SubscriptionFactory(customer=self.user.customer)
+        ActionFactory(content_object=sub.plan)
         ActionFactory(content_object=CardFactory(customer=self.user.customer))
-        ActionFactory(content_object=SubscriptionFactory(customer=self.user.customer))
+        ActionFactory(content_object=sub)
         ActionFactory(content_object=DockerHostFactory())
-        ActionFactory(content_object=ProjectFactory())
-        ActionFactory(content_object=CollaboratorFactory())
-        ActionFactory(content_object=ProjectFileFactory())
-        ActionFactory(content_object=ServerFactory())
+        collaborator = CollaboratorFactory(user=self.user)
+        ActionFactory(content_object=collaborator.project)
+        ActionFactory(content_object=collaborator)
+        ActionFactory(content_object=ProjectFileFactory(project=collaborator.project))
+        ActionFactory(content_object=ServerFactory(project=collaborator.project))
         ActionFactory(content_object=ServerSizeFactory())
-        ActionFactory(content_object=TriggerFactory())
+        ActionFactory(content_object=TriggerFactory(user=self.user))
+        ActionFactory(content_object=TeamFactory())
         url = reverse('action-list', kwargs={'version': settings.DEFAULT_VERSION})
         response = self.client.get(url, {'limit': 100})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -68,7 +72,7 @@ class ActionTest(APITestCase):
 
     def test_create_action(self):
         url = reverse('action-create', kwargs={'version': settings.DEFAULT_VERSION})
-        action_content_object = ProjectFactory()
+        action_content_object = CollaboratorFactory(user=self.user).project
         data = dict(
             action_name='detail',
             action="Project delete",

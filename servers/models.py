@@ -56,17 +56,21 @@ class Server(models.Model):
     def __str__(self):
         return self.name
 
-    def get_absolute_url(self, version, namespace):
-        return self.get_action_url(version, namespace, 'detail')
+    def get_absolute_url(self, version):
+        return self.get_action_url(version, 'detail')
 
-    def get_action_url(self, version, namespace, action):
+    def get_action_url(self, version, action):
         return reverse(
             'server-{}'.format(action),
             kwargs={'version': version,
-                    'namespace': namespace.name,
+                    'namespace': self.namespace_name,
                     'project_project': str(self.project.pk),
                     'server': str(self.pk)}
         )
+
+    @property
+    def namespace_name(self):
+        return self.project.namespace_name
 
     @property
     def container_name(self):

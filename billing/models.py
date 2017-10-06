@@ -44,8 +44,13 @@ class Customer(StripeModel):
                                                            Subscription.ACTIVE]).exists()
         return has_sub
 
-    def get_absolute_url(self, version, namespace):
-        return reverse('customer-detail', kwargs={'namespace': namespace.name, 'version': version, 'pk': str(self.pk)})
+    @property
+    def namespace_name(self):
+        return self.user.username
+
+    def get_absolute_url(self, version):
+        return reverse('customer-detail', kwargs={
+            'namespace': self.namespace_name, 'version': version, 'pk': str(self.pk)})
 
 
 class Card(StripeModel):
@@ -107,8 +112,12 @@ class Card(StripeModel):
 
     funding = models.CharField(max_length=7, choices=FUNDING_CHOICES)
 
-    def get_absolute_url(self, version, namespace):
-        return reverse('card-detail', kwargs={'namespace': namespace.name, 'version': version, 'pk': str(self.pk)})
+    @property
+    def namespace_name(self):
+        return self.customer.namespace_name
+
+    def get_absolute_url(self, version):
+        return reverse('card-detail', kwargs={'namespace': self.namespace_name, 'version': version, 'pk': str(self.pk)})
 
 
 class Plan(StripeModel):
@@ -132,8 +141,12 @@ class Plan(StripeModel):
     statement_descriptor = models.TextField(null=True)
     trial_period_days = models.PositiveIntegerField(null=True)
 
-    def get_absolute_url(self, version, namespace):
-        return reverse('card-detail', kwargs={'namespace': namespace.name, 'version': version, 'pk': str(self.pk)})
+    @property
+    def namespace_name(self):
+        return self.subscription_set.first().namespace_name
+
+    def get_absolute_url(self, version):
+        return reverse('card-detail', kwargs={'namespace': self.namespace_name, 'version': version, 'pk': str(self.pk)})
 
 
 class SubscriptionQuerySet(models.QuerySet):
@@ -170,9 +183,13 @@ class Subscription(StripeModel):
 
     objects = SubscriptionQuerySet.as_manager()
 
-    def get_absolute_url(self, version, namespace):
+    @property
+    def namespace_name(self):
+        return self.customer.namespace_name
+
+    def get_absolute_url(self, version):
         return reverse('subscription-detail', kwargs={
-            'namespace': namespace.name, 'version': version, 'pk': str(self.pk)})
+            'namespace': self.namespace_name, 'version': version, 'pk': str(self.pk)})
 
     def delete(self, using=None, keep_parents=False, new_status=CANCELED):
         self.canceled_at = timezone.now()
@@ -210,9 +227,13 @@ class Invoice(StripeModel):
 
     objects = InvoiceQuerySet.as_manager()
 
-    def get_absolute_url(self, version, namespace):
+    @property
+    def namespace_name(self):
+        return self.customer.namespace_name
+
+    def get_absolute_url(self, version):
         return reverse('invoice-detail', kwargs={
-            'namespace': namespace.name, 'version': version, 'pk': str(self.pk)})
+            'namespace': self.namespace_name, 'version': version, 'pk': str(self.pk)})
 
 
 class InvoiceItem(StripeModel):

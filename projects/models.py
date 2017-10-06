@@ -7,7 +7,6 @@ from django.urls import reverse
 from guardian.shortcuts import get_perms
 from social_django.models import UserSocialAuth
 
-from base.namespace import Namespace
 from utils import alphanumeric
 
 from .managers import ProjectQuerySet, CollaboratorQuerySet, FileQuerySet, SyncedResourceQuerySet
@@ -22,6 +21,7 @@ class Project(models.Model):
     last_updated = models.DateTimeField(auto_now=True)
     collaborators = models.ManyToManyField(settings.AUTH_USER_MODEL, through='Collaborator', related_name='projects')
     integrations = models.ManyToManyField(UserSocialAuth, through='SyncedResource', related_name='projects')
+    team = models.ForeignKey('teams.Team', blank=True, null=True, related_name='projects')
 
     objects = ProjectQuerySet.as_manager()
 
@@ -34,23 +34,27 @@ class Project(models.Model):
     def __str__(self):
         return self.name
 
-    def get_absolute_url(self, version, namespace: Namespace):
-        return self.get_action_url(version, namespace, 'detail')
+    def get_absolute_url(self, version):
+        return self.get_action_url(version, 'detail')
 
-    def get_action_url(self, version, namespace, action):
+    def get_action_url(self, version, action):
         return reverse(
             'project-{}'.format(action),
-            kwargs={'namespace': namespace.name,
+            kwargs={'namespace': self.namespace_name,
                     'project': str(self.id),
                     'version': version}
         )
 
     @property
+    def namespace_name(self):
+        return self.get_owner_name()
+
+    @property
     def owner(self):
-        return self.collaborator_set.filter(owner=True).first().user
+        return self.team if self.team else self.collaborator_set.filter(owner=True).first().user
 
     def get_owner_name(self):
-        return self.owner.username
+        return getattr(self.owner, self.owner.NATURAL_KEY)
 
     def resource_root(self):
         return Path(settings.RESOURCE_DIR, self.get_owner_name(), str(self.pk))
@@ -64,10 +68,14 @@ class Collaborator(models.Model):
 
     objects = CollaboratorQuerySet.as_manager()
 
-    def get_absolute_url(self, version, namespace):
+    @property
+    def namespace_name(self):
+        return self.user.username
+
+    def get_absolute_url(self, version):
         return reverse(
             "collaborator-detail",
-            kwargs={'namespace': namespace.name, 'version': version, 'project_project': str(self.project.pk),
+            kwargs={'namespace': self.namespace_name, 'version': version, 'project_project': str(self.project.pk),
                     'pk': str(self.pk)})
 
     @property
@@ -108,8 +116,12 @@ class ProjectFile(models.Model):
                                              proj=self.project.name,
                                              name=self.file.name)
 
-    def get_absolute_url(self, version, namespace):
-        return reverse('projectfile-detail', kwargs={'namespace': namespace.name, 'version': version,
+    @property
+    def namespace_name(self):
+        return self.project.namespace_name
+
+    def get_absolute_url(self, version):
+        return reverse('projectfile-detail', kwargs={'namespace': self.namespace_name, 'version': version,
                        'project_project': str(self.project.pk), 'pk': str(self.pk)})
 
     def delete(self, using=None, keep_parents=False):
