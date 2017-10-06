@@ -61,9 +61,9 @@ def assign_to_team(request, project):
 
 def create_ancillary_project_stuff(request, project):
     if request.namespace.type == 'user':
-        assign_to_user(project)
+        assign_to_user(request, project)
     else:
-        assign_to_team(project)
+        assign_to_team(request, project)
     Path(settings.RESOURCE_DIR, project.get_owner_name(), str(project.pk)).mkdir(parents=True, exist_ok=True)
 
 
