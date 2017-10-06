@@ -12,7 +12,6 @@ from base.views import LookupByMultipleFields
 from base.permissions import IsAdminUser
 from base.utils import get_object_or_404
 from base.renderers import PlainTextRenderer
-from projects.models import Project
 from projects.permissions import ProjectChildPermission
 from jwt_auth.views import JWTApiView
 from jwt_auth.serializers import VerifyJSONWebTokenServerSerializer

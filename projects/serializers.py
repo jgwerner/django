@@ -1,15 +1,14 @@
 import base64
-from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 from guardian.shortcuts import assign_perm
-from pathlib import Path
 from rest_framework import serializers
 from social_django.models import UserSocialAuth
 
 from base.serializers import SearchSerializerMixin
 from projects.models import (Project, Collaborator,
                              SyncedResource, ProjectFile)
+from .utils import create_ancillary_project_stuff
 
 User = get_user_model()
 
@@ -20,7 +19,7 @@ class ProjectSerializer(SearchSerializerMixin, serializers.ModelSerializer):
 
     class Meta:
         model = Project
-        fields = ('id', 'name', 'description', 'private', 'last_updated', 'owner', 'collaborators')
+        fields = ('id', 'name', 'description', 'private', 'last_updated', 'owner', 'collaborators', 'copying_enabled')
         read_only_fields = ('collaborators',)
 
     def validate_name(self, value):
@@ -40,26 +39,8 @@ class ProjectSerializer(SearchSerializerMixin, serializers.ModelSerializer):
     def create(self, validated_data):
         project = super().create(validated_data)
         request = self.context['request']
-        if request.namespace.type == 'user':
-            self._assign_to_user(project)
-        else:
-            self._assign_to_team(project)
-        Path(settings.RESOURCE_DIR, project.get_owner_name(), str(project.pk)).mkdir(parents=True, exist_ok=True)
+        create_ancillary_project_stuff(request, project)
         return project
-
-    def _assign_to_user(self, project):
-        request = self.context['request']
-        if request.user.is_staff:
-            user = request.namespace.object
-        else:
-            user = request.user
-        Collaborator.objects.create(project=project, owner=True, user=user)
-        assign_perm('write_project', request.user, project)
-
-    def _assign_to_team(self, project):
-        request = self.context['request']
-        project.team = request.namespace.object
-        project.save()
 
 
 class FileAuthorSerializer(serializers.ModelSerializer):

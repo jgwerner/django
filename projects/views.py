@@ -3,6 +3,8 @@ from django.contrib.auth import get_user_model
 from rest_framework import viewsets, status, permissions
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 
 from base.views import NamespaceMixin, LookupByMultipleFields
 from projects.serializers import (ProjectSerializer,
@@ -13,7 +15,7 @@ from projects.models import Project, Collaborator, SyncedResource
 from projects.permissions import ProjectPermission, ProjectChildPermission
 from projects.tasks import sync_github
 from projects.models import ProjectFile
-from projects.utils import get_files_from_request
+from projects.utils import get_files_from_request, perform_project_copy
 
 User = get_user_model()
 
@@ -68,6 +70,29 @@ class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewS
         instance.delete()
         return Response(data={"message": "Project deleted."},
                         status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['post'])
+@permission_classes((IsAuthenticated,))
+def copy_project(request, *args, **kwargs):
+    proj_identifier = request.data['project']
+    new_project = perform_project_copy(request, proj_identifier)
+    try:
+        if new_project is not None:
+            resp_status = status.HTTP_201_CREATED
+            serializer = ProjectSerializer(instance=new_project)
+            resp_data = serializer.data
+        else:
+            resp_status = status.HTTP_404_NOT_FOUND
+            resp_data = {'message': f"Project {proj_identifier} not found."}
+    except Exception as e:
+        log.error(f"There was a problem attempting to copy project {proj_identifier}. "
+                  f"Stacktrace incoming.")
+        log.exception(e)
+        resp_status = status.HTTP_500_INTERNAL_SERVER_ERROR
+        resp_data = {'message': "Internal Server Error when attempting to copy project."}
+
+    return Response(data=resp_data, status=resp_status)
 
 
 class ProjectMixin(LookupByMultipleFields):

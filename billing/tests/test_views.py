@@ -231,13 +231,19 @@ class SubscriptionTest(APITestCase):
             UserFactory()
             # Dont need to create a Subscription, one is created to the free plan automatically
         my_subs_count = 2
-        SubscriptionFactory.create_batch(my_subs_count, customer=self.customer)
+        SubscriptionFactory.create_batch(my_subs_count,
+                                         customer=self.customer,
+                                         plan__amount=500,
+                                         status=Subscription.ACTIVE)
         url = reverse("subscription-list", kwargs={'namespace': self.user.username,
                                                    'version': settings.DEFAULT_VERSION})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(Subscription.objects.filter(plan__amount__gt=0).count(), my_subs_count)
-        self.assertEqual(len(response.data), my_subs_count)
+        self.assertEqual(Subscription.objects.filter(customer=self.customer,
+                                                     plan__amount__gt=0).count(), my_subs_count)
+        # The + 1 here corresponds to the automatically created default subscription when the user is entered in
+        # The database
+        self.assertEqual(len(response.data), my_subs_count + 1)
 
     def test_subscription_details(self):
         sub = SubscriptionFactory(customer=self.customer,

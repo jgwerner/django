@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('teams', '0001_initial'),
-        ('projects', '0002_remove_projectfile_public'),
+        ('projects', '0003_project_copying_enabled'),
     ]
 
     operations = [
