@@ -116,8 +116,11 @@ urlpatterns = [
         name='stripe-invoice-payment-failed'),
     url(r'^webhooks/incoming/billing/invoice_payment_success/$', billing_views.stripe_invoice_payment_success,
         name='stripe-invoice-payment-success'),
-    url(r'^(?P<namespace>[\w-]+)/notifications/', include("notifications.urls"))
-
+    url(r'^(?P<namespace>[\w-]+)/notifications/', include("notifications.urls")),
+    url(r'^(?P<namespace>[\w-]+)/teams/(?P<team_team>[\w-]+)/groups/(?P<group>[^/.]+)/add/',
+        team_views.add_user_to_group, name='add-user-to-group'),
+    url(r'^(?P<namespace>[\w-]+)/teams/(?P<team_team>[\w-]+)/groups/(?P<group>[^/.]+)/remove/',
+        team_views.remove_user_from_group, name='remove-user-from-group'),
 ]
 
 

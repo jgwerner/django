@@ -24,7 +24,6 @@ class TeamFactory(factory.django.DjangoModelFactory):
             name='owners', team=self, defaults=dict(created_by=self.created_by))
         if created:
             owners.user_set.add(self.created_by)
-            owners.save()
 
 
 class GroupFactory(factory.django.DjangoModelFactory):

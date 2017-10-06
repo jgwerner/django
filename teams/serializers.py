@@ -1,6 +1,9 @@
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from .models import Team, Group
+
+User = get_user_model()
 
 
 class GroupSerializer(serializers.ModelSerializer):
@@ -24,5 +27,20 @@ class TeamSerializer(serializers.ModelSerializer):
         request = self.context['request']
         owners = team.groups.create(name='owners', created_by=request.user)
         owners.user_set.add(request.user)
-        owners.save()
         return team
+
+
+class UserField(serializers.Field):
+    def to_representation(self, obj):
+        return obj.username
+
+    def to_internal_value(self, data):
+        try:
+            user = User.objects.tbs_get(data)
+        except Exception as e:
+            raise serializers.ValidationError(e)
+        return user
+
+
+class GroupUserSerializer(serializers.Serializer):
+    user = UserField()
