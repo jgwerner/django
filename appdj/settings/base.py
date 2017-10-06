@@ -340,7 +340,7 @@ SERVER_RESOURCE_DIR = os.environ.get("SERVER_RESOURCE_DIR", "/resources")
 SERVER_PORT_MAPPING = {'8080': "proxy", '6006': 'restful'}
 SERVER_TYPES = {"restful", "cron", "proxy"}
 SERVER_TYPE_MAPPING = {'jupyter': 'proxy', 'rstudio': 'proxy'}
-SERVER_ENDPOINT_URLS = {'restful': '/restfull/', 'proxy': '/proxy/'}
+SERVER_ENDPOINT_URLS = {'restful': '/restful/', 'proxy': '/proxy/'}
 SERVER_COMMANDS = {
     'jupyter': 'jupyter notebook --NotebookApp.base_url=' +
     '"/{version}/{server.project.owner.username}/projects/{server.project.pk}/servers/{server.pk}/endpoint/proxy"',
