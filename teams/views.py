@@ -2,13 +2,13 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 
-from base.views import NamespaceMixin, LookupByMultipleFields
+from base.views import LookupByMultipleFields
 from base.utils import get_object_or_404
 from .models import Team, Group
 from .serializers import TeamSerializer, GroupSerializer, GroupUserSerializer
 
 
-class TeamViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewSet):
+class TeamViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
     queryset = Team.objects.all()
     serializer_class = TeamSerializer
     lookup_url_kwarg = 'team'
@@ -20,7 +20,8 @@ class GroupViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
     lookup_url_kwarg = 'group'
 
     def get_queryset(self):
-        return super().get_queryset().tbs_filter(self.kwargs['team_team'])
+        team = Team.objects.tbs_get(self.kwargs['team_team'])
+        return super().get_queryset().filter(team=team)
 
 
 def _user_group_action(action, request, **kwargs):

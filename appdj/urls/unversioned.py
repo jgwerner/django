@@ -29,7 +29,7 @@ from teams import views as team_views
 from billing import views as billing_views
 from search.views import SearchView
 
-router = routers.DefaultRouter()
+router = routers.SimpleRouter()
 
 router.register(r'hosts', infra_views.DockerHostViewSet)
 router.register(r'triggers', trigger_views.TriggerViewSet)
@@ -58,9 +58,11 @@ if settings.ENABLE_BILLING:
     router.register(r'billing/(?P<invoice_id>[\w-]+)/invoice-items', billing_views.InvoiceItemViewSet)
 
 router.register(r'service/(?P<server>[^/.]+)/trigger', trigger_views.ServerActionViewSet)
-router.register(r'teams', team_views.TeamViewSet)
-teams_router = routers.NestedSimpleRouter(router, r'teams', lookup='team')
-teams_router.register(r'groups', team_views.GroupViewSet)
+
+teams_router = routers.SimpleRouter()
+teams_router.register(r'teams', team_views.TeamViewSet)
+teams_sub_router = routers.NestedSimpleRouter(teams_router, r'teams', lookup='team')
+teams_sub_router.register(r'groups', team_views.GroupViewSet)
 
 servers_router = routers.SimpleRouter()
 servers_router.register("options/server-size", servers_views.ServerSizeViewSet)
@@ -81,7 +83,6 @@ urlpatterns = [
     url(r'^(?P<namespace>[\w-]+)/', include(router.urls)),
     url(r'^(?P<namespace>[\w-]+)/', include(project_router.urls)),
     url(r'^(?P<namespace>[\w-]+)/', include(server_router.urls)),
-    url(r'^(?P<namespace>[\w-]+)/', include(teams_router.urls)),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project>[\w-]+)/synced-resources/$',
         project_views.SyncedResourceViewSet.as_view({'get': 'list', 'post': 'create'})),
     url(r'^users/', include(user_router.urls)),
@@ -90,6 +91,8 @@ urlpatterns = [
         name='reset_ssh_key'),
     url(r'^users/(?P<user_pk>[\w-]+)/api-key/$', user_views.api_key, name='api_key'),
     url(r'^users/(?P<user_pk>[\w-]+)/avatar/$', user_views.avatar, name='avatar'),
+    url(r'^', include(teams_router.urls)),
+    url(r'^', include(teams_sub_router.urls)),
     url(r'^(?P<namespace>[\w-]+)/service/(?P<server>[^/.]+)/trigger/(?P<pk>[^/.]+)/call/$',
         trigger_views.call_trigger, name='server-trigger-call'),
     url(r'^(?P<namespace>[\w-]+)/project-copy/$', project_views.copy_project, name='project-copy'),

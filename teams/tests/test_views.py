@@ -17,7 +17,7 @@ class TeamTest(APITestCase):
         self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
     def test_create_team(self):
-        url = reverse('team-list', kwargs={'version': settings.DEFAULT_VERSION, 'namespace': self.user.username})
+        url = reverse('team-list', kwargs={'version': settings.DEFAULT_VERSION})
         data = {'name': 'TestTeam'}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -29,8 +29,7 @@ class TeamTest(APITestCase):
         owners = GroupFactory(name='owners', team=team)
         owners.user_set.add(self.user)
         owners.save()
-        url = reverse('team-detail', kwargs={
-            'version': settings.DEFAULT_VERSION, 'namespace': self.user.username, 'team': str(team.pk)})
+        url = reverse('team-detail', kwargs={'version': settings.DEFAULT_VERSION, 'team': str(team.pk)})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['name'], team.name)
@@ -40,8 +39,7 @@ class TeamTest(APITestCase):
         owners = GroupFactory(name='owners', team=team)
         owners.user_set.add(self.user)
         owners.save()
-        url = reverse('team-detail', kwargs={
-            'version': settings.DEFAULT_VERSION, 'namespace': self.user.username, 'team': team.name})
+        url = reverse('team-detail', kwargs={'version': settings.DEFAULT_VERSION, 'team': team.name})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['name'], team.name)

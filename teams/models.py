@@ -8,11 +8,6 @@ from base.models import TBSQuerySet
 from utils import alphanumeric
 
 
-class TeamQuerySet(TBSQuerySet):
-    def namespace(self, namespace):
-        return self.filter(groups__user__username=namespace.name)
-
-
 def team_directory_path(instance, filename):
     return f'{instance.name}/avatar/{filename}'
 
@@ -30,18 +25,13 @@ class Team(TimeStampedModel):
     avatar_url = models.CharField(max_length=100, blank=True, null=True)
     avatar = models.ImageField(upload_to=team_directory_path, null=True, blank=True)
 
-    objects = TeamQuerySet.as_manager()
+    objects = TBSQuerySet.as_manager()
 
     def __str__(self):
         return self.name
 
-    @property
-    def namespace_name(self):
-        return self.groups.filter(name='owners').first().user_set.first().username
-
     def get_absolute_url(self, version):
-        return reverse('team-detail', kwargs={
-            'namespace': self.namespace_name, 'version': version, 'team': str(self.pk)})
+        return reverse('team-detail', kwargs={'version': version, 'team': str(self.pk)})
 
     def resource_root(self):
         return Path(settings.RESOURCE_DIR, self.name)

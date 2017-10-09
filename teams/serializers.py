@@ -7,11 +7,12 @@ User = get_user_model()
 
 
 class GroupSerializer(serializers.ModelSerializer):
+    members = serializers.StringRelatedField(many=True, read_only=True, source='user_set')
     permissions = serializers.StringRelatedField(many=True)
 
     class Meta:
         model = Group
-        fields = ('id', 'name', 'permissions')
+        fields = ('id', 'name', 'permissions', 'members')
 
 
 class TeamSerializer(serializers.ModelSerializer):
