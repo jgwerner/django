@@ -139,6 +139,46 @@ class ProjectTest(ProjectTestMixin, APITestCase):
         copied_project = Project.objects.filter(id=str(response.data['id'])).first()
         self.assertIsNotNone(copied_project)
 
+    def test_project_copy_check_allowed(self):
+        proj = CollaboratorFactory(project__private=False,
+                                   project__copying_enabled=True).project
+        url = reverse("project-copy-check", kwargs={'version': settings.DEFAULT_VERSION,
+                                                    'namespace': self.user.username})
+        data = {'project': str(proj.pk)}
+        response = self.client.post(url, data=data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_project_copy_check_not_allowed(self):
+        proj = CollaboratorFactory(project__private=False,
+                                   project__copying_enabled=False).project
+        url = reverse("project-copy-check", kwargs={'version': settings.DEFAULT_VERSION,
+                                                    'namespace': self.user.username})
+        data = {'project': str(proj.pk)}
+        response = self.client.post(url, data=data)
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_copy_project_with_existing_name(self):
+        to_copy = CollaboratorFactory(project__private=False,
+                                      project__copying_enabled=True).project
+        my_own_project = CollaboratorFactory(project__private=False,
+                                             project__copying_enabled=True,
+                                             project__name=to_copy.name,
+                                             user=self.user).project
+
+        url = reverse("project-copy", kwargs={'version': settings.DEFAULT_VERSION,
+                                              'namespace': self.user.username})
+        data = {'project': str(to_copy.pk)}
+        response = self.client.post(url, data=data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        copied_project = Project.objects.filter(id=str(response.data['id'])).first()
+        self.assertIsNotNone(copied_project)
+
+        self.assertNotEqual(copied_project.name, my_own_project.name)
+        self.assertTrue(to_copy.name in copied_project.name)
+
     def test_create_project_with_different_user(self):
         staff_user = UserFactory(is_staff=True)
         token = create_auth_jwt(staff_user)

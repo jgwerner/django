@@ -15,7 +15,9 @@ from projects.models import Project, Collaborator, SyncedResource
 from projects.permissions import ProjectPermission, ProjectChildPermission
 from projects.tasks import sync_github
 from projects.models import ProjectFile
-from projects.utils import get_files_from_request, perform_project_copy
+from projects.utils import (get_files_from_request,
+                            has_copy_permission,
+                            perform_project_copy)
 
 User = get_user_model()
 
@@ -74,9 +76,21 @@ class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewS
 
 @api_view(['post'])
 @permission_classes((IsAuthenticated,))
+def copy_project_check(request, *args, **kwargs):
+    has_perm = has_copy_permission(request=request)
+    if has_perm:
+        resp_status = status.HTTP_200_OK
+    else:
+        resp_status = status.HTTP_404_NOT_FOUND
+
+    return Response(status=resp_status)
+
+
+@api_view(['post'])
+@permission_classes((IsAuthenticated,))
 def copy_project(request, *args, **kwargs):
     proj_identifier = request.data['project']
-    new_project = perform_project_copy(request.user, proj_identifier)
+    new_project = perform_project_copy(request)
     try:
         if new_project is not None:
             resp_status = status.HTTP_201_CREATED
