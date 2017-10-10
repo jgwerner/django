@@ -1,6 +1,7 @@
 import logging
 import base64
 import os
+from datetime import datetime
 from copy import deepcopy
 from pathlib import Path
 from distutils.dir_util import copy_tree
@@ -51,7 +52,29 @@ def create_ancillary_project_stuff(user, project):
     Path(settings.RESOURCE_DIR, project.get_owner_name(), str(project.pk)).mkdir(parents=True, exist_ok=True)
 
 
-def has_copy_permission(user, project):
+def has_copy_permission(request=None, user=None, project=None):
+    """
+    :param request: An HTTP Request
+    :param user: Authenticated User
+    :param project: Project Object
+    :return: Boolean reflecting whether or not the given user has permission to copy the project in question.
+    
+    Note that callers of this function should pass *either* request only, *or* both user and project.
+    If request is passed, the values stored in it will take precedence, and the others will be ignored.
+    If not enough information is passed, an exception will be raised.
+    
+    This is done to avoid unnecessary DB queries when we can.
+    """
+
+    if request is not None:
+        user = request.user
+        # We have to use request.GET when request.method is GET or HEAD
+        proj_pk = request.data.get('project') or request.GET.get('project')
+        project = Project.objects.get(pk=proj_pk)
+    elif user is None or project is None:
+        log.error("Someone attempted to call has_copy_permission without specifying enough information.")
+        raise ValueError("When calling has_copy_function, either request or both user and project must be specified.")
+
     has_perm = False
     if project.copying_enabled:
         if project.private:
@@ -76,16 +99,25 @@ def copy_servers(old_project: Project, new_project: Project) -> None:
         log.info(f"Copied {server.pk}")
 
 
-def perform_project_copy(user, project_id):
+def perform_project_copy(request):
+    user = request.user
+    project_id = request.data['project']
     log.info(f"Attempting to copy project {project_id} for user {user}")
     new_proj = None
     proj_to_copy = Project.objects.get(pk=project_id)
     old_resource_root = proj_to_copy.resource_root()
 
-    if has_copy_permission(user, proj_to_copy):
+    if has_copy_permission(user=user, project=proj_to_copy):
         log.info(f"User has the correct permissions to copy, doing it.")
         new_proj = deepcopy(proj_to_copy)
         new_proj.pk = None
+
+        project_with_same_name = Collaborator.objects.filter(owner=True,
+                                                             user=user,
+                                                             project__name=new_proj.name)
+        if project_with_same_name.exists():
+            new_proj.name += str(datetime.now().timestamp())
+
         new_proj.save()
 
         create_ancillary_project_stuff(user, new_proj)

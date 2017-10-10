@@ -1,6 +1,7 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from django.test import TestCase
 from django.core import mail
+from django.utils import timezone
 from billing.models import Event
 from users.models import User
 from users.tests.factories import UserFactory, EmailFactory
@@ -60,7 +61,7 @@ class TestNotificationSignals(TestCase):
         subscription = Subscription.objects.filter(customer=self.customer,
                                                    status=Subscription.TRIAL).first()
         self.assertIsNotNone(subscription)
-        subscription.trial_end = datetime.now() + timedelta(days=1)
+        subscription.trial_end = timezone.now() + timedelta(days=1)
         subscription.save()
         handle_trial_about_to_expire(sender=User,
                                      user=self.user)
@@ -94,7 +95,7 @@ class TestNotificationSignals(TestCase):
         subscription = Subscription.objects.filter(customer=self.customer,
                                                    status=Subscription.TRIAL).first()
         self.assertIsNotNone(subscription)
-        subscription.trial_end = datetime.now() + timedelta(days=1)
+        subscription.trial_end = timezone.now() + timedelta(days=1)
         subscription.save()
         handle_trial_about_to_expire(sender=User,
                                      user=self.user)
@@ -118,7 +119,7 @@ class TestNotificationSignals(TestCase):
         subscription = Subscription.objects.filter(customer=self.customer,
                                                    status=Subscription.TRIAL).first()
         self.assertIsNotNone(subscription)
-        subscription.trial_end = datetime.now() + timedelta(days=1)
+        subscription.trial_end = timezone.now() + timedelta(days=1)
         subscription.save()
         handle_trial_about_to_expire(sender=User,
                                      user=self.user)
