@@ -54,7 +54,6 @@ def create_ancillary_project_stuff(user, project):
 
 def has_copy_permission(request=None, user=None, project=None):
     """
-    
     :param request: An HTTP Request
     :param user: Authenticated User
     :param project: Project Object
@@ -69,8 +68,8 @@ def has_copy_permission(request=None, user=None, project=None):
 
     if request is not None:
         user = request.user
-        proj_pk = request.data.get('project')
-        log.debug(("proj pk", request.data))
+        # We have to use request.GET when request.method is GET or HEAD
+        proj_pk = request.data.get('project') or request.GET.get('project')
         project = Project.objects.get(pk=proj_pk)
     elif user is None or project is None:
         log.error("Someone attempted to call has_copy_permission without specifying enough information.")
