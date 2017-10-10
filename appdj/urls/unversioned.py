@@ -70,6 +70,13 @@ urlpatterns = [
         servers_views.server_internal_details, name="server_internal"),
     url(r'^(?P<namespace>[\w-]+)/triggers/send-slack-message/$', trigger_views.SlackMessageView.as_view(),
         name='send-slack-message'),
+    url(r'^(?P<namespace>[\w-]+)/triggers/(?P<trigger>[\w-]+)/start/$', trigger_views.start,
+        name='trigger-start'),
+    url(r'^(?P<namespace>[\w-]+)/triggers/(?P<trigger>[\w-]+)/stop/$', trigger_views.stop,
+        name='trigger-stop'),
+    url(r'^(?P<namespace>[\w-]+)/projects/project-copy/$',
+        project_views.CopyProjectView.as_view({'post': 'post', 'head': 'head'}),
+        name='project-copy'),
     url(r'^(?P<namespace>[\w-]+)/', include(router.urls)),
     url(r'^(?P<namespace>[\w-]+)/', include(project_router.urls)),
     url(r'^(?P<namespace>[\w-]+)/', include(server_router.urls)),
@@ -98,10 +105,16 @@ urlpatterns = [
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/auth/$',
         servers_views.check_token, name='server-auth'),
     url(r'^servers/', include(servers_router.urls)),
-    url(r'webhooks/incoming/billing/invoice_created/$', billing_views.stripe_invoice_created,
+    url(r'^webhooks/incoming/billing/invoice_created/$', billing_views.stripe_invoice_created,
         name='stripe-invoice-created'),
-    url(r'webhooks/incoming/billing/invoice_upcoming/$', billing_views.stripe_invoice_upcoming,
+    url(r'^webhooks/incoming/billing/invoice_upcoming/$', billing_views.stripe_invoice_upcoming,
         name='stripe-invoice-upcoming'),
+    url(r'^webhooks/incoming/billing/invoice_payment_failed/$', billing_views.stripe_invoice_payment_failed,
+        name='stripe-invoice-payment-failed'),
+    url(r'^webhooks/incoming/billing/invoice_payment_success/$', billing_views.stripe_invoice_payment_success,
+        name='stripe-invoice-payment-success'),
+    url(r'^(?P<namespace>[\w-]+)/notifications/', include("notifications.urls"))
+
 ]
 
 

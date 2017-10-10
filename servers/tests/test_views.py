@@ -6,7 +6,7 @@ from django.test import override_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from jwt_auth.utils import create_server_jwt
+from jwt_auth.utils import create_server_jwt, create_auth_jwt
 from projects.tests.factories import CollaboratorFactory
 from servers.models import Server, SshTunnel
 from users.tests.factories import UserFactory
@@ -22,13 +22,13 @@ class ServerTest(APITestCase):
         collaborator = CollaboratorFactory()
         self.user = collaborator.user
         self.project = collaborator.project
-        self.token_header = 'Token {}'.format(self.user.auth_token.key)
         self.url_kwargs = {'namespace': self.user.username,
                            'project_project': str(self.project.pk),
                            'version': settings.DEFAULT_VERSION}
         self.server_size = ServerSizeFactory(name='Nano')
         ServerSizeFactory()
-        self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+        token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
     def test_create_server(self):
         url = reverse('server-list', kwargs=self.url_kwargs)
@@ -221,13 +221,13 @@ class ServerTestWithName(APITestCase):
         collaborator = CollaboratorFactory()
         self.user = collaborator.user
         self.project = collaborator.project
-        self.token_header = 'Token {}'.format(self.user.auth_token.key)
         self.url_kwargs = {'namespace': self.user.username,
                            'project_project': self.project.name,
                            'version': settings.DEFAULT_VERSION}
         self.server_size = ServerSizeFactory(name='Nano')
         ServerSizeFactory()
-        self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+        token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
     def test_create_server(self):
         url = reverse('server-list', kwargs=self.url_kwargs)
@@ -409,11 +409,11 @@ class ServerRunStatisticsTestCase(APITestCase):
         collaborator = CollaboratorFactory()
         self.user = collaborator.user
         self.project = collaborator.project
-        self.token_header = 'Token {}'.format(self.user.auth_token.key)
         self.url_kwargs = {'namespace': self.user.username,
                            'project_project': str(self.project.pk),
                            'version': settings.DEFAULT_VERSION}
-        self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+        token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
     def test_list(self):
         stats = ServerRunStatisticsFactory(server__project=self.project)
@@ -439,11 +439,11 @@ class ServerRunStatisticsTestCaseWithName(APITestCase):
         collaborator = CollaboratorFactory()
         self.user = collaborator.user
         self.project = collaborator.project
-        self.token_header = 'Token {}'.format(self.user.auth_token.key)
         self.url_kwargs = {'namespace': self.user.username,
                            'project_project': self.project.name,
                            'version': settings.DEFAULT_VERSION}
-        self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+        token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
     def test_list(self):
         stats = ServerRunStatisticsFactory(server__project=self.project)
@@ -469,11 +469,11 @@ class ServerStatisticsTestCase(APITestCase):
         collaborator = CollaboratorFactory()
         self.user = collaborator.user
         self.project = collaborator.project
-        self.token_header = 'Token {}'.format(self.user.auth_token.key)
         self.url_kwargs = {'namespace': self.user.username,
                            'project_project': str(self.project.pk),
                            'version': settings.DEFAULT_VERSION}
-        self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+        token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
     def test_list(self):
         stats = ServerStatisticsFactory(server__project=self.project)
@@ -498,11 +498,11 @@ class ServerStatisticsTestCaseWithName(APITestCase):
         collaborator = CollaboratorFactory()
         self.user = collaborator.user
         self.project = collaborator.project
-        self.token_header = 'Token {}'.format(self.user.auth_token.key)
         self.url_kwargs = {'namespace': self.user.username,
                            'project_project': self.project.name,
                            'version': settings.DEFAULT_VERSION}
-        self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+        token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
     def test_list(self):
         stats = ServerStatisticsFactory(server__project=self.project)
@@ -526,8 +526,8 @@ class ServerStatisticsTestCaseWithName(APITestCase):
 class ServerSizeTestCase(APITestCase):
     def setUp(self):
         self.user = UserFactory()
-        self.token_header = 'Token {}'.format(self.user.auth_token.key)
-        self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+        token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
         self.server_size = ServerSizeFactory()
 
     def test_server_size_detail(self):
@@ -542,8 +542,8 @@ class ServerSizeTestCase(APITestCase):
         non_staff = UserFactory()
         non_staff.is_staff = False
         non_staff.save()
-        token_header = 'Token {}'.format(non_staff.auth_token.key)
-        client = self.client_class(HTTP_AUTHORIZATION=token_header)
+        token = create_auth_jwt(non_staff)
+        client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
         data = {'name': "Permission Test",
                 'cpu': 4,

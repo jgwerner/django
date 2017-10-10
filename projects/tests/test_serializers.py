@@ -16,6 +16,7 @@ class ProjectFileSerializerTestCase(TestCase):
         validated_data = {'author': self.user,
                           'project': str(self.project.pk),
                           'file': test_file}
+
         serializer = ProjectFileSerializer()
         # self.assertTrue(serializer.is_valid())
         project_file = serializer.create(validated_data)

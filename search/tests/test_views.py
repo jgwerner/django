@@ -5,6 +5,7 @@ from rest_framework.test import APITestCase
 from users.tests.factories import UserFactory
 from projects.tests.factories import ProjectFactory, CollaboratorFactory
 from servers.tests.factories import ServerFactory
+from jwt_auth.utils import create_auth_jwt
 
 
 class SearchTestCase(APITestCase):
@@ -15,8 +16,8 @@ class SearchTestCase(APITestCase):
             last_name='Craig',
             email='scraig@gmail.com'
         )
-        self.token_header = 'Token {}'.format(self.user.auth_token.key)
-        self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+        token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
         UserFactory.create_batch(4)
         self.url = reverse('search', kwargs={'namespace': self.user.username,
                                              'version': settings.DEFAULT_VERSION})

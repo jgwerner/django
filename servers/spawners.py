@@ -12,7 +12,7 @@ from django.utils.functional import cached_property
 import docker
 from docker.errors import APIError
 
-from utils import create_jwt_token
+from jwt_auth.utils import create_auth_jwt
 
 
 logger = logging.getLogger("servers")
@@ -83,7 +83,7 @@ class DockerSpawner(ServerSpawner):
     def _get_cmd(self):
         command = '''/runner -key={token} -ns={server.project.owner.username} -version={version}
         -projectID={server.project.pk} -serverID={server.pk} -root={domain} -secret={secret}'''.format(
-            token=create_jwt_token(self.server.project.owner),
+            token=create_auth_jwt(self.server.project.owner),
             server=self.server,
             domain=Site.objects.get_current(),
             version=settings.DEFAULT_VERSION,

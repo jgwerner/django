@@ -6,16 +6,17 @@ from rest_framework.test import APITestCase
 
 from users.tests.factories import UserFactory
 from infrastructure.models import DockerHost
+from jwt_auth.utils import create_auth_jwt
 from .factories import DockerHostFactory
 
 
 class DockerHostTest(APITestCase):
     def setUp(self):
         self.user = UserFactory()
-        self.token_header = 'Token {}'.format(self.user.auth_token.key)
         self.url_kwargs = {'namespace': self.user.username,
                            'version': settings.DEFAULT_VERSION}
-        self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+        token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
     @patch('infrastructure.models.DockerHost.status', new_callable=PropertyMock)
     def test_create_docker_host(self, host_status):
@@ -85,19 +86,6 @@ class DockerHostTest(APITestCase):
         url = reverse('dockerhost-detail', kwargs={'host': str(host.pk), **self.url_kwargs})
         data = dict(
             name='Test',
-        )
-        response = self.client.patch(url, data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        db_host = DockerHost.objects.get(pk=host.pk)
-        self.assertEqual(db_host.name, data['name'])
-
-    @patch('infrastructure.models.DockerHost.status', new_callable=PropertyMock)
-    def test_docker_host_update_with_name(self, host_status):
-        host_status.return_value = DockerHost.AVAILABLE
-        host = DockerHostFactory(owner=self.user)
-        url = reverse('dockerhost-detail', kwargs={'host': host.name, **self.url_kwargs})
-        data = dict(
-           name='Test',
         )
         response = self.client.patch(url, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)

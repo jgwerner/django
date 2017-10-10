@@ -6,6 +6,7 @@ from users.tests.factories import UserFactory
 from rest_framework import status
 from billing.models import Subscription
 from billing.tests.factories import SubscriptionFactory
+from jwt_auth.utils import create_auth_jwt
 
 
 class TestMiddleware(APITestCase):
@@ -16,8 +17,8 @@ class TestMiddleware(APITestCase):
         trial_sub = Subscription.objects.get(customer=self.user.customer)
         trial_sub.status = Subscription.CANCELED
         trial_sub.save()
-        self.token_header = "Token {auth}".format(auth=self.user.auth_token.key)
-        self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+        token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
         self.customer = self.user.customer
 
     @override_settings(ENABLE_BILLING=True)

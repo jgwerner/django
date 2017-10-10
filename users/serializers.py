@@ -1,7 +1,6 @@
 import logging
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from rest_framework.authtoken.serializers import AuthTokenSerializer as RestAuthTokenSerializer
 from social_django.models import UserSocialAuth
 
 from base.views import RequestUserMixin
@@ -82,9 +81,3 @@ class IntegrationSerializer(serializers.ModelSerializer):
         fields = ('id', 'provider', 'extra_data')
 
     extra_data = serializers.JSONField(required=False)
-
-
-class AuthTokenSerializer(RestAuthTokenSerializer):
-    username = serializers.CharField(label="Username", write_only=True)
-    password = serializers.CharField(label="Password", style={'input_type': 'password'}, write_only=True)
-    token = serializers.CharField(label="Token", read_only=True)

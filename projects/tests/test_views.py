@@ -14,11 +14,15 @@ from rest_framework.test import APITestCase
 
 from projects.tests.factories import (CollaboratorFactory,
                                       ProjectFileFactory)
+from servers.models import Server
+from servers.tests.factories import ServerFactory
 from projects.tests.utils import generate_random_file_content
 from users.tests.factories import UserFactory
-from projects.models import Project, ProjectFile
+from projects.models import Project, ProjectFile, Collaborator
+from jwt_auth.utils import create_auth_jwt
 import logging
 log = logging.getLogger('projects')
+
 
 class ProjectTestMixin(object):
     @classmethod
@@ -36,8 +40,8 @@ class ProjectTestMixin(object):
 class ProjectTest(ProjectTestMixin, APITestCase):
     def setUp(self):
         self.user = UserFactory()
-        self.token_header = 'Token {}'.format(self.user.auth_token.key)
-        self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+        token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
     def test_create_project(self):
         url = reverse('project-list', kwargs={'namespace': self.user.username,
@@ -51,10 +55,134 @@ class ProjectTest(ProjectTestMixin, APITestCase):
         self.assertEqual(Project.objects.count(), 1)
         self.assertEqual(Project.objects.get().name, data['name'])
 
+    def test_copy_public_project(self):
+        proj = CollaboratorFactory(project__private=False,
+                                   project__copying_enabled=True).project
+
+        uploaded_file = generate_random_file_content("foo")
+        old_file = ProjectFileFactory(author=proj.owner,
+                                      project=proj,
+                                      file=uploaded_file)
+        old_server = ServerFactory(project=proj)
+        url = reverse("project-copy", kwargs={'version': settings.DEFAULT_VERSION,
+                                              'namespace': self.user.username})
+        data = {'project': str(proj.pk)}
+        response = self.client.post(url, data=data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        copied_project = Project.objects.filter(id=str(response.data['id'])).first()
+        self.assertIsNotNone(copied_project)
+
+        # The approach to copying file for projects is simply to move them to the new project's
+        # resource root, and let the file watcher pick them up and create them in the database.
+        # So we simply check to see if the file exists on disk, and assume the file watcher will handle the rest.
+        # After all, it has its own unit tests ;)
+        expected_file_path = str(copied_project.resource_root()) + "/" + old_file.file.name.split("/")[-1]
+        path_obj = Path(expected_file_path)
+        self.assertTrue(path_obj.is_file())
+
+        new_server = Server.objects.filter(project=copied_project).first()
+        self.assertIsNotNone(new_server)
+        self.assertEqual(old_server.name, new_server.name)
+
+    def test_copying_public_project_disabled_fails(self):
+        proj = CollaboratorFactory(project__private=False,
+                                   project__copying_enabled=False).project
+        url = reverse("project-copy", kwargs={'version': settings.DEFAULT_VERSION,
+                                              'namespace': self.user.username})
+        data = {'project': str(proj.pk)}
+        response = self.client.post(url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        collab = Collaborator.objects.filter(user=self.user,
+                                             project__name=proj.name).first()
+        self.assertIsNone(collab)
+
+    def test_copying_private_project_disabled_fails(self):
+        proj = CollaboratorFactory(project__private=True,
+                                   project__copying_enabled=False).project
+        url = reverse("project-copy", kwargs={'version': settings.DEFAULT_VERSION,
+                                              'namespace': self.user.username})
+        data = {'project': str(proj.pk)}
+        response = self.client.post(url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        collab = Collaborator.objects.filter(user=self.user,
+                                             project__name=proj.name).first()
+        self.assertIsNone(collab)
+
+    def test_copying_private_project_enabled_not_a_collaborator(self):
+        proj = CollaboratorFactory(project__private=True,
+                                   project__copying_enabled=True).project
+        url = reverse("project-copy", kwargs={'version': settings.DEFAULT_VERSION,
+                                              'namespace': self.user.username})
+        data = {'project': str(proj.pk)}
+        response = self.client.post(url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        collab = Collaborator.objects.filter(user=self.user,
+                                             project__name=proj.name).first()
+        self.assertIsNone(collab)
+
+    def test_copying_private_project_enabled_as_a_collaborator(self):
+        proj = CollaboratorFactory(project__private=True,
+                                   project__copying_enabled=True).project
+        uploaded_file = generate_random_file_content("foo")
+        old_file = ProjectFileFactory(author=proj.owner,
+                                      project=proj,
+                                      file=uploaded_file)
+        CollaboratorFactory(user=self.user,
+                            project=proj,
+                            owner=False)
+        url = reverse("project-copy", kwargs={'version': settings.DEFAULT_VERSION,
+                                              'namespace': self.user.username})
+        data = {'project': str(proj.pk)}
+        response = self.client.post(url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        copied_project = Project.objects.filter(id=str(response.data['id'])).first()
+        self.assertIsNotNone(copied_project)
+
+    def test_project_copy_check_allowed(self):
+        proj = CollaboratorFactory(project__private=False,
+                                   project__copying_enabled=True).project
+        url = reverse("project-copy", kwargs={'version': settings.DEFAULT_VERSION,
+                                              'namespace': self.user.username})
+        data = {'project': str(proj.pk)}
+        response = self.client.head(url, data=data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_project_copy_check_not_allowed(self):
+        proj = CollaboratorFactory(project__private=False,
+                                   project__copying_enabled=False).project
+        url = reverse("project-copy", kwargs={'version': settings.DEFAULT_VERSION,
+                                              'namespace': self.user.username})
+        data = {'project': str(proj.pk)}
+        response = self.client.head(url, data=data)
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_copy_project_with_existing_name(self):
+        to_copy = CollaboratorFactory(project__private=False,
+                                      project__copying_enabled=True).project
+        my_own_project = CollaboratorFactory(project__private=False,
+                                             project__copying_enabled=True,
+                                             project__name=to_copy.name,
+                                             user=self.user).project
+
+        url = reverse("project-copy", kwargs={'version': settings.DEFAULT_VERSION,
+                                              'namespace': self.user.username})
+        data = {'project': str(to_copy.pk)}
+        response = self.client.post(url, data=data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        copied_project = Project.objects.filter(id=str(response.data['id'])).first()
+        self.assertIsNotNone(copied_project)
+
+        self.assertNotEqual(copied_project.name, my_own_project.name)
+        self.assertTrue(to_copy.name in copied_project.name)
+
     def test_create_project_with_different_user(self):
         staff_user = UserFactory(is_staff=True)
-        token_header = 'Token {}'.format(staff_user.auth_token.key)
-        client = self.client_class(HTTP_AUTHORIZATION=token_header)
+        token = create_auth_jwt(staff_user)
+        client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
         url = reverse('project-list', kwargs={'namespace': self.user.username,
                                               'version': settings.DEFAULT_VERSION})
         data = dict(
@@ -230,8 +358,8 @@ class ProjectTest(ProjectTestMixin, APITestCase):
 class ProjectTestWithName(ProjectTestMixin, APITestCase):
     def setUp(self):
         self.user = UserFactory()
-        self.token_header = 'Token {}'.format(self.user.auth_token.key)
-        self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+        token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
     def test_project_details(self):
         collaborator = CollaboratorFactory(user=self.user)
@@ -350,7 +478,6 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
     def setUp(self):
         collaborator = CollaboratorFactory()
         self.user = collaborator.user
-        self.token_header = 'Token {}'.format(self.user.auth_token.key)
         self.project = collaborator.project
         assign_perm('read_project', self.user, self.project)
         assign_perm('write_project', self.user, self.project)
@@ -360,7 +487,8 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
         self.user_dir = Path(settings.RESOURCE_DIR, self.user.username)
         self.project_root = self.user_dir.joinpath(str(self.project.pk))
         self.project_root.mkdir(parents=True)
-        self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+        token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
     def tearDown(self):
         shutil.rmtree(str(self.user_dir))
@@ -665,7 +793,6 @@ class ProjectFileTestWithName(ProjectTestMixin, APITestCase):
     def setUp(self):
         collaborator = CollaboratorFactory()
         self.user = collaborator.user
-        self.token_header = 'Token {}'.format(self.user.auth_token.key)
         self.project = collaborator.project
         assign_perm('read_project', self.user, self.project)
         assign_perm('write_project', self.user, self.project)
@@ -675,7 +802,8 @@ class ProjectFileTestWithName(ProjectTestMixin, APITestCase):
         self.user_dir = Path(settings.RESOURCE_DIR, self.user.username)
         self.project_root = self.user_dir.joinpath(str(self.project.pk))
         self.project_root.mkdir(parents=True)
-        self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+        token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
     def tearDown(self):
         shutil.rmtree(str(self.user_dir))
@@ -979,8 +1107,8 @@ class ProjectFileTestWithName(ProjectTestMixin, APITestCase):
 class CollaboratorTest(ProjectTestMixin, APITestCase):
     def setUp(self):
         self.user = UserFactory()
-        self.token_header = 'Token {}'.format(self.user.auth_token.key)
-        self.client = self.client_class(HTTP_AUTHORIZATION=self.token_header)
+        token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
     def test_create_collaborator(self):
         # Implicitly create project

@@ -29,6 +29,19 @@ services:
       - broker
       - search
     entrypoint: ''
+  beat:
+    build: .
+    command: /srv/env/bin/celery -A appdj beat -l debug
+    volumes:
+      - .:/srv/app
+      - /workspaces:/workspaces
+    env_file: env
+    depends_on:
+      - db
+      - cache
+      - broker
+      - search
+    entrypoint: ''
   db:
     image: postgres:alpine
     ports:

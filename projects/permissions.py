@@ -8,7 +8,6 @@ def has_project_permission(request, project):
         return request.user.has_perm('read_project', project)
     else:
         return request.user.has_perm('write_project', project)
-    return True
 
 
 class ProjectPermission(permissions.BasePermission):

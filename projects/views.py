@@ -1,8 +1,9 @@
 import logging
 from django.contrib.auth import get_user_model
-from rest_framework import viewsets, status, permissions
+from rest_framework import viewsets, status, permissions, views
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
+from rest_framework.decorators import api_view
 
 from base.views import NamespaceMixin, LookupByMultipleFields
 from projects.serializers import (ProjectSerializer,
@@ -13,7 +14,9 @@ from projects.models import Project, Collaborator, SyncedResource
 from projects.permissions import ProjectPermission, ProjectChildPermission
 from projects.tasks import sync_github
 from projects.models import ProjectFile
-from projects.utils import get_files_from_request
+from projects.utils import (get_files_from_request,
+                            has_copy_permission,
+                            perform_project_copy)
 
 User = get_user_model()
 
@@ -38,10 +41,11 @@ class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewS
 
         update_data = request.data
 
+        context = self.get_serializer_context()
+        context.update({'pk': instance.pk})
         serializer = self.serializer_class(instance, data=update_data,
                                            partial=partial,
-                                           context={'request': request,
-                                                    'pk': instance.pk})
+                                           context=context)
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
@@ -67,6 +71,41 @@ class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewS
         instance.delete()
         return Response(data={"message": "Project deleted."},
                         status=status.HTTP_204_NO_CONTENT)
+
+
+class CopyProjectView(viewsets.ViewSet):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request, *args, **kwargs):
+        proj_identifier = request.data['project']
+
+        try:
+            new_project = perform_project_copy(request)
+        except Exception as e:
+            log.error(f"There was a problem attempting to copy project {proj_identifier}. "
+                      f"Stacktrace incoming.")
+            log.exception(e)
+            resp_status = status.HTTP_500_INTERNAL_SERVER_ERROR
+            resp_data = {'message': "Internal Server Error when attempting to copy project."}
+        else:
+            if new_project is not None:
+                resp_status = status.HTTP_201_CREATED
+                serializer = ProjectSerializer(instance=new_project)
+                resp_data = serializer.data
+            else:
+                resp_status = status.HTTP_404_NOT_FOUND
+                resp_data = {'message': f"Project {proj_identifier} not found."}
+
+        return Response(data=resp_data, status=resp_status)
+
+    def head(self, request, *args, **kwargs):
+        has_perm = has_copy_permission(request=request)
+        if has_perm:
+            resp_status = status.HTTP_200_OK
+        else:
+            resp_status = status.HTTP_404_NOT_FOUND
+
+        return Response(status=resp_status)
 
 
 class ProjectMixin(LookupByMultipleFields):
@@ -116,8 +155,9 @@ class ProjectFileViewSet(ProjectMixin,
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         get_content = self.request.query_params.get('content', "false").lower() == "true"
-        serializer = self.serializer_class(instance,
-                                           context={'get_content': get_content})
+        context = self.get_serializer_context()
+        context.update({'get_content': get_content})
+        serializer = self.serializer_class(instance, context=context)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def destroy(self, request, *args, **kwargs):
@@ -130,7 +170,9 @@ class ProjectFileViewSet(ProjectMixin,
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset(*args, **kwargs)
         get_content = self.request.query_params.get('content', "false").lower() == "true"
-        serializer = self.serializer_class(queryset, many=True, context={'get_content': get_content})
+        context = self.get_serializer_context()
+        context.update({'get_content': get_content})
+        serializer = self.serializer_class(queryset, many=True, context=context)
         data = serializer.data
         # for proj_file in data:
         #     proj_file['file'] = request.build_absolute_uri(proj_file['file'])
@@ -161,9 +203,8 @@ class ProjectFileViewSet(ProjectMixin,
 
         proj_files = ProjectFile.objects.filter(pk__in=proj_files_to_serialize)
 
-        serializer = self.serializer_class(proj_files,
-                                           context={'request': request},
-                                           many=True)
+        context = self.get_serializer_context()
+        serializer = self.serializer_class(proj_files, context=context, many=True)
         return Response(data=serializer.data,
                         status=status.HTTP_201_CREATED)
 
@@ -186,7 +227,8 @@ class ProjectFileViewSet(ProjectMixin,
         data = {'project': project_pk,
                 'file': new_file}
 
-        serializer = self.serializer_class(instance, data=data)
+        context = self.get_serializer_context()
+        serializer = self.serializer_class(instance, data=data, context=context)
         serializer.is_valid(raise_exception=True)
         serializer.save()
 

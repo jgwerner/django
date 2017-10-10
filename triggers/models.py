@@ -1,6 +1,6 @@
 import requests
-from collections import defaultdict
 import logging
+from collections import defaultdict
 from django.db import models
 from django.conf import settings
 from django.contrib.postgres.fields import JSONField

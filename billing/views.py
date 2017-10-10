@@ -2,7 +2,6 @@ import logging
 import json
 
 from django.http import HttpResponse
-from django.utils import timezone
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
@@ -12,13 +11,17 @@ from rest_framework.response import Response
 from base.views import NamespaceMixin
 from base.permissions import IsAdminUser
 from billing.models import (Plan, Card, Subscription,
-                            Invoice, InvoiceItem)
+                            Invoice, InvoiceItem, Event)
 from billing.serializers import (PlanSerializer, CardSerializer,
                                  SubscriptionSerializer,
                                  InvoiceSerializer,
                                  InvoiceItemSerializer)
-from billing.stripe_utils import handle_stripe_invoice_webhook, handle_upcoming_invoice
-
+from billing.stripe_utils import (handle_stripe_invoice_created,
+                                  handle_upcoming_invoice,
+                                  handle_stripe_invoice_payment_status_change)
+from .signals import (subscription_cancelled,
+                      subscription_created,
+                      invoice_payment_failure)
 
 log = logging.getLogger('billing')
 
@@ -93,7 +96,7 @@ class SubscriptionViewSet(NamespaceMixin,
                           mixins.ListModelMixin,
                           mixins.RetrieveModelMixin,
                           viewsets.GenericViewSet):
-    queryset = Subscription.objects.all()
+    queryset = Subscription.objects.all().exclude(status=Subscription.CANCELED)
     serializer_class = SubscriptionSerializer
 
     def create(self, request, *args, **kwargs):
@@ -101,6 +104,11 @@ class SubscriptionViewSet(NamespaceMixin,
                                            context={'request': request})
         serializer.is_valid(raise_exception=True)
         instance = serializer.create(validated_data=request.data)
+        subscription_created.send(sender=Subscription,
+                                  user=instance.customer.user,
+                                  actor=request.user,
+                                  target=instance,
+                                  notif_type="subscription.created")
         return Response(data=self.serializer_class(instance).data,
                         status=status.HTTP_201_CREATED)
 
@@ -109,10 +117,13 @@ class SubscriptionViewSet(NamespaceMixin,
         stripe_obj = stripe.Subscription.retrieve(instance.stripe_id)
 
         stripe_response = stripe_obj.delete()
-        instance.canceled_at = timezone.now()
-        instance.ended_at = timezone.now()
-        instance.status = stripe_response['status']
-        instance.save()
+        instance.delete(new_status=stripe_response['status'])
+
+        subscription_cancelled.send(sender=Subscription,
+                                    user=instance.customer.user,
+                                    actor=request.user,
+                                    target=instance,
+                                    notif_type="subscription.canceled")
 
         data = {'stripe_id': stripe_response['id'], 'deleted': True}
         return Response(data=data, status=status.HTTP_204_NO_CONTENT)
@@ -149,12 +160,40 @@ class InvoiceItemViewSet(NamespaceMixin,
         data = serializer.data
         return Response(data, status=status.HTTP_200_OK)
 
+
 @require_POST
 @csrf_exempt
 def stripe_invoice_created(request, *args, **kwargs):
     body = request.body
     event_json = json.loads(body.decode("utf-8"))
-    handle_stripe_invoice_webhook(event_json)
+    handle_stripe_invoice_created(event_json)
+    return HttpResponse(status=status.HTTP_200_OK)
+
+
+@require_POST
+@csrf_exempt
+def stripe_invoice_payment_success(request, *args, **kwargs):
+    body = request.body
+    event_json = json.loads(body.decode("utf-8"))
+    signal_data = handle_stripe_invoice_payment_status_change(event_json)
+
+    if signal_data:
+        invoice_payment_failure.send(sender=Event, **signal_data)
+
+    return HttpResponse(status=status.HTTP_200_OK)
+
+
+@require_POST
+@csrf_exempt
+def stripe_invoice_payment_failed(request, *args, **kwargs):
+    body = request.body
+    event_json = json.loads(body.decode('utf-8'))
+
+    signal_data = handle_stripe_invoice_payment_status_change(event_json)
+
+    if signal_data:
+        invoice_payment_failure.send(sender=Event, **signal_data)
+
     return HttpResponse(status=status.HTTP_200_OK)
 
 
@@ -163,7 +202,6 @@ def stripe_invoice_created(request, *args, **kwargs):
 def stripe_invoice_upcoming(request, *args, **kwargs):
     body = request.body
     event_json = json.loads(body.decode("utf-8"))
-    # TODO: Think about how to return 200 OK before doing this calculation
     handle_upcoming_invoice(event_json)
 
     return HttpResponse(status=status.HTTP_200_OK)
