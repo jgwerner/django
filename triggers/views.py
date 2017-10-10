@@ -1,4 +1,3 @@
-import logging
 from django.shortcuts import get_object_or_404
 from django.contrib.sites.models import Site
 from rest_framework import viewsets, status
@@ -12,7 +11,6 @@ from servers.models import Server
 from triggers.models import Trigger
 from triggers.serializers import TriggerSerializer, SlackMessageSerializer, ServerActionSerializer
 from triggers.tasks import dispatch_trigger
-log = logging.getLogger('triggers')
 
 
 class TriggerViewSet(NamespaceMixin, viewsets.ModelViewSet):
@@ -38,7 +36,9 @@ class ServerActionViewSet(NamespaceMixin, LookupByMultipleFields, viewsets.Model
 
     def get_queryset(self):
         server = self.kwargs.get('server_server')
-        return super().get_queryset().filter(cause__object=Server.objects.tbs_filter(server).first())
+        server_first_filtered = Server.objects.tbs_filter(server).first()
+        final_qs = super().get_queryset().filter(cause__object_id=server_first_filtered.id)
+        return final_qs
 
 
 @api_view(['POST'])
