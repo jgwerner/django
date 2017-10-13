@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from .models import Team, Group
+from .utils import get_owners_permissions
 
 User = get_user_model()
 
@@ -26,8 +27,9 @@ class TeamSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         team = super().create(validated_data)
         request = self.context['request']
-        owners = team.groups.create(name='owners', created_by=request.user)
+        owners = Group.add_root(name='owners', created_by=request.user, team=team)
         owners.user_set.add(request.user)
+        owners.permissions.set(get_owners_permissions())
         return team
 
 

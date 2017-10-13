@@ -64,6 +64,11 @@ teams_router.register(r'teams', team_views.TeamViewSet)
 teams_sub_router = routers.NestedSimpleRouter(teams_router, r'teams', lookup='team')
 teams_sub_router.register(r'groups', team_views.GroupViewSet)
 
+my_teams_router = routers.SimpleRouter()
+my_teams_router.register(r'teams', team_views.TeamViewSet, base_name='my-team')
+my_teams_sub_router = routers.NestedSimpleRouter(my_teams_router, r'teams', lookup='team')
+my_teams_sub_router.register(r'groups', team_views.GroupViewSet, base_name='my-group')
+
 servers_router = routers.SimpleRouter()
 servers_router.register("options/server-size", servers_views.ServerSizeViewSet)
 
@@ -91,6 +96,8 @@ urlpatterns = [
         name='reset_ssh_key'),
     url(r'^users/(?P<user_pk>[\w-]+)/api-key/$', user_views.api_key, name='api_key'),
     url(r'^users/(?P<user_pk>[\w-]+)/avatar/$', user_views.avatar, name='avatar'),
+    url(r'^me/', include(my_teams_router.urls)),
+    url(r'^me/', include(my_teams_sub_router.urls)),
     url(r'^', include(teams_router.urls)),
     url(r'^', include(teams_sub_router.urls)),
     url(r'^(?P<namespace>[\w-]+)/service/(?P<server>[^/.]+)/trigger/(?P<pk>[^/.]+)/call/$',

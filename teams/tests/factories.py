@@ -12,19 +12,6 @@ class TeamFactory(factory.django.DjangoModelFactory):
     name = factory.Sequence(lambda o: f'team{o}')
     created_by = factory.SubFactory(UserFactory)
 
-    @factory.post_generation
-    def groups(self, create, extracted, **kwargs):
-        if not create:
-            return
-        if extracted:
-            for group in extracted:
-                self.groups.add(group)
-
-        owners, created = Group.objects.get_or_create(
-            name='owners', team=self, defaults=dict(created_by=self.created_by))
-        if created:
-            owners.user_set.add(self.created_by)
-
 
 class GroupFactory(factory.django.DjangoModelFactory):
     class Meta:
@@ -34,3 +21,4 @@ class GroupFactory(factory.django.DjangoModelFactory):
     name = factory.Sequence(lambda o: f'group{o}')
     team = factory.SubFactory(TeamFactory, groups=None)
     created_by = factory.SubFactory(UserFactory)
+    depth = 1

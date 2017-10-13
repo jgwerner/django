@@ -48,3 +48,4 @@ django-ses==0.8.2
 google-compute-engine==2.4.1
 raven==6.2.1
 celery-redbeat==0.10.0
+django-treebeard==4.1.2

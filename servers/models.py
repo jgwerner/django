@@ -53,6 +53,12 @@ class Server(models.Model):
     access_token = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
 
+    class Meta:
+        permissions = (
+            ('write_server', "Write server"),
+            ('read_server', "Read server"),
+        )
+
     def __str__(self):
         return self.name
 
@@ -186,3 +192,7 @@ class SshTunnel(models.Model):
 
     class Meta:
         unique_together = (('name', 'server'),)
+        permissions = (
+            ('write_ssh_tunnel', "Write ssh tunnel"),
+            ('read_ssh_tunnel', "Read ssh tunnel"),
+        )

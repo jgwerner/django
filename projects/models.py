@@ -100,6 +100,12 @@ class ProjectFile(models.Model):
 
     objects = FileQuerySet.as_manager()
 
+    class Meta:
+        permissions = (
+            ('write_project_file', "Write project file"),
+            ('read_project_file', "Read project file"),
+        )
+
     @property
     def path(self):
         relative_path = self.file.name.replace(str(self.project.pk), "")

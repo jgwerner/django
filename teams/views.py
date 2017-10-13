@@ -1,3 +1,4 @@
+from django.conf import settings
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
@@ -12,6 +13,13 @@ class TeamViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
     queryset = Team.objects.all()
     serializer_class = TeamSerializer
     lookup_url_kwarg = 'team'
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        version = settings.DEFAULT_VERSION
+        if self.request.META['PATH_INFO'].startswith(f'/{version}/me/'):
+            return qs.filter(groups__user=self.request.user)
+        return qs
 
 
 class GroupViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
