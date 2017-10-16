@@ -15,7 +15,8 @@ def run(files_list):
         username = path_parts[0]
         project_pk = path_parts[1]
 
-        user = User.objects.get(username=username)
+        user = User.objects.get(username=username,
+                                is_active=True)
         project = Project.objects.get(pk=project_pk)
 
         if to_delete:

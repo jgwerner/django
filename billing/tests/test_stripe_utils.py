@@ -5,7 +5,7 @@ from django.test import TestCase
 from users.tests.factories import UserFactory
 from projects.tests.factories import CollaboratorFactory
 from servers.models import ServerRunStatistics, ServerSize
-from servers.tests.factories import ServerRunStatisticsFactory
+from servers.tests.factories import ServerRunStatisticsFactory, ServerFactory
 from billing.models import Customer, Plan, Invoice
 from billing.tests.factories import PlanFactory
 from billing import stripe_utils
@@ -232,3 +232,18 @@ class TestStripeUtils(TestCase):
                                                                           usage_data)
         self.assertEqual(invoice_item.amount, usage_data['total'])
         self.assertEqual(invoice_item.customer, self.customer)
+
+    def test_server_with_no_usage(self):
+        collaborator = CollaboratorFactory(user=self.user)
+        project = collaborator.project
+        ServerFactory(project=project)
+
+        plan_dict = create_plan_dict()
+        plan = stripe_utils.create_plan_in_stripe(plan_dict)
+        plan.save()
+        self.plans_to_delete.append(plan)
+        stripe_utils.create_subscription_in_stripe({'customer': self.customer,
+                                                    'plan': plan})
+        usage_data = stripe_utils.calculate_compute_usage(self.customer.stripe_id)
+        expected_cost = 0.0
+        self.assertEqual(usage_data['total'], expected_cost)
