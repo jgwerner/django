@@ -1,6 +1,7 @@
 from pathlib import Path
 from django.db import models
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils import timezone
 from django_extensions.db.models import TimeStampedModel
@@ -9,6 +10,8 @@ from treebeard.mp_tree import MP_Node
 from base.models import TBSQuerySet
 from utils import alphanumeric
 from .managers import GroupManager
+
+User = get_user_model()
 
 
 def team_directory_path(instance, filename):
@@ -39,6 +42,9 @@ class Team(TimeStampedModel):
     def resource_root(self):
         return Path(settings.RESOURCE_DIR, self.name)
 
+    def members(self):
+        return User.objects.filter(team_groups__team=self)
+
 
 class Group(MP_Node):
     NATURAL_KEY = 'name'
@@ -49,15 +55,19 @@ class Group(MP_Node):
     team = models.ForeignKey(Team, related_name='groups')
     created = models.DateTimeField(default=timezone.now)
     modified = models.DateTimeField(auto_now=True)
+    private = models.BooleanField(default=True)
 
     objects = GroupManager()
 
     node_order_by = ['team', 'name']
 
     class Meta:
+        unique_together = ('team', 'name')
         permissions = (
             ('read_group', "Read group"),
             ('write_group', "Write group"),
+            ('add_member', "Add member"),
+            ('remove_member', "Remove member"),
         )
 
     def __str__(self):

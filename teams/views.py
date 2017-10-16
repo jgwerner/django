@@ -16,7 +16,7 @@ class TeamViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        version = settings.DEFAULT_VERSION
+        version = self.kwargs.get('version', settings.DEFAULT_VERSION)
         if self.request.META['PATH_INFO'].startswith(f'/{version}/me/'):
             return qs.filter(groups__user=self.request.user)
         return qs

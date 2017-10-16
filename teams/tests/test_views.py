@@ -1,5 +1,4 @@
 from django.conf import settings
-from django.contrib.auth.models import Permission
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITransactionTestCase
@@ -9,7 +8,7 @@ from projects.tests.factories import ProjectFactory
 from servers.tests.factories import ServerFactory, ServerSizeFactory
 from jwt_auth.utils import create_auth_jwt
 
-from .factories import TeamFactory, GroupFactory
+from .factories import TeamFactory
 from ..models import Team, Group
 
 
@@ -25,7 +24,11 @@ class TeamTest(APITransactionTestCase):
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Team.objects.count(), 1)
-        self.assertEqual(Team.objects.get().name, data['name'])
+        team = Team.objects.get()
+        self.assertEqual(team.name, data['name'])
+        self.assertEqual(team.groups.count(), 2)
+        self.assertTrue(team.groups.filter(name='owners').exists())
+        self.assertTrue(team.groups.filter(name='members').exists())
 
     def test_list_teams(self):
         teams_count = 4
@@ -38,27 +41,21 @@ class TeamTest(APITransactionTestCase):
     def test_list_my_teams(self):
         teams_count = 4
         url = reverse('my-team-list', kwargs={'version': settings.DEFAULT_VERSION})
-        teams = TeamFactory.create_batch(teams_count)
-        for team in teams:
-            owners = Group.add_root(name='owners', team=team, created_by=self.user)
-            owners.user_set.add(self.user)
+        TeamFactory.create_batch(teams_count, created_by=self.user)
+        TeamFactory.create_batch(teams_count)
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), teams_count)
 
     def test_list_my_team_groups(self):
         team = TeamFactory(created_by=self.user)
-        owners = Group.add_root(name='owners', team=team, created_by=self.user)
-        owners.user_set.add(self.user)
         url = reverse('my-group-list', kwargs={'version': settings.DEFAULT_VERSION, 'team_team': str(team.pk)})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
+        self.assertEqual(len(response.data), 2)
 
     def test_team_details(self):
         team = TeamFactory(created_by=self.user)
-        owners = Group.add_root(name='owners', team=team, created_by=self.user)
-        owners.user_set.add(self.user)
         url = reverse('team-detail', kwargs={'version': settings.DEFAULT_VERSION, 'team': str(team.pk)})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -66,9 +63,6 @@ class TeamTest(APITransactionTestCase):
 
     def test_team_details_with_name(self):
         team = TeamFactory(created_by=self.user)
-        owners = GroupFactory(name='owners', team=team)
-        owners.user_set.add(self.user)
-        owners.save()
         url = reverse('team-detail', kwargs={'version': settings.DEFAULT_VERSION, 'team': team.name})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -79,10 +73,6 @@ class TeamTest(APITransactionTestCase):
         token = create_auth_jwt(owner)
         cli = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
         team = TeamFactory(created_by=owner)
-        owners = GroupFactory(name='owners', team=team)
-        owners.user_set.add(owner)
-        project_write = Permission.objects.get(codename='write_project')
-        owners.permissions.add(project_write)
         return team, cli
 
     def test_team_group_permission_for_project(self):
@@ -145,3 +135,21 @@ class TeamTest(APITransactionTestCase):
         data['name'] = 'Test2'
         resp = self.client.post(tunnel_url, data=data)
         self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_create_group(self):
+        team = TeamFactory(created_by=self.user)
+        data = dict(name='testers', permissions=[])
+        url = reverse('group-list', kwargs={'version': settings.DEFAULT_VERSION, 'team_team': str(team.pk)})
+        resp = self.client.post(url, data)
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Group.objects.filter(name=data['name']).count(), 1)
+
+    def test_add_group_child(self):
+        team = TeamFactory(created_by=self.user)
+        owners = team.groups.get(name='owners')
+        data = dict(name='testers', parent=str(owners.pk), permissions=[])
+        url = reverse('group-list', kwargs={'version': settings.DEFAULT_VERSION, 'team_team': str(team.pk)})
+        resp = self.client.post(url, data)
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        owners.refresh_from_db()
+        self.assertEqual(owners.get_children_count(), 1)
