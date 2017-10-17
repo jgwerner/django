@@ -53,8 +53,8 @@ class CardViewSet(mixins.CreateModelMixin,
                                            context={'request': request})
         serializer.is_valid(raise_exception=True)
         try:
-            serializer.create(validated_data=request.data)
-            data = serializer.data
+            instance = serializer.create(validated_data=request.data)
+            data = self.serializer_class(instance).data
             ret_status = status.HTTP_201_CREATED
         except stripe.error.StripeError as e:
             body = e.json_body
