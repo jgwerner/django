@@ -47,7 +47,7 @@ class UserViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
             return Response(data={'message': "Username cannot be changed after creation."},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        serializer = self.serializer_class(instance=user, data=data, partial=partial)
+        serializer = self.get_serializer(instance=user, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
         if user is None:
             # A user is being created via PUT
@@ -99,8 +99,8 @@ def avatar(request, version, user_pk):
             profile.avatar = request.FILES.get("image")
             profile.save()
             log.info("Updated avatar for user: {user}".format(user=user.username))
-            data = UserSerializer(instance=user).data
-            data['profile']['avatar'] = request.build_absolute_uri(data['profile']['avatar'])
+            data = UserSerializer(instance=user,
+                                  context={'request': request}).data
         except Exception as e:
             data = {'message': str(e)}
             log.exception(e)
