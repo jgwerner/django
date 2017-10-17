@@ -5,6 +5,7 @@ from pathlib import Path
 from shutil import copy2
 from django.conf import settings
 from django.test import TestCase
+from users.tests.factories import UserFactory
 from projects.tests.factories import (ProjectFactory,
                                       CollaboratorFactory,
                                       ProjectFileFactory)
@@ -89,3 +90,16 @@ class FileWatcherTest(TestCase):
         self.assertEqual(ProjectFile.objects.count(), 1)
         files_in_project = [name for name in os.listdir(str(self.project_root))]
         self.assertEqual(len(files_in_project), 1)
+
+    def test_deactivated_user_with_same_username_does_not_fail(self):
+        UserFactory(username=self.user.username,
+                    is_active=False)
+        copy2("projects/tests/file_upload_test_1.txt", str(self.project_root))
+        file_name = "{user}/{proj}/file_upload_test_1.txt".format(user=self.user.username,
+                                                                  proj=self.project.pk)
+        files_sent_to_watchman = [{'name': file_name, 'exists': True}]
+        run(files_list=files_sent_to_watchman)
+        proj_file = ProjectFile.objects.filter(author=self.user,
+                                               project=self.project,
+                                               file=file_name).first()
+        self.assertIsNotNone(proj_file)

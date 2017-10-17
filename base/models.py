@@ -3,7 +3,6 @@ from django.db.models import QuerySet, Q
 
 from .utils import validate_uuid
 
-
 class TBSQuerySet(QuerySet):
     def tbs_filter(self, value, *args, **kwargs):
         """

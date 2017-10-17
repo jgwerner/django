@@ -206,6 +206,18 @@ def create_event_from_webhook(stripe_obj):
     return None
 
 
+def find_or_create_invoice(stripe_data):
+    stripe_data['invoice_date'] = stripe_data['date']
+    converted = convert_stripe_object(Invoice, stripe_data)
+    invoice, created = Invoice.objects.update_or_create(stripe_id=converted['stripe_id'],
+                                                        defaults=converted)
+    if created:
+        log.info("Created a new invoice: {invoice}".format(invoice=invoice.pk))
+    else:
+        log.info("Updated an invoice: {invoice}".format(invoice=invoice.stripe_id))
+    return invoice
+
+
 def handle_stripe_invoice_payment_status_change(stripe_obj):
     signal_data = {}
     event = create_event_from_webhook(stripe_obj)
@@ -216,8 +228,8 @@ def handle_stripe_invoice_payment_status_change(stripe_obj):
         converted_data = convert_stripe_object(Subscription, stripe_subscription)
         subscription = Subscription.objects.get(stripe_id=sub_stripe_id)
 
-        invoice_stripe_id = stripe_obj['data']['object']['id']
-        invoice = Invoice.objects.get(stripe_id=invoice_stripe_id)
+        stripe_data = stripe_obj['data']['object']
+        invoice = find_or_create_invoice(stripe_data)
 
         signal_data = {'user': subscription.customer.user,
                        'actor': subscription,
@@ -241,14 +253,7 @@ def handle_stripe_invoice_created(stripe_obj):
     event = create_event_from_webhook(stripe_obj)
     if event is not None:
         stripe_invoice = stripe_obj['data']['object']
-        stripe_invoice['invoice_date'] = stripe_invoice['date']
-        converted = convert_stripe_object(Invoice, stripe_invoice)
-        invoice, created = Invoice.objects.update_or_create(stripe_id=converted['stripe_id'],
-                                                            defaults=converted)
-        if created:
-            log.info("Created a new invoice: {invoice}".format(invoice=invoice.pk))
-        else:
-            log.info("Updated an invoice: {invoice}".format(invoice=invoice.stripe_id))
+        find_or_create_invoice(stripe_invoice)
 
 
 def calculate_compute_usage(customer_stripe_id):
@@ -267,9 +272,13 @@ def calculate_compute_usage(customer_stripe_id):
     total_cost = 0
     for server in servers:
         this_server_data = get_server_usage([str(server.pk)], begin_measure_time=usage_start_time)
-        # server_size.cost_per_second is in _dollars_, we want cents
-        this_server_cost = (100 * server.server_size.cost_per_second *
-                            Decimal(this_server_data['duration'].total_seconds()))
+        duration = this_server_data.get('duration')
+        if duration:
+            # server_size.cost_per_second is in _dollars_, we want cents
+            this_server_cost = (100 * server.server_size.cost_per_second *
+                                Decimal(duration.total_seconds()))
+        else:
+            this_server_cost = 0.0
         usage_data[server] += this_server_cost
         total_cost += this_server_cost
 

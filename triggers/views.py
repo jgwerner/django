@@ -7,7 +7,6 @@ from rest_framework.decorators import api_view, permission_classes, authenticati
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
 from base.views import NamespaceMixin, LookupByMultipleFields
 from servers.models import Server
 from .models import Trigger
@@ -15,7 +14,6 @@ from .serializers import TriggerSerializer, SlackMessageSerializer, ServerAction
 from .tasks import dispatch_trigger
 from .utils import get_beat_entry, create_beat_entry
 log = logging.getLogger('triggers')
-
 
 class TriggerViewSet(NamespaceMixin, viewsets.ModelViewSet):
     queryset = Trigger.objects.all()
@@ -40,7 +38,9 @@ class ServerActionViewSet(NamespaceMixin, LookupByMultipleFields, viewsets.Model
 
     def get_queryset(self):
         server = self.kwargs.get('server_server')
-        return super().get_queryset().filter(cause__object=Server.objects.tbs_filter(server).first())
+        server_first_filtered = Server.objects.tbs_filter(server).first()
+        final_qs = super().get_queryset().filter(cause__object_id=server_first_filtered.id)
+        return final_qs
 
 
 @api_view(['POST'])
