@@ -609,6 +609,19 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(ProjectFile.objects.count(), files_count)
 
+    def test_get_call_triggers_disk_sync(self):
+        old_pf = ProjectFile.objects.filter(project=self.project).count()
+        generate_random_file_content(suffix="fizzbuzz.txt",
+                                     base_path=str(self.project.resource_root()))
+        url = reverse('projectfile-list', kwargs=self.url_kwargs)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        new_project_files = ProjectFile.objects.filter(project=self.project)
+        self.assertEqual(new_project_files.count(), old_pf + 1)
+        all_names = new_project_files.values_list('file', flat=True)
+        expected_name = (str(self.project.resource_root()) + "/" + "test_file_fizzbuzz.txt")
+        self.assertTrue(expected_name in all_names)
+
     def test_list_files_respects_project(self):
         files_count = 4
         this_project_files = []

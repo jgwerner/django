@@ -1,9 +1,8 @@
 import logging
 from django.contrib.auth import get_user_model
-from rest_framework import viewsets, status, permissions, views
+from rest_framework import viewsets, status, permissions
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
-from rest_framework.decorators import api_view
 
 from base.views import NamespaceMixin, LookupByMultipleFields
 from projects.serializers import (ProjectSerializer,
@@ -16,7 +15,8 @@ from projects.tasks import sync_github
 from projects.models import ProjectFile
 from projects.utils import (get_files_from_request,
                             has_copy_permission,
-                            perform_project_copy)
+                            perform_project_copy,
+                            sync_project_files_from_disk)
 
 User = get_user_model()
 
@@ -144,6 +144,7 @@ class ProjectFileViewSet(ProjectMixin,
     def get_queryset(self, *args, **kwargs):
         queryset = super().get_queryset()
         project = Project.objects.tbs_get(self.kwargs.get('project_project'))
+        sync_project_files_from_disk(project)
         filename = self.request.query_params.get("filename", None)
         if filename is not None:
             complete_filename = "{usr}/{proj}/{file}".format(usr=self.request.user.username,
