@@ -16,7 +16,7 @@ class TbsStorage(FileSystemStorage):
     for the handling of files that already exist on disk. Sometimes it
     may be intentional that we're saving a file by a name that is already
     on disk. In that scenario we do nothing. This class is trimmed as much
-    as possible, but the handling of certain excpetions does require some
+    as possible, but the handling of certain exceptions does require some
     copy/pasting.
     """
     def _save(self, name, content):
