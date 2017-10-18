@@ -10,17 +10,30 @@ class SubscriptionMiddleware(object):
         self.get_response = get_response
 
     def __call__(self, request):
-        try:
-            url_name = resolve(request.path).url_name
-            if url_name not in settings.SUBSCRIPTION_EXEMPT_URLS:
-                user = request.action.user
-                if (settings.ENABLE_BILLING
-                    and user
-                    and not user.is_staff):
-                    customer = user.customer
-                    if not customer.has_active_subscription():
-                        return HttpResponse(status=status.HTTP_402_PAYMENT_REQUIRED)
-        except Customer.DoesNotExist:
-            pass
+        url_name = resolve(request.path).url_name
+        if url_name not in settings.SUBSCRIPTION_EXEMPT_URLS:
+            user = request.action.user
+            customer = self.get_customer(request)
+            conditions = [
+                settings.ENABLE_BILLING,
+                user and not user.is_staff,
+                customer and not customer.has_active_subscription()
+            ]
+            if all(conditions):
+                return HttpResponse(status=status.HTTP_402_PAYMENT_REQUIRED)
 
         return self.get_response(request)
+
+    def get_customer(self, request):
+        obj = user = request.action.user
+        if user is None:
+            return
+        if hasattr(request, 'namespace') and request.namespace.type == 'team':
+            team = request.namespace.object
+            if not team.is_member(user):
+                return
+            obj = team
+        try:
+            return obj.customer
+        except Customer.DoesNotExist:
+            return
