@@ -41,12 +41,6 @@ class TeamSerializer(serializers.ModelSerializer):
         model = Team
         fields = ('id', 'name', 'description', 'website', 'location', 'groups', 'created_by')
 
-    def create(self, validated_data):
-        request = self.context['view'].request
-        instance = Team(customer=request.user.customer, **validated_data)
-        instance.save()
-        return instance
-
 
 class UserField(serializers.Field):
     def to_representation(self, obj):
