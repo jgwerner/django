@@ -29,6 +29,7 @@ class TeamTest(APITransactionTestCase):
         self.assertEqual(team.groups.count(), 2)
         self.assertTrue(team.groups.filter(name='owners').exists())
         self.assertTrue(team.groups.filter(name='members').exists())
+        self.assertIsNotNone(team.customer)
 
     def test_list_teams(self):
         teams_count = 4
@@ -153,3 +154,36 @@ class TeamTest(APITransactionTestCase):
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         owners.refresh_from_db()
         self.assertEqual(owners.get_children_count(), 1)
+
+    def test_group_read_perm(self):
+        team, cli = self._create_base_permission_test()
+        owners = team.groups.get(name='owners')
+        url = reverse('group-detail', kwargs={
+            'version': settings.DEFAULT_VERSION, 'team_team': str(team.pk), 'group': str(owners.pk)})
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+        resp = cli.get(url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+    def test_group_write_perm(self):
+        team, cli = self._create_base_permission_test()
+        owners = team.groups.get(name='owners')
+        data = dict(private=not owners.private)
+        url = reverse('group-detail', kwargs={
+            'version': settings.DEFAULT_VERSION, 'team_team': str(team.pk), 'group': str(owners.pk)})
+        resp = self.client.patch(url, data=data)
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+        resp = cli.get(url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+    def test_group_public(self):
+        team, cli = self._create_base_permission_test()
+        owners = team.groups.get(name='owners')
+        owners.private = False
+        owners.save()
+        url = reverse('group-detail', kwargs={
+            'version': settings.DEFAULT_VERSION, 'team_team': str(team.pk), 'group': str(owners.pk)})
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        resp = cli.get(url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)

@@ -1,5 +1,5 @@
 from django.conf import settings
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 
@@ -7,6 +7,7 @@ from base.views import LookupByMultipleFields
 from base.utils import get_object_or_404
 from .models import Team, Group
 from .serializers import TeamSerializer, GroupSerializer, GroupUserSerializer
+from .permissions import GroupPermission
 
 
 class TeamViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
@@ -25,6 +26,7 @@ class TeamViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
 class GroupViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
+    permission_classes = (permissions.IsAuthenticated, GroupPermission)
     lookup_url_kwarg = 'group'
 
     def get_queryset(self):
