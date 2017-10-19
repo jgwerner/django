@@ -21,18 +21,13 @@ class TbsStorage(FileSystemStorage):
     copy/pasting.
     """
     def _save(self, name, content):
-        log.debug(("name in _save", name))
-        log.debug(("self.project root included", self.project_root_included))
         full_path = self.path(name)
-        log.debug(("full path", full_path))
 
         # Create any intermediate directories that do not exist.
         # Note that there is a race between os.path.exists and os.makedirs:
         # if os.makedirs fails with EEXIST, the directory was created
         # concurrently, and we can continue normally. Refs #16082.
         directory = os.path.dirname(full_path)
-        log.debug(("directory", directory))
-        log.debug(("directory exists", os.path.exists(directory)))
         if not os.path.exists(directory):
             try:
                 if self.directory_permissions_mode is not None:
