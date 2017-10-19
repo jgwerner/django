@@ -142,20 +142,20 @@ class ProjectTest(ProjectTestMixin, APITestCase):
     def test_project_copy_check_allowed(self):
         proj = CollaboratorFactory(project__private=False,
                                    project__copying_enabled=True).project
-        url = reverse("project-copy", kwargs={'version': settings.DEFAULT_VERSION,
-                                              'namespace': self.user.username})
+        url = reverse("project-copy-check", kwargs={'version': settings.DEFAULT_VERSION,
+                                                    'namespace': self.user.username})
         data = {'project': str(proj.pk)}
-        response = self.client.head(url, data=data)
+        response = self.client.post(url, data=data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_project_copy_check_not_allowed(self):
         proj = CollaboratorFactory(project__private=False,
                                    project__copying_enabled=False).project
-        url = reverse("project-copy", kwargs={'version': settings.DEFAULT_VERSION,
-                                              'namespace': self.user.username})
+        url = reverse("project-copy-check", kwargs={'version': settings.DEFAULT_VERSION,
+                                                    'namespace': self.user.username})
         data = {'project': str(proj.pk)}
-        response = self.client.head(url, data=data)
+        response = self.client.post(url, data=data)
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
