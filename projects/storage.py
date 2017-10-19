@@ -1,6 +1,7 @@
 import errno
 import os
 import logging
+from django.conf import settings
 from django.core.files import File, locks
 from django.core.files.move import file_move_safe
 from django.core.files.storage import FileSystemStorage
@@ -111,9 +112,11 @@ class TbsStorage(FileSystemStorage):
     def get_available_name(self, name, max_length=None):
         if self.exists(name) and self.project_root_included:
             log.info("Project root was included in the file's name. Not going to attempt"
-                     " to generate a unique file name; assuming the file is already on disk.")
+                     " to generate a unique file name; assuming the file is already on disk."
+                     " Instead, we simply remove settings.RESOUCE_DIR (probably /workspaces)"
+                     " from the file name.")
             # We know the file exists, and we want it to be that name. Break the loop
-            return name
+            return name.replace(settings.RESOURCE_DIR + "/", "")
         else:
             return super(TbsStorage, self).get_available_name(name=name, max_length=max_length)
 
