@@ -1,6 +1,6 @@
 import logging
 from django.contrib.auth import get_user_model
-from rest_framework import viewsets, status, permissions, views
+from rest_framework import viewsets, status, permissions
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
@@ -16,7 +16,8 @@ from projects.tasks import sync_github
 from projects.models import ProjectFile
 from projects.utils import (get_files_from_request,
                             has_copy_permission,
-                            perform_project_copy)
+                            perform_project_copy,
+                            sync_project_files_from_disk)
 
 User = get_user_model()
 
@@ -73,39 +74,39 @@ class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewS
                         status=status.HTTP_204_NO_CONTENT)
 
 
-class CopyProjectView(viewsets.ViewSet):
-    permission_classes = (permissions.IsAuthenticated,)
+@api_view(['post'])
+def project_copy(request, *args, **kwargs):
+    proj_identifier = request.data['project']
 
-    def post(self, request, *args, **kwargs):
-        proj_identifier = request.data['project']
-
-        try:
-            new_project = perform_project_copy(request)
-        except Exception as e:
-            log.error(f"There was a problem attempting to copy project {proj_identifier}. "
-                      f"Stacktrace incoming.")
-            log.exception(e)
-            resp_status = status.HTTP_500_INTERNAL_SERVER_ERROR
-            resp_data = {'message': "Internal Server Error when attempting to copy project."}
+    try:
+        new_project = perform_project_copy(request)
+    except Exception as e:
+        log.error(f"There was a problem attempting to copy project {proj_identifier}. "
+                  f"Stacktrace incoming.")
+        log.exception(e)
+        resp_status = status.HTTP_500_INTERNAL_SERVER_ERROR
+        resp_data = {'message': "Internal Server Error when attempting to copy project."}
+    else:
+        if new_project is not None:
+            resp_status = status.HTTP_201_CREATED
+            serializer = ProjectSerializer(instance=new_project)
+            resp_data = serializer.data
         else:
-            if new_project is not None:
-                resp_status = status.HTTP_201_CREATED
-                serializer = ProjectSerializer(instance=new_project)
-                resp_data = serializer.data
-            else:
-                resp_status = status.HTTP_404_NOT_FOUND
-                resp_data = {'message': f"Project {proj_identifier} not found."}
+            resp_status = status.HTTP_404_NOT_FOUND
+            resp_data = {'message': f"Project {proj_identifier} not found."}
 
         return Response(data=resp_data, status=resp_status)
 
-    def head(self, request, *args, **kwargs):
-        has_perm = has_copy_permission(request=request)
-        if has_perm:
-            resp_status = status.HTTP_200_OK
-        else:
-            resp_status = status.HTTP_404_NOT_FOUND
 
-        return Response(status=resp_status)
+@api_view(['post'])
+def project_copy_check(request, *args, **kwargs):
+    has_perm = has_copy_permission(request=request)
+    if has_perm:
+        resp_status = status.HTTP_200_OK
+    else:
+        resp_status = status.HTTP_404_NOT_FOUND
+
+    return Response(status=resp_status)
 
 
 class ProjectMixin(LookupByMultipleFields):
@@ -144,6 +145,7 @@ class ProjectFileViewSet(ProjectMixin,
     def get_queryset(self, *args, **kwargs):
         queryset = super().get_queryset()
         project = Project.objects.tbs_get(self.kwargs.get('project_project'))
+        sync_project_files_from_disk(project)
         filename = self.request.query_params.get("filename", None)
         if filename is not None:
             complete_filename = "{usr}/{proj}/{file}".format(usr=self.request.user.username,

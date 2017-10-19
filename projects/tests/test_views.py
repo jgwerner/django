@@ -142,20 +142,20 @@ class ProjectTest(ProjectTestMixin, APITestCase):
     def test_project_copy_check_allowed(self):
         proj = CollaboratorFactory(project__private=False,
                                    project__copying_enabled=True).project
-        url = reverse("project-copy", kwargs={'version': settings.DEFAULT_VERSION,
-                                              'namespace': self.user.username})
+        url = reverse("project-copy-check", kwargs={'version': settings.DEFAULT_VERSION,
+                                                    'namespace': self.user.username})
         data = {'project': str(proj.pk)}
-        response = self.client.head(url, data=data)
+        response = self.client.post(url, data=data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_project_copy_check_not_allowed(self):
         proj = CollaboratorFactory(project__private=False,
                                    project__copying_enabled=False).project
-        url = reverse("project-copy", kwargs={'version': settings.DEFAULT_VERSION,
-                                              'namespace': self.user.username})
+        url = reverse("project-copy-check", kwargs={'version': settings.DEFAULT_VERSION,
+                                                    'namespace': self.user.username})
         data = {'project': str(proj.pk)}
-        response = self.client.head(url, data=data)
+        response = self.client.post(url, data=data)
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
@@ -608,6 +608,19 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(ProjectFile.objects.count(), files_count)
+
+    def test_get_call_triggers_disk_sync(self):
+        old_pf = ProjectFile.objects.filter(project=self.project).count()
+        generate_random_file_content(suffix="fizzbuzz.txt",
+                                     base_path=str(self.project.resource_root()))
+        url = reverse('projectfile-list', kwargs=self.url_kwargs)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        new_project_files = ProjectFile.objects.filter(project=self.project)
+        self.assertEqual(new_project_files.count(), old_pf + 1)
+        all_names = new_project_files.values_list('file', flat=True)
+        expected_name = (str(self.project.resource_root()) + "/" + "test_file_fizzbuzz.txt")
+        self.assertTrue(expected_name in all_names)
 
     def test_list_files_respects_project(self):
         files_count = 4
