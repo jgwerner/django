@@ -26,6 +26,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 class UserSerializer(SearchSerializerMixin, serializers.ModelSerializer):
     profile = UserProfileSerializer(required=False)
+    email = serializers.EmailField(required=True, allow_blank=False, allow_null=False)
 
     class Meta:
         model = User
