@@ -1,6 +1,7 @@
 import errno
 import os
 import logging
+from django.conf import settings
 from django.core.files import File, locks
 from django.core.files.move import file_move_safe
 from django.core.files.storage import FileSystemStorage
@@ -20,13 +21,18 @@ class TbsStorage(FileSystemStorage):
     copy/pasting.
     """
     def _save(self, name, content):
+        log.debug(("name in _save", name))
+        log.debug(("self.project root included", self.project_root_included))
         full_path = self.path(name)
+        log.debug(("full path", full_path))
 
         # Create any intermediate directories that do not exist.
         # Note that there is a race between os.path.exists and os.makedirs:
         # if os.makedirs fails with EEXIST, the directory was created
         # concurrently, and we can continue normally. Refs #16082.
         directory = os.path.dirname(full_path)
+        log.debug(("directory", directory))
+        log.debug(("directory exists", os.path.exists(directory)))
         if not os.path.exists(directory):
             try:
                 if self.directory_permissions_mode is not None:
@@ -111,9 +117,11 @@ class TbsStorage(FileSystemStorage):
     def get_available_name(self, name, max_length=None):
         if self.exists(name) and self.project_root_included:
             log.info("Project root was included in the file's name. Not going to attempt"
-                     " to generate a unique file name; assuming the file is already on disk.")
+                     " to generate a unique file name; assuming the file is already on disk."
+                     " Instead, we simply remove settings.RESOUCE_DIR (probably /workspaces)"
+                     " from the file name.")
             # We know the file exists, and we want it to be that name. Break the loop
-            return name
+            return name.replace(settings.RESOURCE_DIR + "/", "")
         else:
             return super(TbsStorage, self).get_available_name(name=name, max_length=max_length)
 

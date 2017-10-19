@@ -619,7 +619,8 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
         new_project_files = ProjectFile.objects.filter(project=self.project)
         self.assertEqual(new_project_files.count(), old_pf + 1)
         all_names = new_project_files.values_list('file', flat=True)
-        expected_name = (str(self.project.resource_root()) + "/" + "test_file_fizzbuzz.txt")
+        expected_name = (str(self.project.resource_root()).replace(settings.RESOURCE_DIR + "/", "")
+                         + "/" + "test_file_fizzbuzz.txt")
         self.assertTrue(expected_name in all_names)
 
     def test_list_files_respects_project(self):

@@ -27,7 +27,8 @@ class ProjectUtilsTest(TestCase):
         sync_project_files_from_disk(proj)
         new_pf = ProjectFile.objects.filter(project=proj)
         self.assertEqual(new_pf.count(), 1)
-        self.assertEqual(new_pf.first().file.name, str(proj.resource_root()) + "/" + "test_file_foo.txt")
+        self.assertEqual(new_pf.first().file.name, str(proj.resource_root()).replace(settings.RESOURCE_DIR + "/", "")
+                         + "/" + "test_file_foo.txt")
 
     def test_sync_files_nested_location(self):
         proj = CollaboratorFactory().project
@@ -41,7 +42,8 @@ class ProjectUtilsTest(TestCase):
         new_pf = ProjectFile.objects.filter(project=proj)
         self.assertEqual(new_pf.count(), 1)
         self.assertEqual(new_pf.first().file.name,
-                         str(proj.resource_root()) + "/" + "test_file_foo/bar/my/path/fizz.txt")
+                         str(proj.resource_root()).replace(settings.RESOURCE_DIR + "/", "")
+                         + "/" + "test_file_foo/bar/my/path/fizz.txt")
 
     def test_sync_files_delete(self):
         proj = CollaboratorFactory().project
@@ -63,5 +65,5 @@ class ProjectUtilsTest(TestCase):
         new_pf = ProjectFile.objects.filter(project=proj)
         self.assertEqual(new_pf.count(), 2)
         file_names_list = new_pf.values_list('file', flat=True)
-        self.assertTrue(paths[0] not in file_names_list)
-        self.assertTrue(paths[1] not in file_names_list)
+        self.assertTrue(paths[0].replace(settings.RESOURCE_DIR + "/", "") not in file_names_list)
+        self.assertTrue(paths[1].replace(settings.RESOURCE_DIR + "/", "") not in file_names_list)
