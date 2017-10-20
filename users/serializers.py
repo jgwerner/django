@@ -16,9 +16,17 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = ('bio', 'url', 'location', 'company', 'timezone', 'avatar')
         read_only_fields = ('avatar',)
 
+    def to_representation(self, instance):
+        initial_rep = super().to_representation(instance)
+        request = self.context.get('request')
+        if request:
+            initial_rep['avatar'] = request.build_absolute_uri(initial_rep['avatar'])
+        return initial_rep
+
 
 class UserSerializer(SearchSerializerMixin, serializers.ModelSerializer):
     profile = UserProfileSerializer(required=False)
+    email = serializers.EmailField(required=True, allow_blank=False, allow_null=False)
 
     class Meta:
         model = User
