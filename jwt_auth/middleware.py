@@ -26,4 +26,6 @@ class OAuthUIMiddleware(object):
 
     def __call__(self, request):
         response = self.get_response(request)
-        return add_one_time_token_to_response(request.user, response)
+        if hasattr(request, 'user'):
+            return add_one_time_token_to_response(request.user, response)
+        return response
