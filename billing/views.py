@@ -140,25 +140,9 @@ class InvoiceItemViewSet(NamespaceMixin,
     queryset = InvoiceItem.objects.all()
     serializer_class = InvoiceItemSerializer
 
-    def get_queryset(self, *args, **kwargs):
-        invoice_items = InvoiceItem.objects.filter(invoice_id=kwargs.get("invoice_id"))
-        return invoice_items
-
-    def retrieve(self, request, *args, **kwargs):
-        instance = self.get_queryset(*args, **kwargs).filter(pk=kwargs.get('pk')).first()
-
-        if instance is None:
-            Response({'message': "InvoiceItem not found"},
-                     status=status.HTTP_404_NOT_FOUND)
-
-        serializer = self.serializer_class(instance)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset(*args, **kwargs)
-        serializer = self.serializer_class(queryset, many=True)
-        data = serializer.data
-        return Response(data, status=status.HTTP_200_OK)
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs.filter(invoice_id=self.kwargs.get("invoice_id"))
 
 
 @require_POST

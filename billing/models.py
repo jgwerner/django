@@ -4,6 +4,8 @@ from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
 
+from base.models import TBSQuerySet
+
 
 class BillingAddress(models.Model):
     address = models.CharField(max_length=255)
@@ -149,7 +151,7 @@ class Plan(StripeModel):
         return reverse('card-detail', kwargs={'namespace': self.namespace_name, 'version': version, 'pk': str(self.pk)})
 
 
-class SubscriptionQuerySet(models.QuerySet):
+class SubscriptionQuerySet(TBSQuerySet):
     def namespace(self, namespace):
         return self.filter(customer__user=namespace.object)
 
@@ -198,7 +200,7 @@ class Subscription(StripeModel):
         self.save(update_fields=['canceled_at', 'ended_at', 'status'])
 
 
-class InvoiceQuerySet(models.QuerySet):
+class InvoiceQuerySet(TBSQuerySet):
     def namespace(self, namespace):
         return self.filter(customer__user=namespace.object)
 
@@ -236,6 +238,11 @@ class Invoice(StripeModel):
             'namespace': self.namespace_name, 'version': version, 'pk': str(self.pk)})
 
 
+class InvoiceItemQuerySet(TBSQuerySet):
+    def namespace(self, namespace):
+        return self.filter(invoice__customer__user=namespace.object)
+
+
 class InvoiceItem(StripeModel):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, null=True)
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, null=True)
@@ -249,6 +256,8 @@ class InvoiceItem(StripeModel):
     proration = models.BooleanField(default=False)
     quantity = models.IntegerField()
     description = models.TextField(default="")
+
+    objects = InvoiceItemQuerySet.as_manager()
 
 
 class Charge(StripeModel):
