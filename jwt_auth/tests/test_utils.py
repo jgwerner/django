@@ -1,7 +1,6 @@
 from time import sleep
 from datetime import timedelta
 from django.urls import reverse
-from django.conf import settings
 from django.core.cache import cache
 from django.test import override_settings
 from rest_framework import status
@@ -41,7 +40,7 @@ class TestJWT(APITestCase):
     def test_one_time_jwt_with_view(self):
         token = create_one_time_jwt(self.user)
         cli = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
-        url = reverse('project-list', kwargs={'namespace': self.user.username, 'version': settings.DEFAULT_VERSION})
+        url = reverse('temp-token-auth')
         resp = cli.get(url)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         resp = cli.get(url)
@@ -51,7 +50,7 @@ class TestJWT(APITestCase):
     def test_one_time_jwt_with_view_expiry(self):
         token = create_one_time_jwt(self.user)
         cli = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
-        url = reverse('project-list', kwargs={'namespace': self.user.username, 'version': settings.DEFAULT_VERSION})
+        url = reverse('temp-token-auth')
         sleep(1)
         resp = cli.get(url)
         self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)

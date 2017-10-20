@@ -150,7 +150,8 @@ OAUTH2_PROVIDER_APPLICATION_MODEL = 'oauth2_provider.Application'
 
 HTTPS = os.environ.get("TBS_HTTPS", "false").lower() == "true"
 LOGIN_URL = '/api-auth/login/'
-LOGIN_REDIRECT_URL = '{scheme}://{host}'.format(scheme='https' if HTTPS else 'http', host=os.environ.get('TBS_DOMAIN'))
+LOGIN_REDIRECT_URL = '{scheme}://{host}/auth/token-login'.format(
+    scheme='https' if HTTPS else 'http', host=os.environ.get('TBS_DOMAIN'))
 LOGOUT_URL = '/api-auth/logout/'
 
 # Password validation

@@ -55,6 +55,12 @@ class UserTest(APITestCase):
         for img_file in self.image_files:
             os.remove(img_file)
 
+    def test_my_api_key(self):
+        url = reverse("temp-token-auth")
+        resp = self.user_client.get(url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertIn('token', resp.data)
+
     def test_user_create_by_admin(self):
         url = reverse("user-list", kwargs={'version': settings.DEFAULT_VERSION})
         data = {'username': "foobar",
