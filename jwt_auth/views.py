@@ -1,12 +1,12 @@
 from datetime import datetime
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework_jwt.serializers import VerifyJSONWebTokenSerializer, RefreshJSONWebTokenSerializer
+from rest_framework_jwt.serializers import RefreshJSONWebTokenSerializer
 from rest_framework_jwt.settings import api_settings
 from rest_framework_jwt.views import JSONWebTokenAPIView
 
 from servers.utils import is_server_token
-from .serializers import JWTSerializer
+from .serializers import JWTSerializer, VerifyJSONWebTokenSerializer
 
 from users.signals import user_authenticated
 from users.models import User

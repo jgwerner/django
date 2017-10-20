@@ -1,3 +1,4 @@
+import jwt
 from rest_framework import serializers
 from rest_framework_jwt.serializers import JSONWebTokenSerializer, VerificationBaseSerializer
 
@@ -11,11 +12,26 @@ class JWTSerializer(JSONWebTokenSerializer):
         self.fields['token'] = serializers.CharField(read_only=True)
 
 
+class VerifyJSONWebTokenSerializer(VerificationBaseSerializer):
+    def validate(self, attrs):
+        token = attrs['token']
+        try:
+            payload = self._check_payload(token=token)
+        except jwt.InvalidTokenError as e:
+            raise serializers.ValidationError(e)
+        user = self._check_user(payload=payload)
+
+        return {'token': token, 'user': user}
+
+
 class VerifyJSONWebTokenServerSerializer(VerificationBaseSerializer):
     def validate(self, attrs):
         token = attrs['token']
 
-        payload = self._check_payload(token=token)
+        try:
+            payload = self._check_payload(token=token)
+        except jwt.InvalidTokenError as e:
+            raise serializers.ValidationError(e)
         user = self._check_user(payload=payload)
         server = self._check_server(payload=payload)
 
