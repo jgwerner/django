@@ -273,6 +273,22 @@ class SubscriptionTest(APITestCase):
                                                    type__name="subscription.canceled").first()
         self.assertIsNotNone(notification)
 
+    def test_subscription_updated_webhook(self):
+        url = reverse("stripe-subscription-updated", kwargs={'version': settings.DEFAULT_VERSION})
+        from billing.tests import mock_stripe
+        subscription = self._create_subscription_in_stripe()
+        webhook_data = mock_stripe.Event.get_sub_updated_evt(customer=self.customer.stripe_id,
+                                                             subscription=subscription.stripe_id,
+                                                             status=Subscription.PAST)
+        response = self.client.post(url, json.dumps(webhook_data), content_type="application/json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        events = Event.objects.filter(stripe_id=webhook_data['id'])
+        self.assertEqual(events.count(), 1)
+        self.assertEqual(events.first().event_type, "customer.subscription.updated")
+
+        sub_reloaded = Subscription.objects.get(pk=subscription.pk)
+        self.assertEqual(sub_reloaded.status, Subscription.PAST)
+
 
 class InvoiceTest(TestCase):
 

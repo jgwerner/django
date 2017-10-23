@@ -22,10 +22,19 @@ class TestMiddleware(APITestCase):
         self.customer = self.user.customer
 
     @override_settings(ENABLE_BILLING=True)
-    def test_no_subscription_is_rejected(self):
+    def test_no_subscription_GET_is_accepted(self):
         url = reverse("project-list", kwargs={'version': settings.DEFAULT_VERSION,
                                               'namespace': self.user.username})
         response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    @override_settings(ENABLE_BILLING=True)
+    def test_no_subscription_non_GET_rejected(self):
+        url = reverse("project-list", kwargs={'version': settings.DEFAULT_VERSION,
+                                              'namespace': self.user.username})
+        data = {'name': "MyProject",
+                'description': "This is a test."}
+        response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_402_PAYMENT_REQUIRED)
 
     @override_settings(ENABLE_BILLING=True)

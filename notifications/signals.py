@@ -7,7 +7,8 @@ from billing.models import Subscription
 from billing.signals import (subscription_cancelled,
                              subscription_created,
                              invoice_payment_success,
-                             invoice_payment_failure)
+                             invoice_payment_failure,
+                             trial_expired)
 from .utils import create_notification
 log = logging.getLogger('notifications')
 
@@ -50,3 +51,8 @@ def handle_trial_about_to_expire(sender, **kwargs):
             except TypeError as e:
                 log.warning(f"Subscription.trial_end was None for sub {trial_sub.pk}. Look into this.")
                 log.exception(e)
+
+
+@receiver(trial_expired)
+def trial_expired_handler(sender, **kwargs):
+    create_notification(**kwargs)

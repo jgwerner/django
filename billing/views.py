@@ -18,10 +18,12 @@ from billing.serializers import (PlanSerializer, CardSerializer,
                                  InvoiceItemSerializer)
 from billing.stripe_utils import (handle_stripe_invoice_created,
                                   handle_upcoming_invoice,
-                                  handle_stripe_invoice_payment_status_change)
+                                  handle_stripe_invoice_payment_status_change,
+                                  handle_subscription_updated)
 from .signals import (subscription_cancelled,
                       subscription_created,
-                      invoice_payment_failure)
+                      invoice_payment_failure,
+                      trial_expired)
 
 log = logging.getLogger('billing')
 
@@ -203,5 +205,18 @@ def stripe_invoice_upcoming(request, *args, **kwargs):
     body = request.body
     event_json = json.loads(body.decode("utf-8"))
     handle_upcoming_invoice(event_json)
+
+    return HttpResponse(status=status.HTTP_200_OK)
+
+
+@require_POST
+@csrf_exempt
+def stripe_subscription_updated(request, *args, **kwargs):
+    body = request.body
+    event_json = json.loads(body.decode("utf-8"))
+    signal_data = handle_subscription_updated(event_json)
+
+    if signal_data:
+        trial_expired.send(sender=Event, **signal_data)
 
     return HttpResponse(status=status.HTTP_200_OK)
