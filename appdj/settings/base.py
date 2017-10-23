@@ -72,6 +72,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'jwt_auth.middleware.OAuthUIMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
@@ -149,8 +150,10 @@ SOCIAL_AUTH_GITHUB_SCOPE = ['user:email', 'repo']
 
 OAUTH2_PROVIDER_APPLICATION_MODEL = 'oauth2_provider.Application'
 
+HTTPS = os.environ.get("TBS_HTTPS", "false").lower() == "true"
 LOGIN_URL = '/api-auth/login/'
-LOGIN_REDIRECT_URL = '/swagger/'
+LOGIN_REDIRECT_URL = '{scheme}://{host}/auth/token-login'.format(
+    scheme='https' if HTTPS else 'http', host=os.environ.get('TBS_DOMAIN'))
 LOGOUT_URL = '/api-auth/logout/'
 
 # Password validation
@@ -185,7 +188,9 @@ JWT_AUTH = {
     'JWT_EXPIRATION_DELTA': datetime.timedelta(days=30),
     'JWT_AUTH_HEADER_PREFIX': 'Bearer',
     'JWT_ALLOW_REFRESH': True,
+    'JWT_DECODE_HANDLER': 'jwt_auth.utils.jwt_decode_handler'
 }
+JWT_TMP_EXPIRATION_DELTA = datetime.timedelta(seconds=60)
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.10/topics/i18n/
@@ -394,7 +399,6 @@ HAYSTACK_CONNECTIONS = {
 
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
 
-HTTPS = os.environ.get("TBS_HTTPS", "false").lower() == "true"
 DOCKER_NET = os.environ.get('DOCKER_NET', 'tbs-net')
 
 MOCK_STRIPE = os.environ.get("MOCK_STRIPE", "false").lower() == "true"

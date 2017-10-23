@@ -6,7 +6,7 @@ from django.http import HttpRequest, HttpResponse
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.views import get_view_name
-from rest_framework_jwt.serializers import VerifyJSONWebTokenSerializer
+from jwt_auth.serializers import VerifyJSONWebTokenSerializer
 
 from actions.models import Action
 from triggers.models import Trigger

@@ -8,10 +8,12 @@ from djoser import views as djoser_views
 from oauth2_provider import views as oauth2_views
 from jwt_auth import views as jwt_views
 from base.views import tbs_status
+from users import views as users_views
 
 
 urlpatterns = [
     url(r'^auth/jwt-token-auth/$', jwt_views.ObtainJSONWebToken.as_view(), name='obtain-jwt'),
+    url(r'^auth/temp-token-auth/$', users_views.my_api_key, name='temp-token-auth'),
     url(r'^auth/jwt-token-refresh/$', jwt_views.RefreshJSONWebToken.as_view(), name='refresh-jwt'),
     url(r'^auth/jwt-token-verify/$', jwt_views.VerifyJSONWebToken.as_view(), name='verify-jwt'),
     url(r'^auth/register/$', djoser_views.RegistrationView.as_view(), name='register'),
