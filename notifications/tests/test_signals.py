@@ -5,12 +5,13 @@ from django.utils import timezone
 from billing.models import Event
 from users.models import User
 from users.tests.factories import UserFactory, EmailFactory
-from billing.models import Subscription
+from billing.models import Subscription, Event
 from billing.stripe_utils import create_stripe_customer_from_user
 from billing.tests.factories import InvoiceFactory, SubscriptionFactory
 from notifications.signals import (invoice_payment_failure_handler,
                                    invoice_payment_successful_handler,
-                                   handle_trial_about_to_expire)
+                                   handle_trial_about_to_expire,
+                                   trial_expired_handler)
 from notifications.models import Notification, NotificationSettings, NotificationType
 
 
@@ -71,6 +72,25 @@ class TestNotificationSignals(TestCase):
         self.assertEqual(notif.actor, subscription)
         self.assertEqual(notif.target, self.user)
         self.assertEqual(notif.type.name, "subscription.trial_will_end")
+
+    def test_trial_expired(self):
+        self.user.is_staff = False
+        self.user.save()
+        subscription = Subscription.objects.filter(customer=self.customer,
+                                                   status=Subscription.TRIAL).first()
+        self.assertIsNotNone(subscription)
+        subscription.status = Subscription.PAST
+        subscription.save()
+        trial_expired_handler(sender=Event,
+                              user=self.user,
+                              actor=self.user,
+                              target=subscription,
+                              notif_type="subscription.trial_ended")
+        notif = Notification.objects.filter(user=self.user,
+                                            type__name="subscription.trial_ended").first()
+        self.assertIsNotNone(notif)
+        self.assertEqual(notif.actor, self.user)
+        self.assertEqual(notif.target, subscription)
 
     def test_settings_are_respected(self):
         self.user.is_staff = False

@@ -48,3 +48,5 @@ subscription_created = dispatch.Signal(providing_args=['user', 'actor', 'target'
 invoice_payment_success = dispatch.Signal(providing_args=['user', 'actor', 'target', 'notif_type'])
 
 invoice_payment_failure = dispatch.Signal(providing_args=['user', 'actor', 'target', 'notif_type'])
+
+trial_expired = dispatch.Signal(providing_args=['user', 'actor', 'target', 'notif_type'])

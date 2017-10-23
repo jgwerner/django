@@ -1,8 +1,12 @@
+import logging
 from django.http import HttpResponse
 from rest_framework import status
+from rest_framework.permissions import SAFE_METHODS
 from django.urls import resolve
 from django.conf import settings
 from billing.models import Customer
+from billing.stripe_utils import create_stripe_customer_from_user
+log = logging.getLogger('billing')
 
 
 class SubscriptionMiddleware(object):
@@ -11,17 +15,25 @@ class SubscriptionMiddleware(object):
 
     def __call__(self, request):
         url_name = resolve(request.path).url_name
-        if url_name not in settings.SUBSCRIPTION_EXEMPT_URLS:
-            user = request.action.user
-            customer = self.get_customer(request)
-            conditions = [
-                settings.ENABLE_BILLING,
-                user and not user.is_staff,
-                customer and not customer.has_active_subscription()
-            ]
-            if all(conditions):
-                return HttpResponse(status=status.HTTP_402_PAYMENT_REQUIRED)
+        user = request.action.user
+        if settings.ENABLE_BILLING and user and not user.is_staff:
+            try:
+                customer = self.get_customer(request)
+            except Customer.DoesNotExist:
+                log.warning(f"Somehow a user's request hit the billing middleware without a corresponding customer "
+                            f"record being created. Going to create one now for {user}")
+                customer, _ = create_stripe_customer_from_user(user)
 
+            if(customer is not None
+                    and (not customer.has_active_subscription())
+                    and (url_name not in settings.SUBSCRIPTION_EXEMPT_URLS)
+                    and request.method not in SAFE_METHODS):
+                log.info(f"User {user} does not have an active subscription, "
+                         f"and is trying to perform a {request.method} action "
+                         f"to {url_name}. Returning 402.")
+                # To get to this point, a user: doesn't have a subscription
+                # and is attempting to modify non-billing information.
+                return HttpResponse(status=status.HTTP_402_PAYMENT_REQUIRED)
         return self.get_response(request)
 
     def get_customer(self, request):
@@ -33,7 +45,4 @@ class SubscriptionMiddleware(object):
             if not team.is_member(user):
                 return
             obj = team
-        try:
-            return obj.customer
-        except Customer.DoesNotExist:
-            return
+        return obj.customer

@@ -343,3 +343,34 @@ def assign_customer_to_default_plan(customer):
         create_subscription_in_stripe(sub_data)
         log.info("Finished creating default subscription.")
 
+
+def handle_subscription_updated(stripe_event):
+    if stripe_event['type'] != "customer.subscription.updated":
+        raise ValueError(f"This function only handles subscription.updated events (specifically trail expiry). "
+                         f"You passed {stripe_event['type']}")
+    signal_data = {}
+    stripe_sub = stripe_event['data']['object']
+    subscription = Subscription.objects.filter(stripe_id=stripe_sub['id']).first()
+
+    if subscription is None:
+        log.error("Received a subscription updated webhook for a subscription that does not exist in the database."
+                  "As much information as possible will be logged, but the event will NOT be entered in the DB so "
+                  "that it will still be processed if Stripe sends the event again.")
+        log.error(f"Data sent from Stripe: {stripe_event}")
+
+    else:
+        create_event_from_webhook(stripe_event)
+        if (subscription.status in [Subscription.TRIAL, Subscription.ACTIVE]
+            and stripe_sub['status'] in [Subscription.PAST, Subscription.UNPAID, Subscription.CANCELED]):
+            signal_data = {'user': subscription.customer.user,
+                           'actor': subscription.customer.user,
+                           'target': subscription,
+                           'notif_type': "subscription.trial_ended"}
+        converted_data = convert_stripe_object(Subscription, stripe_sub)
+        for key in converted_data:
+            if key not in ["customer", "plan"]:
+                setattr(subscription, key, converted_data[key])
+        subscription.save()
+
+    return signal_data
+

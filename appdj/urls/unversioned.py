@@ -143,6 +143,9 @@ urlpatterns = [
         team_views.add_user_to_group, name='add-user-to-group'),
     url(r'^(?P<namespace>[\w-]+)/teams/(?P<team_team>[\w-]+)/groups/(?P<group>[^/.]+)/remove/',
         team_views.remove_user_from_group, name='remove-user-from-group'),
+    url(r'^webhooks/incoming/billing/subscription-updated/$', billing_views.stripe_subscription_updated,
+        name='stripe-subscription-updated'),
+    url(r'^(?P<namespace>[\w-]+)/notifications/', include("notifications.urls"))
 ]
 
 
