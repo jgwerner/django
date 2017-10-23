@@ -354,6 +354,89 @@ class InvoiceItem:
 
 
 class Event:
+    sub_updated_webhook_obj = {"api_version": "2017-04-06",
+                               "created": int(time.time()),
+                               "data": {
+                                   "object": {
+                                       "id": "sub_{sub_id}",
+                                       "object": "subscription",
+                                       "application_fee_percent": None,
+                                       "billing": "charge_automatically",
+                                       "cancel_at_period_end": False,
+                                       "canceled_at": None,
+                                       "created": 1508437548,
+                                       "current_period_end": 1509647148,
+                                       "current_period_start": 1508437548,
+                                       "customer": "cus_{cust_id}",
+                                       "discount": None,
+                                       "ended_at": None,
+                                       "items": {
+                                           "object": "list",
+                                           "data": [
+                                               {
+                                                   "id": "si_1BEiiGLUHPUzUsaQ7Pedwx9t",
+                                                   "object": "subscription_item",
+                                                   "created": 1508437549,
+                                                   "metadata": {
+                                                   },
+                                                   "plan": {
+                                                       "id": "threeblades-free-plan",
+                                                       "object": "plan",
+                                                       "amount": 0,
+                                                       "created": 1504615475,
+                                                       "currency": "usd",
+                                                       "interval": "month",
+                                                       "interval_count": 1,
+                                                       "livemode": False,
+                                                       "metadata": {
+                                                       },
+                                                       "name": "Threeblades Free Plan",
+                                                       "statement_descriptor": None,
+                                                       "trial_period_days": 14
+                                                   },
+                                                   "quantity": 1
+                                               }
+                                           ],
+                                           "has_more": False,
+                                           "total_count": 1,
+                                           "url": "/v1/subscription_items?subscription=sub_BbwbCp2WpU8F1J"
+                                       },
+                                       "livemode": False,
+                                       "metadata": {
+                                       },
+                                       "plan": {
+                             "id": "threeblades-free-plan",
+                             "object": "plan",
+                             "amount": 0,
+                             "created": 1504615475,
+                             "currency": "usd",
+                             "interval": "month",
+                             "interval_count": 1,
+                             "livemode": False,
+                             "metadata": {
+                             },
+                             "name": "Threeblades Free Plan",
+                             "statement_descriptor": None,
+                             "trial_period_days": 14
+                         },
+                                       "quantity": 1,
+                                       "start": 1508437548,
+                                       "status": "{sub_status}",
+                                       "tax_percent": None,
+                                       "trial_end": 1509647148,
+                                       "trial_start": 1508437548
+                                   }
+                               },
+                               "id": "evt_{fake}".format(fake=generate_fake_stripe_suffix(24)),
+                               "livemode": False,
+                               "object": "event",
+                               "pending_webhooks": 0,
+                               "request": {
+                                   "id": "req_{fake}".format(fake=generate_fake_stripe_suffix(16)),
+                                   "idempotency_key": None
+                               },
+                               "type": "customer.subscription.updated"
+                               }
     webhook_obj = {"api_version": "2017-04-06",
                        "created": int(time.time()),
                        "data": {
@@ -455,4 +538,12 @@ class Event:
         json['data']['object']['lines']['data'][0]['plan']['trial_period_days'] = kwargs.get("trial_period")
         if kwargs.get("stripe_id") is not None:
             json['id'] = kwargs.get("stripe_id")
+        return json
+
+    @classmethod
+    def get_sub_updated_evt(cls, *args, **kwargs):
+        json = Event.sub_updated_webhook_obj
+        json['data']['object']['id'] = kwargs.get("subscription")
+        json['data']['object']['customer'] = kwargs.get("customer")
+        json['data']['object']['status'] = kwargs.get("status")
         return json
