@@ -34,13 +34,17 @@ def create_notification(user, actor, target, notif_type, signal=None):
     notification.save()
     log.info(f"Created notification {notification}")
 
-    if settings.emails_enabled:
+    if notif_type.entity == "billing" or settings.emails_enabled:
         log.info("Settings have enabled emails. Emailing notification.")
         template_name_str = f"notifications/{notif_type.template_name}."
         plaintext = get_template(template_name_str + "txt")
         html_text = get_template(template_name_str + "html")
 
-        context = {'username': user.username}
+        user_name_to_use = user.first_name or user.username
+
+        context = {'username': user_name_to_use,
+                   'actor': actor,
+                   'target': target}
         from_email = django_settings.DEFAULT_FROM_EMAIL
         to = [settings.email_address.address]
 
