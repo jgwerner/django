@@ -98,7 +98,7 @@ class EmailSerializer(RequestUserMixin, serializers.ModelSerializer):
         existing_secondary_email = Email.objects.filter(address=value,
                                                         user__is_active=True).exists()
 
-        if existing_user_email existing_secondary_email:
+        if existing_user_email or existing_secondary_email:
             log.info(f"Rejected creating/updating Email object due to email conflict: {value}")
             raise serializers.ValidationError(f"The email {value} is taken")
 
