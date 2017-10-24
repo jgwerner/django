@@ -1,5 +1,4 @@
 {% extends "notifications/base_email_template.html" %}
-
 {% block message %}
 You have successfully removed your monthly subscription from 3Blades and have been downgraded to the free plan. Please remember that you can always upgrade your plan again at any time in the future.
 {% endblock %}
