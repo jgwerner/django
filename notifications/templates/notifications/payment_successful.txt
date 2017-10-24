@@ -3,7 +3,7 @@
 {% load usd %}
 
 {% block message %}
-Thank you for payment to Bill.com. The credit/debit card you have on file with us was successfully charged {{target.total|divide:"10"|usd}} for the billing period {{target.period_start}} - {{target.period_end}}. To view your statement of fees, log in at our website and navigate https://3blades.ai/settings/billing.
+Thank you for payment to 3Blades. The credit/debit card you have on file with us was successfully charged {{target.total|divide:"10"|usd}} for the billing period {{target.period_start}} - {{target.period_end}}. To view your statement of fees, navigate to https://3blades.ai/settings/billing.
 
 Have questions? Sign in at our website, then contact us with the chat widget.
 
