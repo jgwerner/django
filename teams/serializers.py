@@ -41,6 +41,11 @@ class TeamSerializer(serializers.ModelSerializer):
         model = Team
         fields = ('id', 'name', 'description', 'website', 'location', 'groups', 'created_by')
 
+    def validate_name(self, value):
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError(f"User with name {value} exists.")
+        return value
+
 
 class UserField(serializers.Field):
     def to_representation(self, obj):

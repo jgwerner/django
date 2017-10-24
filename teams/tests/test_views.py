@@ -43,6 +43,13 @@ class TeamTest(APITransactionTestCase):
         self.assertTrue(team.groups.filter(name='members').exists())
         self.assertIsNotNone(team.customer)
 
+    def test_create_team_with_name_same_as_user(self):
+        UserFactory(username='test')
+        url = reverse('team-list', kwargs={'version': settings.DEFAULT_VERSION})
+        data = {'name': 'test'}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_list_teams(self):
         teams_count = 4
         url = reverse('team-list', kwargs={'version': settings.DEFAULT_VERSION})

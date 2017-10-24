@@ -112,7 +112,6 @@ urlpatterns = [
     url(r'^me/', include(my_teams_sub_router.urls)),
     url(r'^', include(teams_router.urls)),
     url(r'^', include(teams_sub_router.urls)),
-    url(r'^', include(teams_billing_router.urls)),
     url(r'^(?P<namespace>[\w-]+)/service/(?P<server>[^/.]+)/trigger/(?P<pk>[^/.]+)/call/$',
         trigger_views.call_trigger, name='server-trigger-call'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/start/$',
@@ -157,6 +156,12 @@ def handler404(request):
 @api_view()
 def handler500(request):
     raise APIException(detail="Internal Server Error", code=500)
+
+
+if settings.ENABLE_BILLING:
+    urlpatterns += [
+        url(r'^', include(teams_billing_router.urls)),
+    ]
 
 
 if settings.DEBUG:
