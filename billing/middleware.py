@@ -25,8 +25,7 @@ class SubscriptionMiddleware(object):
                 customer, _ = create_stripe_customer_from_user(user)
 
             if ((not customer.has_active_subscription())
-                and (url_name in settings.SUBSCRIPTION_REQUIRED_URLS)
-                and request.method != "GET"):
+                and (url_name in settings.SUBSCRIPTION_REQUIRED_URLS)):
                 log.info(f"User {user} does not have an active subscription, "
                          f"and is trying to perform a {request.method} action "
                          f"to {url_name}. Returning 402.")
