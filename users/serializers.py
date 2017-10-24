@@ -40,6 +40,17 @@ class UserSerializer(SearchSerializerMixin, serializers.ModelSerializer):
             raise serializers.ValidationError("{username} is already taken.".format(username=value))
         return value
 
+    def validate_email(self, value):
+        existing_user_email = User.objects.filter(email=value, is_active=True).first()
+        existing_secondary_email = Email.objects.filter(address=value,
+                                                        user__is_active=True).first()
+
+        if (existing_user_email is not None) or (existing_secondary_email is not None):
+            log.info(f"Rejected creating/updating user due to email conflict: {value}")
+            raise serializers.ValidationError(f"The email {value} is taken")
+
+        return value
+
     def create(self, validated_data):
         profile_data = {}
         if "profile" in validated_data:
@@ -81,6 +92,17 @@ class EmailSerializer(RequestUserMixin, serializers.ModelSerializer):
         model = Email
         fields = ('id', 'address', 'public', 'unsubscribed')
         read_only_fields = ("id",)
+
+    def validate_address(self, value):
+        existing_user_email = User.objects.filter(email=value, is_active=True).first()
+        existing_secondary_email = Email.objects.filter(address=value,
+                                                        user__is_active=True).first()
+
+        if (existing_user_email is not None) or (existing_secondary_email is not None):
+            log.info(f"Rejected creating/updating Email object due to email conflict: {value}")
+            raise serializers.ValidationError(f"The email {value} is taken")
+
+        return value
 
 
 class IntegrationSerializer(serializers.ModelSerializer):

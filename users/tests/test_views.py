@@ -22,12 +22,12 @@ log = logging.getLogger('users')
 User = get_user_model()
 
 
-def send_register_request():
+def send_register_request(*args, **kwargs):
     url = reverse("register")
     client = APIClient()
-    data = {'username': "test_user",
+    data = {'username': kwargs.get('username', "test_user"),
             'password': "password",
-            'email': "test_user@example.com",
+            'email': kwargs.get('email', "test_user@example.com"),
             'profile': {}}
     response = client.post(url, data=data)
     return response
@@ -376,6 +376,13 @@ class UserTest(APITestCase):
         resp_data = json.loads(response.content.decode("utf-8"))
         self.assertEqual(resp_data.get("message"), "Only POST is allowed for this URL.")
 
+    def test_registration_rejects_duplicate_email(self):
+        old_user = UserFactory()
+        response = send_register_request(email=old_user.email)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        expected_error = f"The email {old_user.email} is taken"
+        self.assertEqual(response.data.get("email")[0], expected_error)
+
     def test_registration_sends_activation_email(self):
         response = send_register_request()
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -512,6 +519,18 @@ class EmailTest(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 0)
+
+    def test_existing_email_is_rejected(self):
+        other_email = EmailFactory()
+        data = {'address': other_email.address,
+                'public': True,
+                'unsubscribed': False}
+        url = reverse("email-list", kwargs={'user_id': str(self.user.pk),
+                                            'version': settings.DEFAULT_VERSION})
+        response = self.client.post(url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        expected_error = f"The email {other_email.address} is taken"
+        self.assertEqual(response.data.get("address")[0], expected_error)
 
 
 class UserIntegrationTest(APITestCase):
