@@ -366,16 +366,9 @@ LOGGING = TBS_LOGGING
 
 ENABLE_BILLING = os.environ.get("ENABLE_BILLING", "false").lower() == "true"
 
-# A list of url *names* that do not require a subscription to access.
-SUBSCRIPTION_EXEMPT_URLS = [LOGIN_URL,
-                            "subscription-required"]
-SUBSCRIPTION_EXEMPT_URLS += [view + "-list" for view in ["customer", "card",
-                                                         "plan", "subscription",
-                                                         "invoice"]]
+# A list of url *names* that require a subscription to access.
+SUBSCRIPTION_REQUIRED_URLS = ["server-start"]
 
-SUBSCRIPTION_EXEMPT_URLS += [view + "-detail" for view in ["customer", "card",
-                                                           "plan", "subscription",
-                                                           "invoice"]]
 # What should this setting actually be? They seem reasonable for dev environments
 # But I'm not sure if they're secure and what not for prod
 MEDIA_ROOT = "/workspaces/"

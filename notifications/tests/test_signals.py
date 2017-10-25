@@ -125,28 +125,3 @@ class TestNotificationSignals(TestCase):
         self.assertEqual(out_mail.to[0], self.email.address)
         notif_type = NotificationType.objects.get(name="subscription.trial_will_end")
         self.assertEqual(out_mail.subject, notif_type.subject)
-
-    def test_emails_are_not_sent_when_disabled(self):
-        self.user.is_staff = False
-        self.user.save()
-        notif_settings = NotificationSettings(user=self.user,
-                                              entity="global",
-                                              enabled=True,
-                                              emails_enabled=False,
-                                              email_address=self.email)
-        notif_settings.save()
-
-        subscription = Subscription.objects.filter(customer=self.customer,
-                                                   status=Subscription.TRIAL).first()
-        self.assertIsNotNone(subscription)
-        subscription.trial_end = timezone.now() + timedelta(days=1)
-        subscription.save()
-        handle_trial_about_to_expire(sender=User,
-                                     user=self.user)
-        notif = Notification.objects.all().first()
-        self.assertIsNotNone(notif)
-        self.assertEqual(notif.actor, subscription)
-        self.assertEqual(notif.target, self.user)
-        self.assertEqual(notif.type.name, "subscription.trial_will_end")
-
-        self.assertEqual(len(mail.outbox), 0)

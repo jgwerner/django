@@ -6,6 +6,8 @@ from users.tests.factories import UserFactory
 from rest_framework import status
 from billing.models import Subscription
 from billing.tests.factories import SubscriptionFactory
+from projects.tests.factories import CollaboratorFactory
+from servers.tests.factories import ServerFactory
 from jwt_auth.utils import create_auth_jwt
 from teams.tests.factories import TeamFactory
 
@@ -31,12 +33,23 @@ class TestMiddleware(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     @override_settings(ENABLE_BILLING=True)
-    def test_no_subscription_non_GET_rejected(self):
+    def test_no_subscription_non_GET_accepted(self):
         url = reverse("project-list", kwargs={'version': settings.DEFAULT_VERSION,
                                               'namespace': self.user.username})
         data = {'name': "MyProject",
                 'description': "This is a test."}
         response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    @override_settings(ENABLE_BILLING=True)
+    def test_no_subscription_cannot_start_server(self):
+        project = CollaboratorFactory(user=self.user).project
+        server = ServerFactory(project=project)
+        url = reverse("server-start", kwargs={'version': settings.DEFAULT_VERSION,
+                                              'namespace': self.user.username,
+                                              'project_project': str(project.pk),
+                                              'server': str(server.pk)})
+        response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_402_PAYMENT_REQUIRED)
 
     @override_settings(ENABLE_BILLING=True)

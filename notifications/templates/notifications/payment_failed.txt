@@ -1,0 +1,9 @@
+{% extends "notifications/base_email_template.txt" %}
+
+{% block message %}
+    Unfortunately we had issues charging your credit card for your 3Blades account.
+
+    No worries if this is just a temporary failure. We'll try charging your card again in 1 day.
+
+    Should your credit card have changed, you can update your card details any time.
+{% endblock %}

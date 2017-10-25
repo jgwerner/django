@@ -1,1 +1,5 @@
-Hello {{ username }} - your trial is going to expire soon.
+Hi {{ username }},
+{% block message %}
+{% endblock %}
+All the best,
+The 3Blades Team

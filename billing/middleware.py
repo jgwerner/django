@@ -1,7 +1,6 @@
 import logging
 from django.http import HttpResponse
 from rest_framework import status
-from rest_framework.permissions import SAFE_METHODS
 from django.urls import resolve
 from django.conf import settings
 from billing.models import Customer
@@ -26,8 +25,7 @@ class SubscriptionMiddleware(object):
 
             if(customer is not None
                     and (not customer.has_active_subscription())
-                    and (url_name not in settings.SUBSCRIPTION_EXEMPT_URLS)
-                    and request.method not in SAFE_METHODS):
+                    and (url_name in settings.SUBSCRIPTION_REQUIRED_URLS)):
                 log.info(f"User {user} does not have an active subscription, "
                          f"and is trying to perform a {request.method} action "
                          f"to {url_name}. Returning 402.")
