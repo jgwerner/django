@@ -46,7 +46,7 @@ def create_notification(user, actor, target, notif_type, signal=None):
                    'actor': actor,
                    'target': target}
         from_email = django_settings.DEFAULT_FROM_EMAIL
-        to = [settings.email_address.address]
+        to = [user.email]
 
         text_content = plaintext.render(context)
         html_content = html_text.render(context)
