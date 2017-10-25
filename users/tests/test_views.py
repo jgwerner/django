@@ -335,6 +335,13 @@ class UserTest(APITestCase):
                                     user_reloaded.profile.avatar.path))
         self.to_remove.append(user_reloaded.profile.resource_root())
 
+    def test_user_without_avatar_is_serialized_correctly(self):
+        url = reverse("user-detail", kwargs={'version': settings.DEFAULT_VERSION,
+                                             'user': str(self.user.pk)})
+        response = self.user_client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsNone(response.data['profile']['avatar'])
+
     def test_uploading_avatar_with_username(self):
         url = reverse("avatar", kwargs={'version': settings.DEFAULT_VERSION,
                                         'user_pk': self.user.username})
