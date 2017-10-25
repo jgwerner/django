@@ -47,6 +47,10 @@ class UserViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
             return Response(data={'message': "Username cannot be changed after creation."},
                             status=status.HTTP_400_BAD_REQUEST)
 
+        if user is not None and "email" in data:
+            if data['email'] == user.email:
+                data.pop("email")
+
         serializer = self.get_serializer(instance=user, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
         if user is None:
