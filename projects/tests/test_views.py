@@ -354,6 +354,18 @@ class ProjectTest(ProjectTestMixin, APITestCase):
         self.assertEqual(response.data['username'], other_user.username)
         self.assertEqual(response.data['permissions'], {"read_project"})
 
+    def test_list_projects_respects_privacy(self):
+        private_collab = CollaboratorFactory(project__private=True)
+        public_project = CollaboratorFactory(project__private=False,
+                                             user=private_collab.user).project
+        url = reverse("project-list", kwargs={'version': settings.DEFAULT_VERSION,
+                                              'namespace': private_collab.user.username})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['id'], str(public_project.pk))
+
+
 
 class ProjectTestWithName(ProjectTestMixin, APITestCase):
     def setUp(self):
