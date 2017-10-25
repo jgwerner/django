@@ -19,7 +19,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         initial_rep = super().to_representation(instance)
         request = self.context.get('request')
-        if request:
+        if request and initial_rep['avatar'] is not None:
             initial_rep['avatar'] = request.build_absolute_uri(initial_rep['avatar'])
         return initial_rep
 
