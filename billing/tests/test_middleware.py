@@ -62,20 +62,22 @@ class TestMiddleware(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     @override_settings(ENABLE_BILLING=True)
+    def test_no_team_subscription_cannot_start_server(self):
+        project = CollaboratorFactory(user=self.user).project
+        server = ServerFactory(project=project)
+        url = reverse("server-start", kwargs={'version': settings.DEFAULT_VERSION,
+                                              'namespace': self.team.name,
+                                              'project_project': str(project.pk),
+                                              'server': str(server.pk)})
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_402_PAYMENT_REQUIRED)
+
+    @override_settings(ENABLE_BILLING=True)
     def test_no_team_subscription_GET_is_accepted(self):
         url = reverse("project-list", kwargs={'version': settings.DEFAULT_VERSION,
                                               'namespace': self.team.name})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    @override_settings(ENABLE_BILLING=True)
-    def test_no_team_subscription_non_GET_rejected(self):
-        url = reverse("project-list", kwargs={'version': settings.DEFAULT_VERSION,
-                                              'namespace': self.team.name})
-        data = {'name': "MyProject",
-                'description': "This is a test."}
-        response = self.client.post(url, data)
-        self.assertEqual(response.status_code, status.HTTP_402_PAYMENT_REQUIRED)
 
     @override_settings(ENABLE_BILLING=True)
     def test_valid_team_subscription_accepted(self):
