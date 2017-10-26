@@ -334,7 +334,7 @@ class UserTest(APITestCase):
 
         user_reloaded = User.objects.get(pk=self.user.pk)
         request = response.wsgi_request
-        full_url = (request.environ['wsgi.url_scheme'] + "://" +
+        full_url = ("https" + "://" +
                     request.environ['SERVER_NAME'] +
                     user_reloaded.profile.avatar.url)
 
