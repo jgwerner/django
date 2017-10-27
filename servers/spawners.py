@@ -3,6 +3,7 @@ import os
 
 import logging
 import tarfile
+import requests
 from io import BytesIO
 from pathlib import Path
 
@@ -102,7 +103,7 @@ class DockerSpawner(ServerSpawner):
             command += " " + self.server.config["command"]
         return command
 
-    def _get_host_config(self, nvidia_driver):
+    def _get_host_config(self):
         binds = ['{}:{}'.format(self.server.volume_path, settings.SERVER_RESOURCE_DIR)]
         ssh_path = self._get_ssh_path()
         if ssh_path:
@@ -116,8 +117,8 @@ class DockerSpawner(ServerSpawner):
             restart_policy=self.restart
         )
 
-        if nvidia_driver is not None and nvidia_driver.exists():
-            binds.append(str(nvidia_driver) + ":/usr/local/nvidia:ro")
+        if self._is_gpu_instance:
+            binds.append(settings.NVIDIA_DRIVER_PATH + ":/usr/local/nvidia:ro")
             config['devices'] = ['/dev/nvidiactl:/dev/nvidiactl:rwm',
                                  '/dev/nvidia-uvm:/dev/nvidia-uvm:rwm',
                                  '/dev/nvidia0:/dev/nvidia0:rwm']
@@ -156,13 +157,12 @@ class DockerSpawner(ServerSpawner):
         volume_config = {'volume_driver': None,
                          'volumes': None}
 
-        nvidia_driver = Path(settings.NVIDIA_DRIVER_PATH)
-        if nvidia_driver.exists():
-            logger.info("Found Nvidia drivers, creating a GPU enabled container.")
+        if self._is_gpu_instance:
+            logger.info("Creating a GPU enabled container.")
             volume_config['volume_driver'] = "nvidia-docker"
             volume_config['volumes'] = ["/usr/local/nvidia"]
         else:
-            logger.info(f"Nvidia drivers were not found a path {settings.NVIDIA_DRIVER_PATH}.\n"
+            logger.info(f"This is not nvidia enabled host.\n"
                         f"Creating a non-GPU enabled container.")
 
         config = dict(
@@ -170,7 +170,7 @@ class DockerSpawner(ServerSpawner):
             command=self.cmd,
             environment=self._get_envs(),
             name=self.server.container_name,
-            host_config=self.client.api.create_host_config(**self._get_host_config(nvidia_driver)),
+            host_config=self.client.api.create_host_config(**self._get_host_config()),
             labels=self._get_traefik_labels(),
             cpu_shares=0,
             **volume_config
@@ -333,6 +333,14 @@ class DockerSpawner(ServerSpawner):
             return result
         result.extend([k.split('/')[0] for k in resp["Config"]["ExposedPorts"]])
         return result
+
+    @cached_property
+    def _is_gpu_instance(self):
+        gpu_info_url = f"{os.environ.get('NVIDIA_DOCKER_HOST')}/v1.0/gpu/info"
+        resp = requests.get(gpu_info_url)
+        if resp.status_code == 200:
+            return True
+        return False
 
 
 class ServerDummySpawner(ServerSpawner):
