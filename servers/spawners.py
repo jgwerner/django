@@ -337,7 +337,10 @@ class DockerSpawner(ServerSpawner):
     @cached_property
     def _is_gpu_instance(self):
         gpu_info_url = f"{os.environ.get('NVIDIA_DOCKER_HOST')}/v1.0/gpu/info"
-        resp = requests.get(gpu_info_url)
+        try:
+            resp = requests.get(gpu_info_url)
+        except requests.exceptions.ConnectionError:
+            return False
         if resp.status_code == 200:
             return True
         return False

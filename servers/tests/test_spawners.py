@@ -87,7 +87,7 @@ class TestDockerSpawnerForModel(TransactionTestCase):
             ],
             'restart_policy': None
         }
-        self.assertDictEqual(expected, self.spawner._get_host_config(nvidia_driver=None))
+        self.assertDictEqual(expected, self.spawner._get_host_config())
 
     def test_create_container(self):
         self.spawner._create_container()
