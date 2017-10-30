@@ -130,6 +130,7 @@ Modify environment variables located in `env` file with your local settings. You
     DOCKER_EVENTS_URL=http://events:8000
     DOCKER_PORT=2375
     DOCKER_HOST=tcp://172.17.0.1:2375/
+	NVIDIA_DOCKER_HOST=http://172.17.0.1:3476
     ELASTICSEARCH_URL=http://search:9200/
     ELASTICSEARCH_USER=
     ELASTICSEARCH_PASSWORD=
