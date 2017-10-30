@@ -23,14 +23,11 @@ from rest_framework_nested import routers
 from projects import views as project_views
 from servers import views as servers_views
 from users import views as user_views
-from infrastructure import views as infra_views
 from triggers import views as trigger_views
-from billing import views as billing_views
 from search.views import SearchView
 
 router = routers.DefaultRouter()
 
-router.register(r'hosts', infra_views.DockerHostViewSet)
 router.register(r'triggers', trigger_views.TriggerViewSet)
 
 user_router = routers.SimpleRouter()
@@ -49,18 +46,10 @@ server_router.register(r'run-stats', servers_views.ServerRunStatisticsViewSet)
 server_router.register(r'stats', servers_views.ServerStatisticsViewSet)
 server_router.register(r'triggers', trigger_views.ServerActionViewSet)
 
-if settings.ENABLE_BILLING:
-    router.register(r'billing/cards', billing_views.CardViewSet)
-    router.register(r'billing/plans', billing_views.PlanViewSet)
-    router.register(r'billing/subscriptions', billing_views.SubscriptionViewSet)
-    router.register(r'billing/invoices', billing_views.InvoiceViewSet)
-    router.register(r'billing/(?P<invoice_id>[\w-]+)/invoice-items', billing_views.InvoiceItemViewSet)
-
 router.register(r'service/(?P<server>[^/.]+)/trigger', trigger_views.ServerActionViewSet)
 
 servers_router = routers.SimpleRouter()
 servers_router.register("options/server-size", servers_views.ServerSizeViewSet)
-
 
 urlpatterns = [
     url(r'^me/$', user_views.me, name="me"),
@@ -105,16 +94,6 @@ urlpatterns = [
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/auth/$',
         servers_views.check_token, name='server-auth'),
     url(r'^servers/', include(servers_router.urls)),
-    url(r'^webhooks/incoming/billing/invoice_created/$', billing_views.stripe_invoice_created,
-        name='stripe-invoice-created'),
-    url(r'^webhooks/incoming/billing/invoice_upcoming/$', billing_views.stripe_invoice_upcoming,
-        name='stripe-invoice-upcoming'),
-    url(r'^webhooks/incoming/billing/invoice_payment_failed/$', billing_views.stripe_invoice_payment_failed,
-        name='stripe-invoice-payment-failed'),
-    url(r'^webhooks/incoming/billing/invoice_payment_success/$', billing_views.stripe_invoice_payment_success,
-        name='stripe-invoice-payment-success'),
-    url(r'^webhooks/incoming/billing/subscription-updated/$', billing_views.stripe_subscription_updated,
-        name='stripe-subscription-updated'),
     url(r'^(?P<namespace>[\w-]+)/notifications/', include("notifications.urls"))
 
 ]
