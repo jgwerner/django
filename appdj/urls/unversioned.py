@@ -20,7 +20,6 @@ from rest_framework.decorators import api_view
 from rest_framework.exceptions import NotFound, APIException
 from rest_framework_nested import routers
 
-from projects import views as project_views
 from servers import views as servers_views
 from users import views as user_views
 from triggers import views as trigger_views
@@ -35,11 +34,11 @@ user_router.register(r'profiles', user_views.UserViewSet)
 user_router.register(r'(?P<user_id>[\w-]+)/emails', user_views.EmailViewSet)
 user_router.register(r'integrations', user_views.IntegrationViewSet)
 
-router.register(r'projects', project_views.ProjectViewSet)
+
 project_router = routers.NestedSimpleRouter(router, r'projects', lookup='project')
-project_router.register(r'collaborators', project_views.CollaboratorViewSet)
+
 project_router.register(r'servers', servers_views.ServerViewSet)
-project_router.register(r'project_files', project_views.ProjectFileViewSet)
+
 server_router = routers.NestedSimpleRouter(project_router, r'servers', lookup='server')
 server_router.register(r'ssh-tunnels', servers_views.SshTunnelViewSet)
 server_router.register(r'run-stats', servers_views.ServerRunStatisticsViewSet)
@@ -63,14 +62,10 @@ urlpatterns = [
         name='trigger-start'),
     url(r'^(?P<namespace>[\w-]+)/triggers/(?P<trigger>[\w-]+)/stop/$', trigger_views.stop,
         name='trigger-stop'),
-    url(r'^(?P<namespace>[\w-]+)/projects/project-copy-check/$',
-        project_views.project_copy_check, name='project-copy-check'),
-    url(r'^(?P<namespace>[\w-]+)/projects/project-copy/$', project_views.project_copy, name='project-copy'),
     url(r'^(?P<namespace>[\w-]+)/', include(router.urls)),
     url(r'^(?P<namespace>[\w-]+)/', include(project_router.urls)),
     url(r'^(?P<namespace>[\w-]+)/', include(server_router.urls)),
-    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project>[\w-]+)/synced-resources/$',
-        project_views.SyncedResourceViewSet.as_view({'get': 'list', 'post': 'create'})),
+
     url(r'^users/', include(user_router.urls)),
     url(r'^users/(?P<user_pk>[\w-]+)/ssh-key/$', user_views.ssh_key, name='ssh_key'),
     url(r'^users/(?P<user_pk>[\w-]+)/ssh-key/reset/$', user_views.reset_ssh_key,
