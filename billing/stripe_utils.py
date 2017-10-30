@@ -231,14 +231,25 @@ def handle_stripe_invoice_payment_status_change(stripe_obj):
         stripe_data = stripe_obj['data']['object']
         invoice = find_or_create_invoice(stripe_data)
 
-        signal_data = {'user': subscription.customer.user,
-                       'actor': subscription,
-                       'target': invoice,
-                       'notif_type': event.event_type}
+        if event.event_type == "invoice.payment_succeeded" or (event.event_type == "invoice.payment_failed" and
+                                                               subscription.metadata.get('has_been_active')):
+            log.info(f"Subscription {subscription} has been active before and payment failed (or this was a successful "
+                     f"payment. Generating a notification.")
+            signal_data = {'user': subscription.customer.user,
+                           'actor': subscription,
+                           'target': invoice,
+                           'notif_type': event.event_type}
+        else:
+            log.info(f"Subscription {subscription} has NOT been active before, meaning it was in trial status "
+                     f"before payment failure. Not generating a notification.")
 
         for key in converted_data:
-            if key not in ["customer", "plan"]:
+            if key not in ["customer", "plan", "metadata"]:
                 setattr(subscription, key, converted_data[key])
+        if subscription.status == Subscription.ACTIVE:
+            subscription.metadata.update({'has_been_active': True})
+            log.info(f"Subscription {subscription} has status active. Marking it as such in metadata "
+                     f"for notification purposes.")
         subscription.save()
         log.info(f"Updated subscription {subscription} after {event.event_type}.")
 
@@ -368,8 +379,12 @@ def handle_subscription_updated(stripe_event):
                            'notif_type': "subscription.trial_ended"}
         converted_data = convert_stripe_object(Subscription, stripe_sub)
         for key in converted_data:
-            if key not in ["customer", "plan"]:
+            if key not in ["customer", "plan", "metadata"]:
                 setattr(subscription, key, converted_data[key])
+        if subscription.status == Subscription.ACTIVE:
+            subscription.metadata.update({'has_been_active': True})
+            log.info(f"Subscription {subscription} has status active. Marking it as such in metadata "
+                     f"for notification purposes.")
         subscription.save()
 
     return signal_data

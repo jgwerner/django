@@ -289,6 +289,23 @@ class SubscriptionTest(APITestCase):
         sub_reloaded = Subscription.objects.get(pk=subscription.pk)
         self.assertEqual(sub_reloaded.status, Subscription.PAST)
 
+    def test_subscription_updated_to_active_status(self):
+        url = reverse("stripe-subscription-updated", kwargs={'version': settings.DEFAULT_VERSION})
+        from billing.tests import mock_stripe
+        subscription = self._create_subscription_in_stripe()
+        webhook_data = mock_stripe.Event.get_sub_updated_evt(customer=self.customer.stripe_id,
+                                                             subscription=subscription.stripe_id,
+                                                             status=Subscription.ACTIVE)
+        response = self.client.post(url, json.dumps(webhook_data), content_type="application/json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        events = Event.objects.filter(stripe_id=webhook_data['id'])
+        self.assertEqual(events.count(), 1)
+        self.assertEqual(events.first().event_type, "customer.subscription.updated")
+
+        sub_reloaded = Subscription.objects.get(pk=subscription.pk)
+        self.assertEqual(sub_reloaded.status, Subscription.ACTIVE)
+        self.assertTrue(sub_reloaded.metadata.get('has_been_active', False))
+
 
 class InvoiceTest(TestCase):
 
@@ -387,7 +404,7 @@ class InvoiceTest(TestCase):
         self.assertEqual(events.first().event_type, "invoice.created")
 
     def test_invoice_payment_failed_webhook(self):
-        url = reverse("stripe-invoice-created",
+        url = reverse("stripe-invoice-payment-failed",
                       kwargs={'version': settings.DEFAULT_VERSION})
         # Always use Mock stripe for these tests, configuring webhooks for testing is near impossible.
         from billing.tests import mock_stripe
@@ -409,6 +426,39 @@ class InvoiceTest(TestCase):
         sub_reloaded = Subscription.objects.get(pk=subscription.pk)
         stripe_subscription = stripe.Subscription.retrieve(subscription.stripe_id)
         self.assertEqual(sub_reloaded.status, stripe_subscription['status'])
+
+        # We shouldn't create a notification if the subscription was previously in trialing status
+        notifications = Notification.objects.filter(user=self.user,
+                                                    type__name="invoice.payment_failed")
+        self.assertFalse(notifications.exists())
+
+    def test_invoice_payment_success_webhook(self):
+        url = reverse("stripe-invoice-payment-success",
+                      kwargs={'version': settings.DEFAULT_VERSION})
+        # Always use Mock stripe for these tests, configuring webhooks for testing is near impossible.
+        from billing.tests import mock_stripe
+        subscription = self._create_subscription_in_stripe()
+        webhook_data = mock_stripe.Event.get_webhook_event(event_type="invoice.payment_succeeded",
+                                                           customer=self.customer.stripe_id,
+                                                           plan=subscription.plan.stripe_id,
+                                                           subscription=subscription.stripe_id,
+                                                           amount=subscription.plan.amount,
+                                                           interval=subscription.plan.interval,
+                                                           trial_period=subscription.plan.trial_period_days)
+        response = self.client.post(url, json.dumps(webhook_data), content_type="application/json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        invoices = Invoice.objects.filter(stripe_id=webhook_data['data']['object']['id'])
+        self.assertEqual(invoices.count(), 1)
+        events = Event.objects.filter(stripe_id=webhook_data['id'])
+        self.assertEqual(events.count(), 1)
+        self.assertEqual(events.first().event_type, "invoice.payment_succeeded")
+        sub_reloaded = Subscription.objects.get(pk=subscription.pk)
+        stripe_subscription = stripe.Subscription.retrieve(subscription.stripe_id)
+        self.assertEqual(sub_reloaded.status, stripe_subscription['status'])
+
+        notifications = Notification.objects.filter(user=self.user,
+                                                    type__name="invoice.payment_succeeded")
+        self.assertTrue(notifications.exists())
 
     def test_invoice_upcoming_webhook(self):
         url = reverse("stripe-invoice-upcoming", kwargs={'version': settings.DEFAULT_VERSION})
