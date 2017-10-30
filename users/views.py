@@ -87,11 +87,6 @@ class UserViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         return self._update(request, False, *args, **kwargs)
 
-    def perform_destroy(self, instance):
-        if self.request.user.pk == instance.pk:
-            deactivate_user(instance)
-            instance.save()
-
     def _check_for_permission_to_destroy(self):
         request_user = self.request.user
         kwargs_user = self.kwargs.get("user")
