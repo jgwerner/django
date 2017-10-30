@@ -32,7 +32,7 @@ class UserViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
     queryset = User.objects.filter(is_active=True).select_related('profile')
     serializer_class = UserSerializer
     filter_fields = ('username', 'email')
-    permission_classes = (IsAuthenticated, DeleteAdminOnly, PostAdminOnly)
+    permission_classes = (IsAuthenticated, PostAdminOnly)
     lookup_url_kwarg = 'user'
 
     def _update(self, request, partial, *args, **kwargs):
@@ -88,8 +88,27 @@ class UserViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
         return self._update(request, False, *args, **kwargs)
 
     def perform_destroy(self, instance):
-        deactivate_user(instance)
-        instance.save()
+        if self.request.user.pk == instance.pk:
+            deactivate_user(instance)
+            instance.save()
+
+    def _check_for_permission_to_destroy(self):
+        request_user = self.request.user
+        kwargs_user = self.kwargs.get("user")
+        return (request_user.is_staff or
+                str(request_user.pk) == kwargs_user
+                or request_user.username == kwargs_user)
+
+    def destroy(self, request, *args, **kwargs):
+        if self._check_for_permission_to_destroy():
+            instance = User.objects.tbs_get(kwargs.get('user'))
+            deactivate_user(instance)
+            instance.save()
+            resp_status = status.HTTP_204_NO_CONTENT
+        else:
+            resp_status = status.HTTP_403_FORBIDDEN
+
+        return Response(status=resp_status)
 
 
 @csrf_exempt
