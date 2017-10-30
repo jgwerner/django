@@ -122,6 +122,18 @@ class UserTest(APITestCase):
         response = self.user_client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_user_delete_own_account(self):
+        url = reverse('user-detail', kwargs={'user': str(self.user.pk),
+                                             'version': settings.DEFAULT_VERSION})
+        response = self.user_client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_user_delete_own_account_with_username(self):
+        url = reverse('user-detail', kwargs={'user': self.user.username,
+                                             'version': settings.DEFAULT_VERSION})
+        response = self.user_client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
     def test_user_delete_by_user_with_username(self):
         user = UserFactory()
         url = reverse('user-detail', kwargs={'user': user.username,
