@@ -57,6 +57,7 @@ class DockerSpawner(ServerSpawner):
         self.entry_point = None
         self.restart = None
         self.network_name = 'project_{}_network'.format(self.server.project.pk)
+        self.gpu_info = None
 
     def _get_envs(self) -> dict:
         all_env_vars = {}
@@ -118,7 +119,7 @@ class DockerSpawner(ServerSpawner):
         )
 
         if self._is_gpu_instance:
-            binds.append(settings.NVIDIA_DRIVER_PATH + ":/usr/local/nvidia:ro")
+            binds.append(f"{self._gpu_driver_path}:/usr/local/nvidia:ro")
             config['devices'] = ['/dev/nvidiactl:/dev/nvidiactl:rwm',
                                  '/dev/nvidia-uvm:/dev/nvidia-uvm:rwm',
                                  '/dev/nvidia0:/dev/nvidia0:rwm']
@@ -334,16 +335,24 @@ class DockerSpawner(ServerSpawner):
         result.extend([k.split('/')[0] for k in resp["Config"]["ExposedPorts"]])
         return result
 
-    @cached_property
-    def _is_gpu_instance(self):
+    def _gpu_info(self):
         gpu_info_url = f"{os.environ.get('NVIDIA_DOCKER_HOST')}/v1.0/gpu/info"
         try:
             resp = requests.get(gpu_info_url)
         except requests.exceptions.ConnectionError:
-            return False
+            return
         if resp.status_code == 200:
-            return True
-        return False
+            self.gpu_info = resp.data
+
+    @cached_property
+    def _gpu_driver_path(self):
+        driver = self.gpu_info['Version']['Driver']
+        return f'/var/lib/nvidia-docker/volumes/nvidia_driver/{driver}'
+
+    @cached_property
+    def _is_gpu_instance(self):
+        self._gpu_info()
+        return bool(self.gpu_info)
 
 
 class ServerDummySpawner(ServerSpawner):
