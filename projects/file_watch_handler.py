@@ -15,6 +15,10 @@ def run(files_list):
         username = path_parts[0]
         project_pk = path_parts[1]
 
+        if project_pk == ".ssh":
+            log.info("File watcher picked up the .ssh directory. Skipping it.")
+            continue
+
         user = User.objects.get(username=username,
                                 is_active=True)
         project = Project.objects.get(pk=project_pk)
