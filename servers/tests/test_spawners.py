@@ -1,7 +1,12 @@
 import os
+import socket
+import requests
+import json
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from threading import Thread
 from unittest.mock import patch
 
-from django.test import TransactionTestCase
+from django.test import TransactionTestCase, TestCase
 
 from projects.tests.factories import CollaboratorFactory
 from servers.tests.fake_docker_api_client.fake_api import FAKE_CONTAINER_ID
@@ -106,7 +111,7 @@ class TestDockerSpawnerForModel(TransactionTestCase):
             'name': self.server.container_name,
             'host_config': self.spawner.client.api.create_host_config(**{}),
         }
-        created_config = self.spawner._create_container_config()
+        self.spawner._create_container_config()
         for k, v in expected.items():
             if isinstance(v, dict):
                 self.assertDictEqual(expected[k], v)
@@ -160,3 +165,94 @@ class TestDockerSpawnerForModel(TransactionTestCase):
         links = self.spawner._connected_links()
         self.assertIn(conn.container_name, links)
         self.assertEqual(links[conn.container_name], conn.name.lower())
+
+
+class MockNvidiaDocker(BaseHTTPRequestHandler):
+    data = {
+        "Version": {"Driver": "384.90", "CUDA": "9.0"},
+        "Devices": [
+            {
+                "UUID": "GPU-6c43e5e5-6279-20ba-50g8-d64fc5af1b05",
+                "Path": "/dev/nvidia0",
+                "Model": "GRID K520",
+                "Power": 125,
+                "CPUAffinity": 0,
+                "PCI": {
+                    "BusID": "0000:00:03.0",
+                    "BAR1": 128,
+                    "Bandwidth": 15760
+                },
+                "Clocks": {"Cores": 797, "Memory": 2500},
+                "Topology": None,
+                "Family": "Kepler",
+                "Arch": "3.0",
+                "Cores": 1536,
+                "Memory": {
+                    "ECC": False,
+                    "Global": 4036,
+                    "Shared": 48,
+                    "Constant": 64,
+                    "L2Cache": 512,
+                    "Bandwidth": 160000
+                }
+            }
+        ]
+    }
+
+    def do_GET(self):
+        self.send_response(requests.codes.ok)
+        self.send_header("Content-type", "application/json")
+        self.end_headers()
+        d = json.dumps(self.data)
+        self.wfile.write(d.encode('utf-8'))
+
+
+def get_free_port():
+    s = socket.socket(socket.AF_INET, type=socket.SOCK_STREAM)
+    s.bind(('localhost', 0))
+    address, port = s.getsockname()
+    s.close()
+    return port
+
+
+class TestGPU(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.nvidia_server_port = get_free_port()
+        cls.nvidia_server = HTTPServer(('localhost', cls.nvidia_server_port), MockNvidiaDocker)
+        cls.nvidia_server_thread = Thread(target=cls.nvidia_server.serve_forever)
+        cls.nvidia_server_thread.daemon = True
+        cls.nvidia_server_thread.start()
+
+    def setUp(self):
+        collaborator = CollaboratorFactory()
+        self.user = collaborator.user
+        self.server = ServerFactory(
+            image_name='test',
+            server_size=ServerSizeFactory(
+                memory=512
+            ),
+            env_vars={'test': 'test'},
+            project=collaborator.project,
+            config={
+                'type': 'proxy',
+                'function': 'test',
+                'script': 'test.py'
+            }
+        )
+        docker_client = make_fake_client()
+        self.spawner = DockerSpawner(self.server, docker_client)
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        cls.nvidia_server.shutdown()
+        cls.nvidia_server.server_close()
+        cls.nvidia_server_thread.join()
+
+    def test_gpu_info(self):
+        with self.settings(NVIDIA_DOCKER_HOST=f'http://localhost:{self.nvidia_server_port}'):
+            self.spawner._gpu_info()
+        self.assertIsNotNone(self.spawner.gpu_info)
+        self.assertEqual(self.spawner.gpu_info['Version']['Driver'], '384.90')
