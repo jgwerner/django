@@ -118,7 +118,8 @@ class DockerSpawner(ServerSpawner):
             restart_policy=self.restart
         )
 
-        if self._is_gpu_instance and not self.server.config['type'].lower() == 'rstudio':
+        # The order of these conditionals *does* matter. RStudio images will blow up 
+        if (not self.server.config['type'].lower() == 'rstudio') and self._is_gpu_instance:
             binds.append(f"{self._gpu_driver_path}:/usr/local/nvidia:ro")
             config['devices'] = ['/dev/nvidiactl:/dev/nvidiactl:rwm',
                                  '/dev/nvidia-uvm:/dev/nvidia-uvm:rwm',
