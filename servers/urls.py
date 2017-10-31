@@ -37,4 +37,16 @@ urlpatterns = [
         servers_views.server_key, name='server-api-key'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/api-key/reset/$',
         servers_views.server_key_reset, name='server-api-key-reset'),
+    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/start/$',
+        servers_views.start, name='server-start'),
+    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/stop/$',
+        servers_views.stop, name='server-stop'),
+    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/terminate/$',
+        servers_views.terminate, name='server-terminate'),
+
+    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/api-key/verify/$',
+        servers_views.VerifyJSONWebTokenServer.as_view(), name='server-api-key-verify'),
+    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/auth/$',
+        servers_views.check_token, name='server-auth'),
+    url(r'^servers/', include(servers_urls.servers_router.urls)),
 ]

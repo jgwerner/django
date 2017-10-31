@@ -14,7 +14,7 @@ Including another URLconf
     1. Import the include() function: from django.conf.urls import url, include
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
-from django.conf.urls import url
+from django.conf.urls import url, include
 from rest_framework_nested import routers
 
 from appdj.urls.unversioned import router
@@ -33,4 +33,5 @@ urlpatterns = [
     url(r'^(?P<namespace>[\w-]+)/projects/project-copy/$', project_views.project_copy, name='project-copy'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project>[\w-]+)/synced-resources/$',
         project_views.SyncedResourceViewSet.as_view({'get': 'list', 'post': 'create'})),
+    url(r'^(?P<namespace>[\w-]+)/', include(project_router.urls)),
 ]

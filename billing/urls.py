@@ -16,11 +16,9 @@ Including another URLconf
 """
 from django.conf import settings
 from django.conf.urls import url
-from rest_framework_nested import routers
 
+from appdj.urls.unversioned import router
 from . import views as billing_views
-
-router = routers.DefaultRouter()
 
 if settings.ENABLE_BILLING:
     router.register(r'billing/cards', billing_views.CardViewSet)

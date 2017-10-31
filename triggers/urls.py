@@ -1,5 +1,5 @@
 """
-    actions URL Configuration
+    triggers URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/1.10/topics/http/urls/
@@ -16,12 +16,15 @@ Including another URLconf
 """
 from django.conf.urls import url
 
-from .views import ActionList, cancel, ActionViewSet
+from . import views as trigger_views
 
-urlpatterns = [
-    url(r'^$', ActionList.as_view(), name='action-list'),
-    url(r'^create/$', ActionViewSet.as_view({'post': 'create'}), name='action-create'),
-    url(r'^(?P<pk>[\w-]+)/cancel/$', cancel, name='action-cancel'),
-    url(r'^(?P<pk>[\w-]+)/$', ActionViewSet.as_view({'get': 'retrieve', 'patch': 'partial_update'}),
-        name='action-detail'),
+urlpattens = [
+    url(r'^(?P<namespace>[\w-]+)/triggers/send-slack-message/$', trigger_views.SlackMessageView.as_view(),
+        name='send-slack-message'),
+    url(r'^(?P<namespace>[\w-]+)/triggers/(?P<trigger>[\w-]+)/start/$', trigger_views.start,
+        name='trigger-start'),
+    url(r'^(?P<namespace>[\w-]+)/triggers/(?P<trigger>[\w-]+)/stop/$', trigger_views.stop,
+        name='trigger-stop'),
+    url(r'^(?P<namespace>[\w-]+)/service/(?P<server>[^/.]+)/trigger/(?P<pk>[^/.]+)/call/$',
+        trigger_views.call_trigger, name='server-trigger-call')
 ]

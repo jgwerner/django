@@ -1,4 +1,5 @@
-"""appdj URL Configuration
+"""
+    appdj URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/1.10/topics/http/urls/
@@ -20,13 +21,6 @@ from rest_framework.decorators import api_view
 from rest_framework.exceptions import NotFound, APIException
 from rest_framework_nested import routers
 
-from billing import urls as billing_urls
-from infrastructure import urls as infra_urls
-from projects import urls as project_urls
-from servers import urls as servers_urls
-from users import urls as user_urls
-
-from servers import views as servers_views
 from users import views as user_views
 from triggers import views as trigger_views
 from search.views import SearchView
@@ -41,38 +35,9 @@ urlpatterns = [
     url(r'^me/$', user_views.me, name="me"),
     url(r'^(?P<namespace>[\w-]+)/search/$', SearchView.as_view(), name='search'),
     url(r'^actions/', include('actions.urls')),
-    url(r'^(?P<namespace>[\w-]+)/triggers/send-slack-message/$', trigger_views.SlackMessageView.as_view(),
-        name='send-slack-message'),
-    url(r'^(?P<namespace>[\w-]+)/triggers/(?P<trigger>[\w-]+)/start/$', trigger_views.start,
-        name='trigger-start'),
-    url(r'^(?P<namespace>[\w-]+)/triggers/(?P<trigger>[\w-]+)/stop/$', trigger_views.stop,
-        name='trigger-stop'),
-    url(r'^(?P<namespace>[\w-]+)/', include(router.urls)),
-    url(r'^(?P<namespace>[\w-]+)/', include(project_urls.project_router.urls)),
-    url(r'^users/', include(user_urls.user_router.urls)),
-    url(r'^users/(?P<user_pk>[\w-]+)/ssh-key/$', user_views.ssh_key, name='ssh_key'),
-    url(r'^users/(?P<user_pk>[\w-]+)/ssh-key/reset/$', user_views.reset_ssh_key,
-        name='reset_ssh_key'),
-    url(r'^users/(?P<user_pk>[\w-]+)/api-key/$', user_views.api_key, name='api_key'),
-    url(r'^users/(?P<user_pk>[\w-]+)/avatar/$', user_views.avatar, name='avatar'),
-    url(r'^(?P<namespace>[\w-]+)/service/(?P<server>[^/.]+)/trigger/(?P<pk>[^/.]+)/call/$',
-        trigger_views.call_trigger, name='server-trigger-call'),
-    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/start/$',
-        servers_views.start, name='server-start'),
-    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/stop/$',
-        servers_views.stop, name='server-stop'),
-    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/terminate/$',
-        servers_views.terminate, name='server-terminate'),
-
-    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/api-key/verify/$',
-        servers_views.VerifyJSONWebTokenServer.as_view(), name='server-api-key-verify'),
-    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/auth/$',
-        servers_views.check_token, name='server-auth'),
-    url(r'^servers/', include(servers_urls.servers_router.urls)),
-    url(r'^(?P<namespace>[\w-]+)/notifications/', include("notifications.urls"))
-
+    url(r'^(?P<namespace>[\w-]+)/notifications/', include('notifications.urls')),
+    url(r'^(?P<namespace>[\w-]+)/', include(router.urls))
 ]
-
 
 @api_view()
 def handler404(request):
