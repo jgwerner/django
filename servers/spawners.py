@@ -342,7 +342,7 @@ class DockerSpawner(ServerSpawner):
         except requests.exceptions.ConnectionError:
             return
         if resp.status_code == 200:
-            self.gpu_info = resp.data
+            self.gpu_info = resp.json()
 
     @cached_property
     def _gpu_driver_path(self):
