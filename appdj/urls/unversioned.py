@@ -20,42 +20,27 @@ from rest_framework.decorators import api_view
 from rest_framework.exceptions import NotFound, APIException
 from rest_framework_nested import routers
 
+from billing import urls as billing_urls
+from infrastructure import urls as infra_urls
+from projects import urls as project_urls
+from servers import urls as servers_urls
+from users import urls as user_urls
+
 from servers import views as servers_views
 from users import views as user_views
 from triggers import views as trigger_views
 from search.views import SearchView
+from projects import views as project_views
 
 router = routers.DefaultRouter()
-
+router.register(r'projects', project_views.ProjectViewSet)
 router.register(r'triggers', trigger_views.TriggerViewSet)
-
-user_router = routers.SimpleRouter()
-user_router.register(r'profiles', user_views.UserViewSet)
-user_router.register(r'(?P<user_id>[\w-]+)/emails', user_views.EmailViewSet)
-user_router.register(r'integrations', user_views.IntegrationViewSet)
-
-
-project_router = routers.NestedSimpleRouter(router, r'projects', lookup='project')
-
-project_router.register(r'servers', servers_views.ServerViewSet)
-
-server_router = routers.NestedSimpleRouter(project_router, r'servers', lookup='server')
-server_router.register(r'ssh-tunnels', servers_views.SshTunnelViewSet)
-server_router.register(r'run-stats', servers_views.ServerRunStatisticsViewSet)
-server_router.register(r'stats', servers_views.ServerStatisticsViewSet)
-server_router.register(r'triggers', trigger_views.ServerActionViewSet)
-
 router.register(r'service/(?P<server>[^/.]+)/trigger', trigger_views.ServerActionViewSet)
-
-servers_router = routers.SimpleRouter()
-servers_router.register("options/server-size", servers_views.ServerSizeViewSet)
 
 urlpatterns = [
     url(r'^me/$', user_views.me, name="me"),
     url(r'^(?P<namespace>[\w-]+)/search/$', SearchView.as_view(), name='search'),
     url(r'^actions/', include('actions.urls')),
-    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server_server>[^/.]+)/internal/(?P<service>[^/.]+)/$',
-        servers_views.server_internal_details, name="server_internal"),
     url(r'^(?P<namespace>[\w-]+)/triggers/send-slack-message/$', trigger_views.SlackMessageView.as_view(),
         name='send-slack-message'),
     url(r'^(?P<namespace>[\w-]+)/triggers/(?P<trigger>[\w-]+)/start/$', trigger_views.start,
@@ -63,10 +48,8 @@ urlpatterns = [
     url(r'^(?P<namespace>[\w-]+)/triggers/(?P<trigger>[\w-]+)/stop/$', trigger_views.stop,
         name='trigger-stop'),
     url(r'^(?P<namespace>[\w-]+)/', include(router.urls)),
-    url(r'^(?P<namespace>[\w-]+)/', include(project_router.urls)),
-    url(r'^(?P<namespace>[\w-]+)/', include(server_router.urls)),
-
-    url(r'^users/', include(user_router.urls)),
+    url(r'^(?P<namespace>[\w-]+)/', include(project_urls.project_router.urls)),
+    url(r'^users/', include(user_urls.user_router.urls)),
     url(r'^users/(?P<user_pk>[\w-]+)/ssh-key/$', user_views.ssh_key, name='ssh_key'),
     url(r'^users/(?P<user_pk>[\w-]+)/ssh-key/reset/$', user_views.reset_ssh_key,
         name='reset_ssh_key'),
@@ -80,15 +63,12 @@ urlpatterns = [
         servers_views.stop, name='server-stop'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/terminate/$',
         servers_views.terminate, name='server-terminate'),
-    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/api-key/$',
-        servers_views.server_key, name='server-api-key'),
-    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/api-key/reset/$',
-        servers_views.server_key_reset, name='server-api-key-reset'),
+
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/api-key/verify/$',
         servers_views.VerifyJSONWebTokenServer.as_view(), name='server-api-key-verify'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/auth/$',
         servers_views.check_token, name='server-auth'),
-    url(r'^servers/', include(servers_router.urls)),
+    url(r'^servers/', include(servers_urls.servers_router.urls)),
     url(r'^(?P<namespace>[\w-]+)/notifications/', include("notifications.urls"))
 
 ]

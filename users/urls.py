@@ -1,5 +1,5 @@
 """
-    infrastructure URL Configuration
+    users URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/1.10/topics/http/urls/
@@ -16,8 +16,9 @@ Including another URLconf
 """
 from rest_framework_nested import routers
 
-from . import views as infra_views
+from . import views as user_views
 
-router = routers.DefaultRouter()
-
-router.register(r'hosts', infra_views.DockerHostViewSet)
+user_router = routers.SimpleRouter()
+user_router.register(r'profiles', user_views.UserViewSet)
+user_router.register(r'(?P<user_id>[\w-]+)/emails', user_views.EmailViewSet)
+user_router.register(r'integrations', user_views.IntegrationViewSet)
