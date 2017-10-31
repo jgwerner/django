@@ -162,10 +162,10 @@ class ProjectTest(ProjectTestMixin, APITestCase):
     def test_copy_project_with_existing_name(self):
         to_copy = CollaboratorFactory(project__private=False,
                                       project__copying_enabled=True).project
-        my_own_project = CollaboratorFactory(project__private=False,
-                                             project__copying_enabled=True,
-                                             project__name=to_copy.name,
-                                             user=self.user).project
+        CollaboratorFactory(project__private=False,
+                            project__copying_enabled=True,
+                            project__name=to_copy.name,
+                            user=self.user)
 
         url = reverse("project-copy", kwargs={'version': settings.DEFAULT_VERSION,
                                               'namespace': self.user.username})
@@ -175,9 +175,34 @@ class ProjectTest(ProjectTestMixin, APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         copied_project = Project.objects.filter(id=str(response.data['id'])).first()
         self.assertIsNotNone(copied_project)
+        self.assertEqual(copied_project.name, to_copy.name + "-1")
 
-        self.assertNotEqual(copied_project.name, my_own_project.name)
-        self.assertTrue(to_copy.name in copied_project.name)
+    def test_copy_project_with_existing_name_multiple(self):
+        name = "foo"
+        to_copy = CollaboratorFactory(project__name=name,
+                                      project__private=False,
+                                      project__copying_enabled=True).project
+        # Set up the 0th project...
+        CollaboratorFactory(project__private=False,
+                            project__copying_enabled=True,
+                            project__name=name,
+                            user=self.user)
+        for x in range(1, 10):
+            # We're doing so many of these in order to test what happens when we get to double digits
+            CollaboratorFactory(project__private=False,
+                                project__copying_enabled=True,
+                                project__name=name + "-" + str(x),
+                                user=self.user)
+
+        url = reverse("project-copy", kwargs={'version': settings.DEFAULT_VERSION,
+                                              'namespace': self.user.username})
+        data = {'project': str(to_copy.pk)}
+        response = self.client.post(url, data=data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        copied_project = Project.objects.filter(id=str(response.data['id'])).first()
+        self.assertIsNotNone(copied_project)
+        self.assertEqual(copied_project.name, to_copy.name + "-10")
 
     def test_create_project_with_different_user(self):
         staff_user = UserFactory(is_staff=True)
@@ -353,6 +378,18 @@ class ProjectTest(ProjectTestMixin, APITestCase):
         self.assertFalse(response.data['owner'])
         self.assertEqual(response.data['username'], other_user.username)
         self.assertEqual(response.data['permissions'], {"read_project"})
+
+    def test_list_projects_respects_privacy(self):
+        private_collab = CollaboratorFactory(project__private=True)
+        public_project = CollaboratorFactory(project__private=False,
+                                             user=private_collab.user).project
+        url = reverse("project-list", kwargs={'version': settings.DEFAULT_VERSION,
+                                              'namespace': private_collab.user.username})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['id'], str(public_project.pk))
+
 
 
 class ProjectTestWithName(ProjectTestMixin, APITestCase):

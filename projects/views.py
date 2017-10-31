@@ -1,4 +1,5 @@
 import logging
+from django.db.models import Q
 from django.contrib.auth import get_user_model
 from rest_framework import viewsets, status, permissions
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
@@ -32,6 +33,11 @@ class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewS
     filter_fields = ('private', 'name')
     ordering_fields = ('name',)
     lookup_url_kwarg = 'project'
+
+    def get_queryset(self):
+        qs = super(ProjectViewSet, self).get_queryset()
+        final_qs = qs.filter(Q(collaborator__user=self.request.user) | Q(private=False))
+        return final_qs
 
     def _update(self, request, partial,  *args, **kwargs):
         instance = Project.objects.tbs_get(kwargs.get("project"))

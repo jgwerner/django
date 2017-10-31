@@ -31,7 +31,7 @@ uuid==1.30
 django-cacheops==3.2.1
 django-storages==1.5.2
 django-oauth-toolkit==0.12.0
-django-rest-framework-social-oauth2==1.0.6
+django-rest-framework-social-oauth2==1.0.8
 djangorestframework-jwt==1.10
 slackclient==1.0.5
 django-cors-headers==2.0.2

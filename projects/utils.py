@@ -132,7 +132,9 @@ def perform_project_copy(request):
                                                              user=user,
                                                              project__name=new_proj.name)
         if project_with_same_name.exists():
-            new_proj.name += str(datetime.now().timestamp())
+            existing_projects = Project.objects.filter(name__istartswith=new_proj.name + "-").count()
+            new_name = new_proj.name + "-" + str(existing_projects + 1)
+            new_proj.name = new_name
 
         new_proj.save()
 

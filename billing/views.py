@@ -23,6 +23,7 @@ from billing.stripe_utils import (handle_stripe_invoice_created,
 from .signals import (subscription_cancelled,
                       subscription_created,
                       invoice_payment_failure,
+                      invoice_payment_success,
                       trial_expired)
 
 log = logging.getLogger('billing')
@@ -164,7 +165,7 @@ def stripe_invoice_payment_success(request, *args, **kwargs):
     signal_data = handle_stripe_invoice_payment_status_change(event_json)
 
     if signal_data:
-        invoice_payment_failure.send(sender=Event, **signal_data)
+        invoice_payment_success.send(sender=Event, **signal_data)
 
     return HttpResponse(status=status.HTTP_200_OK)
 

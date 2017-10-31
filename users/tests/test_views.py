@@ -122,6 +122,18 @@ class UserTest(APITestCase):
         response = self.user_client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_user_delete_own_account(self):
+        url = reverse('user-detail', kwargs={'user': str(self.user.pk),
+                                             'version': settings.DEFAULT_VERSION})
+        response = self.user_client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_user_delete_own_account_with_username(self):
+        url = reverse('user-detail', kwargs={'user': self.user.username,
+                                             'version': settings.DEFAULT_VERSION})
+        response = self.user_client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
     def test_user_delete_by_user_with_username(self):
         user = UserFactory()
         url = reverse('user-detail', kwargs={'user': user.username,
@@ -138,6 +150,18 @@ class UserTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         user_reloaded = User.objects.get(pk=user.pk)
         self.assertEqual(user_reloaded.first_name, "Tom")
+
+    def test_patch_with_email_same_as_before(self):
+        url = reverse("user-detail", kwargs={'user': self.user.pk,
+                                             'version': settings.DEFAULT_VERSION})
+        old_email = self.user.email
+        data = {'first_name': "Tom",
+                'email': old_email}
+        response = self.user_client.patch(url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        user_reloaded = User.objects.get(pk=self.user.pk)
+        self.assertEqual(user_reloaded.first_name, "Tom")
+        self.assertEqual(user_reloaded.email, old_email)
 
     def test_patch_user_without_profile_with_username(self):
         user = UserFactory()
@@ -322,7 +346,7 @@ class UserTest(APITestCase):
 
         user_reloaded = User.objects.get(pk=self.user.pk)
         request = response.wsgi_request
-        full_url = (request.environ['wsgi.url_scheme'] + "://" +
+        full_url = ("https" + "://" +
                     request.environ['SERVER_NAME'] +
                     user_reloaded.profile.avatar.url)
 
@@ -334,6 +358,13 @@ class UserTest(APITestCase):
         self.assertTrue(filecmp.cmp("/tmp/myavatar.png",
                                     user_reloaded.profile.avatar.path))
         self.to_remove.append(user_reloaded.profile.resource_root())
+
+    def test_user_without_avatar_is_serialized_correctly(self):
+        url = reverse("user-detail", kwargs={'version': settings.DEFAULT_VERSION,
+                                             'user': str(self.user.pk)})
+        response = self.user_client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsNone(response.data['profile']['avatar'])
 
     def test_uploading_avatar_with_username(self):
         url = reverse("avatar", kwargs={'version': settings.DEFAULT_VERSION,
