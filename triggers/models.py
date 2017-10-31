@@ -36,8 +36,12 @@ class Trigger(models.Model):
             return '{} -> {}'.format(self.cause, self.effect)
         return '{}: {}'.format(self.effect, self.schedule)
 
-    def get_absolute_url(self, version, namespace):
-        return reverse('trigger-detail', kwargs={'namespace': namespace.name, 'version': version, 'pk': str(self.pk)})
+    @property
+    def namespace_name(self):
+        return self.user.username
+
+    def get_absolute_url(self, version):
+        return reverse('trigger-detail', kwargs={'namespace': self.namespace_name, 'version': version, 'pk': str(self.pk)})
 
     def dispatch(self, url='http://localhost'):
         logger.debug(f'Dispatching trigger {self}')

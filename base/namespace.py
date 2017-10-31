@@ -9,9 +9,15 @@ class Namespace(object):
 
     @staticmethod
     def from_name(name):
+        from teams.models import Team
         ns = Namespace(name=name)
         ns.object = get_user_model().objects.filter(username=name,
                                                     is_active=True).first()
         if ns.object is not None:
             ns.type = 'user'
-        return ns
+            return ns
+
+        ns.object = Team.objects.filter(name=name).first()
+        if ns.object is not None:
+            ns.type = 'team'
+            return ns

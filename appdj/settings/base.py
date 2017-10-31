@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'haystack',
     'djoser',
     'django_ses',
+    'treebeard',
 
     'base',
     'notifications',
@@ -67,6 +68,7 @@ INSTALLED_APPS = [
     'triggers',
     'jwt_auth',
     'search',
+    'teams',
 ]
 
 MIDDLEWARE = [
@@ -244,6 +246,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
+        'teams.permissions.TeamGroupPermission',
         'rest_framework.permissions.IsAuthenticated',
     ),
     'DEFAULT_PAGINATION_CLASS': 'base.pagination.LimitOffsetPagination',

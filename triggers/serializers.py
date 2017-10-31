@@ -88,7 +88,6 @@ class TriggerSerializer(serializers.ModelSerializer):
             content_object = content_type.get_object_for_this_type(pk=validated_data['object_id'])
         if content_object:
             path = content_object.get_action_url(self.context['request'].version,
-                                                 self.context['request'].namespace,
                                                  action_name)
         else:
             path = reverse(action_name, kwargs={'version': self.context['request'].version,
@@ -151,7 +150,6 @@ class ServerActionSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         content_type = ContentType.objects.filter(model='server').first()
         server = Server.objects.get(pk=self.context['view'].kwargs['server_server'])
-        namespace = self.context['request'].namespace
         action = Action.objects.create(
             method='POST',
             action='Server {}'.format(validated_data['operation']),
@@ -160,7 +158,7 @@ class ServerActionSerializer(serializers.ModelSerializer):
             content_object=server,
             is_user_action=False,
             user=validated_data['user'],
-            path=server.get_action_url(self.context['request'].version, namespace, validated_data['operation']),
+            path=server.get_action_url(self.context['request'].version, validated_data['operation']),
         )
         trigger = Trigger(
             name=validated_data.get('name', ''),

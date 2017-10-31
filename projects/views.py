@@ -19,6 +19,7 @@ from projects.utils import (get_files_from_request,
                             has_copy_permission,
                             perform_project_copy,
                             sync_project_files_from_disk)
+from teams.permissions import TeamGroupPermission
 
 User = get_user_model()
 
@@ -28,7 +29,7 @@ log = logging.getLogger('projects')
 class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-    permission_classes = (permissions.IsAuthenticated, ProjectPermission)
+    permission_classes = (permissions.IsAuthenticated, ProjectPermission, TeamGroupPermission)
     filter_fields = ('private', 'name')
     ordering_fields = ('name',)
     lookup_url_kwarg = 'project'
@@ -116,7 +117,7 @@ def project_copy_check(request, *args, **kwargs):
 
 
 class ProjectMixin(LookupByMultipleFields):
-    permission_classes = (permissions.IsAuthenticated, ProjectChildPermission)
+    permission_classes = (permissions.IsAuthenticated, ProjectChildPermission, TeamGroupPermission)
 
 
 class CollaboratorViewSet(ProjectMixin, viewsets.ModelViewSet):

@@ -4,7 +4,9 @@ from base.utils import validate_uuid
 
 class ProjectQuerySet(TBSQuerySet):
     def namespace(self, namespace):
-        return self.filter(collaborator__user=namespace.object)
+        if namespace.type == 'user':
+            return self.filter(collaborator__user=namespace.object)
+        return self.filter(team=namespace.object)
 
 
 class CollaboratorQuerySet(TBSQuerySet):

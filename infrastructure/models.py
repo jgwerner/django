@@ -28,9 +28,13 @@ class DockerHost(models.Model):
     def __str__(self):
         return self.name
 
-    def get_absolute_url(self, version, namespace):
+    @property
+    def namespace_name(self):
+        return self.owner.username
+
+    def get_absolute_url(self, version):
         return reverse('dockerhost-detail', kwargs={
-            'namespace': namespace.name, 'version': version, 'host': str(self.pk)})
+            'namespace': self.namespace_name, 'version': version, 'host': str(self.pk)})
 
     @property
     def url(self):

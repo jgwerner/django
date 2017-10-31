@@ -53,20 +53,30 @@ class Server(models.Model):
     access_token = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
 
+    class Meta:
+        permissions = (
+            ('write_server', "Write server"),
+            ('read_server', "Read server"),
+        )
+
     def __str__(self):
         return self.name
 
-    def get_absolute_url(self, version, namespace):
-        return self.get_action_url(version, namespace, 'detail')
+    def get_absolute_url(self, version):
+        return self.get_action_url(version, 'detail')
 
-    def get_action_url(self, version, namespace, action):
+    def get_action_url(self, version, action):
         return reverse(
             'server-{}'.format(action),
             kwargs={'version': version,
-                    'namespace': namespace.name,
+                    'namespace': self.namespace_name,
                     'project_project': str(self.project.pk),
                     'server': str(self.pk)}
         )
+
+    @property
+    def namespace_name(self):
+        return self.project.namespace_name
 
     @property
     def container_name(self):
@@ -182,3 +192,7 @@ class SshTunnel(models.Model):
 
     class Meta:
         unique_together = (('name', 'server'),)
+        permissions = (
+            ('write_ssh_tunnel', "Write ssh tunnel"),
+            ('read_ssh_tunnel', "Read ssh tunnel"),
+        )

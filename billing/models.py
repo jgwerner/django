@@ -4,6 +4,8 @@ from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
 
+from base.models import TBSQuerySet
+
 
 class BillingAddress(models.Model):
     address = models.CharField(max_length=255)
@@ -44,8 +46,13 @@ class Customer(StripeModel):
                                                            Subscription.ACTIVE]).exists()
         return has_sub
 
-    def get_absolute_url(self, version, namespace):
-        return reverse('customer-detail', kwargs={'namespace': namespace.name, 'version': version, 'pk': str(self.pk)})
+    @property
+    def namespace_name(self):
+        return self.user.username
+
+    def get_absolute_url(self, version):
+        return reverse('customer-detail', kwargs={
+            'namespace': self.namespace_name, 'version': version, 'pk': str(self.pk)})
 
 
 class Card(StripeModel):
@@ -107,8 +114,12 @@ class Card(StripeModel):
 
     funding = models.CharField(max_length=7, choices=FUNDING_CHOICES)
 
-    def get_absolute_url(self, version, namespace):
-        return reverse('card-detail', kwargs={'namespace': namespace.name, 'version': version, 'pk': str(self.pk)})
+    @property
+    def namespace_name(self):
+        return self.customer.namespace_name
+
+    def get_absolute_url(self, version):
+        return reverse('card-detail', kwargs={'namespace': self.namespace_name, 'version': version, 'pk': str(self.pk)})
 
 
 class Plan(StripeModel):
@@ -132,11 +143,15 @@ class Plan(StripeModel):
     statement_descriptor = models.TextField(null=True)
     trial_period_days = models.PositiveIntegerField(null=True)
 
-    def get_absolute_url(self, version, namespace):
-        return reverse('card-detail', kwargs={'namespace': namespace.name, 'version': version, 'pk': str(self.pk)})
+    @property
+    def namespace_name(self):
+        return self.subscription_set.first().namespace_name
+
+    def get_absolute_url(self, version):
+        return reverse('card-detail', kwargs={'namespace': self.namespace_name, 'version': version, 'pk': str(self.pk)})
 
 
-class SubscriptionQuerySet(models.QuerySet):
+class SubscriptionQuerySet(TBSQuerySet):
     def namespace(self, namespace):
         return self.filter(customer__user=namespace.object)
 
@@ -170,9 +185,13 @@ class Subscription(StripeModel):
 
     objects = SubscriptionQuerySet.as_manager()
 
-    def get_absolute_url(self, version, namespace):
+    @property
+    def namespace_name(self):
+        return self.customer.namespace_name
+
+    def get_absolute_url(self, version):
         return reverse('subscription-detail', kwargs={
-            'namespace': namespace.name, 'version': version, 'pk': str(self.pk)})
+            'namespace': self.namespace_name, 'version': version, 'pk': str(self.pk)})
 
     def delete(self, using=None, keep_parents=False, new_status=CANCELED):
         self.canceled_at = timezone.now()
@@ -181,7 +200,7 @@ class Subscription(StripeModel):
         self.save(update_fields=['canceled_at', 'ended_at', 'status'])
 
 
-class InvoiceQuerySet(models.QuerySet):
+class InvoiceQuerySet(TBSQuerySet):
     def namespace(self, namespace):
         return self.filter(customer__user=namespace.object)
 
@@ -210,9 +229,18 @@ class Invoice(StripeModel):
 
     objects = InvoiceQuerySet.as_manager()
 
-    def get_absolute_url(self, version, namespace):
+    @property
+    def namespace_name(self):
+        return self.customer.namespace_name
+
+    def get_absolute_url(self, version):
         return reverse('invoice-detail', kwargs={
-            'namespace': namespace.name, 'version': version, 'pk': str(self.pk)})
+            'namespace': self.namespace_name, 'version': version, 'pk': str(self.pk)})
+
+
+class InvoiceItemQuerySet(TBSQuerySet):
+    def namespace(self, namespace):
+        return self.filter(invoice__customer__user=namespace.object)
 
 
 class InvoiceItem(StripeModel):
@@ -228,6 +256,8 @@ class InvoiceItem(StripeModel):
     proration = models.BooleanField(default=False)
     quantity = models.IntegerField()
     description = models.TextField(default="")
+
+    objects = InvoiceItemQuerySet.as_manager()
 
 
 class Charge(StripeModel):

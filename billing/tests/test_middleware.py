@@ -9,6 +9,7 @@ from billing.tests.factories import SubscriptionFactory
 from projects.tests.factories import CollaboratorFactory
 from servers.tests.factories import ServerFactory
 from jwt_auth.utils import create_auth_jwt
+from teams.tests.factories import TeamFactory
 
 
 class TestMiddleware(APITestCase):
@@ -22,6 +23,7 @@ class TestMiddleware(APITestCase):
         token = create_auth_jwt(self.user)
         self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
         self.customer = self.user.customer
+        self.team = TeamFactory(customer=self.customer, created_by=self.user)
 
     @override_settings(ENABLE_BILLING=True)
     def test_no_subscription_GET_is_accepted(self):
@@ -56,5 +58,32 @@ class TestMiddleware(APITestCase):
                             status="active")
         url = reverse("project-list", kwargs={'version': settings.DEFAULT_VERSION,
                                               'namespace': self.user.username})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    @override_settings(ENABLE_BILLING=True)
+    def test_no_team_subscription_cannot_start_server(self):
+        project = CollaboratorFactory(user=self.user).project
+        server = ServerFactory(project=project)
+        url = reverse("server-start", kwargs={'version': settings.DEFAULT_VERSION,
+                                              'namespace': self.team.name,
+                                              'project_project': str(project.pk),
+                                              'server': str(server.pk)})
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_402_PAYMENT_REQUIRED)
+
+    @override_settings(ENABLE_BILLING=True)
+    def test_no_team_subscription_GET_is_accepted(self):
+        url = reverse("project-list", kwargs={'version': settings.DEFAULT_VERSION,
+                                              'namespace': self.team.name})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    @override_settings(ENABLE_BILLING=True)
+    def test_valid_team_subscription_accepted(self):
+        SubscriptionFactory(customer=self.customer,
+                            status="active")
+        url = reverse("project-list", kwargs={'version': settings.DEFAULT_VERSION,
+                                              'namespace': self.team.name})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)

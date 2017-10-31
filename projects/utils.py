@@ -45,10 +45,26 @@ def get_files_from_request(request):
     return django_files
 
 
-def create_ancillary_project_stuff(user, project):
+def assign_to_user(request, project):
+    if request.user.is_staff:
+        user = request.namespace.object
+    else:
+        user = request.user
     log.info(f"Creating default collaborator, assigning permissions, and creating project resource root.")
     Collaborator.objects.create(project=project, owner=True, user=user)
-    assign_perm('write_project', user, project)
+    assign_perm('write_project', request.user, project)
+
+
+def assign_to_team(request, project):
+    project.team = request.namespace.object
+    project.save()
+
+
+def create_ancillary_project_stuff(request, project):
+    if request.namespace.type == 'user':
+        assign_to_user(request, project)
+    else:
+        assign_to_team(request, project)
     Path(settings.RESOURCE_DIR, project.get_owner_name(), str(project.pk)).mkdir(parents=True, exist_ok=True)
 
 
@@ -58,11 +74,11 @@ def has_copy_permission(request=None, user=None, project=None):
     :param user: Authenticated User
     :param project: Project Object
     :return: Boolean reflecting whether or not the given user has permission to copy the project in question.
-    
+
     Note that callers of this function should pass *either* request only, *or* both user and project.
     If request is passed, the values stored in it will take precedence, and the others will be ignored.
     If not enough information is passed, an exception will be raised.
-    
+
     This is done to avoid unnecessary DB queries when we can.
     """
 
@@ -122,7 +138,7 @@ def perform_project_copy(request):
 
         new_proj.save()
 
-        create_ancillary_project_stuff(user, new_proj)
+        create_ancillary_project_stuff(request, new_proj)
 
         if old_resource_root.is_dir():
             log.info(f"Copying files from the {old_resource_root} to {new_proj.resource_root()}")

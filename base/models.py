@@ -3,7 +3,8 @@ from django.db.models import QuerySet, Q
 
 from .utils import validate_uuid
 
-class TBSQuerySet(QuerySet):
+
+class TBSQuerySetMixin:
     def tbs_filter(self, value, *args, **kwargs):
         """
         Filters objects against pk or natural key.
@@ -41,6 +42,10 @@ class TBSQuerySet(QuerySet):
                 natural_keys.append(val)
         q = Q(pk__in=uuids) | Q(**{f"{self.model.NATURAL_KEY}__in": natural_keys})
         return self.filter(q, *args, **kwargs)
+
+
+class TBSQuerySet(TBSQuerySetMixin, QuerySet):
+    pass
 
 
 class TBSModelMixin:

@@ -25,21 +25,21 @@ class ProjectSerializer(SearchSerializerMixin, serializers.ModelSerializer):
     def validate_name(self, value):
         request = self.context['request']
         existing_pk = self.context.get("pk")
-        if Project.objects.filter(name=value,
-                                  collaborator__user=request.user,
-                                  collaborator__user__is_active=True,
-                                  collaborator__owner=True).exclude(pk=existing_pk).exists():
+        qs = Project.objects.filter(name=value).exclude(pk=existing_pk)
+        if request.namespace.type == 'user':
+            qs = qs.filter(
+                collaborator__user=request.user,
+                collaborator__owner=True)
+        else:
+            qs = qs.filter(team=request.namespace.object)
+        if qs.exists():
             raise serializers.ValidationError("You can have only one project named %s" % value)
         return value
 
     def create(self, validated_data):
         project = super().create(validated_data)
         request = self.context['request']
-        if request.user.is_staff:
-            user = request.namespace.object
-        else:
-            user = request.user
-        create_ancillary_project_stuff(user, project)
+        create_ancillary_project_stuff(request, project)
         return project
 
 
