@@ -337,7 +337,6 @@ class DockerSpawner(ServerSpawner):
 
     def _gpu_info(self):
         gpu_info_url = f"{settings.NVIDIA_DOCKER_HOST}/v1.0/gpu/info"
-        print(gpu_info_url)
         try:
             resp = requests.get(gpu_info_url)
         except requests.exceptions.ConnectionError:
