@@ -40,7 +40,6 @@ urlpatterns = [
     # Below added by ncompton. Verify these work
     url(r'^(?P<namespace>[\w-]+)/', include('servers.urls')),
     url(r'^', include('billing.urls')),
-    url(r'^', include('infrastructure.urls')),
     url(r'^', include('notifications.urls')),
     url(r'^', include('projects.urls')),
     url(r'^', include('servers.urls')),

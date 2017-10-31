@@ -18,7 +18,7 @@ from django.conf.urls import url
 
 from . import views as trigger_views
 
-urlpattens = [
+urlpatterns = [
     url(r'^(?P<namespace>[\w-]+)/triggers/send-slack-message/$', trigger_views.SlackMessageView.as_view(),
         name='send-slack-message'),
     url(r'^(?P<namespace>[\w-]+)/triggers/(?P<trigger>[\w-]+)/start/$', trigger_views.start,
