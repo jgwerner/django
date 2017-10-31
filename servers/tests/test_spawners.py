@@ -236,9 +236,7 @@ class TestGPU(TestCase):
             env_vars={'test': 'test'},
             project=collaborator.project,
             config={
-                'type': 'proxy',
-                'function': 'test',
-                'script': 'test.py'
+                'type': 'rstudio',
             }
         )
         docker_client = make_fake_client()
@@ -256,3 +254,15 @@ class TestGPU(TestCase):
             self.spawner._gpu_info()
         self.assertIsNotNone(self.spawner.gpu_info)
         self.assertEqual(self.spawner.gpu_info['Version']['Driver'], '384.90')
+
+    @patch('servers.spawners.DockerSpawner._is_swarm')
+    def test_get_host_config(self, _is_swarm):
+        _is_swarm.return_value = False
+        expected = {
+            'mem_limit': '512m',
+            'binds': [
+                '{}:/resources'.format(self.server.volume_path)
+            ],
+            'restart_policy': None
+        }
+        self.assertDictEqual(expected, self.spawner._get_host_config())
