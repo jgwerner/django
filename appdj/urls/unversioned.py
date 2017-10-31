@@ -36,7 +36,16 @@ urlpatterns = [
     url(r'^(?P<namespace>[\w-]+)/search/$', SearchView.as_view(), name='search'),
     url(r'^actions/', include('actions.urls')),
     url(r'^(?P<namespace>[\w-]+)/notifications/', include('notifications.urls')),
-    url(r'^(?P<namespace>[\w-]+)/', include(router.urls))
+    url(r'^(?P<namespace>[\w-]+)/', include(router.urls)),
+    # Below added by ncompton. Verify these work
+    url(r'^(?P<namespace>[\w-]+)/', include('servers.urls')),
+    url(r'^', include('billing.urls')),
+    url(r'^', include('infrastructure.urls')),
+    url(r'^', include('notifications.urls')),
+    url(r'^', include('projects.urls')),
+    url(r'^', include('servers.urls')),
+    url(r'^', include('triggers.urls')),
+    url(r'^', include('users.urls'))
 ]
 
 @api_view()

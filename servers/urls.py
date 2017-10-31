@@ -31,6 +31,7 @@ server_router.register(r'triggers', trigger_views.ServerActionViewSet)
 
 urlpatterns = [
     url(r'^(?P<namespace>[\w-]+)/', include(server_router.urls)),
+    url(r'^servers/', include(server_router.urls)),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server_server>[^/.]+)/internal/(?P<service>[^/.]+)/$',
         servers_views.server_internal_details, name="server_internal"),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/api-key/$',
@@ -43,10 +44,8 @@ urlpatterns = [
         servers_views.stop, name='server-stop'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/terminate/$',
         servers_views.terminate, name='server-terminate'),
-
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/api-key/verify/$',
         servers_views.VerifyJSONWebTokenServer.as_view(), name='server-api-key-verify'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/auth/$',
         servers_views.check_token, name='server-auth'),
-    url(r'^servers/', include(servers_urls.servers_router.urls)),
 ]
