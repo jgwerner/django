@@ -233,7 +233,6 @@ class ProjectTest(ProjectTestMixin, APITestCase):
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(Project.objects.count(), 1)
-        print(response.data)
 
     def test_list_projects(self):
         projects_count = 4

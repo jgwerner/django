@@ -156,15 +156,14 @@ class DockerSpawner(ServerSpawner):
 
     def _create_container_config(self):
 
-        volume_config = {'volume_driver': None,
-                         'volumes': None}
+        volume_config = {}
 
-        if self._is_gpu_instance:
+        if (not self.server.config['type'].lower() == 'rstudio') and self._is_gpu_instance:
             logger.info("Creating a GPU enabled container.")
             volume_config['volume_driver'] = "nvidia-docker"
             volume_config['volumes'] = ["/usr/local/nvidia"]
         else:
-            logger.info(f"This is not nvidia enabled host.\n"
+            logger.info(f"This is not nvidia enabled host, OR the container is a non-GPU enabled image.\n"
                         f"Creating a non-GPU enabled container.")
 
         config = dict(
