@@ -156,8 +156,7 @@ class DockerSpawner(ServerSpawner):
 
     def _create_container_config(self):
 
-        volume_config = {'volume_driver': None,
-                         'volumes': None}
+        volume_config = {}
 
         if self._is_gpu_instance:
             logger.info("Creating a GPU enabled container.")
