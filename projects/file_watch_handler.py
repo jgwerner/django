@@ -15,8 +15,16 @@ def run(files_list):
         username = path_parts[0]
         project_pk = path_parts[1]
 
-        user = User.objects.get(username=username,
-                                is_active=True)
+        if project_pk == ".ssh":
+            log.info("File watcher picked up the .ssh directory. Skipping it.")
+            continue
+
+        try:
+            user = User.objects.get(username=username,
+                                    is_active=True)
+        except User.DoesNotExist:
+            log.warning(f"User {username} does not exist as an active user. Perhaps they just registered.")
+            continue
         project = Project.objects.get(pk=project_pk)
 
         if to_delete:

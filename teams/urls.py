@@ -1,5 +1,5 @@
 """
-    users URL Configuration
+    teams URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/1.10/topics/http/urls/
@@ -16,17 +16,20 @@ Including another URLconf
 """
 from django.conf.urls import url, include
 from rest_framework_nested import routers
-from . import views as user_views
+from . import views as team_views
 
-user_router = routers.SimpleRouter()
-user_router.register(r'profiles', user_views.UserViewSet)
-user_router.register(r'(?P<user_id>[\w-]+)/emails', user_views.EmailViewSet)
-user_router.register(r'integrations', user_views.IntegrationViewSet)
+teams_router = routers.SimpleRouter()
+teams_router.register(r'teams', team_views.TeamViewSet)
+
+teams_sub_router = routers.NestedSimpleRouter(teams_router, r'teams', lookup='team')
+teams_sub_router.register(r'groups', team_views.GroupViewSet)
+
+my_teams_router = routers.SimpleRouter()
+my_teams_router.register(r'teams', team_views.TeamViewSet, base_name='my-team')
+my_teams_sub_router = routers.NestedSimpleRouter(my_teams_router, r'teams', lookup='team')
+my_teams_sub_router.register(r'groups', team_views.GroupViewSet, base_name='my-group')
 
 urlpatterns = [
-    url(r'^users/', include(user_router.urls)),
-    url(r'^users/(?P<user_pk>[\w-]+)/ssh-key/$', user_views.ssh_key, name='ssh_key'),
-    url(r'^users/(?P<user_pk>[\w-]+)/ssh-key/reset/$', user_views.reset_ssh_key, name='reset_ssh_key'),
-    url(r'^users/(?P<user_pk>[\w-]+)/api-key/$', user_views.api_key, name='api_key'),
-    url(r'^users/(?P<user_pk>[\w-]+)/avatar/$', user_views.avatar, name='avatar')
+    url(r'^', include(teams_router.urls)),
+    url(r'^', include(my_teams_router.urls))
 ]

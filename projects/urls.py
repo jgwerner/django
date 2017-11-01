@@ -18,7 +18,6 @@ from django.conf.urls import url, include
 from rest_framework_nested import routers
 
 from appdj.urls.unversioned import router
-
 from servers import views as servers_views
 from . import views as project_views
 

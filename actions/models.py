@@ -6,7 +6,6 @@ from django.db import models
 from django.urls import reverse
 from requests import Session, Request
 
-from base.namespace import Namespace
 from jwt_auth.utils import create_auth_jwt
 
 
@@ -66,15 +65,15 @@ class Action(models.Model):
     def __str__(self):
         return self.action
 
-    def get_absolute_url(self, version, namespace: Namespace):
+    def get_absolute_url(self, version):
         return reverse('action-detail', kwargs={'version': version,
                                                 'pk': str(self.pk)})
 
     def get_state_display(self):
         return dict(self.STATE_CHOICES)[self.state]
 
-    def content_object_url(self, version, namespace: Namespace):
-        return self.content_object.get_absolute_url(version, namespace) if self.content_object else ''
+    def content_object_url(self, version):
+        return self.content_object.get_absolute_url(version) if self.content_object else ''
 
     def dispatch(self, url='http://localhost'):
         url = '{}{}'.format(url, self.path)

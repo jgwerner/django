@@ -23,6 +23,7 @@ from billing.stripe_utils import (handle_stripe_invoice_created,
 from .signals import (subscription_cancelled,
                       subscription_created,
                       invoice_payment_failure,
+                      invoice_payment_success,
                       trial_expired)
 
 log = logging.getLogger('billing')
@@ -142,25 +143,9 @@ class InvoiceItemViewSet(NamespaceMixin,
     queryset = InvoiceItem.objects.all()
     serializer_class = InvoiceItemSerializer
 
-    def get_queryset(self, *args, **kwargs):
-        invoice_items = InvoiceItem.objects.filter(invoice_id=kwargs.get("invoice_id"))
-        return invoice_items
-
-    def retrieve(self, request, *args, **kwargs):
-        instance = self.get_queryset(*args, **kwargs).filter(pk=kwargs.get('pk')).first()
-
-        if instance is None:
-            Response({'message': "InvoiceItem not found"},
-                     status=status.HTTP_404_NOT_FOUND)
-
-        serializer = self.serializer_class(instance)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset(*args, **kwargs)
-        serializer = self.serializer_class(queryset, many=True)
-        data = serializer.data
-        return Response(data, status=status.HTTP_200_OK)
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs.filter(invoice_id=self.kwargs.get("invoice_id"))
 
 
 @require_POST
@@ -180,7 +165,7 @@ def stripe_invoice_payment_success(request, *args, **kwargs):
     signal_data = handle_stripe_invoice_payment_status_change(event_json)
 
     if signal_data:
-        invoice_payment_failure.send(sender=Event, **signal_data)
+        invoice_payment_success.send(sender=Event, **signal_data)
 
     return HttpResponse(status=status.HTTP_200_OK)
 

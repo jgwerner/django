@@ -14,18 +14,8 @@ Including another URLconf
     1. Import the include() function: from django.conf.urls import url, include
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
-from django.conf import settings
 from django.conf.urls import url
-
-from appdj.urls.unversioned import router
 from . import views as billing_views
-
-if settings.ENABLE_BILLING:
-    router.register(r'billing/cards', billing_views.CardViewSet)
-    router.register(r'billing/plans', billing_views.PlanViewSet)
-    router.register(r'billing/subscriptions', billing_views.SubscriptionViewSet)
-    router.register(r'billing/invoices', billing_views.InvoiceViewSet)
-    router.register(r'billing/(?P<invoice_id>[\w-]+)/invoice-items', billing_views.InvoiceItemViewSet)
 
 urlpatterns = [
     url(r'^webhooks/incoming/billing/invoice_created/$', billing_views.stripe_invoice_created,

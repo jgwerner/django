@@ -14,8 +14,3 @@ Including another URLconf
     1. Import the include() function: from django.conf.urls import url, include
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
-from appdj.urls.unversioned import router
-
-from . import views as infra_views
-
-router.register(r'hosts', infra_views.DockerHostViewSet)

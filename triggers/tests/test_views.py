@@ -79,7 +79,7 @@ class ServerActionTestCase(APILiveServerTestCase):
         self.project = collaborator.project
         self.token = create_auth_jwt(self.user)
         self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {self.token}')
-        self.server = ServerFactory()
+        self.server = ServerFactory(project=self.project)
         self.url_kwargs = {
             'namespace': self.user.username,
             'project_project': str(self.project.pk),
@@ -122,7 +122,7 @@ class ServerActionTestCase(APILiveServerTestCase):
                        effect=effect)
         resp = self.client.post(url, {'name': 'TestProject0'})
         self.assertEqual(resp.status_code, 201)
-        self.assertEqual(Project.objects.count(), 4)
+        self.assertEqual(Project.objects.count(), 3)
         self.assertTrue(Project.objects.filter(name=effect.payload['name']).exists())
 
     def test_trigger_webhook_after_server_action(self):

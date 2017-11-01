@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'haystack',
     'djoser',
     'django_ses',
+    'treebeard',
 
     'base',
     'notifications',
@@ -67,6 +68,7 @@ INSTALLED_APPS = [
     'triggers',
     'jwt_auth',
     'search',
+    'teams',
 ]
 
 MIDDLEWARE = [
@@ -244,6 +246,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
+        'teams.permissions.TeamGroupPermission',
         'rest_framework.permissions.IsAuthenticated',
     ),
     'DEFAULT_PAGINATION_CLASS': 'base.pagination.LimitOffsetPagination',
@@ -399,3 +402,5 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024 * int(os.getenv("MAX_FILE_UPLOAD_SIZE"
 SILENCED_SYSTEM_CHECKS = ["auth.W004"]
 
 DEFAULT_STRIPE_PLAN_ID = os.getenv("DEFAULT_STRIPE_PLAN_ID", "threeblades-free-plan")
+
+NVIDIA_DOCKER_HOST = os.environ.get('NVIDIA_DOCKER_HOST')

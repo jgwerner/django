@@ -118,7 +118,8 @@ class DockerSpawner(ServerSpawner):
             restart_policy=self.restart
         )
 
-        if self._is_gpu_instance:
+        # The order of these conditionals *does* matter. RStudio images will blow up 
+        if (not self.server.config['type'].lower() == 'rstudio') and self._is_gpu_instance:
             binds.append(f"{self._gpu_driver_path}:/usr/local/nvidia:ro")
             config['devices'] = ['/dev/nvidiactl:/dev/nvidiactl:rwm',
                                  '/dev/nvidia-uvm:/dev/nvidia-uvm:rwm',
@@ -336,13 +337,13 @@ class DockerSpawner(ServerSpawner):
         return result
 
     def _gpu_info(self):
-        gpu_info_url = f"{os.environ.get('NVIDIA_DOCKER_HOST')}/v1.0/gpu/info"
+        gpu_info_url = f"{settings.NVIDIA_DOCKER_HOST}/v1.0/gpu/info/json"
         try:
             resp = requests.get(gpu_info_url)
         except requests.exceptions.ConnectionError:
             return
         if resp.status_code == 200:
-            self.gpu_info = resp.data
+            self.gpu_info = resp.json()
 
     @cached_property
     def _gpu_driver_path(self):

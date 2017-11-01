@@ -1,5 +1,5 @@
 import logging
-from django.db.models import Sum, Count, Max, F
+from django.db.models import Sum, Max, F
 from django.db.models.functions import Coalesce, Now
 from rest_framework import status, viewsets
 from rest_framework.decorators import api_view, permission_classes, renderer_classes
@@ -16,6 +16,7 @@ from projects.permissions import ProjectChildPermission
 from jwt_auth.views import JWTApiView
 from jwt_auth.serializers import VerifyJSONWebTokenServerSerializer
 from jwt_auth.utils import create_server_jwt
+from teams.permissions import TeamGroupPermission
 from .tasks import start_server, stop_server, terminate_server
 from .permissions import ServerChildPermission, ServerActionPermission
 from . import serializers, models
@@ -28,7 +29,7 @@ jwt_response_payload_handler = api_settings.JWT_RESPONSE_PAYLOAD_HANDLER
 class ServerViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
     queryset = models.Server.objects.all()
     serializer_class = serializers.ServerSerializer
-    permission_classes = (IsAuthenticated, ProjectChildPermission)
+    permission_classes = (IsAuthenticated, ProjectChildPermission, TeamGroupPermission)
     filter_fields = ("name",)
     lookup_url_kwarg = 'server'
 
@@ -42,7 +43,7 @@ class ServerViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
 
 
 @api_view(['post'])
-@permission_classes([IsAuthenticated, ServerActionPermission])
+@permission_classes([IsAuthenticated, ServerActionPermission, TeamGroupPermission])
 def start(request, version, *args, **kwargs):
     start_server.apply_async(
         args=[kwargs.get('server')],
@@ -52,7 +53,7 @@ def start(request, version, *args, **kwargs):
 
 
 @api_view(['post'])
-@permission_classes([IsAuthenticated, ServerActionPermission])
+@permission_classes([IsAuthenticated, ServerActionPermission, TeamGroupPermission])
 def stop(request, *args, **kwargs):
     stop_server.apply_async(
         args=[kwargs.get('server')],
@@ -62,7 +63,7 @@ def stop(request, *args, **kwargs):
 
 
 @api_view(['post'])
-@permission_classes([IsAuthenticated, ServerActionPermission])
+@permission_classes([IsAuthenticated, ServerActionPermission, TeamGroupPermission])
 def terminate(request, *args, **kwargs):
     terminate_server.apply_async(
         args=[kwargs.get('server')],
@@ -92,7 +93,7 @@ class VerifyJSONWebTokenServer(JWTApiView):
 class ServerRunStatisticsViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
     queryset = models.ServerRunStatistics.objects.all()
     serializer_class = serializers.ServerRunStatisticsSerializer
-    permission_classes = (IsAuthenticated, ServerChildPermission)
+    permission_classes = (IsAuthenticated, ServerChildPermission, TeamGroupPermission)
 
     def list(self, request, *args, **kwargs):
         obj = get_server_usage([kwargs.get("server_server")])
@@ -103,7 +104,7 @@ class ServerRunStatisticsViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
 class ServerStatisticsViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
     queryset = models.ServerStatistics.objects.all()
     serializer_class = serializers.ServerStatisticsSerializer
-    permission_classes = (IsAuthenticated, ServerChildPermission)
+    permission_classes = (IsAuthenticated, ServerChildPermission, TeamGroupPermission)
 
     def list(self, request, *args, **kwargs):
         server = kwargs.get('server_server')
@@ -119,7 +120,7 @@ class ServerStatisticsViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
 class SshTunnelViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
     queryset = models.SshTunnel.objects.all()
     serializer_class = serializers.SshTunnelSerializer
-    permission_classes = (IsAuthenticated, ServerChildPermission)
+    permission_classes = (IsAuthenticated, ServerChildPermission, TeamGroupPermission)
 
     def create(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)

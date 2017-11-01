@@ -25,6 +25,7 @@ class User(AbstractUser):
                                 max_length=150,
                                 validators=[django.contrib.auth.validators.UnicodeUsernameValidator()],
                                 verbose_name='username')
+    team_groups = models.ManyToManyField('teams.Group', blank=True, related_name="user_set", related_query_name="user")
 
     objects = CustomUserManager()
 
@@ -38,7 +39,7 @@ class User(AbstractUser):
         else:
             super(User, self).save(*args, **kwargs)
 
-    def get_absolute_url(self, version, namespace):
+    def get_absolute_url(self, version):
         return reverse('user-detail', kwargs={'version': version, 'user': str(self.pk)})
 
 
@@ -80,5 +81,10 @@ class Email(models.Model):
     public = models.BooleanField(default=False)
     unsubscribed = models.BooleanField(default=True)
 
-    def get_absolute_url(self, version, namespace):
-        return reverse('email-detail', kwargs={'namespace': namespace.name, 'version': version, 'pk': str(self.pk)})
+    @property
+    def namespace_name(self):
+        return self.user.username
+
+    def get_absolute_url(self, version):
+        return reverse('email-detail', kwargs={
+            'namespace': self.namespace_name, 'version': version, 'pk': str(self.pk)})

@@ -17,11 +17,12 @@ Including another URLconf
 
 from django.conf.urls import url, include
 from rest_framework_nested import routers
-
 from projects.urls import project_router
 from triggers import views as trigger_views
 from . import views as servers_views
 
+servers_router = routers.SimpleRouter()
+servers_router.register("options/server-size", servers_views.ServerSizeViewSet)
 
 server_router = routers.NestedSimpleRouter(project_router, r'servers', lookup='server')
 server_router.register(r'ssh-tunnels', servers_views.SshTunnelViewSet)
@@ -31,7 +32,7 @@ server_router.register(r'triggers', trigger_views.ServerActionViewSet)
 
 urlpatterns = [
     url(r'^(?P<namespace>[\w-]+)/', include(server_router.urls)),
-    url(r'^servers/', include(server_router.urls)),
+    url(r'^servers/', include(servers_router.urls)),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server_server>[^/.]+)/internal/(?P<service>[^/.]+)/$',
         servers_views.server_internal_details, name="server_internal"),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/api-key/$',
