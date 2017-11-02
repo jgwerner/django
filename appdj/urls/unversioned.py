@@ -79,6 +79,7 @@ if settings.ENABLE_BILLING:
     # add additional urlpatterns
     urlpatterns += [
         url(r'^', include(teams_billing_router.urls)),
+        url(r'^', include(router.urls))
     ]
 
 if settings.DEBUG:
