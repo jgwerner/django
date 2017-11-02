@@ -27,5 +27,5 @@ urlpatterns = [
     url(r'^webhooks/incoming/billing/invoice_payment_success/$', billing_views.stripe_invoice_payment_success,
         name='stripe-invoice-payment-success'),
     url(r'^webhooks/incoming/billing/subscription-updated/$', billing_views.stripe_subscription_updated,
-        name='stripe-subscription-updated'),
+        name='stripe-subscription-updated')
 ]
