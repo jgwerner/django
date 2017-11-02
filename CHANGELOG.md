@@ -1,8 +1,8 @@
 # 3Blades/app-backend Change Log
 ### 28 July 2017 - 1 November 2017
-### Generated 2 Nov 2017 by [Nathaniel Compton](https://github.com/nathanielcompton)
+#### Generated 2 Nov 2017 by [Nathaniel Compton](https://github.com/nathanielcompton)
 
-## [Unreleased](https://github.com/3blades/app-backend/tree/HEAD)
+## [Release version 1.0](https://github.com/3blades/app-backend/tree/HEAD)
 
 **Closed issues:**
 
