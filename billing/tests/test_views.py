@@ -269,10 +269,6 @@ class SubscriptionTest(APITestCase):
         self.assertIsNotNone(sub_reloaded.canceled_at)
         self.assertIsNotNone(sub_reloaded.ended_at)
 
-        notification = Notification.objects.filter(user=self.user,
-                                                   type__name="subscription.canceled").first()
-        self.assertIsNotNone(notification)
-
     def test_subscription_updated_webhook(self):
         url = reverse("stripe-subscription-updated", kwargs={'version': settings.DEFAULT_VERSION})
         from billing.tests import mock_stripe
