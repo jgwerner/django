@@ -20,8 +20,6 @@ from projects.tests.utils import generate_random_file_content
 from users.tests.factories import UserFactory
 from projects.models import Project, ProjectFile, Collaborator
 from jwt_auth.utils import create_auth_jwt
-import logging
-log = logging.getLogger('projects')
 
 
 class ProjectTestMixin(object):
@@ -388,7 +386,6 @@ class ProjectTest(ProjectTestMixin, APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['id'], str(public_project.pk))
-
 
 
 class ProjectTestWithName(ProjectTestMixin, APITestCase):
@@ -1177,8 +1174,45 @@ class CollaboratorTest(ProjectTestMixin, APITestCase):
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        log.debug(response.data)
         self.assertEqual(response.data['username'], other_user.username)
+
+    def test_write_permission_grants_read_access(self):
+        me_collab = CollaboratorFactory(user=self.user)
+
+        url = reverse("collaborator-list", kwargs={'version': settings.DEFAULT_VERSION,
+                                                   'project_project': me_collab.project.name,
+                                                   'namespace': self.user.username})
+
+        other_user = UserFactory()
+
+        data = {'owner': False,
+                'member': other_user.username,
+                'permissions': ['write_project']}
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertSetEqual(response.data.get('permissions', {}), {'read_project', 'write_project'})
+
+    def test_creating_new_owner_resets_existing_owner(self):
+        me_collab = CollaboratorFactory(user=self.user)
+
+        url = reverse("collaborator-list", kwargs={'version': settings.DEFAULT_VERSION,
+                                                   'project_project': me_collab.project.name,
+                                                   'namespace': self.user.username})
+
+        other_user = UserFactory()
+
+        data = {'owner': True,
+                'member': other_user.username,
+                'permissions': ['write_project', 'read_project']}
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(response.data.get('owner'))
+        me_collab_reloaded = Collaborator.objects.get(pk=me_collab.pk)
+        self.assertFalse(me_collab_reloaded.owner)
 
     def test_get_collaborator(self):
         collab = CollaboratorFactory(user=self.user)
