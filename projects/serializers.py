@@ -11,6 +11,8 @@ from projects.models import (Project, Collaborator,
 from .utils import create_ancillary_project_stuff
 
 User = get_user_model()
+import logging
+log = logging.getLogger('projects')
 
 
 class ProjectSerializer(SearchSerializerMixin, serializers.ModelSerializer):
@@ -121,6 +123,11 @@ class CollaboratorSerializer(serializers.ModelSerializer):
         if owner is True:
             Collaborator.objects.filter(project=project).update(owner=False)
         user = User.objects.filter(Q(username=member) | Q(email=member), is_active=True).first()
+
+        # Ensure that owners and users with write permissions get read permissions as well.
+        # For some reason, they come through as a set instead of a list
+        if permissions == {'write_project'} or owner:
+            permissions = {'write_project', 'read_project'}
         for permission in permissions:
             assign_perm(permission, user, project)
         return Collaborator.objects.create(user=user, project=project, **validated_data)
