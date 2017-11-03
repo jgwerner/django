@@ -53,6 +53,7 @@ def assign_to_user(request, project):
     log.info(f"Creating default collaborator, assigning permissions, and creating project resource root.")
     Collaborator.objects.create(project=project, owner=True, user=user)
     assign_perm('write_project', request.user, project)
+    assign_perm('read_project', request.user, project)
 
 
 def assign_to_team(request, project):
