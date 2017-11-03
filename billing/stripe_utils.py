@@ -1,4 +1,5 @@
 import logging
+from typing import List
 from datetime import datetime
 from decimal import Decimal, getcontext
 from collections import defaultdict
@@ -389,3 +390,11 @@ def handle_subscription_updated(stripe_event):
 
     return signal_data
 
+
+def cancel_subscriptions(subscription_ids: List[str]) -> None:
+    subscriptions = Subscription.objects.filter(id__in=subscription_ids)
+    for sub in subscriptions:
+        stripe_obj = stripe.Subscription.retrieve(sub.stripe_id)
+        stripe_response = stripe_obj.delete()
+        sub.delete(new_status=stripe_response['status'])
+        log.info(f"Canceled subscription {sub.pk}.")

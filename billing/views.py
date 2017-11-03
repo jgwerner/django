@@ -19,9 +19,9 @@ from billing.serializers import (PlanSerializer, CardSerializer,
 from billing.stripe_utils import (handle_stripe_invoice_created,
                                   handle_upcoming_invoice,
                                   handle_stripe_invoice_payment_status_change,
-                                  handle_subscription_updated)
-from .signals import (subscription_cancelled,
-                      subscription_created,
+                                  handle_subscription_updated,
+                                  cancel_subscriptions)
+from .signals import (subscription_created,
                       invoice_payment_failure,
                       invoice_payment_success,
                       trial_expired)
@@ -116,20 +116,8 @@ class SubscriptionViewSet(NamespaceMixin,
                         status=status.HTTP_201_CREATED)
 
     def destroy(self, request, *args, **kwargs):
-        instance = Subscription.objects.get(pk=kwargs.get('pk'))
-        stripe_obj = stripe.Subscription.retrieve(instance.stripe_id)
-
-        stripe_response = stripe_obj.delete()
-        instance.delete(new_status=stripe_response['status'])
-
-        subscription_cancelled.send(sender=Subscription,
-                                    user=instance.customer.user,
-                                    actor=request.user,
-                                    target=instance,
-                                    notif_type="subscription.canceled")
-
-        data = {'stripe_id': stripe_response['id'], 'deleted': True}
-        return Response(data=data, status=status.HTTP_204_NO_CONTENT)
+        cancel_subscriptions([kwargs.get("pk")])
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class InvoiceViewSet(NamespaceMixin,

@@ -127,6 +127,9 @@ class UserTest(APITestCase):
                                              'version': settings.DEFAULT_VERSION})
         response = self.user_client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        user_reloaded = User.objects.get(pk=self.user.pk)
+        self.assertFalse(user_reloaded.is_active)
+        self.assertFalse(user_reloaded.customer.has_active_subscription())
 
     def test_user_delete_own_account_with_username(self):
         url = reverse('user-detail', kwargs={'user': self.user.username,
