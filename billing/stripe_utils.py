@@ -392,7 +392,8 @@ def handle_subscription_updated(stripe_event):
 
 
 def cancel_subscriptions(subscription_ids: List[str]) -> None:
-    subscriptions = Subscription.objects.filter(id__in=subscription_ids)
+    subscriptions = Subscription.objects.filter(id__in=subscription_ids,
+                                                status__in=[Subscription.ACTIVE, Subscription.TRIAL])
     for sub in subscriptions:
         stripe_obj = stripe.Subscription.retrieve(sub.stripe_id)
         stripe_response = stripe_obj.delete()
