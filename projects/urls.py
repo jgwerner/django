@@ -32,5 +32,5 @@ urlpatterns = [
     url(r'^(?P<namespace>[\w-]+)/projects/project-copy/$', project_views.project_copy, name='project-copy'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project>[\w-]+)/synced-resources/$',
         project_views.SyncedResourceViewSet.as_view({'get': 'list', 'post': 'create'})),
-    url(r'^(?P<namespace>[\w-]+)/', include(project_router.urls)),
+    url(r'^(?P<namespace>[\w-]+)/', include(project_router.urls))
 ]
