@@ -21,8 +21,7 @@ from billing.stripe_utils import (handle_stripe_invoice_created,
                                   handle_stripe_invoice_payment_status_change,
                                   handle_subscription_updated,
                                   cancel_subscriptions)
-from .signals import (subscription_created,
-                      invoice_payment_failure,
+from .signals import (invoice_payment_failure,
                       invoice_payment_success,
                       trial_expired)
 
@@ -107,11 +106,6 @@ class SubscriptionViewSet(NamespaceMixin,
                                            context={'request': request})
         serializer.is_valid(raise_exception=True)
         instance = serializer.create(validated_data=request.data)
-        subscription_created.send(sender=Subscription,
-                                  user=instance.customer.user,
-                                  actor=request.user,
-                                  target=instance,
-                                  notif_type="subscription.created")
         return Response(data=self.serializer_class(instance).data,
                         status=status.HTTP_201_CREATED)
 
