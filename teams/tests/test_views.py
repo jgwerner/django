@@ -260,10 +260,6 @@ class SubscriptionTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Subscription.objects.count(), pre_test_sub_count + 1)
 
-        notification = Notification.objects.filter(user=self.user,
-                                                   type__name="subscription.created").first()
-        self.assertIsNotNone(notification)
-
     def test_update_subscription_fails(self):
         subscription = SubscriptionFactory(customer=self.customer,
                                            status="trialing")
@@ -309,10 +305,6 @@ class SubscriptionTest(APITestCase):
         self.assertEqual(sub_reloaded.status, Subscription.CANCELED)
         self.assertIsNotNone(sub_reloaded.canceled_at)
         self.assertIsNotNone(sub_reloaded.ended_at)
-
-        notification = Notification.objects.filter(user=self.user,
-                                                   type__name="subscription.canceled").first()
-        self.assertIsNotNone(notification)
 
 
 class InvoiceTest(TestCase):

@@ -11,8 +11,9 @@ from django.core import mail
 from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
 
-from billing.tests.factories import SubscriptionFactory
-from billing.models import Subscription
+from billing.tests.factories import SubscriptionFactory, PlanFactory
+from billing.models import Subscription, Plan
+from billing.stripe_utils import create_stripe_customer_from_user, create_plan_in_stripe
 from users.tests.factories import UserFactory, EmailFactory
 from users.tests.utils import generate_random_image
 from utils import create_ssh_key
@@ -33,6 +34,16 @@ def send_register_request(*args, **kwargs):
     return response
 
 
+def create_plan_dict(trial_period=None):
+    obj_dict = vars(PlanFactory.build())
+    if trial_period is not None:
+        obj_dict['trial_period_days'] = trial_period
+    data_dict = {key: obj_dict[key] for key in obj_dict
+                 if key in [f.name for f in Plan._meta.get_fields()] and key not in ["stripe_id", "created",
+                                                                                     "id", "metadata"]}
+    return data_dict
+
+
 class UserTest(APITestCase):
     def setUp(self):
         self.admin = UserFactory(is_staff=True, username='admin')
@@ -48,12 +59,30 @@ class UserTest(APITestCase):
         self.user_client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {user_token}')
         self.to_remove = []
         self.image_files = []
+        self.plans_to_delete = []
 
     def tearDown(self):
         for user_dir in self.to_remove:
             shutil.rmtree(user_dir)
         for img_file in self.image_files:
             os.remove(img_file)
+
+    def _create_plan_in_stripe(self, trial_period=None):
+        plan_data = create_plan_dict(trial_period)
+        plan = create_plan_in_stripe(plan_data)
+        plan.save()
+        self.plans_to_delete.append(plan)
+        return plan
+
+    def _create_subscription_in_stripe(self, trial_period=7):
+        plan = self._create_plan_in_stripe(trial_period)
+        url = reverse("subscription-list", kwargs={'namespace': self.user.username,
+                                                   'version': settings.DEFAULT_VERSION})
+        data = {'plan': str(plan.pk)}
+        self.user_client.post(url, json.dumps(data), content_type="application/json")
+
+        subscription = Subscription.objects.get(plan=plan)
+        return subscription
 
     def test_my_api_key(self):
         url = reverse("temp-token-auth")
@@ -123,12 +152,19 @@ class UserTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_user_delete_own_account(self):
+        Subscription.objects.filter(customer=self.user.customer).delete()
+        self._create_subscription_in_stripe()
         url = reverse('user-detail', kwargs={'user': str(self.user.pk),
                                              'version': settings.DEFAULT_VERSION})
         response = self.user_client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        user_reloaded = User.objects.get(pk=self.user.pk)
+        self.assertFalse(user_reloaded.is_active)
+        self.assertFalse(user_reloaded.customer.has_active_subscription())
 
     def test_user_delete_own_account_with_username(self):
+        Subscription.objects.filter(customer=self.user.customer).delete()
+        self._create_subscription_in_stripe()
         url = reverse('user-detail', kwargs={'user': self.user.username,
                                              'version': settings.DEFAULT_VERSION})
         response = self.user_client.delete(url)
