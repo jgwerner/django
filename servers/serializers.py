@@ -117,6 +117,10 @@ class ServerRunStatisticsSerializer(serializers.ModelSerializer):
         fields = ('id', 'start', 'stop', 'exit_code', 'size', 'stacktrace')
 
 
+class ServerRunStatisticsStopSerializer(serializers.Serializer):
+    stop = serializers.DateTimeField()
+
+
 class ServerRunStatisticsAggregatedSerializer(serializers.Serializer):
     duration = serializers.DurationField()
     runs = serializers.IntegerField()

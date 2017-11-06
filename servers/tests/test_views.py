@@ -1,6 +1,7 @@
 from unittest.mock import patch
 from guardian.shortcuts import assign_perm
 from django.urls import reverse
+from django.utils import timezone
 from django.conf import settings
 from django.test import override_settings
 from rest_framework import status
@@ -433,6 +434,21 @@ class ServerRunStatisticsTestCase(APITestCase):
         }
         self.assertDictEqual(response.data, expected)
 
+    def test_update_latest(self):
+        stats = ServerRunStatisticsFactory(server__project=self.project, stop=None)
+        url = reverse('serverrunstatistics-update-latest', kwargs={
+            'namespace': self.project.get_owner_name(),
+            'project_project': str(self.project.pk),
+            'server_server': str(stats.server.pk),
+            'version': settings.DEFAULT_VERSION
+        })
+        stop = timezone.now()
+        data = dict(stop=stop.isoformat('T')[:-6] + 'Z')
+        resp = self.client.post(url, data=data)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        stats.refresh_from_db()
+        self.assertEqual(stats.stop, stop)
+
 
 class ServerRunStatisticsTestCaseWithName(APITestCase):
     def setUp(self):
@@ -462,6 +478,21 @@ class ServerRunStatisticsTestCaseWithName(APITestCase):
             'stop': stats.stop.isoformat('T')[:-6] + 'Z',
         }
         self.assertDictEqual(response.data, expected)
+
+    def test_update_latest(self):
+        stats = ServerRunStatisticsFactory(server__project=self.project, stop=None)
+        url = reverse('serverrunstatistics-update-latest', kwargs={
+            'namespace': self.project.get_owner_name(),
+            'project_project': self.project.name,
+            'server_server': stats.server.name,
+            'version': settings.DEFAULT_VERSION,
+        })
+        stop = timezone.now()
+        data = dict(stop=stop.isoformat('T')[:-6] + 'Z')
+        resp = self.client.post(url, data=data)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        stats.refresh_from_db()
+        self.assertEqual(stats.stop, stop)
 
 
 class ServerStatisticsTestCase(APITestCase):
