@@ -19,6 +19,9 @@ def run(files_list):
             log.info("File watcher picked up the .ssh directory. Skipping it.")
             continue
 
+        if line[:4].lower() == ".nfs":
+            log.info("File watcher picked up nfs info as a project file. Skipping it.")
+
         try:
             user = User.objects.get(username=username,
                                     is_active=True)
