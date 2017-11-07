@@ -116,6 +116,14 @@ class ServerRunStatisticsSerializer(serializers.ModelSerializer):
         model = ServerRunStatistics
         fields = ('id', 'start', 'stop', 'exit_code', 'size', 'stacktrace')
 
+    def create(self, validated_data):
+        instance = ServerRunStatistics(**validated_data)
+        server_pk = self.context['view'].kwargs.get('server_server')
+        server = Server.objects.tbs_get(server_pk)
+        instance.server = server
+        instance.save()
+        return instance
+
 
 class ServerRunStatisticsStopSerializer(serializers.Serializer):
     stop = serializers.DateTimeField()

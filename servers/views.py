@@ -1,5 +1,4 @@
 import logging
-from datetime import datetime
 from django.db.models import Sum, Max, F
 from django.db.models.functions import Coalesce, Now
 from rest_framework import status, viewsets
@@ -103,8 +102,10 @@ class ServerRunStatisticsViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
 
     @list_route(methods=['POST'])
     def update_latest(self, request, **kwargs):
-        begin = datetime(1, 1, 1)
-        latest = self.get_queryset().filter(stop=begin).first()
+        latest = self.get_queryset().filter(stop__lt=F('start')).first()
+        if latest is None:
+            server = models.Server.objects.tbs_get(kwargs.get("server_server"))
+            latest = models.ServerRunStatistics.objects.create(server=server, start=server.last_start)
         serializer = serializers.ServerRunStatisticsStopSerializer(data=request.data)
         if serializer.is_valid():
             latest.stop = serializer.data['stop']

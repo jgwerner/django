@@ -52,6 +52,7 @@ class Server(models.Model):
     host = models.ForeignKey('infrastructure.DockerHost', related_name='servers', null=True, blank=True)
     access_token = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
+    last_start = models.DateTimeField(null=True)
 
     class Meta:
         permissions = (
