@@ -533,9 +533,8 @@ class UserTest(APITestCase):
                     user_reloaded.profile.avatar.url)
 
         self.assertEqual(response.data['profile']['avatar'], full_url)
-
-
-
+        self.to_remove.append(user_reloaded.profile.resource_root())
+        
 
 class EmailTest(APITestCase):
     def setUp(self):
