@@ -2,7 +2,7 @@ import logging
 from django.db.models import Sum, Max, F
 from django.db.models.functions import Coalesce, Now
 from rest_framework import status, viewsets
-from rest_framework.decorators import api_view, permission_classes, renderer_classes
+from rest_framework.decorators import api_view, permission_classes, renderer_classes, list_route
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -99,6 +99,19 @@ class ServerRunStatisticsViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
         obj = get_server_usage([kwargs.get("server_server")])
         serializer = serializers.ServerRunStatisticsAggregatedSerializer(obj)
         return Response(serializer.data)
+
+    @list_route(methods=['POST'])
+    def update_latest(self, request, **kwargs):
+        latest = self.get_queryset().filter(stop__lt=F('start')).first()
+        if latest is None:
+            server = models.Server.objects.tbs_get(kwargs.get("server_server"))
+            latest = models.ServerRunStatistics.objects.create(server=server, start=server.last_start)
+        serializer = serializers.ServerRunStatisticsStopSerializer(data=request.data)
+        if serializer.is_valid():
+            latest.stop = serializer.data['stop']
+            latest.save()
+            return Response(status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ServerStatisticsViewSet(LookupByMultipleFields, viewsets.ModelViewSet):

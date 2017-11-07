@@ -167,7 +167,8 @@ class RegisterView(CreateAPIView):
 
 @api_view(['GET'])
 def me(request, version):
-    serialized_data = UserSerializer(request.user).data
+    serialized_data = UserSerializer(request.user,
+                                     context={'request': request}).data
     return Response(data=serialized_data, status=status.HTTP_200_OK)
 
 
