@@ -32,7 +32,6 @@ class JWTApiView(JSONWebTokenAPIView):
                                     response.data['token'],
                                     expires=expiration,
                                     httponly=True)
-            user_authenticated.send(sender=User, user=user)
             return response
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

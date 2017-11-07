@@ -1,6 +1,7 @@
 from unittest.mock import patch
 from guardian.shortcuts import assign_perm
 from django.urls import reverse
+from django.utils import timezone
 from django.conf import settings
 from django.test import override_settings
 from rest_framework import status
@@ -8,7 +9,7 @@ from rest_framework.test import APITestCase
 
 from jwt_auth.utils import create_server_jwt, create_auth_jwt
 from projects.tests.factories import CollaboratorFactory
-from servers.models import Server, SshTunnel
+from servers.models import Server, SshTunnel, ServerRunStatistics
 from users.tests.factories import UserFactory
 from servers.tests.factories import (ServerSizeFactory,
                                      ServerStatisticsFactory,
@@ -433,6 +434,51 @@ class ServerRunStatisticsTestCase(APITestCase):
         }
         self.assertDictEqual(response.data, expected)
 
+    def test_create(self):
+        server = ServerFactory(project=self.project)
+        url = reverse('serverrunstatistics-list', kwargs={
+            'namespace': self.project.get_owner_name(),
+            'project_project': str(self.project.pk),
+            'server_server': str(server.pk),
+            'version': settings.DEFAULT_VERSION
+        })
+        data = dict(
+            start=timezone.now(),
+        )
+        resp = self.client.post(url, data)
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(ServerRunStatistics.objects.filter(server=server).exists())
+
+    def test_update_latest(self):
+        stats = ServerRunStatisticsFactory(server__project=self.project, stop=timezone.datetime(1, 1, 1))
+        url = reverse('serverrunstatistics-update-latest', kwargs={
+            'namespace': self.project.get_owner_name(),
+            'project_project': str(self.project.pk),
+            'server_server': str(stats.server.pk),
+            'version': settings.DEFAULT_VERSION
+        })
+        stop = timezone.now()
+        data = dict(stop=stop.isoformat('T')[:-6] + 'Z')
+        resp = self.client.post(url, data=data)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        stats.refresh_from_db()
+        self.assertEqual(stats.stop, stop)
+
+    def test_update_latest_failsafe(self):
+        server = ServerFactory(project=self.project)
+        url = reverse('serverrunstatistics-update-latest', kwargs={
+            'namespace': self.project.get_owner_name(),
+            'project_project': str(self.project.pk),
+            'server_server': str(server.pk),
+            'version': settings.DEFAULT_VERSION
+        })
+        stop = timezone.now()
+        data = dict(stop=stop.isoformat('T')[:-6] + 'Z')
+        resp = self.client.post(url, data=data)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        stats = ServerRunStatistics.objects.get(server=server)
+        self.assertEqual(stats.stop, stop)
+
 
 class ServerRunStatisticsTestCaseWithName(APITestCase):
     def setUp(self):
@@ -462,6 +508,21 @@ class ServerRunStatisticsTestCaseWithName(APITestCase):
             'stop': stats.stop.isoformat('T')[:-6] + 'Z',
         }
         self.assertDictEqual(response.data, expected)
+
+    def test_update_latest(self):
+        stats = ServerRunStatisticsFactory(server__project=self.project, stop=timezone.datetime(1, 1, 1))
+        url = reverse('serverrunstatistics-update-latest', kwargs={
+            'namespace': self.project.get_owner_name(),
+            'project_project': self.project.name,
+            'server_server': stats.server.name,
+            'version': settings.DEFAULT_VERSION,
+        })
+        stop = timezone.now()
+        data = dict(stop=stop.isoformat('T')[:-6] + 'Z')
+        resp = self.client.post(url, data=data)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        stats.refresh_from_db()
+        self.assertEqual(stats.stop, stop)
 
 
 class ServerStatisticsTestCase(APITestCase):

@@ -9,6 +9,7 @@ from pathlib import Path
 
 from django.conf import settings
 from django.contrib.sites.models import Site
+from django.utils import timezone
 from django.utils.functional import cached_property
 import docker
 from docker.errors import APIError
@@ -81,6 +82,7 @@ class DockerSpawner(ServerSpawner):
         except APIError as e:
             logger.error(e.response.content)
             raise
+        self.server.last_start = timezone.now()
 
     def _get_cmd(self):
         command = '''/runner -key={token} -ns={server.project.owner.username} -version={version}
@@ -118,7 +120,7 @@ class DockerSpawner(ServerSpawner):
             restart_policy=self.restart
         )
 
-        # The order of these conditionals *does* matter. RStudio images will blow up 
+        # The order of these conditionals *does* matter. RStudio images will blow up
         if (not self.server.config['type'].lower() == 'rstudio') and self._is_gpu_instance:
             binds.append(f"{self._gpu_driver_path}:/usr/local/nvidia:ro")
             config['devices'] = ['/dev/nvidiactl:/dev/nvidiactl:rwm',

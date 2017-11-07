@@ -156,6 +156,10 @@ def sync_project_files_from_disk(project: Project) -> None:
     leaf_nodes = []
     for root, dirs, files in os.walk(str(project.resource_root())):
         for f in files:
+            if f[:4].lower() == ".nfs":
+                log.info("Came across some nfs system files during sync process. Skipping them.")
+                continue
+
             full_path = os.path.join(root, f)
             leaf_nodes.append(full_path)
 
