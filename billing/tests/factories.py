@@ -32,6 +32,7 @@ class PlanFactory(factory.django.DjangoModelFactory):
 
     stripe_id = factory.Sequence(lambda n: "plan_%d" % n)
     created = fuzzy.FuzzyDateTime(start_dt=timezone.make_aware(datetime.now() - timedelta(days=7)))
+    metadata = None
     amount = fuzzy.FuzzyInteger(low=0, high=100000)
     currency = "usd"
     interval = fuzzy.FuzzyChoice([c[0] for c in Plan.INTERVAL_CHOICES])
