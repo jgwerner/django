@@ -52,7 +52,7 @@ urlpatterns = [
     url(r'^(?P<namespace>[\w-]+)/', include('servers.urls')),
     url(r'^', include('billing.urls')),
     url(r'^', include('notifications.urls')),
-    url(r'^/', include('projects.urls')),
+    url(r'^(?P<namespace>[\w-]+)/projects/', include('projects.urls')),
     url(r'^', include('servers.urls')),
     url(r'^', include('teams.urls')),
     url(r'^', include('triggers.urls')),
