@@ -1,4 +1,5 @@
-"""appdj URL Configuration
+"""
+    appdj URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/1.10/topics/http/urls/
@@ -20,149 +21,51 @@ from rest_framework.decorators import api_view
 from rest_framework.exceptions import NotFound, APIException
 from rest_framework_nested import routers
 
-from projects import views as project_views
-from servers import views as servers_views
-from users import views as user_views
-from infrastructure import views as infra_views
-from triggers import views as trigger_views
-from teams import views as team_views
 from billing import views as billing_views
+from infrastructure import views as infra_views
+from projects import views as project_views
 from search.views import SearchView
+from triggers import views as trigger_views
+from users import views as user_views
 
 router = routers.SimpleRouter()
-
 router.register(r'hosts', infra_views.DockerHostViewSet)
 router.register(r'triggers', trigger_views.TriggerViewSet)
-
-user_router = routers.SimpleRouter()
-user_router.register(r'profiles', user_views.UserViewSet)
-user_router.register(r'(?P<user_id>[\w-]+)/emails', user_views.EmailViewSet)
-user_router.register(r'integrations', user_views.IntegrationViewSet)
-
 router.register(r'projects', project_views.ProjectViewSet)
-project_router = routers.NestedSimpleRouter(router, r'projects', lookup='project')
-project_router.register(r'collaborators', project_views.CollaboratorViewSet)
-project_router.register(r'servers', servers_views.ServerViewSet)
-project_router.register(r'project_files', project_views.ProjectFileViewSet)
-server_router = routers.NestedSimpleRouter(project_router, r'servers', lookup='server')
-server_router.register(r'ssh-tunnels', servers_views.SshTunnelViewSet)
-server_router.register(r'run-stats', servers_views.ServerRunStatisticsViewSet)
-server_router.register(r'stats', servers_views.ServerStatisticsViewSet)
-server_router.register(r'triggers', trigger_views.ServerActionViewSet)
+router.register(r'triggers', trigger_views.TriggerViewSet)
+router.register(r'service/(?P<server>[^/.]+)/trigger', trigger_views.ServerActionViewSet)
 
 if settings.ENABLE_BILLING:
+    # add billing routing
     router.register(r'billing/cards', billing_views.CardViewSet)
     router.register(r'billing/plans', billing_views.PlanViewSet)
     router.register(r'billing/subscriptions', billing_views.SubscriptionViewSet)
     router.register(r'billing/invoices', billing_views.InvoiceViewSet)
     router.register(r'billing/(?P<invoice_id>[\w-]+)/invoice-items', billing_views.InvoiceItemViewSet)
 
-router.register(r'service/(?P<server>[^/.]+)/trigger', trigger_views.ServerActionViewSet)
-
-teams_router = routers.SimpleRouter()
-teams_router.register(r'teams', team_views.TeamViewSet)
-
-if settings.ENABLE_BILLING:
-    teams_billing_router = routers.NestedSimpleRouter(teams_router, r'teams', lookup='team')
-    teams_billing_router.register(r'billing/subscriptions', team_views.TeamSubscriptionViewSet,
-                                  base_name='team-subscription')
-    teams_billing_router.register(r'billing/invoices', team_views.TeamInvoiceViewSet, base_name='team-invoices')
-    teams_billing_router.register(r'billing/(?P<invoice_id>[\w-]+)/invoice-items', team_views.TeamInvoiceItemViewSet,
-                                  base_name='team-invoice-items')
-
-teams_sub_router = routers.NestedSimpleRouter(teams_router, r'teams', lookup='team')
-teams_sub_router.register(r'groups', team_views.GroupViewSet)
-
-my_teams_router = routers.SimpleRouter()
-my_teams_router.register(r'teams', team_views.TeamViewSet, base_name='my-team')
-my_teams_sub_router = routers.NestedSimpleRouter(my_teams_router, r'teams', lookup='team')
-my_teams_sub_router.register(r'groups', team_views.GroupViewSet, base_name='my-group')
-
-servers_router = routers.SimpleRouter()
-servers_router.register("options/server-size", servers_views.ServerSizeViewSet)
-
-
 urlpatterns = [
     url(r'^me/$', user_views.me, name="me"),
     url(r'^(?P<namespace>[\w-]+)/search/$', SearchView.as_view(), name='search'),
     url(r'^actions/', include('actions.urls')),
-    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server_server>[^/.]+)/internal/(?P<service>[^/.]+)/$',
-        servers_views.server_internal_details, name="server_internal"),
-    url(r'^(?P<namespace>[\w-]+)/triggers/send-slack-message/$', trigger_views.SlackMessageView.as_view(),
-        name='send-slack-message'),
-    url(r'^(?P<namespace>[\w-]+)/triggers/(?P<trigger>[\w-]+)/start/$', trigger_views.start,
-        name='trigger-start'),
-    url(r'^(?P<namespace>[\w-]+)/triggers/(?P<trigger>[\w-]+)/stop/$', trigger_views.stop,
-        name='trigger-stop'),
-    url(r'^(?P<namespace>[\w-]+)/projects/project-copy-check/$',
-        project_views.project_copy_check, name='project-copy-check'),
-    url(r'^(?P<namespace>[\w-]+)/projects/project-copy/$', project_views.project_copy, name='project-copy'),
+    url(r'^(?P<namespace>[\w-]+)/notifications/', include('notifications.urls')),
     url(r'^(?P<namespace>[\w-]+)/', include(router.urls)),
-    url(r'^(?P<namespace>[\w-]+)/', include(project_router.urls)),
-    url(r'^(?P<namespace>[\w-]+)/', include(server_router.urls)),
-    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project>[\w-]+)/synced-resources/$',
-        project_views.SyncedResourceViewSet.as_view({'get': 'list', 'post': 'create'})),
-    url(r'^users/', include(user_router.urls)),
-    url(r'^users/(?P<user_pk>[\w-]+)/ssh-key/$', user_views.ssh_key, name='ssh_key'),
-    url(r'^users/(?P<user_pk>[\w-]+)/ssh-key/reset/$', user_views.reset_ssh_key,
-        name='reset_ssh_key'),
-    url(r'^users/(?P<user_pk>[\w-]+)/api-key/$', user_views.api_key, name='api_key'),
-    url(r'^users/(?P<user_pk>[\w-]+)/avatar/$', user_views.avatar, name='avatar'),
-    url(r'^me/', include(my_teams_router.urls)),
-    url(r'^me/', include(my_teams_sub_router.urls)),
-    url(r'^', include(teams_router.urls)),
-    url(r'^', include(teams_sub_router.urls)),
-    url(r'^(?P<namespace>[\w-]+)/service/(?P<server>[^/.]+)/trigger/(?P<pk>[^/.]+)/call/$',
-        trigger_views.call_trigger, name='server-trigger-call'),
-    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/start/$',
-        servers_views.start, name='server-start'),
-    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/stop/$',
-        servers_views.stop, name='server-stop'),
-    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/terminate/$',
-        servers_views.terminate, name='server-terminate'),
-    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/api-key/$',
-        servers_views.server_key, name='server-api-key'),
-    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/api-key/reset/$',
-        servers_views.server_key_reset, name='server-api-key-reset'),
-    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/api-key/verify/$',
-        servers_views.VerifyJSONWebTokenServer.as_view(), name='server-api-key-verify'),
-    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/auth/$',
-        servers_views.check_token, name='server-auth'),
-    url(r'^servers/', include(servers_router.urls)),
-    url(r'^webhooks/incoming/billing/invoice_created/$', billing_views.stripe_invoice_created,
-        name='stripe-invoice-created'),
-    url(r'^webhooks/incoming/billing/invoice_upcoming/$', billing_views.stripe_invoice_upcoming,
-        name='stripe-invoice-upcoming'),
-    url(r'^webhooks/incoming/billing/invoice_payment_failed/$', billing_views.stripe_invoice_payment_failed,
-        name='stripe-invoice-payment-failed'),
-    url(r'^webhooks/incoming/billing/invoice_payment_success/$', billing_views.stripe_invoice_payment_success,
-        name='stripe-invoice-payment-success'),
-    url(r'^(?P<namespace>[\w-]+)/notifications/', include("notifications.urls")),
-    url(r'^(?P<namespace>[\w-]+)/teams/(?P<team_team>[\w-]+)/groups/(?P<group>[^/.]+)/add/',
-        team_views.add_user_to_group, name='add-user-to-group'),
-    url(r'^(?P<namespace>[\w-]+)/teams/(?P<team_team>[\w-]+)/groups/(?P<group>[^/.]+)/remove/',
-        team_views.remove_user_from_group, name='remove-user-from-group'),
-    url(r'^webhooks/incoming/billing/subscription-updated/$', billing_views.stripe_subscription_updated,
-        name='stripe-subscription-updated'),
-    url(r'^(?P<namespace>[\w-]+)/notifications/', include("notifications.urls"))
+    url(r'^(?P<namespace>[\w-]+)/', include('servers.urls')),
+    url(r'^', include('billing.urls')),
+    url(r'^', include('notifications.urls')),
+    url(r'^/', include('projects.urls')),
+    url(r'^', include('servers.urls')),
+    url(r'^', include('teams.urls')),
+    url(r'^', include('triggers.urls')),
+    url(r'^', include('users.urls')),
 ]
-
 
 @api_view()
 def handler404(request):
     raise NotFound()
 
-
 @api_view()
 def handler500(request):
     raise APIException(detail="Internal Server Error", code=500)
-
-
-if settings.ENABLE_BILLING:
-    urlpatterns += [
-        url(r'^', include(teams_billing_router.urls)),
-    ]
-
 
 if settings.DEBUG:
     urlpatterns = staticfiles_urlpatterns() + urlpatterns
