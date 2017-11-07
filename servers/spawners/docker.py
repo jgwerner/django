@@ -1,4 +1,3 @@
-import abc
 import os
 
 import logging
@@ -15,37 +14,10 @@ from docker.errors import APIError
 
 from jwt_auth.utils import create_auth_jwt
 
+from .abstract import ServerSpawner
+
 
 logger = logging.getLogger("servers")
-
-
-class ServerSpawner(object):
-    """
-    Server service interface to allow start/stop/terminate servers
-    """
-    __metaclass__ = abc.ABCMeta
-
-    def __init__(self, server):
-        self.server = server
-
-    @abc.abstractmethod
-    def start(self, *args, **kwargs) -> None:
-        return None
-
-    @abc.abstractmethod
-    def stop(self) -> None:
-        return None
-
-    @abc.abstractmethod
-    def terminate(self) -> None:
-        return None
-
-    @abc.abstractmethod
-    def status(self) -> str:
-        """
-        Server statuses should be those defined in server model
-        """
-        return ''
 
 
 class DockerSpawner(ServerSpawner):
@@ -118,7 +90,7 @@ class DockerSpawner(ServerSpawner):
             restart_policy=self.restart
         )
 
-        # The order of these conditionals *does* matter. RStudio images will blow up 
+        # The order of these conditionals *does* matter. RStudio images will blow up
         if (not self.server.config['type'].lower() == 'rstudio') and self._is_gpu_instance:
             binds.append(f"{self._gpu_driver_path}:/usr/local/nvidia:ro")
             config['devices'] = ['/dev/nvidiactl:/dev/nvidiactl:rwm',
