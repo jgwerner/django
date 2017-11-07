@@ -2,20 +2,20 @@ import logging
 from django.conf import settings as django_settings
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import get_template
-from users.models import Email
+from users.models import Email, User
 from .models import Notification, NotificationType, NotificationSettings
 log = logging.getLogger('notifications')
 
 
-def create_notification(user, actor, target, notif_type, signal=None):
+def create_notification(user: User, actor, target, entity: str, notif_type: str) -> None:
     # TODO: Once we add more notification types, we will need to properly resolve
     # TODO: settings precedence
     settings, created = NotificationSettings.objects.get_or_create(user=user,
-                                                                   entity="global",
+                                                                   entity=entity,
                                                                    defaults={'enabled': True,
                                                                              'emails_enabled': True})
     if created:
-        log.info(f"Global notification settings did not exist for user {user}, so they were created.")
+        log.info(f"{entity} notification settings did not exist for user {user}, so they were created.")
         # This is the de facto default email address
         email = Email.objects.filter(user=user,
                                      address=user.email).first()
@@ -37,8 +37,12 @@ def create_notification(user, actor, target, notif_type, signal=None):
     if notif_type.entity == "billing" or settings.emails_enabled:
         log.info("Settings have enabled emails. Emailing notification.")
         template_name_str = f"notifications/{notif_type.template_name}."
-        plaintext = get_template(template_name_str + "txt")
-        html_text = get_template(template_name_str + "html")
+
+        try:
+            plaintext = get_template(template_name_str + "txt")
+            html_text = get_template(template_name_str + "html")
+        except Exception as e:
+            log.exception(e)
 
         user_name_to_use = user.first_name or user.username
 
@@ -55,9 +59,10 @@ def create_notification(user, actor, target, notif_type, signal=None):
         message.attach_alternative(html_content, "text/html")
         try:
             message.send(fail_silently=False)
-            notification.emailed = True
-            notification.save()
-            log.info(f"Emailed notification.")
         except Exception as e:
             log.error(f"Unable to email notification: {notification}. Exception stacktrace:")
             log.exception(e)
+
+        notification.emailed = True
+        notification.save()
+        log.info(f"Emailed notification.")
