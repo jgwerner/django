@@ -42,7 +42,10 @@ def create_notification(user: User, actor, target, entity: str, notif_type: str)
             plaintext = get_template(template_name_str + "txt")
             html_text = get_template(template_name_str + "html")
         except Exception as e:
+            log.error(f"Unable to find template {template_name_str} for notification type {notif_type.name}."
+                      f"Will not be able to email notification. This is a problem!!")
             log.exception(e)
+            return
 
         user_name_to_use = user.first_name or user.username
 

@@ -43,6 +43,9 @@ class ServerRunStatisticsFactory(factory.django.DjangoModelFactory):
     start = timezone.now() - timedelta(hours=1)
     stop = timezone.now()
     exit_code = 0
+    project = None
+    owner = None
+    server_size_memory = fuzzy.FuzzyChoice([512, 1024, 2048, 4096])
 
 
 class ServerStatisticsFactory(factory.django.DjangoModelFactory):

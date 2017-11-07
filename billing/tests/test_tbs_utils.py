@@ -3,10 +3,11 @@ from django.utils import timezone
 from django.test import TestCase
 from users.tests.factories import UserFactory
 from billing.stripe_utils import create_stripe_customer_from_user
+from billing.tbs_utils import calculate_usage_for_current_billing_period
 from billing.tests.factories import (PlanFactory,
                                      SubscriptionFactory,
-                                     CustomerFactory,
                                      InvoiceFactory)
+from servers.tests.factories import ServerRunStatisticsFactory
 
 
 class TestTbsUtils(TestCase):
@@ -22,7 +23,10 @@ class TestTbsUtils(TestCase):
                                            plan=plan)
         # Just so period_start and period_end are relative to the exact same time...
         now = timezone.now()
-        invoice = InvoiceFactory(customer=customer,
-                                 subscription=subscription,
-                                 period_start=now - timedelta(days=15),
-                                 period_end=now + timedelta(days=15))
+        InvoiceFactory(customer=customer,
+                       subscription=subscription,
+                       period_start=now - timedelta(days=15),
+                       period_end=now + timedelta(days=15),
+                       closed=False)
+        ServerRunStatisticsFactory(owner=user)
+        calculate_usage_for_current_billing_period()
