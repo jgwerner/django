@@ -139,8 +139,8 @@ class SyncedResourceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SyncedResource
-        fields = ('project', 'folder', 'settings', 'provider')
-        read_only_fields = ('project')
+        fields = ('project', 'folder', 'settings', 'provider', 'integration')
+        read_only_fields = ('project', 'integration')
 
     def create(self, validated_data):
         provider = validated_data.pop('integration').get('provider')
