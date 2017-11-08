@@ -2,7 +2,7 @@ import boto3
 from typing import List
 from django.utils.functional import cached_property
 
-from .abstract import BaseSpawner, GPUMixin, TraefikMixin
+from .base import BaseSpawner, GPUMixin, TraefikMixin
 
 
 class ECSSpawner(GPUMixin, TraefikMixin, BaseSpawner):

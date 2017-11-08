@@ -8,7 +8,7 @@ from django.utils.functional import cached_property
 import docker
 from docker.errors import APIError
 
-from .abstract import BaseSpawner, GPUMixin, TraefikMixin
+from .base import BaseSpawner, GPUMixin, TraefikMixin
 
 
 logger = logging.getLogger("servers")
