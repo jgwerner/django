@@ -36,12 +36,12 @@ class TestDockerSpawnerForModel(TransactionTestCase):
         docker_client = make_fake_client()
         self.spawner = DockerSpawner(self.server, docker_client)
 
-    def test_get_envs(self):
+    def test_get_env(self):
         expected = {
             'test': 'test',
             'TZ': 'UTC',
         }
-        self.assertEqual(self.spawner._get_envs(), expected)
+        self.assertEqual(self.spawner._get_env(), expected)
 
     @patch('servers.spawners.DockerSpawner._get_container')
     def test_start(self, _get_container):
@@ -52,23 +52,23 @@ class TestDockerSpawnerForModel(TransactionTestCase):
     def test_get_cmd_restful(self):
         self.server.config['type'] = 'restful'
         cmd = self.spawner._get_cmd()
-        self.assertIn("runner", cmd)
-        self.assertIn(self.user.username, cmd)
-        self.assertIn(str(self.server.project.pk), cmd)
-        self.assertIn(str(self.server.pk), cmd)
-        self.assertIn(self.server.config["function"], cmd)
-        self.assertIn(self.server.config["script"], cmd)
+        self.assertIn("/runner", cmd)
+        self.assertIn(f'--ns={self.user.username}', cmd)
+        self.assertIn(f'--projectID={self.server.project.pk}', cmd)
+        self.assertIn(f'--serverID={self.server.pk}', cmd)
+        self.assertIn(f'--function={self.server.config["function"]}', cmd)
+        self.assertIn(f'--script={self.server.config["script"]}', cmd)
 
     def test_get_cmd_jupyter(self):
         self.server.config = {
             "type": "jupyter"
         }
         cmd = self.spawner._get_cmd()
-        self.assertIn("runner", cmd)
-        self.assertIn(self.user.username, cmd)
-        self.assertIn(str(self.server.project.pk), cmd)
-        self.assertIn(str(self.server.pk), cmd)
-        self.assertIn(self.server.config["type"], cmd)
+        self.assertIn("/runner", cmd)
+        self.assertIn(f'--ns={self.user.username}', cmd)
+        self.assertIn(f'--projectID={self.server.project.pk}', cmd)
+        self.assertIn(f'--serverID={self.server.pk}', cmd)
+        self.assertIn('--type=proxy', cmd)
 
     def test_get_command_generic(self):
         self.server.config = {
@@ -76,11 +76,12 @@ class TestDockerSpawnerForModel(TransactionTestCase):
             'type': 'proxy'
         }
         cmd = self.spawner._get_cmd()
-        self.assertIn("runner", cmd)
-        self.assertIn(self.user.username, cmd)
-        self.assertIn(str(self.server.project.pk), cmd)
-        self.assertIn(str(self.server.pk), cmd)
-        self.assertIn(self.server.config["command"], cmd)
+        self.assertIn("/runner", cmd)
+        self.assertIn(f'--ns={self.user.username}', cmd)
+        self.assertIn(f'--projectID={self.server.project.pk}', cmd)
+        self.assertIn(f'--serverID={self.server.pk}', cmd)
+        self.assertIn('python', cmd)
+        self.assertIn('run.py', cmd)
 
     @patch('servers.spawners.DockerSpawner._is_swarm')
     def test_get_host_config(self, _is_swarm):
@@ -98,12 +99,12 @@ class TestDockerSpawnerForModel(TransactionTestCase):
         self.spawner._create_container()
         self.assertTrue(bool(self.server.container_id))
 
-    @patch('servers.spawners.DockerSpawner._get_envs')
+    @patch('servers.spawners.DockerSpawner._get_env')
     @patch('servers.spawners.DockerSpawner._get_host_config')
-    def test_create_container_config(self, _get_host_config, _get_envs):
+    def test_create_container_config(self, _get_host_config, _get_env):
         self.spawner.cmd = 'test'
         _get_host_config.return_value = {}
-        _get_envs.return_value = {}
+        _get_env.return_value = {}
         expected = {
             'image': 'test',
             'command': 'test',
@@ -157,12 +158,12 @@ class TestDockerSpawnerForModel(TransactionTestCase):
         self.assertEqual(self.spawner._get_user_timezone(), 'EDT')
 
     @patch('servers.spawners.DockerSpawner.status')
-    def test_connected_links(self, status):
+    def test_links(self, status):
         status.return_value = Server.RUNNING
         conn = ServerFactory()
         self.server.connected.add(conn)
         self.server.save()
-        links = self.spawner._connected_links()
+        links = self.spawner._get_links()
         self.assertIn(conn.container_name, links)
         self.assertEqual(links[conn.container_name], conn.name.lower())
 
