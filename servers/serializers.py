@@ -26,8 +26,8 @@ class BaseServerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Server
         fields = ('id', 'name', 'created_at', 'image_name', 'server_size', 'startup_script', 'config',
-                  'status', 'connected', 'host')
-        read_only_fields = ('created_at', 'project')
+                  'status', 'connected', 'host', 'project', 'created_by')
+        read_only_fields = ('created_at', 'created_by', 'project')
         extra_kwargs = {
             'connected': {'allow_empty': True, 'required': False},
             'server_size': {'allow_empty': True, 'required': False},
@@ -114,7 +114,8 @@ class ServerSearchSerializer(SearchSerializerMixin, BaseServerSerializer):
 class ServerRunStatisticsSerializer(serializers.ModelSerializer):
     class Meta:
         model = ServerRunStatistics
-        fields = ('id', 'start', 'stop', 'exit_code', 'size', 'stacktrace')
+        fields = ('server', 'id', 'start', 'stop', 'exit_code', 'size', 'stacktrace')
+        read_only_fields = ('server')
 
     def create(self, validated_data):
         instance = ServerRunStatistics(**validated_data)
@@ -139,7 +140,8 @@ class ServerRunStatisticsAggregatedSerializer(serializers.Serializer):
 class ServerStatisticsSerializer(serializers.ModelSerializer):
     class Meta:
         model = ServerStatistics
-        fields = ('id', 'start', 'stop', 'size')
+        fields = ('id', 'start', 'stop', 'size', 'server')
+        read_only_fields = ('server')
 
 
 class ServerStatisticsAggregatedSerializer(serializers.Serializer):
@@ -151,4 +153,5 @@ class ServerStatisticsAggregatedSerializer(serializers.Serializer):
 class SshTunnelSerializer(serializers.ModelSerializer):
     class Meta:
         model = SshTunnel
-        fields = ('id', 'name', 'host', 'local_port', 'remote_port', 'endpoint', 'username')
+        fields = ('id', 'name', 'host', 'local_port', 'remote_port', 'endpoint', 'username', 'server')
+        read_only_fields = ('server')
