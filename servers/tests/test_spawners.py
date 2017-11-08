@@ -48,6 +48,7 @@ class TestDockerSpawnerForModel(TransactionTestCase):
         _get_container.return_value = None
         self.spawner.start()
         self.assertEqual(self.server.container_id, FAKE_CONTAINER_ID)
+        self.assertIsNotNone(self.server.last_start)
 
     def test_get_cmd_restful(self):
         self.server.config['type'] = 'restful'

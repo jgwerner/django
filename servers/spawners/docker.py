@@ -3,6 +3,7 @@ import tarfile
 from io import BytesIO
 
 from django.conf import settings
+from django.utils import timezone
 from django.utils.functional import cached_property
 import docker
 from docker.errors import APIError
@@ -37,6 +38,7 @@ class DockerSpawner(TraefikMixin, GPUMixin, BaseSpawner):
         except APIError as e:
             logger.error(e.response.content)
             raise
+        self.server.last_start = timezone.now()
 
     def _get_host_config(self):
         config = dict(
