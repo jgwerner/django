@@ -42,9 +42,10 @@ class ServerRunStatisticsFactory(factory.django.DjangoModelFactory):
     server = factory.SubFactory(ServerFactory)
     start = timezone.now() - timedelta(hours=1)
     stop = timezone.now()
+    duration = factory.LazyAttribute(lambda obj: obj.stop - obj.start)
     exit_code = 0
-    project = None
-    owner = None
+    project = factory.LazyAttribute(lambda obj: obj.server.project)
+    owner = factory.LazyAttribute(lambda obj: obj.server.project.owner)
     server_size_memory = fuzzy.FuzzyChoice([512, 1024, 2048, 4096])
 
 

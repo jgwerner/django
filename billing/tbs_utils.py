@@ -8,7 +8,11 @@ from notifications.utils import create_notification
 log = logging.getLogger('servers')
 
 
-def calculate_usage_for_current_billing_period() -> None:
+def calculate_usage_for_current_billing_period() -> dict:
+    """
+    :return: user_runs_mapping is a dict that maps user.pk -> 
+             Percentage of plan used for this billing period. 
+    """
     log.debug("In calculate usage method")
     # TODO: In theory there is only one open invoice per user, but this needs to be verified, especially for teams
     # Do select related for user and plan
@@ -18,11 +22,13 @@ def calculate_usage_for_current_billing_period() -> None:
     user_runs_mapping = {}
     for inv in invoices:
         user = inv.customer.user
+        if user.pk in user_runs_mapping:
+            # TODO: Decide what to do in this scenario
+            log.warning(f"For some reason {user} currently has multiple open invoices. "
+                        f"This shouldn't really happen, and I'm not sure how to handle it for now.")
         runs = ServerRunStatistics.objects.filter(Q(stop=None) | Q(start__gte=inv.period_start),
                                                   owner=inv.customer.user)
         log.debug(("server runs count", runs.count()))
-        # Not sure this will be needed after all
-        user_runs_mapping[user] = runs
 
         # TODO: This is a very slow way of doing this calculation. Only using it now for clarity's sake.
         # TODO: Will refactor soon for performance.
@@ -48,6 +54,7 @@ def calculate_usage_for_current_billing_period() -> None:
         # TODO: Agree on what this field in the plan's metadata should be called
         log.debug(("this user total", this_user_total))
         usage_percent = (this_user_total / inv.subscription.plan.metadata.get('gb_hours')) * 100
+        user_runs_mapping[user.pk] = usage_percent
         log.debug(("usage percent", usage_percent))
         if usage_percent > settings.USAGE_WARNING_THRESHOLD:
             log.info(f"User {user} has used {usage_percent}% of their plan. Sending a notification.")
@@ -56,3 +63,5 @@ def calculate_usage_for_current_billing_period() -> None:
                                 target=None,
                                 entity="billing",
                                 notif_type="usage_warning")
+
+    return user_runs_mapping
