@@ -1,10 +1,12 @@
 import random
 from datetime import timedelta
-from django.db.models import Sum, F, DurationField
+from django.db.models import Sum, F, DurationField, Case, When, ExpressionWrapper
+from django.db.models.functions import Greatest
 from django.utils import timezone
 from django.test import TestCase
 from users.models import User
 from users.tests.factories import UserFactory
+from billing.models import Invoice
 from billing.stripe_utils import create_stripe_customer_from_user
 from billing.tbs_utils import calculate_usage_for_current_billing_period
 from billing.tests.factories import (PlanFactory,
@@ -29,7 +31,6 @@ class TestTbsUtils(TestCase):
                                 metadata={'gb_hours': 5})
 
     def _setup_basics_for_user(self, user: User, duration: int=1, server_memory: int=512) -> ServerRunStatistics:
-        log.debug("in setup basics for user")
         subscription = SubscriptionFactory(customer=user.customer,
                                            plan=self.plan)
         # Just so period_start and period_end are relative to the exact same time...
@@ -117,33 +118,25 @@ class TestTbsUtils(TestCase):
     def test_multiple_users_multiple_servers_and_runs(self):
         users = UserFactory.create_batch(4) + [self.user]
         for user in users:
-            run = self._setup_basics_for_user(user)
-            log.debug(("run.owener", run.owner))
-            log.debug(("run server memory", run.server_size_memory))
-            log.debug(("run duration", run.duration))
+            self._setup_basics_for_user(user)
             for x in range(4):
                 project = CollaboratorFactory(user=user).project
 
-                # duration = random.randint(1, 3)
-                duration = 1
+                duration = random.randint(1, 3)
                 now = timezone.now()
                 start_time = now - timedelta(hours=duration)
 
-                # run = ServerRunStatisticsFactory(server__project=project,
-                #                                  server__server_size__memory=1024,
-                #                                  start=start_time,
-                #                                  stop=now)
-                # ServerRunStatisticsFactory.create_batch(2, server=run.server, start=start_time, stop=now)
-
+                run = ServerRunStatisticsFactory(server__project=project,
+                                                 start=start_time,
+                                                 stop=now)
+                ServerRunStatisticsFactory.create_batch(2, server=run.server, start=start_time, stop=now)
         usage_dict = calculate_usage_for_current_billing_period()
-        for user in users:
-            log.debug(("user", user))
-            usage_in_byte_seconds = ServerRunStatistics.objects.filter(owner=
-                                                                       user).aggregate(usage=Sum(F('duration') *
-                                                                                                 (F('server_size_memory')),
-                                                                                                 output_field=DurationField()))
-            log.debug(("usage amount", usage_in_byte_seconds))
-            log.debug(("days", usage_in_byte_seconds['usage'].days))
-            log.debug(("seconds", usage_in_byte_seconds['usage'].seconds))
-            log.debug(("microseconds", usage_in_byte_seconds['usage'].microseconds))
 
+        for user in users:
+            user_runs = ServerRunStatistics.objects.filter(owner=user)
+            total_usage = 0.0
+            for run in user_runs:
+                total_usage += (run.server_size_memory / 1024) * (run.duration.total_seconds() / 3600)
+
+            expected_usage_pct = (total_usage / self.plan.metadata.get('gb_hours')) * 100
+            self.assertEqual(usage_dict[user.pk], expected_usage_pct)
