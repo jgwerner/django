@@ -115,7 +115,7 @@ class ServerRunStatisticsSerializer(serializers.ModelSerializer):
     class Meta:
         model = ServerRunStatistics
         fields = ('server', 'id', 'start', 'stop', 'exit_code', 'size', 'stacktrace')
-        read_only_fields = ('server')
+        read_only_fields = ('server',)
 
     def create(self, validated_data):
         instance = ServerRunStatistics(**validated_data)
@@ -141,7 +141,7 @@ class ServerStatisticsSerializer(serializers.ModelSerializer):
     class Meta:
         model = ServerStatistics
         fields = ('id', 'start', 'stop', 'size', 'server')
-        read_only_fields = ('server')
+        read_only_fields = ('server',)
 
 
 class ServerStatisticsAggregatedSerializer(serializers.Serializer):
@@ -154,4 +154,4 @@ class SshTunnelSerializer(serializers.ModelSerializer):
     class Meta:
         model = SshTunnel
         fields = ('id', 'name', 'host', 'local_port', 'remote_port', 'endpoint', 'username', 'server')
-        read_only_fields = ('server')
+        read_only_fields = ('server',)

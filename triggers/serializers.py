@@ -55,7 +55,7 @@ class TriggerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Trigger
         fields = ('id', 'user', 'cause', 'effect', 'schedule', 'webhook')
-        read_only_field = ('user', 'cause')
+        read_only_fields = ('user', 'cause')
 
     def create(self, validated_data):
         cause_data = validated_data.pop('cause', None)
