@@ -155,3 +155,4 @@ class SshTunnelSerializer(serializers.ModelSerializer):
         model = SshTunnel
         fields = ('id', 'name', 'host', 'local_port', 'remote_port', 'endpoint', 'username', 'server')
         read_only_fields = ('server',)
+
