@@ -42,7 +42,7 @@ class ServerRunStatisticsFactory(factory.django.DjangoModelFactory):
     server = factory.SubFactory(ServerFactory)
     start = timezone.now() - timedelta(hours=1)
     stop = timezone.now()
-    duration = factory.LazyAttribute(lambda obj: obj.stop - obj.start)
+    duration = factory.LazyAttribute(lambda obj: obj.stop - obj.start if obj.stop else None)
     exit_code = 0
     project = factory.LazyAttribute(lambda obj: obj.server.project)
     owner = factory.LazyAttribute(lambda obj: obj.server.project.owner)

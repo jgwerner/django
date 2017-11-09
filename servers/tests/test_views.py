@@ -1,3 +1,4 @@
+from datetime import datetime
 from unittest.mock import patch
 from guardian.shortcuts import assign_perm
 from django.urls import reverse
@@ -452,7 +453,7 @@ class ServerRunStatisticsTestCase(APITestCase):
     def test_update_latest(self):
         stats = ServerRunStatisticsFactory(server__project=self.project,
                                            project=self.project,
-                                           stop=timezone.datetime(1, 1, 1))
+                                           stop=timezone.make_aware(datetime(1, 1, 1)))
         url = reverse('serverrunstatistics-update-latest', kwargs={
             'namespace': self.project.get_owner_name(),
             'project_project': str(self.project.pk),
@@ -514,7 +515,7 @@ class ServerRunStatisticsTestCaseWithName(APITestCase):
     def test_update_latest(self):
         stats = ServerRunStatisticsFactory(server__project=self.project,
                                            project=self.project,
-                                           stop=timezone.datetime(1, 1, 1))
+                                           stop=timezone.make_aware(datetime(1, 1, 1)))
         url = reverse('serverrunstatistics-update-latest', kwargs={
             'namespace': self.project.get_owner_name(),
             'project_project': self.project.name,
