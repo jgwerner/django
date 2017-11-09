@@ -404,3 +404,5 @@ SILENCED_SYSTEM_CHECKS = ["auth.W004"]
 DEFAULT_STRIPE_PLAN_ID = os.getenv("DEFAULT_STRIPE_PLAN_ID", "threeblades-free-plan")
 
 NVIDIA_DOCKER_HOST = os.environ.get('NVIDIA_DOCKER_HOST')
+
+SPAWNER = 'servers.spawners.docker.DockerSpawner'

@@ -1,11 +1,13 @@
 from celery import shared_task
-from .spawners import DockerSpawner
+from .spawners import get_spawner_class
 from .models import Server
+
+Spawner = get_spawner_class()
 
 
 def server_action(action: str, server: str):
     server = Server.objects.tbs_get(server)
-    spawner = DockerSpawner(server)
+    spawner = Spawner(server)
     getattr(spawner, action)()
 
 

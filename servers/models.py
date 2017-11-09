@@ -11,7 +11,9 @@ from django_redis import get_redis_connection
 
 from base.models import TBSQuerySet
 from servers.managers import ServerQuerySet
-from servers.spawners import DockerSpawner
+from servers.spawners import get_spawner_class
+
+Spawner = get_spawner_class()
 
 
 class Server(models.Model):
@@ -93,7 +95,7 @@ class Server(models.Model):
 
     @property
     def status(self):
-        spawner = DockerSpawner(self)
+        spawner = Spawner(self)
         status = spawner.status()
         return status.decode() if isinstance(status, bytes) else status
 

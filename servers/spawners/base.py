@@ -14,11 +14,10 @@ from jwt_auth.utils import create_auth_jwt
 logger = logging.getLogger("servers")
 
 
-class SpawnerInterface:
+class SpawnerInterface(metaclass=abc.ABCMeta):
     """
     Server service interface to allow start/stop servers
     """
-    __metaclass__ = abc.ABCMeta
 
     def __init__(self, server):
         self.server = server

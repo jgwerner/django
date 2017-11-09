@@ -1,8 +1,11 @@
 import boto3
+import logging
 from typing import List
 from django.utils.functional import cached_property
 
 from .base import BaseSpawner, GPUMixin, TraefikMixin
+
+logger = logging.getLogger("servers")
 
 
 class ECSSpawner(GPUMixin, TraefikMixin, BaseSpawner):
@@ -22,6 +25,7 @@ class ECSSpawner(GPUMixin, TraefikMixin, BaseSpawner):
         try:
             resp = self.client.describe_tasks(tasks=[self._task_arn])
         except:
+            logger.exception("Error getting server status")
             return 'Error'
         try:
             return resp['tasks'][0]['lastStatus']

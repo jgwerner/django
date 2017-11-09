@@ -11,7 +11,7 @@ from django.test import TransactionTestCase, TestCase
 from projects.tests.factories import CollaboratorFactory
 from servers.tests.fake_docker_api_client.fake_api import FAKE_CONTAINER_ID
 from ..models import Server
-from ..spawners import DockerSpawner
+from ..spawners.docker import DockerSpawner
 from .factories import ServerSizeFactory, ServerFactory
 from .fake_docker_api_client.fake_api_client import make_fake_client
 
@@ -43,7 +43,7 @@ class TestDockerSpawnerForModel(TransactionTestCase):
         }
         self.assertEqual(self.spawner._get_env(), expected)
 
-    @patch('servers.spawners.DockerSpawner._get_container')
+    @patch('servers.spawners.docker.DockerSpawner._get_container')
     def test_start(self, _get_container):
         _get_container.return_value = None
         self.spawner.start()
@@ -84,7 +84,7 @@ class TestDockerSpawnerForModel(TransactionTestCase):
         self.assertIn('python', cmd)
         self.assertIn('run.py', cmd)
 
-    @patch('servers.spawners.DockerSpawner._is_swarm')
+    @patch('servers.spawners.docker.DockerSpawner._is_swarm')
     def test_get_host_config(self, _is_swarm):
         _is_swarm.return_value = False
         expected = {
@@ -100,8 +100,8 @@ class TestDockerSpawnerForModel(TransactionTestCase):
         self.spawner._create_container()
         self.assertTrue(bool(self.server.container_id))
 
-    @patch('servers.spawners.DockerSpawner._get_env')
-    @patch('servers.spawners.DockerSpawner._get_host_config')
+    @patch('servers.spawners.docker.DockerSpawner._get_env')
+    @patch('servers.spawners.docker.DockerSpawner._get_host_config')
     def test_create_container_config(self, _get_host_config, _get_env):
         self.spawner.cmd = 'test'
         _get_host_config.return_value = {}
@@ -158,7 +158,7 @@ class TestDockerSpawnerForModel(TransactionTestCase):
         self.user.profile.save()
         self.assertEqual(self.spawner._get_user_timezone(), 'EDT')
 
-    @patch('servers.spawners.DockerSpawner.status')
+    @patch('servers.spawners.docker.DockerSpawner.status')
     def test_links(self, status):
         status.return_value = Server.RUNNING
         conn = ServerFactory()
@@ -257,7 +257,7 @@ class TestGPU(TestCase):
         self.assertIsNotNone(self.spawner.gpu_info)
         self.assertEqual(self.spawner.gpu_info['Version']['Driver'], '384.90')
 
-    @patch('servers.spawners.DockerSpawner._is_swarm')
+    @patch('servers.spawners.docker.DockerSpawner._is_swarm')
     def test_get_host_config(self, _is_swarm):
         _is_swarm.return_value = False
         expected = {
