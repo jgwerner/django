@@ -9,19 +9,26 @@ class Command(BaseCommand):
     help = "Create initial resource"
 
     def handle(self, *args, **kwargs):
-        name = kwargs.get("name", "Nano")
-        cpu = int(kwargs.get("cpu", 1))
-        memory = int(kwargs.get("memory", 512))
+        server_size_dict = {
+            "Nano": 512,
+            "Small": 1024,
+            "Medium": 2048,
+            "Large": 4096,
+            "XLarge": 8192
+        }
 
-        _, created = ServerSize.objects.get_or_create(name=name,
-                                                      cpu=cpu,
-                                                      memory=memory,
-                                                      active=True)
-
-        if created:
-            log.info("Created a new ServerSize with the following parameters: ")
-            log.info(f"Name: {name}\n"
-                     f"CPU: {cpu}\n"
-                     f"Memory: {memory}")
-        else:
-            log.info("A ServerSize with those parameters already exists. Doing Nothing.")
+        try:
+            for i in server_size_dict:
+                ServerSize.objects.update_or_create(
+                    name__iexact = i,
+                    defaults = {
+                        'name': i,
+                        'memory': server_size_dict[i],
+                        'cpu': 1,
+                        'active': True
+                    }
+                )
+            log.info("ServerSize table updated with fixtures.")
+        except Exception as e:
+            log.exception(e)
+            raise Exception("Error running ServerSize script.")
