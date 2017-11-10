@@ -405,5 +405,6 @@ DEFAULT_STRIPE_PLAN_ID = os.getenv("DEFAULT_STRIPE_PLAN_ID", "threeblades-free-p
 
 NVIDIA_DOCKER_HOST = os.environ.get('NVIDIA_DOCKER_HOST')
 
-SPAWNER = 'servers.spawners.docker.DockerSpawner'
+SPAWNER = 'servers.spawners.ecs.ECSSpawner'
+ECS_CLUSTER = 'gpu'
 REDIRECT_IS_HTTPS = True

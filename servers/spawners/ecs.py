@@ -1,6 +1,8 @@
+import os
 import boto3
 import logging
-from typing import List
+from typing import List, Dict
+from django.conf import settings
 from django.utils.functional import cached_property
 
 from .base import BaseSpawner, GPUMixin, TraefikMixin
@@ -15,6 +17,7 @@ class ECSSpawner(GPUMixin, TraefikMixin, BaseSpawner):
 
     def start(self) -> None:
         self.client.run_task(
+            cluster=settings.ECS_CLUSTER,
             taskDefinition=self._task_arn,
         )
 
@@ -33,6 +36,7 @@ class ECSSpawner(GPUMixin, TraefikMixin, BaseSpawner):
             return 'Error'
 
     def _register_task_definition(self) -> str:
+        volumes, mount_points = self._get_volumes_and_mount_points()
         resp = self.client.register_task_definition(
             family='servers',
             containerDefinitions=[
@@ -40,17 +44,20 @@ class ECSSpawner(GPUMixin, TraefikMixin, BaseSpawner):
                     'name': str(self.server.name),
                     'image': self.server.image_name,
                     'cpu': self.server.server_size.cpu,
-                    'memory': self.server.memory,
-                    'memoryReservation': self.server.memory / 2,
+                    'memory': self.server.server_size.memory,
+                    'memoryReservation': int(self.server.server_size.memory / 2),
                     'links': self._get_links(),
                     'essential': True,
                     'command': self._get_cmd(),
                     'environment': self._get_env(),
-                    'devices': self._get_devices(),
-                    'mountPoints': self._get_binds(),
-                    'placementConstrains': self._get_constrains(),
+                    'linuxParameters': {
+                        'devices': self._get_devices(),
+                    },
+                    'mountPoints': mount_points,
                 }
             ],
+            volumes=volumes,
+            placementConstraints=self._get_constrains()
         )
         return resp['taskDefinition']['taskDefinitionArn']
 
@@ -65,3 +72,42 @@ class ECSSpawner(GPUMixin, TraefikMixin, BaseSpawner):
 
     def _get_constrains(self) -> List[str]:
         return []
+
+    def _get_devices(self) -> List[Dict[str, str]]:
+        dev_list = super()._get_devices()
+        devices = []
+        for dev in dev_list:
+            host_path, container_path, _ = dev.split(":")
+            devices.append({
+                'hostPath': host_path,
+                'containerPath': container_path
+            })
+        return devices
+
+    def _get_env(self) -> List[Dict[str, str]]:
+        return [{'name': k, 'value': v} for k, v in super()._get_env().items()]
+
+    def _get_volumes_and_mount_points(self):
+        volumes = [{'name': 'project', 'host': {'sourcePath': self.server.volume_path}}]
+        mount_points = [{'sourceVolume': 'project', 'containerPath': settings.SERVER_RESOURCE_DIR}]
+        ssh_path = self._get_ssh_path()
+        if ssh_path:
+            volumes.append({'name': 'ssh', 'host': {'sourcePath': ssh_path}})
+            mount_points.append({'sourceVolume': 'ssh', 'containerPath': f'{settings.SERVER_RESOURCE_DIR}/.ssh'})
+        if self.server.startup_script:
+            volumes.append({
+                'name': 'script',
+                'host': {'sourcePath': os.path.join(self.server.volume_path, self.server.startup_script)}
+            })
+            mount_points.append({'sourceVolume': 'script', 'containerPath': f'{settings.SERVER_RESOURCE_DIR}/start.sh'})
+        if self._is_gpu_instance:
+            volumes.append({
+                'name': 'gpu',
+                'host': {'sourcePath': self._gpu_driver_path}
+            })
+            mount_points.append({
+                'sourceVolume': 'gpu',
+                'containerPath': '/usr/local/nvidia',
+                'readOnly': True
+            })
+        return volumes, mount_points
