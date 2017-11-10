@@ -21,8 +21,8 @@ class ProjectSerializer(SearchSerializerMixin, serializers.ModelSerializer):
 
     class Meta:
         model = Project
-        fields = ('id', 'name', 'description', 'private', 'last_updated', 'owner', 'collaborators', 'copying_enabled')
-        read_only_fields = ('collaborators',)
+        fields = ('id', 'name', 'description', 'private', 'last_updated', 'team', 'owner', 'collaborators', 'copying_enabled')
+        read_only_fields = ('collaborators', 'team')
 
     def validate_name(self, value):
         request = self.context['request']
@@ -69,8 +69,8 @@ class ProjectFileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProjectFile
-        fields = ("id", "project", "file", "base64_data", "name", "path", "content")
-        read_only_fields = ("author", "project", "content")
+        fields = ('id', 'author', 'project', 'file', 'base64_data', 'name', 'path', 'content')
+        read_only_fields = ('author', 'project', 'content')
 
     def get_content(self, obj):
         encoded = None
@@ -107,7 +107,8 @@ class CollaboratorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Collaborator
-        fields = ('id', 'owner', 'joined', 'username', 'email', 'first_name', 'last_name', 'member', 'permissions')
+        fields = ('id', 'owner', 'project', 'user', 'joined', 'username', 'email', 'first_name', 'last_name', 'member', 'permissions')
+        read_only_fields = ('project', 'user')
 
     def validate_member(self, value):
         if not User.objects.filter(Q(username=value) | Q(email=value), is_active=True).exists():
@@ -138,7 +139,8 @@ class SyncedResourceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SyncedResource
-        fields = ('folder', 'settings', 'provider')
+        fields = ('project', 'folder', 'settings', 'provider', 'integration')
+        read_only_fields = ('project', 'integration')
 
     def create(self, validated_data):
         provider = validated_data.pop('integration').get('provider')

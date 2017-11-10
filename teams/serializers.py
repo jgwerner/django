@@ -14,7 +14,8 @@ class GroupSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Group
-        fields = ('id', 'name', 'permissions', 'members', 'private', 'parent', 'created_by')
+        fields = ('id', 'team', 'name', 'permissions', 'members', 'private', 'parent', 'created_by')
+        read_only_fields = ('team',)
 
     def validate_parent(self, value):
         if not Group.objects.filter(pk=value).exists():
@@ -39,7 +40,8 @@ class TeamSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Team
-        fields = ('id', 'name', 'description', 'website', 'location', 'groups', 'created_by')
+        fields = ('id', 'customer', 'name', 'description', 'website', 'location', 'groups', 'created_by')
+        read_only_fields = ('customer',)
 
     def validate_name(self, value):
         if User.objects.filter(username=value).exists():
