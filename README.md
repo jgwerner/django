@@ -120,6 +120,8 @@ Modify environment variables located in `env` file with your local settings. You
     AWS_SES_REGION_NAME=
     AWS_SES_REGION_ENDPOINT=
     AWS_STORAGE_BUCKET_NAME=
+    BILLING_BUCKET_SIZE_GB=
+    BUCKET_COST_USD=
     C_ROOT=1
     DATABASE_URL=postgres://postgres:@db:5432/postgres/
     DEBUG=True
