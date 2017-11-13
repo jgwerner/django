@@ -25,7 +25,6 @@ else:
 
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
-print(("stripe api key"), stripe.api_key)
 getcontext().prec = 6
 
 
