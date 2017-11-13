@@ -35,9 +35,14 @@ class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewS
     lookup_url_kwarg = 'project'
 
     def get_queryset(self):
-        qs = super(ProjectViewSet, self).get_queryset()
-        final_qs = qs.filter(Q(collaborator__user=self.request.user) | Q(private=False))
-        return final_qs
+        this_namespace_projects = super(ProjectViewSet, self).get_queryset()
+        this_request_user_collabs = Collaborator.objects.filter(user=self.request.user,
+                                                                project__in=this_namespace_projects,
+                                                                project__private=True).values_list('project__pk',
+                                                                                                   flat=True)
+        collab_projects = Project.objects.filter(pk__in=this_request_user_collabs)
+        all_projects = this_namespace_projects.filter(private=False).union(collab_projects)
+        return all_projects
 
     def _update(self, request, partial,  *args, **kwargs):
         instance = Project.objects.tbs_get(kwargs.get("project"))
