@@ -6,6 +6,7 @@ from collections import defaultdict
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
+from django.core.exceptions import ObjectDoesNotExist
 
 from users.models import User
 from servers.models import Server
@@ -106,18 +107,32 @@ def create_stripe_customer_from_user(auth_user):
 
 
 def create_plan_in_stripe(validated_data):
-    log.info(f"Creating plan f{validated_data.get('name')} in Stripe.")
-    stripe_response = stripe.Plan.create(id=validated_data.get('name').lower().replace(" ", "-"),
-                                         amount=validated_data.get('amount'),
-                                         currency=validated_data.get('currency'),
-                                         interval=validated_data.get('interval'),
-                                         interval_count=validated_data.get('interval_count'),
-                                         name=validated_data.get('name'),
-                                         statement_descriptor=validated_data.get('statement_descriptor'),
-                                         trial_period_days=validated_data.get('trial_period_days'))
+    plan_stripe_id = validated_data.get('name').lower().replace(" ", "-")
+    try:
+        stripe_plan = stripe.Plan.retrieve(plan_stripe_id)
+        plan = Plan.objects.get(stripe_id=plan_stripe_id)
+    except stripe.error.InvalidRequestError:
+        # Plan doesn't exist in Stripe. This is the expected flow.
+        log.info(f"Plan f{validated_data.get('name')} did not exist in Stripe. Creating it.")
+        stripe_response = stripe.Plan.create(id=validated_data.get('name').lower().replace(" ", "-"),
+                                             amount=validated_data.get('amount'),
+                                             currency=validated_data.get('currency'),
+                                             interval=validated_data.get('interval'),
+                                             interval_count=validated_data.get('interval_count'),
+                                             name=validated_data.get('name'),
+                                             statement_descriptor=validated_data.get('statement_descriptor'),
+                                             trial_period_days=validated_data.get('trial_period_days'))
 
-    converted_data = convert_stripe_object(Plan, stripe_response)
-    return Plan(**converted_data)
+        converted_data = convert_stripe_object(Plan, stripe_response)
+        plan = Plan(**converted_data)
+    except ObjectDoesNotExist:
+        log.warning(f"Plan {plan_stripe_id} exists in stripe, but not in the local database. Creating it there.")
+        converted_data = convert_stripe_object(Plan, stripe_plan)
+        plan = Plan(**converted_data)
+    else:
+        log.info(f"Plan {plan_stripe_id} already existed in both Stripe and the local database. Hmm.")
+
+    return plan
 
 
 def create_subscription_in_stripe(validated_data, user=None):
