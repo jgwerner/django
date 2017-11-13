@@ -7,17 +7,17 @@ from .models import Notification, NotificationType, NotificationSettings
 log = logging.getLogger('notifications')
 
 
-def create_notification(user: User, actor, target, entity: str, notif_type: NotificationType) -> Notification:
+def create_notification(user: User, actor, target, notif_type: NotificationType) -> Notification:
     # Note that this method does *not* save the notification in the database.
     # This is because it is a common use case to create many notifications at once
     # TODO: Once we add more notification types, we will need to properly resolve
     # TODO: settings precedence
     settings, created = NotificationSettings.objects.get_or_create(user=user,
-                                                                   entity=entity,
+                                                                   entity=notif_type.entity,
                                                                    defaults={'enabled': True,
                                                                              'emails_enabled': True})
     if created:
-        log.info(f"{entity} notification settings did not exist for user {user}, so they were created.")
+        log.info(f"{notif_type.entity} notification settings did not exist for user {user}, so they were created.")
         # This is the de facto default email address
         email = Email.objects.filter(user=user,
                                      address=user.email).first()

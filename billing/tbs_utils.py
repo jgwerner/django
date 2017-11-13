@@ -25,13 +25,17 @@ class MeteredBillingData:
         self.usage = usage
         self.usage_percent = Decimal((self.usage / self.plan_limit) * 100)
 
+    def __str__(self):
+        return f"{self.user}: {self.usage} GB of {self.plan_limit} GB - {self.usage_percent}%."
+
     def calc_necessary_buckets(self) -> int:
         buckets = 0
-
+        log.debug(('useage', self.usage, "Plan limit", self.plan_limit))
         overage = self.usage - self.plan_limit
+        log.debug(("overage", overage))
         if overage > 0:
             buckets = math.ceil(overage / settings.BILLING_BUCKET_SIZE_GB)
-
+        log.debug(("buckets", buckets))
         return buckets
 
 
@@ -108,7 +112,6 @@ def calculate_usage_for_current_billing_period(closing_from: datetime=None, clos
                 notif = create_notification(user=user,
                                             actor=inv,
                                             target=None,
-                                            entity="billing",
                                             notif_type=notification_type)
                 if notif is not None:
                     notifs_to_save.append(notif)
@@ -120,12 +123,18 @@ def update_invoices_with_usage():
     end_time = timezone.now() + timedelta(seconds=1800)
     current_usage_map = calculate_usage_for_current_billing_period(closing_from=timezone.now(),
                                                                    closing_to=end_time)
-    for data_entry in current_usage_map:
+    log.debug(("current usage map", current_usage_map))
+    # Something in the following loop is using a LOT of time. is it the Stripe call?
+    # No, I'm mocking stripe at the moment.
+    for user in current_usage_map:
+        data_entry = current_usage_map[user]
+        log.debug(("data entry", data_entry))
         # TODO: Need to add provisions to handle metered instances
         buckets_needed = data_entry.calc_necessary_buckets()
         if buckets_needed > 0:
-            log.info(f"User {data_entry.user} needs {buckets_needed}. Adding them to their invoice.")
-            invoice_item = add_buckets_to_stripe_invoice(data_entry.customer.stripe_id,
+            log.info(f"User {data_entry.user} needs {buckets_needed} bucket(s). "
+                     f"Adding them to their invoice.")
+            invoice_item = add_buckets_to_stripe_invoice(data_entry.user.customer.stripe_id,
                                                          buckets_needed)
             log.info(f"Successfully created invoice_item {invoice_item.stripe_id}.")
 

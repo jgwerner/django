@@ -1,13 +1,15 @@
 import random
 from decimal import Decimal, getcontext
 from datetime import timedelta
+from django.conf import settings
 from django.utils import timezone
 from django.test import TestCase
 from users.models import User
 from users.tests.factories import UserFactory
-from billing.models import Invoice
+from billing.models import Invoice, InvoiceItem
 from billing.stripe_utils import create_stripe_customer_from_user
-from billing.tbs_utils import calculate_usage_for_current_billing_period
+from billing.tbs_utils import (calculate_usage_for_current_billing_period,
+                               update_invoices_with_usage)
 from billing.tests.factories import (PlanFactory,
                                      SubscriptionFactory,
                                      InvoiceFactory)
@@ -158,4 +160,27 @@ class TestTbsUtils(TestCase):
         usage_dict = calculate_usage_for_current_billing_period()
         expected_usage = (((timedelta(days=2).total_seconds() / 3600) * (run.server_size_memory / 1024)) / 5) * 100
         self.assertEqual(usage_dict[self.user.pk].usage_percent, expected_usage)
+
+    def test_update_invoices_does_not_add_buckets_when_it_should_not(self):
+        self._setup_basics_for_user(user=self.user,
+                                    duration=6)
+        inv = Invoice.objects.get(customer=self.customer)
+        inv.period_end = timezone.now() + timedelta(seconds=900)
+        inv.save()
+        update_invoices_with_usage()
+        invoice_item = InvoiceItem.objects.filter(customer=self.customer)
+        self.assertFalse(invoice_item.exists())
+
+    def test_update_invoices_adds_buckets_correctly(self):
+        self._setup_basics_for_user(user=self.user,
+                                    server_memory=1024,
+                                    duration=6)
+        inv = Invoice.objects.get(customer=self.customer)
+        inv.period_end = timezone.now() + timedelta(seconds=900)
+        inv.save()
+        update_invoices_with_usage()
+        invoice_item = InvoiceItem.objects.filter(customer=self.customer)
+        self.assertEqual(invoice_item.count(), 1)
+        item = invoice_item.first()
+        self.assertEqual(item.amount, settings.BUCKET_COST_USD * 100)
 
