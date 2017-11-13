@@ -1,4 +1,5 @@
 import random
+from decimal import Decimal, getcontext
 from datetime import timedelta
 from django.utils import timezone
 from django.test import TestCase
@@ -14,8 +15,7 @@ from notifications.models import Notification
 from projects.tests.factories import CollaboratorFactory
 from servers.models import ServerRunStatistics
 from servers.tests.factories import ServerRunStatisticsFactory
-import logging
-log = logging.getLogger('servers')
+getcontext().prec = 6
 
 
 class TestTbsUtils(TestCase):
@@ -136,8 +136,8 @@ class TestTbsUtils(TestCase):
             for run in user_runs:
                 total_usage += (run.server_size_memory / 1024) * (run.duration.total_seconds() / 3600)
 
-            expected_usage_pct = (total_usage / self.plan.metadata.get('gb_hours')) * 100
-            self.assertEqual(usage_dict[user.pk], expected_usage_pct)
+            expected_usage_pct = Decimal((total_usage / self.plan.metadata.get('gb_hours')) * 100)
+            self.assertAlmostEqual(usage_dict[user.pk], expected_usage_pct, places=2)
 
     def test_run_that_has_not_stopped_yet(self):
         run = self._setup_basics_for_user(self.user)
@@ -146,7 +146,7 @@ class TestTbsUtils(TestCase):
         run.save()
         usage_dict = calculate_usage_for_current_billing_period()
         # This will never be exactly equal because the application has to use now() to determine the duration
-        self.assertAlmostEqual(usage_dict[self.user.pk], 10.00, places=2)
+        self.assertAlmostEqual(usage_dict[self.user.pk], Decimal(10.00), places=2)
 
     def test_run_that_started_before_this_billing_period(self):
         run = self._setup_basics_for_user(self.user)
@@ -155,7 +155,6 @@ class TestTbsUtils(TestCase):
         run.stop = invoice.period_start + timedelta(days=2)
         run.duration = run.stop - run.start
         run.save()
-        log.debug(run.stop - invoice.period_start)
         usage_dict = calculate_usage_for_current_billing_period()
         expected_usage = (((timedelta(days=2).total_seconds() / 3600) * (run.server_size_memory / 1024)) / 5) * 100
         self.assertEqual(usage_dict[self.user.pk], expected_usage)

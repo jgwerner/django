@@ -7,6 +7,7 @@ from django.db.models.functions import Greatest
 from django.utils import timezone
 from billing.models import Invoice
 from servers.models import ServerRunStatistics
+from notifications.models import Notification, NotificationType
 from notifications.utils import create_notification
 log = logging.getLogger('servers')
 getcontext().prec = 6
@@ -17,16 +18,17 @@ def calculate_usage_for_current_billing_period() -> dict:
     :return: user_runs_mapping is a dict that maps user.pk -> 
              Percentage of plan used for this billing period. 
     """
+    notification_type = NotificationType.objects.get(name="usage_warning")
     # TODO: In theory there is only one open invoice per user, but this needs to be verified, especially for teams
     # Do select related for user and plan
     invoices = Invoice.objects.filter(closed=False).select_related('customer__user',
                                                                    'subscription__plan')
     user_runs_mapping = {}
+    notifs_to_save = []
     for inv in invoices:
         user = inv.customer.user
 
         if user.pk in user_runs_mapping:
-            # TODO: Decide what to do in this scenario
             log.warning(f"For some reason {user} currently has multiple open invoices. "
                         f"This shouldn't really happen, and I'm not sure how to handle it for now.")
 
@@ -70,12 +72,14 @@ def calculate_usage_for_current_billing_period() -> dict:
             usage_percent = (usage_in_gb_hours / inv.subscription.plan.metadata.get('gb_hours')) * 100
             user_runs_mapping[user.pk] = usage_percent
 
-            # TODO: Refactor this to use a bulk create somehow. This adds a ton of overhead
             if usage_percent > settings.USAGE_WARNING_THRESHOLD:
                 log.info(f"User {user} has used {usage_percent}% of their plan. Sending a notification.")
-                create_notification(user=user,
-                                    actor=inv,
-                                    target=None,
-                                    entity="billing",
-                                    notif_type="usage_warning")
+                notif = create_notification(user=user,
+                                            actor=inv,
+                                            target=None,
+                                            entity="billing",
+                                            notif_type=notification_type)
+                if notif is not None:
+                    notifs_to_save.append(notif)
+    Notification.objects.bulk_create(notifs_to_save)
     return user_runs_mapping

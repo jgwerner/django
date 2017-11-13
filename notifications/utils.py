@@ -7,7 +7,9 @@ from .models import Notification, NotificationType, NotificationSettings
 log = logging.getLogger('notifications')
 
 
-def create_notification(user: User, actor, target, entity: str, notif_type: str) -> None:
+def create_notification(user: User, actor, target, entity: str, notif_type: NotificationType) -> Notification:
+    # Note that this method does *not* save the notification in the database.
+    # This is because it is a common use case to create many notifications at once
     # TODO: Once we add more notification types, we will need to properly resolve
     # TODO: settings precedence
     settings, created = NotificationSettings.objects.get_or_create(user=user,
@@ -22,16 +24,11 @@ def create_notification(user: User, actor, target, entity: str, notif_type: str)
         settings.email_address = email
         settings.save()
 
-    notif_type, created = NotificationType.objects.get_or_create(name=notif_type)
-    if created:
-        log.info(f"Created new notification type: {notif_type}")
-
     notification = Notification(user=user,
                                 actor=actor,
                                 target=target,
                                 type=notif_type,
                                 is_active=settings.enabled)
-    notification.save()
     log.info(f"Created notification {notification}")
 
     if notif_type.entity == "billing" or settings.emails_enabled:
@@ -67,5 +64,6 @@ def create_notification(user: User, actor, target, entity: str, notif_type: str)
             log.exception(e)
 
         notification.emailed = True
-        notification.save()
         log.info(f"Emailed notification.")
+
+    return notification
