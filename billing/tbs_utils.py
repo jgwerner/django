@@ -101,20 +101,23 @@ def calculate_usage_for_current_billing_period(closing_from: datetime=None, clos
         if usage_in_mb_seconds is not None:
             usage_in_mb_seconds = Decimal(usage_in_mb_seconds.total_seconds())
             # Divide by 1024 to get gigabytes, then 3600 to get hours. MB Seconds -> GB Hours
-            usage_in_gb_hours = usage_in_mb_seconds / 1024 / 3600
+            usage_in_gb_hours = Decimal(usage_in_mb_seconds / 1024 / 3600)
             user_runs_mapping[user.pk] = MeteredBillingData(user=user,
                                                             invoice=inv,
                                                             usage=usage_in_gb_hours)
             usage_percent = user_runs_mapping[user.pk].usage_percent
             if usage_percent > settings.USAGE_WARNING_THRESHOLD:
-                # TODO: Only send this notification so often. That threshold is TBD.
-                log.info(f"User {user} has used {usage_percent}% of their plan. Sending a notification.")
-                notif = create_notification(user=user,
-                                            actor=inv,
-                                            target=None,
-                                            notif_type=notification_type)
-                if notif is not None:
-                    notifs_to_save.append(notif)
+                already_been_notified = Notification.objects.filter(user=user,
+                                                                    type=notification_type,
+                                                                    timestamp__gt=inv.period_start).exists()
+                if not already_been_notified:
+                    log.info(f"User {user} has used {usage_percent}% of their plan. Sending a notification.")
+                    notif = create_notification(user=user,
+                                                actor=inv,
+                                                target=None,
+                                                notif_type=notification_type)
+                    if notif is not None:
+                        notifs_to_save.append(notif)
     Notification.objects.bulk_create(notifs_to_save)
     return user_runs_mapping
 
@@ -123,12 +126,10 @@ def update_invoices_with_usage():
     end_time = timezone.now() + timedelta(seconds=1800)
     current_usage_map = calculate_usage_for_current_billing_period(closing_from=timezone.now(),
                                                                    closing_to=end_time)
-    log.debug(("current usage map", current_usage_map))
     # Something in the following loop is using a LOT of time. is it the Stripe call?
     # No, I'm mocking stripe at the moment.
     for user in current_usage_map:
         data_entry = current_usage_map[user]
-        log.debug(("data entry", data_entry))
         # TODO: Need to add provisions to handle metered instances
         buckets_needed = data_entry.calc_necessary_buckets()
         if buckets_needed > 0:
