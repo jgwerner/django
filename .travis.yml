@@ -40,7 +40,7 @@ install:
   - pip install codecov
 
 script:
-  - coverage run --source="." manage.py --parallel 16 test && coverage report -m
+  - coverage run --source="." manage.py test --parallel 16 && coverage report -m
   - bash config/buildDockerImage.sh
 
 after_success:
