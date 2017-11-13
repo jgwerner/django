@@ -140,3 +140,4 @@ def update_invoices_with_usage():
             log.info(f"Successfully created invoice_item {invoice_item.stripe_id}.")
 
         data_entry.user.customer.last_invoice_sync = timezone.now()
+        data_entry.user.customer.save()
