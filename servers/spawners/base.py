@@ -115,6 +115,9 @@ class BaseSpawner(SpawnerInterface):
             tz = owner_profile.timezone
         return tz
 
+    def _get_exposed_ports(self):
+        return [{v: k for k, v in settings.SERVER_PORT_MAPPING.items()}[self.server.get_type()]]
+
 
 class GPUMixin:
     gpu_info = None
@@ -143,7 +146,7 @@ class GPUMixin:
 
 class TraefikMixin:
     def _get_traefik_labels(self):
-        labels = {}
+        labels = {"traefik.enable": "true"}
         server_uri = f"/{settings.DEFAULT_VERSION}/{self.server.project.owner.username}/projects/{self.server.project_id}/servers/{self.server.id}/endpoint/"
         domain = Site.objects.get_current().domain
         scheme = 'https' if settings.HTTPS else 'http'

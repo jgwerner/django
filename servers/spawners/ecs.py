@@ -16,17 +16,21 @@ class ECSSpawner(GPUMixin, TraefikMixin, BaseSpawner):
         self.client = boto3.client('ecs')
 
     def start(self) -> None:
-        self.client.run_task(
+        resp = self.client.run_task(
             cluster=settings.ECS_CLUSTER,
-            taskDefinition=self._task_arn,
+            taskDefinition=self._task_definition_arn,
         )
+        self.server.config['task_arn'] = resp['tasks'][0]['taskArn']
+        self.server.save()
 
     def stop(self) -> None:
-        self.client.stop_task(task=self._task_arn)
+        self.client.stop_task(task=self._task_definition_arn)
 
     def status(self) -> str:
+        if 'task_arn' not in self.server.config:
+            return 'Stopped'
         try:
-            resp = self.client.describe_tasks(tasks=[self._task_arn])
+            resp = self.client.describe_tasks(tasks=[self.server.config['task_arn']])
         except:
             logger.exception("Error getting server status")
             return 'Error'
@@ -54,17 +58,20 @@ class ECSSpawner(GPUMixin, TraefikMixin, BaseSpawner):
                         'devices': self._get_devices(),
                     },
                     'mountPoints': mount_points,
+                    'dockerLabels': self._get_traefik_labels(),
                 }
             ],
             volumes=volumes,
             placementConstraints=self._get_constrains()
         )
+        self.server.config['task_definition_arn'] = resp['taskDefinition']['taskDefinitionArn']
+        self.server.save()
         return resp['taskDefinition']['taskDefinitionArn']
 
     @cached_property
-    def _task_arn(self) -> str:
-        if 'task_arn' in self.server.config:
-            return self.server.config['task_arn']
+    def _task_definition_arn(self) -> str:
+        if 'task_definition_arn' in self.server.config:
+            return self.server.config['task_definition_arn']
         return self._register_task_definition()
 
     def _get_links(self) -> List[str]:
