@@ -1,34 +1,28 @@
 import logging
 from django.core.management import BaseCommand
+from appdj.settings.base import SERVER_SIZE
 
 from servers.models import ServerSize
 log = logging.getLogger("servers")
 
 
 class Command(BaseCommand):
-    help = "Create initial resource"
+    help = "Load ServerSize table with initial data"
 
     def handle(self, *args, **kwargs):
-        server_size_dict = {
-            "Nano": 512,
-            "Small": 1024,
-            "Medium": 2048,
-            "Large": 4096,
-            "XLarge": 8192
-        }
-
+        log.info("Adding default entries to ServerSize table...")
         try:
-            for i in server_size_dict:
+            for i in SERVER_SIZE:
                 ServerSize.objects.update_or_create(
                     name__iexact = i,
                     defaults = {
                         'name': i,
-                        'memory': server_size_dict[i],
+                        'memory': SERVER_SIZE[i],
                         'cpu': 1,
                         'active': True
                     }
                 )
-            log.info("ServerSize table updated with fixtures.")
+            log.info("ServerSize table data added.")
         except Exception as e:
             log.exception(e)
             raise Exception("Error running ServerSize script.")
