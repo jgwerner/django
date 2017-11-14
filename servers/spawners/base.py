@@ -31,6 +31,10 @@ class SpawnerInterface(metaclass=abc.ABCMeta):
         return None
 
     @abc.abstractmethod
+    def terminate(self) -> None:
+        return None
+
+    @abc.abstractmethod
     def status(self) -> str:
         return ''
 
@@ -99,13 +103,13 @@ class BaseSpawner(SpawnerInterface):
             binds.append(f"{self._gpu_driver_path}:/usr/local/nvidia:ro")
         return binds
 
-    def _get_ssh_path(self):
+    def _get_ssh_path(self) -> str:
         ssh_path = os.path.abspath(os.path.join(self.server.volume_path, '..', '.ssh'))
         if os.path.exists(ssh_path):
             return str(ssh_path)
         return ''
 
-    def _get_user_timezone(self):
+    def _get_user_timezone(self) -> str:
         tz = 'UTC'
         try:
             owner_profile = self.server.project.owner.profile
@@ -115,14 +119,14 @@ class BaseSpawner(SpawnerInterface):
             tz = owner_profile.timezone
         return tz
 
-    def _get_exposed_ports(self):
+    def _get_exposed_ports(self) -> List[Dict[str, str]]:
         return [{v: k for k, v in settings.SERVER_PORT_MAPPING.items()}[self.server.get_type()]]
 
 
 class GPUMixin:
     gpu_info = None
 
-    def _gpu_info(self):
+    def _gpu_info(self) -> None:
         gpu_info_url = f"{settings.NVIDIA_DOCKER_HOST}/v1.0/gpu/info/json"
         try:
             resp = requests.get(gpu_info_url)
@@ -132,12 +136,12 @@ class GPUMixin:
             self.gpu_info = resp.json()
 
     @cached_property
-    def _gpu_driver_path(self):
+    def _gpu_driver_path(self) -> str:
         driver = self.gpu_info['Version']['Driver']
         return f'/var/lib/nvidia-docker/volumes/nvidia_driver/{driver}'
 
     @cached_property
-    def _is_gpu_instance(self):
+    def _is_gpu_instance(self) -> bool:
         if self.server.config['type'].lower() == 'rstudio':
             return False
         self._gpu_info()
@@ -145,7 +149,7 @@ class GPUMixin:
 
 
 class TraefikMixin:
-    def _get_traefik_labels(self):
+    def _get_traefik_labels(self) -> Dict[str, str]:
         labels = {"traefik.enable": "true"}
         server_uri = f"/{settings.DEFAULT_VERSION}/{self.server.project.owner.username}/projects/{self.server.project_id}/servers/{self.server.id}/endpoint/"
         domain = Site.objects.get_current().domain

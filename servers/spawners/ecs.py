@@ -1,9 +1,8 @@
 import os
 import boto3
 import logging
-from typing import List, Dict
+from typing import List, Dict, Tuple
 from django.conf import settings
-from django.utils.functional import cached_property
 
 from .base import BaseSpawner, GPUMixin, TraefikMixin
 
@@ -11,38 +10,54 @@ logger = logging.getLogger("servers")
 
 
 class ECSSpawner(GPUMixin, TraefikMixin, BaseSpawner):
-    def __init__(self, server) -> None:
+    def __init__(self, server, client=None) -> None:
         super().__init__(server)
-        self.client = boto3.client('ecs')
+        self.client = client or boto3.client('ecs')
 
     def start(self) -> None:
+        if 'task_definition_arn' not in self.server.config:
+            self.server.config['task_definition_arn'] = self._register_task_definition()
         resp = self.client.run_task(
             cluster=settings.ECS_CLUSTER,
-            taskDefinition=self._task_definition_arn,
+            taskDefinition=self.server.config['task_definition_arn'],
         )
         self.server.config['task_arn'] = resp['tasks'][0]['taskArn']
         self.server.save()
 
     def stop(self) -> None:
-        self.client.stop_task(task=self._task_definition_arn)
+        self.client.stop_task(
+            cluster=settings.ECS_CLUSTER,
+            task=self.server.config['task_arn'],
+            reason='User request'
+        )
+
+    def terminate(self) -> None:
+        self.client.deregister_task_definition(
+            taskDefinition=self.server.config['task_definition_arn']
+        )
 
     def status(self) -> str:
         if 'task_arn' not in self.server.config:
-            return 'Stopped'
+            return self.server.STOPPED
         try:
             resp = self.client.describe_tasks(tasks=[self.server.config['task_arn']])
-        except:
+        except Exception as e:
             logger.exception("Error getting server status")
-            return 'Error'
+            return self.server.ERROR
         try:
             return resp['tasks'][0]['lastStatus']
         except IndexError:
-            return 'Error'
+            logger.debug(resp)
+            return self.server.ERROR
 
     def _register_task_definition(self) -> str:
+        resp = self.client.register_task_definition(**self._task_definition_args())
+        return resp['taskDefinition']['taskDefinitionArn']
+
+    def _task_definition_args(self):
         volumes, mount_points = self._get_volumes_and_mount_points()
-        resp = self.client.register_task_definition(
-            family='servers',
+        return dict(
+            family='userspace',
             containerDefinitions=[
                 {
                     'name': str(self.server.name),
@@ -50,6 +65,7 @@ class ECSSpawner(GPUMixin, TraefikMixin, BaseSpawner):
                     'cpu': self.server.server_size.cpu,
                     'memory': self.server.server_size.memory,
                     'memoryReservation': int(self.server.server_size.memory / 2),
+                    'portMappings': self._get_port_mappings(),
                     'links': self._get_links(),
                     'essential': True,
                     'command': self._get_cmd(),
@@ -64,15 +80,6 @@ class ECSSpawner(GPUMixin, TraefikMixin, BaseSpawner):
             volumes=volumes,
             placementConstraints=self._get_constrains()
         )
-        self.server.config['task_definition_arn'] = resp['taskDefinition']['taskDefinitionArn']
-        self.server.save()
-        return resp['taskDefinition']['taskDefinitionArn']
-
-    @cached_property
-    def _task_definition_arn(self) -> str:
-        if 'task_definition_arn' in self.server.config:
-            return self.server.config['task_definition_arn']
-        return self._register_task_definition()
 
     def _get_links(self) -> List[str]:
         return [f'{name}:{alias}' for name, alias in super()._get_links().items()]
@@ -94,7 +101,7 @@ class ECSSpawner(GPUMixin, TraefikMixin, BaseSpawner):
     def _get_env(self) -> List[Dict[str, str]]:
         return [{'name': k, 'value': v} for k, v in super()._get_env().items()]
 
-    def _get_volumes_and_mount_points(self):
+    def _get_volumes_and_mount_points(self) -> Tuple[List[Dict[str, Dict[str, str]]], List[Dict[str, str]]]:
         volumes = [{'name': 'project', 'host': {'sourcePath': self.server.volume_path}}]
         mount_points = [{'sourceVolume': 'project', 'containerPath': settings.SERVER_RESOURCE_DIR}]
         ssh_path = self._get_ssh_path()
@@ -118,3 +125,12 @@ class ECSSpawner(GPUMixin, TraefikMixin, BaseSpawner):
                 'readOnly': True
             })
         return volumes, mount_points
+
+    def _get_port_mappings(self) -> List[Dict[str, int]]:
+        mappings = []
+        for port in self._get_exposed_ports():
+            mappings.append({
+                'hostPort': 0,
+                'containerPort': int(port)
+            })
+        return mappings
