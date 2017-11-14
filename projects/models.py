@@ -161,7 +161,7 @@ class ProjectFile(models.Model):
 
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
     project = models.ForeignKey(Project, related_name="project_files")
-    file = TbsFileField(upload_to=user_project_directory_path, storage=TbsStorage())
+    file = TbsFileField(upload_to=user_project_directory_path, storage=TbsStorage(), max_length=255)
 
     objects = FileQuerySet.as_manager()
 

@@ -1,7 +1,7 @@
 import logging
 from django.db.models import Q
 from django.contrib.auth import get_user_model
-from rest_framework import viewsets, status, permissions
+from rest_framework import viewsets, status, permissions, exceptions
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
@@ -12,7 +12,7 @@ from projects.serializers import (ProjectSerializer,
                                   SyncedResourceSerializer,
                                   ProjectFileSerializer)
 from projects.models import Project, Collaborator, SyncedResource
-from projects.permissions import ProjectPermission, ProjectChildPermission
+from projects.permissions import ProjectPermission, ProjectChildPermission, has_project_permission
 from projects.tasks import sync_github
 from projects.models import ProjectFile
 from projects.utils import (get_files_from_request,
@@ -34,10 +34,25 @@ class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewS
     ordering_fields = ('name',)
     lookup_url_kwarg = 'project'
 
+    def get_object(self):
+        object = Project.objects.tbs_get(self.kwargs.get("project"))
+        if has_project_permission(self.request, object):
+            return object
+        raise exceptions.PermissionDenied()
+
     def get_queryset(self):
-        qs = super(ProjectViewSet, self).get_queryset()
-        final_qs = qs.filter(Q(collaborator__user=self.request.user) | Q(private=False))
-        return final_qs
+        filter_name = self.request.query_params.get('name')
+        filter_dict = {}
+        if filter_name:
+            filter_dict = {'name': filter_name}
+        this_namespace_projects = super(ProjectViewSet, self).get_queryset().filter(**filter_dict)
+        this_request_user_collabs = Collaborator.objects.filter(user=self.request.user,
+                                                                project__in=this_namespace_projects,
+                                                                project__private=True).values_list('project__pk',
+                                                                                                   flat=True)
+        collab_projects = Project.objects.filter(pk__in=this_request_user_collabs)
+        all_projects = this_namespace_projects.filter(private=False).union(collab_projects)
+        return all_projects
 
     def _update(self, request, partial,  *args, **kwargs):
         instance = Project.objects.tbs_get(kwargs.get("project"))
