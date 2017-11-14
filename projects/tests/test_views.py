@@ -423,6 +423,22 @@ class ProjectTestWithName(ProjectTestMixin, APITestCase):
         project = Project.objects.get(pk=project.pk)
         self.assertEqual(project.name, data['name'])
 
+    def test_updating_project_with_common_name(self):
+        collaborator = CollaboratorFactory(user=self.user, project__name="Foo")
+        project = collaborator.project
+        CollaboratorFactory(project__name="Foo")
+        assign_perm('write_project', self.user, project)
+        url = reverse('project-detail', kwargs={'namespace': self.user.username,
+                                                'project': project.name,
+                                                'version': settings.DEFAULT_VERSION})
+        data = dict(
+            description='Test description',
+        )
+        response = self.client.patch(url, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        project = Project.objects.get(pk=project.pk)
+        self.assertEqual(project.description, data['description'])
+
     def test_project_partial_update(self):
         collaborator = CollaboratorFactory(user=self.user)
         project = collaborator.project
