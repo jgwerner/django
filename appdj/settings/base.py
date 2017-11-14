@@ -412,6 +412,5 @@ SERVER_SIZE = {
     "Nano": 512,
     "Small": 1024,
     "Medium": 2048,
-    "Large": 4096,
-    "XLarge": 8192
+    "Large": 4096
 }

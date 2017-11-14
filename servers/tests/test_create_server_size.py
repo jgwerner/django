@@ -4,21 +4,11 @@ from servers.management.commands.create_server_size import Command
 from servers.models import ServerSize
 from servers.tests.factories import ServerSizeFactory
 
+from appdj.settings.base import SERVER_SIZE
 
 class CreateServerSizeCommandTest(TestCase):
-    def test_command_creates_new_server_size(self):
-        cmd = Command()
-        cmd.handle(name='TestServerSize', cpu=1, memory=512, active=True)
 
-        with transaction.atomic():
-            server_size_queryset = ServerSize.objects.all()
-            server_size = ServerSize.objects.get(name="TestServerSize")
-
-        self.assertEqual(server_size_queryset.count(), 1)
-
-        self.assertEqual(server_size.name, "TestServerSize")
-
-    def test_command_does_nothing_when_server_size_already_exists(self):
+    def test_command_handle(self):
         existing_server_size = ServerSizeFactory(name="Nano",
                                                  cpu=1,
                                                  memory=512)
@@ -31,7 +21,7 @@ class CreateServerSizeCommandTest(TestCase):
             server_size_queryset = ServerSize.objects.all()
             server_size = ServerSize.objects.get(name="Nano")
 
-        self.assertEqual(server_size_queryset.count(), 1)
+        self.assertEqual(server_size_queryset.count(), 4)
 
         self.assertEqual(server_size.name, "Nano")
         self.assertEqual(server_size.name, existing_server_size.name)
