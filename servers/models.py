@@ -55,6 +55,8 @@ class Server(models.Model):
     last_start = models.DateTimeField(null=True)
 
     class Meta:
+        # 'unique_together' is to ensure NO DUPLICATE server names in a project
+        unique_together = (('name', 'project'),)
         permissions = (
             ('write_server', "Write server"),
             ('read_server', "Read server"),

@@ -50,6 +50,13 @@ class ServerSerializer(SearchSerializerMixin, BaseServerSerializer):
             raise serializers.ValidationError(f"{server_type} is not a valid server type")
         return value
 
+    def validate_server_name(self, value):
+        pass
+        """
+        TODO: EDIT THIS SIMILARLY TO PROJECTS/SERIALIZERS.PY VALIDATE_MEMBER()
+        TODO: ADD UNIT TESTING
+        """
+
     def create(self, validated_data):
         config = validated_data.pop("config", {})
         server_size = (validated_data.pop('server_size', None) or
