@@ -1,13 +1,15 @@
 import logging
 import base64
 import os
-from datetime import datetime
+from typing import Union
 from copy import deepcopy
 from pathlib import Path
 from distutils.dir_util import copy_tree
 from django.core.files.base import ContentFile, File
 from django.conf import settings
 from guardian.shortcuts import assign_perm
+from users.models import User
+from teams.models import Team
 from .models import Project, Collaborator, ProjectFile
 from servers.models import Server
 from jwt_auth.utils import create_server_jwt
@@ -45,27 +47,24 @@ def get_files_from_request(request):
     return django_files
 
 
-def assign_to_user(request, project):
-    if request.user.is_staff:
-        user = request.namespace.object
-    else:
-        user = request.user
+def assign_to_user(user: User, project: Project) -> None:
     log.info(f"Creating default collaborator, assigning permissions, and creating project resource root.")
     Collaborator.objects.create(project=project, owner=True, user=user)
-    assign_perm('write_project', request.user, project)
-    assign_perm('read_project', request.user, project)
+    assign_perm('write_project', user, project)
+    assign_perm('read_project', user, project)
 
 
-def assign_to_team(request, project):
-    project.team = request.namespace.object
+def assign_to_team(team: Team, project: Project) -> None:
+    project.team = team
     project.save()
 
 
-def create_ancillary_project_stuff(request, project):
+def create_ancillary_project_stuff(request, project: Project) -> None:
     if request.namespace.type == 'user':
-        assign_to_user(request, project)
+        user = request.namespace.object if request.user.is_staff else request.user
+        assign_to_user(user, project)
     else:
-        assign_to_team(request, project)
+        assign_to_team(request.namespace.object, project)
     Path(settings.RESOURCE_DIR, project.get_owner_name(), str(project.pk)).mkdir(parents=True, exist_ok=True)
 
 
@@ -116,9 +115,7 @@ def copy_servers(old_project: Project, new_project: Project) -> None:
         log.info(f"Copied {server.pk}")
 
 
-def perform_project_copy(request):
-    user = request.user
-    project_id = request.data['project']
+def perform_project_copy(user: User, project_id: str, request) -> Project:
     log.info(f"Attempting to copy project {project_id} for user {user}")
     new_proj = None
     proj_to_copy = Project.objects.get(pk=project_id)
