@@ -1,6 +1,8 @@
 import logging
 import base64
 import os
+import shutil
+from typing import List
 from copy import deepcopy
 from pathlib import Path
 from distutils.dir_util import copy_tree
@@ -59,8 +61,10 @@ def assign_to_team(team: Team, project: Project) -> None:
     project.save()
 
 
-def create_ancillary_project_stuff(request: Request, project: Project) -> None:
-    if request.namespace.type == 'user':
+def create_ancillary_project_stuff(request: Request, project: Project, user: User=None) -> None:
+    if user is not None:
+        assign_to_user(user, project)
+    elif request.namespace.type == 'user':
         user = request.namespace.object if request.user.is_staff else request.user
         assign_to_user(user, project)
     else:
@@ -136,7 +140,13 @@ def perform_project_copy(user: User, project_id: str, request: Request) -> Proje
 
         new_proj.save()
 
-        create_ancillary_project_stuff(request, new_proj)
+
+        log.debug(("ARMADILLO", request))
+        user_to_pass = None
+        if request is None:
+            user_to_pass = user
+
+        create_ancillary_project_stuff(request, new_proj, user=user_to_pass)
 
         if old_resource_root.is_dir():
             log.info(f"Copying files from the {old_resource_root} to {new_proj.resource_root()}")
@@ -199,4 +209,40 @@ def sync_project_files_from_disk(project: Project) -> None:
     num_created = ProjectFile.objects.bulk_create(new_project_file_objs)
     log.info(f"Created {num_created} ProjectFile objects in the database.")
     log.info("Done with file sync.")
+
+
+def create_templates(projects: List[str]=[settings.GETTING_STARTED_PROJECT]):
+    user = User.objects.filter(username="3bladestemplates").first()
+    if user is None:
+        user = User.objects.create_superuser(username="3bladestemplates",
+                                             email="templates@3blades.io",
+                                             password="FizzBuzz")
+
+    for proj_name in projects:
+        collab = Collaborator.objects.filter(user=user,
+                                             project__name=proj_name,
+                                             owner=True).first()
+        if collab is None:
+            project = Project(name=proj_name,
+                              private=False,
+                              copying_enabled=True)
+            project.save()
+            collab = Collaborator(user=user,
+                                  project=project,
+                                  owner=True)
+            collab.save()
+        else:
+            project = collab.project
+
+        assign_perm("read_project", user, project)
+        assign_perm("write_project", user, project)
+
+        Path(settings.RESOURCE_DIR, project.get_owner_name(), str(project.pk)).mkdir(parents=True, exist_ok=True)
+        base_path = f"projects/example_templates/{proj_name}/"
+
+        for filename in os.listdir(base_path):
+            full_path = base_path + filename
+            shutil.copy(full_path, str(project.resource_root()) + "/")
+
+        sync_project_files_from_disk(project)
 
