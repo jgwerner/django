@@ -35,7 +35,7 @@ class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewS
     lookup_url_kwarg = 'project'
 
     def get_object(self):
-        object = Project.objects.tbs_get(self.kwargs.get("project"))
+        object = self.get_queryset().tbs_get(self.kwargs.get("project"))
         if has_project_permission(self.request, object):
             return object
         raise exceptions.PermissionDenied()
@@ -55,7 +55,7 @@ class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewS
         return all_projects
 
     def _update(self, request, partial,  *args, **kwargs):
-        instance = Project.objects.tbs_get(kwargs.get("project"))
+        instance = self.get_object()
         user = request.user
 
         if not user.has_perm("projects.write_project", instance):
@@ -82,7 +82,7 @@ class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewS
         return self._update(request, True, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
-        instance = Project.objects.tbs_get(kwargs.get("project"))
+        instance = self.get_object()
         user = request.user
         is_owner = Collaborator.objects.filter(project=instance,
                                                user=user,
