@@ -8,4 +8,5 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         log.info("Creating template projects")
+        print("Creating template projects...")
         create_templates()
