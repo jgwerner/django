@@ -39,5 +39,6 @@ if settings.DEBUG:
     urlpatterns += [
         url(r'^__debug__/', include(debug_toolbar.urls)),
         url(r'^swagger/$', schema_view),
+        url(r'^silk/', include('silk.urls', namespace='silk')),
     ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns = staticfiles_urlpatterns() + urlpatterns
