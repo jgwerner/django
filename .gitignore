@@ -91,6 +91,9 @@ ENV/
 # Rope project settings
 .ropeproject
 
+# Exuberant Ctags
+tags
+
 .idea/
 
 resources/
