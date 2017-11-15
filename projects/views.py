@@ -35,9 +35,15 @@ class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewS
     lookup_url_kwarg = 'project'
 
     def get_object(self):
-        object = self.get_queryset().tbs_get(self.kwargs.get("project"))
-        if has_project_permission(self.request, object):
-            return object
+        project = None
+        all_projects = Project.objects.tbs_filter(self.kwargs.get("project"))
+        collab = Collaborator.objects.filter(project__in=all_projects,
+                                             user=self.request.namespace.object,
+                                             owner=True).first()
+        if collab is not None:
+            project = collab.project
+        if project is not None and has_project_permission(self.request, project):
+            return project
         raise exceptions.PermissionDenied()
 
     def get_queryset(self):
