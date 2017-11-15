@@ -1,12 +1,12 @@
 import logging
 import base64
 import os
-from typing import Union
 from copy import deepcopy
 from pathlib import Path
 from distutils.dir_util import copy_tree
 from django.core.files.base import ContentFile, File
 from django.conf import settings
+from rest_framework.request import Request
 from guardian.shortcuts import assign_perm
 from users.models import User
 from teams.models import Team
@@ -59,7 +59,7 @@ def assign_to_team(team: Team, project: Project) -> None:
     project.save()
 
 
-def create_ancillary_project_stuff(request, project: Project) -> None:
+def create_ancillary_project_stuff(request: Request, project: Project) -> None:
     if request.namespace.type == 'user':
         user = request.namespace.object if request.user.is_staff else request.user
         assign_to_user(user, project)
@@ -115,7 +115,7 @@ def copy_servers(old_project: Project, new_project: Project) -> None:
         log.info(f"Copied {server.pk}")
 
 
-def perform_project_copy(user: User, project_id: str, request) -> Project:
+def perform_project_copy(user: User, project_id: str, request: Request) -> Project:
     log.info(f"Attempting to copy project {project_id} for user {user}")
     new_proj = None
     proj_to_copy = Project.objects.get(pk=project_id)
