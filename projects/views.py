@@ -107,7 +107,9 @@ def project_copy(request, *args, **kwargs):
     proj_identifier = request.data['project']
 
     try:
-        new_project = perform_project_copy(request)
+        new_project = perform_project_copy(user=request.user,
+                                           project_id=proj_identifier,
+                                           request=request)
     except Exception as e:
         log.error(f"There was a problem attempting to copy project {proj_identifier}. "
                   f"Stacktrace incoming.")

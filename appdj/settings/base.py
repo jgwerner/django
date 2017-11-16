@@ -414,3 +414,5 @@ SERVER_SIZE = {
     "Medium": 2048,
     "Large": 4096
 }
+
+GETTING_STARTED_PROJECT = os.environ.get("GETTING_STARTED_PROJECT", "GettingStarted")
