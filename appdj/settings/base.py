@@ -407,6 +407,16 @@ NVIDIA_DOCKER_HOST = os.environ.get('NVIDIA_DOCKER_HOST')
 
 REDIRECT_IS_HTTPS = True
 
+# Default server memory sizes in MB, implemented in /servers/management/commands/
+SERVER_SIZE = {
+    "Nano": 512,
+    "Small": 1024,
+    "Medium": 2048,
+    "Large": 4096
+}
+
+GETTING_STARTED_PROJECT = os.environ.get("GETTING_STARTED_PROJECT", "GettingStarted")
+
 USAGE_WARNING_THRESHOLD = os.environ.get("USAGE_WARNING_THRESHOLD", 75)
 
 BILLING_BUCKET_SIZE_GB = os.environ.get("BILLING_BUCKET_SIZE_GB", 5)

@@ -35,9 +35,15 @@ class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewS
     lookup_url_kwarg = 'project'
 
     def get_object(self):
-        object = Project.objects.tbs_get(self.kwargs.get("project"))
-        if has_project_permission(self.request, object):
-            return object
+        project = None
+        all_projects = Project.objects.tbs_filter(self.kwargs.get("project"))
+        collab = Collaborator.objects.filter(project__in=all_projects,
+                                             user=self.request.namespace.object,
+                                             owner=True).first()
+        if collab is not None:
+            project = collab.project
+        if project is not None and has_project_permission(self.request, project):
+            return project
         raise exceptions.PermissionDenied()
 
     def get_queryset(self):
@@ -55,7 +61,7 @@ class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewS
         return all_projects
 
     def _update(self, request, partial,  *args, **kwargs):
-        instance = Project.objects.tbs_get(kwargs.get("project"))
+        instance = self.get_object()
         user = request.user
 
         if not user.has_perm("projects.write_project", instance):
@@ -82,7 +88,7 @@ class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewS
         return self._update(request, True, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
-        instance = Project.objects.tbs_get(kwargs.get("project"))
+        instance = self.get_object()
         user = request.user
         is_owner = Collaborator.objects.filter(project=instance,
                                                user=user,
@@ -102,7 +108,9 @@ def project_copy(request, *args, **kwargs):
     proj_identifier = request.data['project']
 
     try:
-        new_project = perform_project_copy(request)
+        new_project = perform_project_copy(user=request.user,
+                                           project_id=proj_identifier,
+                                           request=request)
     except Exception as e:
         log.error(f"There was a problem attempting to copy project {proj_identifier}. "
                   f"Stacktrace incoming.")

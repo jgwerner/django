@@ -3,8 +3,9 @@ import shutil
 from pathlib import Path
 from django.conf import settings
 from django.test import TestCase
-from projects.models import ProjectFile
-from projects.utils import sync_project_files_from_disk
+from users.models import User
+from projects.models import ProjectFile, Project
+from projects.utils import sync_project_files_from_disk, create_templates
 from .utils import generate_random_file_content
 from .factories import CollaboratorFactory, ProjectFileFactory
 
@@ -67,3 +68,15 @@ class ProjectUtilsTest(TestCase):
         file_names_list = new_pf.values_list('file', flat=True)
         self.assertTrue(paths[0].replace(settings.RESOURCE_DIR + "/", "") not in file_names_list)
         self.assertTrue(paths[1].replace(settings.RESOURCE_DIR + "/", "") not in file_names_list)
+
+    def test_create_templates(self):
+        create_templates()
+        user = User.objects.filter(username="3bladestemplates").first()
+        self.assertIsNotNone(user)
+
+        project = Project.objects.filter(name=settings.GETTING_STARTED_PROJECT).first()
+        self.assertIsNotNone(project)
+
+        proj_files = ProjectFile.objects.filter(project=project)
+        self.assertEqual(proj_files.count(), 2)
+        self.dirs_to_destroy.append(Path(settings.RESOURCE_DIR, user.username))
