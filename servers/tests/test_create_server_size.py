@@ -4,8 +4,6 @@ from servers.management.commands.create_server_size import Command
 from servers.models import ServerSize
 from servers.tests.factories import ServerSizeFactory
 
-from appdj.settings.base import SERVER_SIZE
-
 class CreateServerSizeCommandTest(TestCase):
 
     def test_command_handle(self):

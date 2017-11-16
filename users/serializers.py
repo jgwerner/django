@@ -1,4 +1,5 @@
 import logging
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from social_django.models import UserSocialAuth
@@ -6,6 +7,8 @@ from social_django.models import UserSocialAuth
 from base.views import RequestUserMixin
 from base.serializers import SearchSerializerMixin
 from users.models import UserProfile, Email
+from projects.models import Collaborator
+from projects.utils import perform_project_copy
 User = get_user_model()
 log = logging.getLogger('users')
 
@@ -65,6 +68,23 @@ class UserSerializer(SearchSerializerMixin, serializers.ModelSerializer):
         profile = UserProfile(user=user, **profile_data)
         profile.save()
         Email.objects.create(user=user, address=validated_data['email'])
+
+        try:
+            getting_started_proj = Collaborator.objects.get(user__username="3bladestemplates",
+                                                            owner=True,
+                                                            project__name=settings.GETTING_STARTED_PROJECT).project
+            perform_project_copy(user=user,
+                                 project_id=getting_started_proj.pk,
+                                 request=None)
+
+        except Collaborator.DoesNotExist as e:
+            log.error(f"The getting started project doesn't exist for the 3bladestemplate user! Cannot "
+                      f"copy it to the user {user}'s account.")
+            log.exception(e)
+        except Exception as e:
+            log.error("Unkown exception encountered during creation of Getting Started project. Stacktrace: ")
+            log.exception(e)
+
         return user
 
     def update(self, instance, validated_data):
