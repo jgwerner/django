@@ -100,8 +100,6 @@ class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewS
 def project_copy(request, *args, **kwargs):
     proj_identifier = request.data['project']
 
-    log.debug(("ARMADILLOP", type(request)))
-
     try:
         new_project = perform_project_copy(user=request.user,
                                            project_id=proj_identifier,
