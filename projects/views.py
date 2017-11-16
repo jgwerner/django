@@ -1,7 +1,7 @@
 import logging
 from django.db.models import Q
 from django.contrib.auth import get_user_model
-from rest_framework import viewsets, status, permissions
+from rest_framework import viewsets, status, permissions, exceptions
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
@@ -12,7 +12,7 @@ from projects.serializers import (ProjectSerializer,
                                   SyncedResourceSerializer,
                                   ProjectFileSerializer)
 from projects.models import Project, Collaborator, SyncedResource
-from projects.permissions import ProjectPermission, ProjectChildPermission
+from projects.permissions import ProjectPermission, ProjectChildPermission, has_project_permission
 from projects.tasks import sync_github
 from projects.models import ProjectFile
 from projects.utils import (get_files_from_request,
@@ -34,8 +34,24 @@ class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewS
     ordering_fields = ('name',)
     lookup_url_kwarg = 'project'
 
+    def get_object(self):
+        project = None
+        all_projects = Project.objects.tbs_filter(self.kwargs.get("project"))
+        collab = Collaborator.objects.filter(project__in=all_projects,
+                                             user=self.request.namespace.object,
+                                             owner=True).first()
+        if collab is not None:
+            project = collab.project
+        if project is not None and has_project_permission(self.request, project):
+            return project
+        raise exceptions.PermissionDenied()
+
     def get_queryset(self):
-        this_namespace_projects = super(ProjectViewSet, self).get_queryset()
+        filter_name = self.request.query_params.get('name')
+        filter_dict = {}
+        if filter_name:
+            filter_dict = {'name': filter_name}
+        this_namespace_projects = super(ProjectViewSet, self).get_queryset().filter(**filter_dict)
         this_request_user_collabs = Collaborator.objects.filter(user=self.request.user,
                                                                 project__in=this_namespace_projects,
                                                                 project__private=True).values_list('project__pk',
@@ -45,7 +61,7 @@ class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewS
         return all_projects
 
     def _update(self, request, partial,  *args, **kwargs):
-        instance = Project.objects.tbs_get(kwargs.get("project"))
+        instance = self.get_object()
         user = request.user
 
         if not user.has_perm("projects.write_project", instance):
@@ -72,7 +88,7 @@ class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewS
         return self._update(request, True, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
-        instance = Project.objects.tbs_get(kwargs.get("project"))
+        instance = self.get_object()
         user = request.user
         is_owner = Collaborator.objects.filter(project=instance,
                                                user=user,
@@ -91,7 +107,9 @@ def project_copy(request, *args, **kwargs):
     proj_identifier = request.data['project']
 
     try:
-        new_project = perform_project_copy(request)
+        new_project = perform_project_copy(user=request.user,
+                                           project_id=proj_identifier,
+                                           request=request)
     except Exception as e:
         log.error(f"There was a problem attempting to copy project {proj_identifier}. "
                   f"Stacktrace incoming.")
