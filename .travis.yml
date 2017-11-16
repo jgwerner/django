@@ -33,6 +33,7 @@ before_install:
   - export REDIS_URL="redis://localhost:6379/0"
   - export DATABASE_URL="postgres://postgres:@localhost:5432/travis_ci_test"
   - export NVIDIA_DOCKER_HOST=http://localhost:3476
+  - export COVERAGE_PROCESS_START=.coveragerc
 # command to install dependencies
 install:
   - pip install -U pip setuptools wheel
