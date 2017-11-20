@@ -181,26 +181,6 @@ def create_card_in_stripe(validated_data, user=None):
     return Card.objects.create(**converted_data)
 
 
-def sync_invoices_for_customer(customer, stripe_invoices=None):
-    if stripe_invoices is None:
-        stripe_invoices = stripe.Invoice.list(customer=customer.stripe_id)
-
-    for stp_invoice in stripe_invoices:
-        stp_invoice['invoice_date'] = stp_invoice['date']
-        converted_data = convert_stripe_object(Invoice, stp_invoice)
-        tbs_invoice = Invoice.objects.filter(stripe_id=converted_data['stripe_id']).first()
-        if tbs_invoice is not None:
-            for key in converted_data:
-                setattr(tbs_invoice, key, converted_data[key])
-        else:
-            tbs_invoice = Invoice(**converted_data)
-
-        tbs_invoice.save()
-
-    customer.last_invoice_sync = timezone.make_aware(datetime.now())
-    customer.save()
-
-
 def create_event_from_webhook(stripe_obj):
     event = Event.objects.filter(stripe_id=stripe_obj['id']).first()
     if not event:
@@ -342,7 +322,7 @@ def assign_customer_to_default_plan(customer):
         if not default_plan:
             log.error(f"Selected default plan {settings.DEFAULT_STRIPE_PLAN_ID} does not exist in DB. "
                       f"Make sure this setting is correct, and that everything is synchronized with Stripe!")
-            free_plan_data = {'name': "Threeblades Free Plan",
+            free_plan_data = {'name': settings.DEFAULT_STRIPE_PLAN_ID.replace("-", " ").title(),
                               'amount': 0,
                               'currency': "usd",
                               'interval': "month",
@@ -352,8 +332,7 @@ def assign_customer_to_default_plan(customer):
                 log.warning("Since the default plan did not exist in the DB, the system will now add the "
                             "user to a free plan to avoid failure.")
                 log.info("First make sure it doesn't exist in Stripe already...")
-                stripe_resp = stripe.Plan.retrieve("threeblades-free-plan")
-
+                stripe_resp = stripe.Plan.retrieve(settings.DEFAULT_STRIPE_PLAN_ID)
                 free_plan_data['created'] = timezone.now()
                 default_plan, created = Plan.objects.get_or_create(stripe_id=stripe_resp['id'],
                                                                    defaults=free_plan_data)
