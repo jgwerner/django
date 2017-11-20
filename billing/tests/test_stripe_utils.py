@@ -42,8 +42,11 @@ class TestStripeUtils(TestCase):
             stripe_obj.delete()
 
         for plan in self.plans_to_delete:
-            stripe_obj = stripe.Plan.retrieve(plan.stripe_id)
-            stripe_obj.delete()
+            try:
+                stripe_obj = stripe.Plan.retrieve(plan.stripe_id)
+                stripe_obj.delete()
+            except Exception:
+                pass
 
     def test_create_stripe_customer_from_user(self):
         user = UserFactory()
