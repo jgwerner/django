@@ -6,6 +6,7 @@ omit = ../*migrations*
        ../*tests*
        */venv/*
        */virtualenv/*
+       */google_compute_engine/*
        logs/*
        sitecustomize.py
        manage.py
