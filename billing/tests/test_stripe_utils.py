@@ -42,8 +42,11 @@ class TestStripeUtils(TestCase):
             stripe_obj.delete()
 
         for plan in self.plans_to_delete:
-            stripe_obj = stripe.Plan.retrieve(plan.stripe_id)
-            stripe_obj.delete()
+            try:
+                stripe_obj = stripe.Plan.retrieve(plan.stripe_id)
+                stripe_obj.delete()
+            except Exception:
+                pass
 
     def test_create_stripe_customer_from_user(self):
         user = UserFactory()
@@ -51,46 +54,6 @@ class TestStripeUtils(TestCase):
         self.customers_to_delete.append(customer)
         self.assertEqual(Customer.objects.filter(user=user).count(), 1)
         self.assertEqual(customer.user, user)
-
-    def test_sync_invoices_for_customer(self):
-        card_data = {'user': str(self.user.pk),
-                     'token': "tok_visa"}
-        stripe_utils.create_card_in_stripe(card_data)
-
-        plan_data = create_plan_dict()
-        plan_data['trial_period_days'] = 0
-        plan = stripe_utils.create_plan_in_stripe(plan_data)
-        plan.save()
-        self.plans_to_delete.append(plan)
-
-        sub_data = {'customer': self.customer,
-                    'plan': plan}
-        subscription = stripe_utils.create_subscription_in_stripe(sub_data)
-
-        now = datetime.now()
-        mock_invoices = None
-        if settings.MOCK_STRIPE:
-            kwargs = {'amount_due': plan.amount,
-                      'date': now.timestamp(),
-                      'subscription': subscription.stripe_id}
-            mock_invoices = stripe.Invoice.list(customer=self.customer.stripe_id,
-                                                **kwargs)
-
-        stripe_utils.sync_invoices_for_customer(self.customer, stripe_invoices=mock_invoices)
-
-        self.assertEqual(Invoice.objects.filter(amount_due__gt=0).count(), 1)
-
-        invoice = Invoice.objects.get(amount_due__gt=0)
-        self.assertEqual(invoice.total, plan.amount)
-        self.assertEqual(invoice.customer, self.customer)
-        self.assertEqual(invoice.subscription, subscription)
-        self.assertTrue(invoice.closed)
-        self.assertTrue(invoice.paid)
-
-        now = datetime.now()
-        self.assertEqual(invoice.invoice_date.year, now.year)
-        self.assertEqual(invoice.invoice_date.month, now.month)
-        self.assertEqual(invoice.invoice_date.day, now.day)
 
     def test_basic_cost_calculation(self):
         collaborator = CollaboratorFactory(user=self.user)
