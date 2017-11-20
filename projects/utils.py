@@ -140,8 +140,6 @@ def perform_project_copy(user: User, project_id: str, request: Request) -> Proje
 
         new_proj.save()
 
-
-        log.debug(("ARMADILLO", request))
         user_to_pass = None
         if request is None:
             user_to_pass = user
