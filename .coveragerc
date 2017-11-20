@@ -1,4 +1,7 @@
 [run]
+parallel = true
+concurrency = multiprocessing
+# source = "."
 omit = ../*migrations*
        ../*tests*
        venv/*
