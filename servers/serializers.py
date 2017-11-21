@@ -3,6 +3,7 @@ import logging
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
 from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator
 
 from base.serializers import SearchSerializerMixin
 from jwt_auth.utils import create_server_jwt
@@ -43,6 +44,14 @@ class ServerSerializer(SearchSerializerMixin, BaseServerSerializer):
         fields = BaseServerSerializer.Meta.fields
         for fld in ["endpoint", "logs_url", "status_url"]:
             fields += (fld,)
+        validators = [
+            # Ensure Projects have unique, non-duplicate Server names
+            UniqueTogetherValidator(
+                queryset=Server.objects.all(),
+                fields=('project', 'name'),
+                message='Project must have a unique, non-duplicate Server name.'
+            )
+        ]
 
     def validate_config(self, value):
         server_type = value.get("type")

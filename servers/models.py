@@ -57,7 +57,6 @@ class Server(models.Model):
     class Meta:
         # Ensuring Projects will not have duplicate Server names
         unique_together = (('project', 'name'),)
-        
         permissions = (
             ('write_server', "Write server"),
             ('read_server', "Read server"),
