@@ -169,3 +169,11 @@ def server_internal_details(request, version, project_project, server_server, se
     server_ip = server.get_private_ip()
     port = server.config.get('ports', {}).get(service)
     return Response(f"{server_ip}:{port}")
+
+
+class DeploymentViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
+    queryset = models.Deployment.objects.all()
+    serializer_class = serializers.DeploymentSerializer
+    permission_classes = (IsAuthenticated, ProjectChildPermission, TeamGroupPermission)
+    filter_fields = ("name",)
+    lookup_url_kwarg = 'deployment'

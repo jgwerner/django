@@ -7,20 +7,22 @@ from django.contrib.postgres.fields import HStoreField, JSONField
 from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
-from django_redis import get_redis_connection
 
 from base.models import TBSQuerySet
-from servers.managers import ServerQuerySet, DeploymentQuerySet
 from servers.spawners import DockerSpawner
 
 
 class ServerModelAbstract(models.Model):
+    NATURAL_KEY = "name"
+
     name = models.CharField(max_length=50)
     project = models.ForeignKey('projects.Project', related_name='%(class)ss')
     config = JSONField(default={})
     is_active = models.BooleanField(default=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='%(class)ss')
     created_at = models.DateTimeField(auto_now_add=True)
+
+    objects = TBSQuerySet.as_manager()
 
     class Meta:
         abstract = True
@@ -54,7 +56,6 @@ class ServerModelAbstract(models.Model):
 
 
 class Server(ServerModelAbstract, models.Model):
-    NATURAL_KEY = "name"
     # statuses
     STOPPED = "Stopped"
     STOPPING = "Stopping"
@@ -69,8 +70,6 @@ class Server(ServerModelAbstract, models.Model):
     STOP = 'stop'
     START = 'start'
     TERMINATE = 'terminate'
-
-    objects = ServerQuerySet.as_manager()
 
     private_ip = models.CharField(max_length=19)
     public_ip = models.CharField(max_length=19)
@@ -94,6 +93,7 @@ class Server(ServerModelAbstract, models.Model):
         spawner = DockerSpawner(self)
         status = spawner.status()
         return status.decode() if isinstance(status, bytes) else status
+
     def script_name_len(self):
         return len(self.config.get('script', '').split('.')[0])
 
@@ -112,8 +112,25 @@ class Server(ServerModelAbstract, models.Model):
             return settings.SERVER_TYPE_MAPPING[self.config['type']]
 
 
+class Runtime(models.Model):
+    name = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.name
+
+
+class Framework(models.Model):
+    name = models.CharField(max_length=50)
+    version = models.CharField(max_length=10)
+
+    def __str__(self):
+        return f"{self.name} {self.version}"
+
+
 class Deployment(ServerModelAbstract, models.Model):
-    objects = DeploymentQuerySet.as_manager()
+    framework = models.ForeignKey(Framework, related_name='deployments', on_delete=models.SET_NULL,
+                                  blank=True, null=True)
+    runtime = models.ForeignKey(Runtime, related_name='deployments', on_delete=models.PROTECT)
 
 
 class ServerSize(models.Model):

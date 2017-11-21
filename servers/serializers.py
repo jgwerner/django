@@ -9,7 +9,8 @@ from jwt_auth.utils import create_server_jwt
 from servers.models import (ServerSize, Server,
                             ServerRunStatistics,
                             ServerStatistics,
-                            SshTunnel)
+                            SshTunnel,
+                            Deployment)
 from projects.models import Project
 from projects.serializers import ProjectSerializer
 log = logging.getLogger('servers')
@@ -156,3 +157,9 @@ class SshTunnelSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'host', 'local_port', 'remote_port', 'endpoint', 'username', 'server')
         read_only_fields = ('server',)
 
+
+class DeploymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Deployment
+        fields = ('id', 'name', 'project', 'created_at', 'created_by', 'config', 'status', 'runtime', 'framework')
+        read_only_fields = ('project', 'created_at', 'created_by')
