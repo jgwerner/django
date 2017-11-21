@@ -30,16 +30,27 @@ class MeteredBillingData:
 
     def calc_necessary_buckets(self) -> int:
         buckets = 0
-        log.debug(('useage', self.usage, "Plan limit", self.plan_limit))
         overage = self.usage - self.plan_limit
-        log.debug(("overage", overage))
         if overage > 0:
             buckets = math.ceil(overage / settings.BILLING_BUCKET_SIZE_GB)
-        log.debug(("buckets", buckets))
         return buckets
 
+    def create_notification_if_necessary(self, notification_type: NotificationType) -> Notification:
+        notif = None
+        if self.usage_percent > settings.USAGE_WARNING_THRESHOLD:
+            already_been_notified = Notification.objects.filter(user=self.user,
+                                                                type=notification_type,
+                                                                timestamp__gt=self.invoice.period_start).exists()
+            if not already_been_notified:
+                log.info(f"User {self.user} has used {self.usage_percent}% of their plan. Sending a notification.")
+                notif = create_notification(user=self.user,
+                                            actor=self.invoice,
+                                            target=None,
+                                            notif_type=notification_type)
+        return notif
 
-def calculate_usage_for_current_billing_period(closing_from: datetime=None, closing_to:datetime=None) -> dict:
+
+def calculate_usage_for_current_billing_period(closing_from: datetime=None, closing_to: datetime=None) -> dict:
     """
     :return: user_runs_mapping is a dict that maps user.pk -> 
              Percentage of plan used for this billing period. 
@@ -102,28 +113,21 @@ def calculate_usage_for_current_billing_period(closing_from: datetime=None, clos
             usage_in_mb_seconds = Decimal(usage_in_mb_seconds.total_seconds())
             # Divide by 1024 to get gigabytes, then 3600 to get hours. MB Seconds -> GB Hours
             usage_in_gb_hours = Decimal(usage_in_mb_seconds / 1024 / 3600)
-            user_runs_mapping[user.pk] = MeteredBillingData(user=user,
-                                                            invoice=inv,
-                                                            usage=usage_in_gb_hours)
-            usage_percent = user_runs_mapping[user.pk].usage_percent
-            if usage_percent > settings.USAGE_WARNING_THRESHOLD:
-                already_been_notified = Notification.objects.filter(user=user,
-                                                                    type=notification_type,
-                                                                    timestamp__gt=inv.period_start).exists()
-                if not already_been_notified:
-                    log.info(f"User {user} has used {usage_percent}% of their plan. Sending a notification.")
-                    notif = create_notification(user=user,
-                                                actor=inv,
-                                                target=None,
-                                                notif_type=notification_type)
-                    if notif is not None:
-                        notifs_to_save.append(notif)
+            usage_data = MeteredBillingData(user=user,
+                                            invoice=inv,
+                                            usage=usage_in_gb_hours)
+            user_runs_mapping[user.pk] = usage_data
+
+            notif = usage_data.create_notification_if_necessary(notification_type)
+            if notif is not None:
+                notifs_to_save.append(notif)
+
     Notification.objects.bulk_create(notifs_to_save)
     return user_runs_mapping
 
 
-def update_invoices_with_usage():
-    end_time = timezone.now() + timedelta(seconds=1800)
+def update_invoices_with_usage(ending_in: int=30):
+    end_time = timezone.now() + timedelta(seconds=ending_in * 60)
     current_usage_map = calculate_usage_for_current_billing_period(closing_from=timezone.now(),
                                                                    closing_to=end_time)
     # Something in the following loop is using a LOT of time. is it the Stripe call?

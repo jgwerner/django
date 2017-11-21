@@ -170,8 +170,6 @@ class TestTbsUtils(TestCase):
         update_invoices_with_usage()
         invoice_item = InvoiceItem.objects.filter(customer=self.customer)
         self.assertFalse(invoice_item.exists())
-        item = invoice_item.first()
-        self.assertEqual(item.amount, settings.BUCKET_COST_USD * 100)
 
     def test_update_invoices_adds_buckets_correctly(self):
         self._setup_basics_for_user(user=self.user,
