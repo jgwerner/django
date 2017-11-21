@@ -186,7 +186,10 @@ class SubscriptionTest(APITestCase):
     def _create_plan_in_stripe(self, trial_period=None):
         plan_data = create_plan_dict(trial_period)
         plan = create_plan_in_stripe(plan_data)
-        plan.save()
+        try:
+            plan.save()
+        except Exception:
+            pass
         self.plans_to_delete.append(plan)
         return plan
 
