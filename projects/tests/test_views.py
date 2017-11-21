@@ -1230,6 +1230,25 @@ class CollaboratorTest(ProjectTestMixin, APITestCase):
         me_collab_reloaded = Collaborator.objects.get(pk=me_collab.pk)
         self.assertFalse(me_collab_reloaded.owner)
 
+    def test_ownership_transfer_stops_servers(self):
+        me_collab = CollaboratorFactory(user=self.user)
+
+        ServerFactory(project=me_collab.project)
+
+        url = reverse("collaborator-list", kwargs={'version': settings.DEFAULT_VERSION,
+                                                   'project_project': me_collab.project.name,
+                                                   'namespace': self.user.username})
+
+        other_user = UserFactory()
+
+        data = {'owner': True,
+                'member': other_user.username,
+                'permissions': ['write_project', 'read_project']}
+
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(response.data.get('owner'))
+
     def test_get_collaborator(self):
         collab = CollaboratorFactory(user=self.user)
         assign_perm('write_project', self.user, collab.project)

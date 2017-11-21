@@ -1,7 +1,9 @@
 from datetime import datetime
 from django.db.models import Sum, Max, F, Count
 from django.db.models.functions import Coalesce, Now, Greatest
+from projects.models import Project
 from servers.models import ServerRunStatistics, Server
+from servers.tasks import stop_server
 
 
 def get_server_usage(server_ids, begin_measure_time=None):
@@ -25,3 +27,9 @@ def get_server_usage(server_ids, begin_measure_time=None):
 
 def is_server_token(token):
     return Server.objects.filter(access_token=token).exists()
+
+
+def stop_all_servers_for_project(project: Project):
+    servers = Server.objects.filter(project=project)
+    for server in servers:
+        stop_server(server)
