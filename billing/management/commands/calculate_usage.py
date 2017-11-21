@@ -1,6 +1,6 @@
 import django; django.setup()
 from django.core.management import BaseCommand
-from billing.tbs_utils import calculate_usage_for_current_billing_period
+from billing.tbs_utils import calculate_usage_for_period
 
 
 class Command(BaseCommand):
@@ -8,4 +8,4 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         print("Calculating usage...")
-        calculate_usage_for_current_billing_period()
+        calculate_usage_for_period()

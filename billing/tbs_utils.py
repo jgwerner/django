@@ -37,20 +37,35 @@ class MeteredBillingData:
 
     def create_notification_if_necessary(self, notification_type: NotificationType) -> Notification:
         notif = None
-        if self.usage_percent > settings.USAGE_WARNING_THRESHOLD:
-            already_been_notified = Notification.objects.filter(user=self.user,
-                                                                type=notification_type,
-                                                                timestamp__gt=self.invoice.period_start).exists()
-            if not already_been_notified:
-                log.info(f"User {self.user} has used {self.usage_percent}% of their plan. Sending a notification.")
-                notif = create_notification(user=self.user,
-                                            actor=self.invoice,
-                                            target=None,
-                                            notif_type=notification_type)
+
+        try:
+            warning_thresholds = sorted(map(int, settings.USAGE_WARNING_THRESHOLDS.split(",")),
+                                        # We sort in reverse order because it's easier to notify in order of
+                                        # precedence later in this method.
+                                        key=lambda val: -val)
+        except ValueError as e:
+            log.warning(f"Unable to cast USAGE_WARNING_THRESHOLDS to a list of ints. "
+                        f"This was the value: {settings.USAGE_WARNING_THRESHOLDS}. "
+                        f"Falling back to defaults of 75, 90, 100.")
+            log.exception(e)
+            warning_thresholds = [75, 90, 100]
+
+        for threshold in warning_thresholds:
+            if self.usage_percent >= threshold:
+                already_been_notified = Notification.objects.filter(user=self.user,
+                                                                    type=notification_type,
+                                                                    timestamp__gt=self.invoice.period_start).exists()
+                if not already_been_notified:
+                    log.info(f"User {self.user} has used {self.usage_percent}% of their plan. Sending a notification.")
+                    notif = create_notification(user=self.user,
+                                                actor=self.invoice,
+                                                target=None,
+                                                notif_type=notification_type)
+                    break
         return notif
 
 
-def calculate_usage_for_current_billing_period(closing_from: datetime=None, closing_to: datetime=None) -> dict:
+def calculate_usage_for_period(closing_from: datetime=None, closing_to: datetime=None) -> dict:
     """
     :return: user_runs_mapping is a dict that maps user.pk -> 
              Percentage of plan used for this billing period. 
@@ -128,8 +143,8 @@ def calculate_usage_for_current_billing_period(closing_from: datetime=None, clos
 
 def update_invoices_with_usage(ending_in: int=30):
     end_time = timezone.now() + timedelta(seconds=ending_in * 60)
-    current_usage_map = calculate_usage_for_current_billing_period(closing_from=timezone.now(),
-                                                                   closing_to=end_time)
+    current_usage_map = calculate_usage_for_period(closing_from=timezone.now(),
+                                                   closing_to=end_time)
     # Something in the following loop is using a LOT of time. is it the Stripe call?
     # No, I'm mocking stripe at the moment.
     for user in current_usage_map:

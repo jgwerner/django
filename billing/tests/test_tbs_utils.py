@@ -8,7 +8,7 @@ from users.models import User
 from users.tests.factories import UserFactory
 from billing.models import Invoice, InvoiceItem
 from billing.stripe_utils import create_stripe_customer_from_user
-from billing.tbs_utils import (calculate_usage_for_current_billing_period,
+from billing.tbs_utils import (calculate_usage_for_period,
                                update_invoices_with_usage)
 from billing.tests.factories import (PlanFactory,
                                      SubscriptionFactory,
@@ -51,12 +51,12 @@ class TestTbsUtils(TestCase):
     def test_calc_usage_for_billing_period_simplest_case(self):
         # Only one user, with one invoice, one server, one run.
         self._setup_basics_for_user(self.user)
-        usage_dict = calculate_usage_for_current_billing_period()
+        usage_dict = calculate_usage_for_period()
         self.assertEqual(usage_dict[self.user.pk].usage_percent, 10.0)
 
     def test_calc_usage_sends_notification_after_threshold(self):
         self._setup_basics_for_user(self.user, duration=4, server_memory=1024)
-        usage_dict = calculate_usage_for_current_billing_period()
+        usage_dict = calculate_usage_for_period()
         self.assertEqual(usage_dict[self.user.pk].usage_percent, 80.0)
 
         notification = Notification.objects.filter(user=self.user,
@@ -68,7 +68,7 @@ class TestTbsUtils(TestCase):
         ServerRunStatisticsFactory.create_batch(4,
                                                 server=run.server)
         # At this point we have 5 runs of a 512 MB server, each one hour in duration.
-        usage_dict = calculate_usage_for_current_billing_period()
+        usage_dict = calculate_usage_for_period()
         self.assertEqual(usage_dict[self.user.pk].usage_percent, 50.0)
 
     def test_calc_usage_one_user_multiple_servers_single_run_each(self):
@@ -82,7 +82,7 @@ class TestTbsUtils(TestCase):
         # each with a single run one hour long. One server is 512 MB, the rest are 1GB,
         # Meaning our usage should total 4.5GB = 90% and a notification
 
-        usage_dict = calculate_usage_for_current_billing_period()
+        usage_dict = calculate_usage_for_period()
         self.assertEqual(usage_dict[self.user.pk].usage_percent, 90.0)
 
         notification = Notification.objects.filter(user=self.user,
@@ -97,7 +97,7 @@ class TestTbsUtils(TestCase):
                                              server__server_size__memory=1024)
             ServerRunStatisticsFactory.create_batch(2,
                                                     server=run.server)
-        usage_dict = calculate_usage_for_current_billing_period()
+        usage_dict = calculate_usage_for_period()
         # 512MB * 1HR + (4 * (1GB server * 3 runs of 1 hour)) = 12.5 GB/hrs = 250.0% usage
         self.assertEqual(usage_dict[self.user.pk].usage_percent, 250.0)
 
@@ -108,7 +108,7 @@ class TestTbsUtils(TestCase):
             self._setup_basics_for_user(user, duration=duration, server_memory=1024)
 
         # We now have 5 users, each with a single 1GB server that has run one time for 1, 2, or 3 hours.
-        usage_dict = calculate_usage_for_current_billing_period()
+        usage_dict = calculate_usage_for_period()
         for user in users:
             run = ServerRunStatistics.objects.filter(owner=user).first()
             self.assertIsNotNone(run)
@@ -130,7 +130,7 @@ class TestTbsUtils(TestCase):
                                                  start=start_time,
                                                  stop=now)
                 ServerRunStatisticsFactory.create_batch(2, server=run.server, start=start_time, stop=now)
-        usage_dict = calculate_usage_for_current_billing_period()
+        usage_dict = calculate_usage_for_period()
 
         for user in users:
             user_runs = ServerRunStatistics.objects.filter(owner=user)
@@ -146,7 +146,7 @@ class TestTbsUtils(TestCase):
         run.stop = None
         run.duration = None
         run.save()
-        usage_dict = calculate_usage_for_current_billing_period()
+        usage_dict = calculate_usage_for_period()
         # This will never be exactly equal because the application has to use now() to determine the duration
         self.assertAlmostEqual(usage_dict[self.user.pk].usage_percent, Decimal(10.00), places=2)
 
@@ -157,7 +157,7 @@ class TestTbsUtils(TestCase):
         run.stop = invoice.period_start + timedelta(days=2)
         run.duration = run.stop - run.start
         run.save()
-        usage_dict = calculate_usage_for_current_billing_period()
+        usage_dict = calculate_usage_for_period()
         expected_usage = (((timedelta(days=2).total_seconds() / 3600) * (run.server_size_memory / 1024)) / 5) * 100
         self.assertEqual(usage_dict[self.user.pk].usage_percent, expected_usage)
 
@@ -184,3 +184,16 @@ class TestTbsUtils(TestCase):
         item = invoice_item.first()
         self.assertEqual(item.amount, settings.BUCKET_COST_USD * 100)
 
+    def test_only_one_notification_is_sent_if_multiple_thresholds_are_crossed(self):
+        notification = Notification.objects.filter(user=self.user,
+                                                   type__name="usage_warning").first()
+        self.assertIsNone(notification)
+        self._setup_basics_for_user(user=self.user,
+                                    server_memory=1024,
+                                    duration=5)
+        usage_dict = calculate_usage_for_period()
+        self.assertEqual(usage_dict[self.user.pk].usage_percent, 100)
+
+        notifs = Notification.objects.filter(user=self.user,
+                                             type__name="usage_warning")
+        self.assertEqual(notifs.count(), 1)
