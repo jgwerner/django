@@ -32,4 +32,4 @@ def is_server_token(token):
 def stop_all_servers_for_project(project: Project):
     servers = Server.objects.filter(project=project)
     for server in servers:
-        stop_server(server)
+        stop_server(str(server.pk))
