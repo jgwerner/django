@@ -54,12 +54,12 @@ class ServerSerializer(SearchSerializerMixin, BaseServerSerializer):
     def validate_server_name(self, value):
         # Ensure Server names remain unique within a project
         server_name = value.get('name')
-        project_name = self.context['project']
-        if not server_name or project_name:
+        project = Project.objects.tbs_filter(self.context['view'].kwargs['project_project'])
+        if not server_name or project:
             raise serializers.ValidationError("Server name and project name must be provided.")
         else:
-            qs = Server.objects.filter(name=server_name, project=project_name)
-            if len(qs) > 0:
+            qs = Server.objects.filter(name=server_name, project=project)
+            if qs.exists():
                 raise serializers.ValidationError("A server with that name already exists in this project.")
         return value
 
