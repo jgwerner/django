@@ -55,6 +55,9 @@ class Server(models.Model):
     last_start = models.DateTimeField(null=True)
 
     class Meta:
+        # Ensuring Projects will not have duplicate Server names
+        unique_together = (('project', 'name'),)
+        
         permissions = (
             ('write_server', "Write server"),
             ('read_server', "Read server"),

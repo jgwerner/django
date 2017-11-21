@@ -50,6 +50,18 @@ class ServerSerializer(SearchSerializerMixin, BaseServerSerializer):
             raise serializers.ValidationError(f"{server_type} is not a valid server type")
         return value
 
+    def validate_server_name(self, value):
+        # Ensure Server names remain unique within a project
+        server_name = value.get('name')
+        project_name = self.context['project']
+        if not server_name or project_name:
+            raise serializers.ValidationError("Server name and project name must be provided.")
+        else:
+            qs = Server.objects.filter(name=server_name, project=project_name)
+            if len(qs) > 0:
+                raise serializers.ValidationError("A server with that name already exists in this project.")
+        return value
+
     def create(self, validated_data):
         config = validated_data.pop("config", {})
         server_size = (validated_data.pop('server_size', None) or
