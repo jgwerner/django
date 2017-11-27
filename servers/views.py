@@ -48,8 +48,6 @@ class ServerViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
         server = servers.tbs_filter(kwargs['server']).first()
 
         data = request.data
-        print("\nDATA**** ", data.name)
-        print("\nSERVER**** ", server.name)
         if data.get('name') == server.name:
             data.pop('name')
 
