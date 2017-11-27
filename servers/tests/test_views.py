@@ -233,7 +233,6 @@ class ServerTestWithName(APITestCase):
 
     def test_validate_server_name_prevents_duplicate_name(self):
         # Passing a project server name identical to an existing server name should error
-        from rest_framework.serializers import ValidationError
         server = ServerFactory(project=self.project, name='test_name')
         url = reverse('server-list', kwargs=self.url_kwargs)
         data = dict(
@@ -243,8 +242,7 @@ class ServerTestWithName(APITestCase):
             config={'type': 'jupyter'},
         )
         response = self.client.post(url, data)
-        with self.assertRaises(ValidationError):
-            response()
+        print("vars **** ", vars(response))
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_server(self):
