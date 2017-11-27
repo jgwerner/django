@@ -19,6 +19,7 @@ from billing.tests.factories import (PlanFactory,
                                      InvoiceFactory,
                                      InvoiceItemFactory)
 from billing.stripe_utils import create_stripe_customer_from_user, create_plan_in_stripe
+from billing.tests.utilities import delete_all_plans_created_by_tests
 from jwt_auth.utils import create_auth_jwt
 
 
@@ -46,12 +47,6 @@ class PlanTest(APITestCase):
         self.user = UserFactory(is_staff=True)
         token = create_auth_jwt(self.user)
         self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
-        self.plans_to_delete = []
-
-    def tearDown(self):
-        for plan in self.plans_to_delete:
-            stripe_obj = stripe.Plan.retrieve(plan.stripe_id)
-            stripe_obj.delete()
 
     def test_list_plans(self):
         pre_create_plan_count = Plan.objects.count()
@@ -164,6 +159,8 @@ class CardTest(APITestCase):
 
 class SubscriptionTest(APITestCase):
 
+    plans_to_delete = []
+
     def setUp(self):
         self.user = UserFactory(first_name="Foo",
                                 last_name="Bar",
@@ -173,15 +170,15 @@ class SubscriptionTest(APITestCase):
         self.customer = create_stripe_customer_from_user(self.user)
         token = create_auth_jwt(self.user)
         self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
-        self.plans_to_delete = []
 
     def tearDown(self):
         stripe_obj = stripe.Customer.retrieve(self.customer.stripe_id)
         stripe_obj.delete()
 
-        for plan in self.plans_to_delete:
-            stripe_obj = stripe.Plan.retrieve(plan.stripe_id)
-            stripe_obj.delete()
+    @classmethod
+    def tearDownClass(cls):
+        delete_all_plans_created_by_tests(cls.plans_to_delete)
+        super(SubscriptionTest, cls).tearDownClass()
 
     def _create_plan_in_stripe(self, trial_period=None):
         plan_data = create_plan_dict(trial_period)
@@ -195,6 +192,7 @@ class SubscriptionTest(APITestCase):
 
     def _create_subscription_in_stripe(self, trial_period=7):
         plan = self._create_plan_in_stripe(trial_period)
+        self.__class__.plans_to_delete.append(plan)
         url = reverse("subscription-list", kwargs={'namespace': self.user.username,
                                                    'version': settings.DEFAULT_VERSION})
         data = {'plan': plan.pk}
@@ -302,6 +300,10 @@ class SubscriptionTest(APITestCase):
 
 class InvoiceTest(TestCase):
 
+    fixtures = ['notification_types.json']
+
+    plans_to_delete = []
+
     def setUp(self):
         self.user = UserFactory(first_name="Foo",
                                 last_name="Bar",
@@ -312,21 +314,21 @@ class InvoiceTest(TestCase):
         token = create_auth_jwt(self.user)
         self.api_client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
         self.client = Client()
-        self.plans_to_delete = []
 
     def tearDown(self):
         stripe_obj = stripe.Customer.retrieve(self.customer.stripe_id)
         stripe_obj.delete()
 
-        for plan in self.plans_to_delete:
-            stripe_obj = stripe.Plan.retrieve(plan.stripe_id)
-            stripe_obj.delete()
+    @classmethod
+    def tearDownClass(cls):
+        delete_all_plans_created_by_tests(cls.plans_to_delete)
+        super(InvoiceTest, cls).tearDownClass()
 
     def _create_plan_in_stripe(self, trial_period=None):
         plan_data = create_plan_dict(trial_period)
         plan = create_plan_in_stripe(plan_data)
+        self.__class__.plans_to_delete.append(plan)
         plan.save()
-        self.plans_to_delete.append(plan)
         return plan
 
     def _create_subscription_in_stripe(self, trial_period=7):

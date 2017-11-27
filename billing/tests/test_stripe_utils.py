@@ -1,14 +1,15 @@
 from decimal import Decimal, getcontext
-from datetime import datetime
+
 from django.conf import settings
 from django.test import TestCase
 from users.tests.factories import UserFactory
 from projects.tests.factories import CollaboratorFactory
 from servers.models import ServerRunStatistics, ServerSize
 from servers.tests.factories import ServerRunStatisticsFactory, ServerFactory
-from billing.models import Customer, Plan, Invoice
+from billing.models import Customer, Plan
 from billing.tests.factories import PlanFactory
 from billing import stripe_utils
+from billing.tests.utilities import delete_all_plans_created_by_tests
 
 if settings.MOCK_STRIPE:
     from billing.tests import mock_stripe as stripe
@@ -29,24 +30,24 @@ def create_plan_dict(*args, **kwargs):
 
 
 class TestStripeUtils(TestCase):
+
+    plans_to_delete = []
+
     def setUp(self):
         self.user = UserFactory()
         self.customers_to_delete = []
         self.customer = stripe_utils.create_stripe_customer_from_user(self.user)
         self.customers_to_delete.append(self.customer)
-        self.plans_to_delete = []
+
+    @classmethod
+    def tearDownClass(cls):
+        delete_all_plans_created_by_tests(cls.plans_to_delete)
+        super(TestStripeUtils, cls).tearDownClass()
 
     def tearDown(self):
         for customer in self.customers_to_delete:
             stripe_obj = stripe.Customer.retrieve(customer.stripe_id)
             stripe_obj.delete()
-
-        for plan in self.plans_to_delete:
-            try:
-                stripe_obj = stripe.Plan.retrieve(plan.stripe_id)
-                stripe_obj.delete()
-            except Exception:
-                pass
 
     def test_create_stripe_customer_from_user(self):
         user = UserFactory()
@@ -62,8 +63,8 @@ class TestStripeUtils(TestCase):
 
         plan_dict = create_plan_dict()
         plan = stripe_utils.create_plan_in_stripe(plan_dict)
+        self.__class__.plans_to_delete.append(plan)
         plan.save()
-        self.plans_to_delete.append(plan)
         stripe_utils.create_subscription_in_stripe({'customer': self.customer,
                                                     'plan': plan})
 
@@ -84,8 +85,8 @@ class TestStripeUtils(TestCase):
 
         plan_dict = create_plan_dict()
         plan = stripe_utils.create_plan_in_stripe(plan_dict)
+        self.__class__.plans_to_delete.append(plan)
         plan.save()
-        self.plans_to_delete.append(plan)
         stripe_utils.create_subscription_in_stripe({'customer': self.customer,
                                                     'plan': plan})
 
@@ -109,8 +110,8 @@ class TestStripeUtils(TestCase):
                                                     server__project=project)
         plan_dict = create_plan_dict()
         plan = stripe_utils.create_plan_in_stripe(plan_dict)
+        self.__class__.plans_to_delete.append(plan)
         plan.save()
-        self.plans_to_delete.append(plan)
         stripe_utils.create_subscription_in_stripe({'customer': self.customer,
                                                     'plan': plan})
 
@@ -160,8 +161,8 @@ class TestStripeUtils(TestCase):
 
         plan_dict = create_plan_dict()
         plan = stripe_utils.create_plan_in_stripe(plan_dict)
+        self.__class__.plans_to_delete.append(plan)
         plan.save()
-        self.plans_to_delete.append(plan)
         stripe_utils.create_subscription_in_stripe({'customer': self.customer,
                                                     'plan': plan})
 
@@ -203,8 +204,8 @@ class TestStripeUtils(TestCase):
 
         plan_dict = create_plan_dict()
         plan = stripe_utils.create_plan_in_stripe(plan_dict)
+        self.__class__.plans_to_delete.append(plan)
         plan.save()
-        self.plans_to_delete.append(plan)
         stripe_utils.create_subscription_in_stripe({'customer': self.customer,
                                                     'plan': plan})
         usage_data = stripe_utils.calculate_compute_usage(self.customer.stripe_id)
