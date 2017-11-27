@@ -2,43 +2,47 @@ import logging
 from django.conf import settings as django_settings
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import get_template
-from users.models import Email
+from users.models import Email, User
 from .models import Notification, NotificationType, NotificationSettings
 log = logging.getLogger('notifications')
 
 
-def create_notification(user, actor, target, notif_type, signal=None):
+def create_notification(user: User, actor, target, notif_type: NotificationType) -> Notification:
+    # Note that this method does *not* save the notification in the database.
+    # This is because it is a common use case to create many notifications at once
     # TODO: Once we add more notification types, we will need to properly resolve
     # TODO: settings precedence
     settings, created = NotificationSettings.objects.get_or_create(user=user,
-                                                                   entity="global",
+                                                                   entity=notif_type.entity,
                                                                    defaults={'enabled': True,
                                                                              'emails_enabled': True})
     if created:
-        log.info(f"Global notification settings did not exist for user {user}, so they were created.")
+        log.info(f"{notif_type.entity} notification settings did not exist for user {user}, so they were created.")
         # This is the de facto default email address
         email = Email.objects.filter(user=user,
                                      address=user.email).first()
         settings.email_address = email
         settings.save()
 
-    notif_type, created = NotificationType.objects.get_or_create(name=notif_type)
-    if created:
-        log.info(f"Created new notification type: {notif_type}")
-
     notification = Notification(user=user,
                                 actor=actor,
                                 target=target,
                                 type=notif_type,
                                 is_active=settings.enabled)
-    notification.save()
     log.info(f"Created notification {notification}")
 
     if notif_type.entity == "billing" or settings.emails_enabled:
         log.info("Settings have enabled emails. Emailing notification.")
         template_name_str = f"notifications/{notif_type.template_name}."
-        plaintext = get_template(template_name_str + "txt")
-        html_text = get_template(template_name_str + "html")
+
+        try:
+            plaintext = get_template(template_name_str + "txt")
+            html_text = get_template(template_name_str + "html")
+        except Exception as e:
+            log.error(f"Unable to find template {template_name_str} for notification type {notif_type.name}."
+                      f"Will not be able to email notification. This is a problem!!")
+            log.exception(e)
+            return
 
         user_name_to_use = user.first_name or user.username
 
@@ -55,9 +59,11 @@ def create_notification(user, actor, target, notif_type, signal=None):
         message.attach_alternative(html_content, "text/html")
         try:
             message.send(fail_silently=False)
-            notification.emailed = True
-            notification.save()
-            log.info(f"Emailed notification.")
         except Exception as e:
             log.error(f"Unable to email notification: {notification}. Exception stacktrace:")
             log.exception(e)
+
+        notification.emailed = True
+        log.info(f"Emailed notification.")
+
+    return notification

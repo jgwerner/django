@@ -304,6 +304,17 @@ def create_invoice_item_for_compute_usage(customer_stripe_id, usage_data):
     return InvoiceItem.objects.create(**converted_data)
 
 
+def add_buckets_to_stripe_invoice(customer_stripe_id: str, buckets: int) -> InvoiceItem:
+    amount = buckets * (settings.BUCKET_COST_USD * 100)
+    stripe_invoice_item = stripe.InvoiceItem.create(customer=customer_stripe_id,
+                                                    amount=amount,
+                                                    currency="usd",
+                                                    description="3Blades Compute Usage")
+    converted_data = convert_stripe_object(InvoiceItem, stripe_invoice_item)
+    converted_data['quantity'] = 1
+    return InvoiceItem.objects.create(**converted_data)
+
+
 def handle_upcoming_invoice(stripe_event):
     event = create_event_from_webhook(stripe_event)
     if event is not None:

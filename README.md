@@ -120,6 +120,8 @@ Modify environment variables located in `env` file with your local settings. You
     AWS_SES_REGION_NAME=
     AWS_SES_REGION_ENDPOINT=
     AWS_STORAGE_BUCKET_NAME=
+    BILLING_BUCKET_SIZE_GB=
+    BUCKET_COST_USD=
     C_ROOT=1
     DATABASE_URL=postgres://postgres:@db:5432/postgres/
     DEBUG=True
@@ -163,6 +165,7 @@ Modify environment variables located in `env` file with your local settings. You
     TBS_HOST=
 	TBS_PORT=
     TBS_HTTPS=
+    USAGE_WARNING_THRESHOLD=
 ```
 
 > Obtain internal virtual machine IPv4 address with `ifconfig`. Usually enp0s3 or eth0 will be the IP address you need to configure for DOCKER_HOST env var. If you switch setup to use production configuration (`DJANGO_SETTINGS_MODULE='appdj.settings.prod`) make sure to set debug to false (`DEBUG=False`). By default, app-backend allows connections from `staging.3blades.io` and `localhost`. Additional host names or IP addresses can be added to the `TBS_HOST`.
