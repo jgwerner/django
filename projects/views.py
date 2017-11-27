@@ -97,7 +97,8 @@ class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewS
             return Response(data={'message': "Insufficient permissions to delete project"},
                             status=status.HTTP_403_FORBIDDEN)
 
-        instance.delete()
+        instance.is_active = False
+        instance.save()
         return Response(data={"message": "Project deleted."},
                         status=status.HTTP_204_NO_CONTENT)
 
