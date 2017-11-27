@@ -144,7 +144,7 @@ class ServerTest(APITestCase):
         self.assertIsNotNone(server_reloaded)
         self.assertFalse(server_reloaded.is_active)
 
-    @patch('servers.spawners.DockerSpawner.status')
+    @patch('servers.spawners.docker.DockerSpawner.status')
     def test_server_internal_running(self, server_status):
         server_status.return_value = Server.RUNNING
         server = ServerFactory(project=self.project, config={'ports': {'jupyter': '1234'}})
@@ -345,7 +345,7 @@ class ServerTestWithName(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertIsNone(Server.objects.filter(pk=server.pk, is_active=True).first())
 
-    @patch('servers.spawners.DockerSpawner.status')
+    @patch('servers.spawners.docker.DockerSpawner.status')
     def test_server_internal_running(self, server_status):
         server_status.return_value = Server.RUNNING
         server = ServerFactory(project=self.project, config={'ports': {'jupyter': '1234'}})

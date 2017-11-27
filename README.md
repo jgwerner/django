@@ -115,6 +115,7 @@ Modify environment variables located in `env` file with your local settings. You
 ```
     AWS_ACCESS_KEY_ID=
     AWS_SECRET_ACCESS_KEY=
+	AWS_DEFAULT_REGION=
     AWS_SES_ACCESS_KEY_ID=
     AWS_SES_SECRET_ACCESS_KEY=
     AWS_SES_REGION_NAME=
@@ -132,8 +133,9 @@ Modify environment variables located in `env` file with your local settings. You
     DOCKER_EVENTS_URL=http://events:8000
     DOCKER_PORT=2375
     DOCKER_HOST=tcp://172.17.0.1:2375/
+    ECS_CLUSTER=
     GETTING_STARTED_PROJECT=
-	NVIDIA_DOCKER_HOST=http://172.17.0.1:3476
+	  NVIDIA_DOCKER_HOST=http://172.17.0.1:3476
     ELASTICSEARCH_URL=http://search:9200/
     ELASTICSEARCH_USER=
     ELASTICSEARCH_PASSWORD=
@@ -163,7 +165,7 @@ Modify environment variables located in `env` file with your local settings. You
     TBS_DEFAULT_VERSION=
     TBS_DOMAIN=localhost:3000
     TBS_HOST=
-	TBS_PORT=
+	  TBS_PORT=
     TBS_HTTPS=
     USAGE_WARNING_THRESHOLD=
 ```
