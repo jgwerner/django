@@ -3,7 +3,6 @@ import logging
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
 from rest_framework import serializers
-from rest_framework.validators import UniqueTogetherValidator
 
 from base.serializers import SearchSerializerMixin
 from jwt_auth.utils import create_server_jwt
@@ -58,8 +57,7 @@ class ServerSerializer(SearchSerializerMixin, BaseServerSerializer):
         if not server_name or project:
             raise serializers.ValidationError("Server name and project name must be provided.")
         else:
-            qs = Server.objects.filter(name=server_name, project=project)
-            if qs.exists():
+            if Server.objects.filter(name=server_name, project=project).exists():
                 raise serializers.ValidationError("A server with that name already exists in this project.")
         return value
 
