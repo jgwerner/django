@@ -2,6 +2,7 @@ import logging
 import datetime
 import posixpath
 from pathlib import Path
+from django.core.validators import validate_unicode_slug
 from django.utils.encoding import force_str, force_text
 from django.conf import settings
 from django.contrib.postgres.fields import JSONField
@@ -9,8 +10,6 @@ from django.db import models
 from django.urls import reverse
 from guardian.shortcuts import get_perms
 from social_django.models import UserSocialAuth
-
-from utils import alphanumeric
 
 from .managers import (ProjectQuerySet, CollaboratorQuerySet,
                        FileQuerySet, SyncedResourceQuerySet)
@@ -21,7 +20,7 @@ log = logging.getLogger('projects')
 class Project(models.Model):
     NATURAL_KEY = "name"
 
-    name = models.CharField(max_length=50, validators=[alphanumeric])
+    name = models.CharField(max_length=50, validators=[validate_unicode_slug])
     description = models.CharField(max_length=400, blank=True)
     private = models.BooleanField(default=True)
     last_updated = models.DateTimeField(auto_now=True)
@@ -161,7 +160,7 @@ class ProjectFile(models.Model):
 
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
     project = models.ForeignKey(Project, related_name="project_files")
-    file = TbsFileField(upload_to=user_project_directory_path, storage=TbsStorage())
+    file = TbsFileField(upload_to=user_project_directory_path, storage=TbsStorage(), max_length=255)
 
     objects = FileQuerySet.as_manager()
 

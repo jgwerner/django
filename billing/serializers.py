@@ -47,6 +47,7 @@ class CardSerializer(serializers.Serializer):
     funding = serializers.CharField(read_only=True)
     stripe_id = serializers.CharField(read_only=True)
     created = serializers.DateTimeField(read_only=True)
+    customer = serializers.CharField(source='customer.user', read_only=True) # returns username instead of id
 
     def create(self, validated_data):
         return create_card_in_stripe(validated_data,
@@ -76,11 +77,11 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         fields = ("id", "plan", 'stripe_id', 'created', 'livemode', 'application_fee_percent',
                   'cancel_at_period_end', 'canceled_at', 'current_period_start',
                   'current_period_end', 'start', 'ended_at', 'quantity', 'status',
-                  'trial_start', 'trial_end')
+                  'trial_start', 'trial_end', 'customer')
         read_only_fields = ('stripe_id', 'created', 'livemode', 'application_fee_percent',
                             'cancel_at_period_end', 'canceled_at', 'current_period_start',
                             'current_period_end', 'start', 'ended_at', 'quantity', 'status',
-                            'trial_start', 'trial_end')
+                            'trial_start', 'trial_end', 'customer')
 
     def create(self, validated_data):
         return create_subscription_in_stripe(validated_data,

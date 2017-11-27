@@ -1,4 +1,5 @@
 import factory
+from uuid import uuid4
 from factory import fuzzy
 from django.db.models.signals import post_save
 from django.contrib.auth import get_user_model
@@ -20,7 +21,10 @@ class UserFactory(factory.django.DjangoModelFactory):
         model = User
         django_get_or_create = ('username', 'email')
 
-    username = factory.Sequence(lambda o: 'user{}'.format(o))
+    @factory.sequence
+    def username(n):
+        return f"user_{str(uuid4())[:16]}"
+
     email = FuzzyEmail()
     password = factory.PostGenerationMethodCall('set_password', 'default')
 

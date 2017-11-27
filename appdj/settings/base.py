@@ -408,3 +408,13 @@ NVIDIA_DOCKER_HOST = os.environ.get('NVIDIA_DOCKER_HOST')
 SPAWNER = 'servers.spawners.ecs.ECSSpawner'
 ECS_CLUSTER = os.environ.get('ECS_CLUSTER', 'default')
 REDIRECT_IS_HTTPS = True
+
+# Default server memory sizes in MB, implemented in /servers/management/commands/
+SERVER_SIZE = {
+    "Nano": 512,
+    "Small": 1024,
+    "Medium": 2048,
+    "Large": 4096
+}
+
+GETTING_STARTED_PROJECT = os.environ.get("GETTING_STARTED_PROJECT", "GettingStarted")

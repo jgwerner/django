@@ -16,7 +16,6 @@ class NotificationType(models.Model):
         return ";".join([self.entity, self.name])
 
 
-# Create your models here.
 class Notification(models.Model):
     user = models.ForeignKey(User, blank=False, related_name='notifications')
     read = models.BooleanField(default=False)
