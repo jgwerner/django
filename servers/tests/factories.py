@@ -15,7 +15,7 @@ class ServerSizeFactory(factory.django.DjangoModelFactory):
 
     name = factory.Sequence(lambda n: 'resource_{}'.format(n))
     cpu = random.randint(1, 9)
-    memory = random.randint(4, 256)
+    memory = fuzzy.FuzzyChoice([512, 1024, 2048, 4096])
     active = True
     cost_per_second = fuzzy.FuzzyDecimal(low=0.0, high=0.1)
 
@@ -42,7 +42,11 @@ class ServerRunStatisticsFactory(factory.django.DjangoModelFactory):
     server = factory.SubFactory(ServerFactory)
     start = timezone.now() - timedelta(hours=1)
     stop = timezone.now()
+    duration = factory.LazyAttribute(lambda obj: obj.stop - obj.start if obj.stop else None)
     exit_code = 0
+    project = factory.LazyAttribute(lambda obj: obj.server.project)
+    owner = factory.LazyAttribute(lambda obj: obj.server.project.owner)
+    server_size_memory = factory.LazyAttribute(lambda obj: obj.server.server_size.memory)
 
 
 class ServerStatisticsFactory(factory.django.DjangoModelFactory):

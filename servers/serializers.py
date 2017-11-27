@@ -133,6 +133,10 @@ class ServerRunStatisticsSerializer(serializers.ModelSerializer):
         server_pk = self.context['view'].kwargs.get('server_server')
         server = Server.objects.tbs_get(server_pk)
         instance.server = server
+        instance.server_size_cost_per_second = server.server_size.cost_per_second
+        instance.server_size_memory = server.server_size.memory
+        instance.server_size_is_gpu = server.server_size.is_gpu
+        instance.server_size_is_metered = server.server_size.is_metered
         instance.save()
         return instance
 

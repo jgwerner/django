@@ -28,6 +28,7 @@ class Project(models.Model):
     integrations = models.ManyToManyField(UserSocialAuth, through='SyncedResource', related_name='projects')
     team = models.ForeignKey('teams.Team', blank=True, null=True, related_name='projects')
     copying_enabled = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True)
 
     objects = ProjectQuerySet.as_manager()
 
