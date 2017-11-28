@@ -61,9 +61,9 @@ jobs:
           command: |
             coverage combine && coverage report -m
       - run:
-        name: report test coverage
-        command: |
-          bash <(curl -s https://codecov.io/bash)
+          name: report test coverage
+          command: |
+            bash <(curl -s https://codecov.io/bash)
       - setup_remote_docker
       - run:
           name: build docker image
