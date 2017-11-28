@@ -17,13 +17,9 @@ from billing.serializers import (PlanSerializer, CardSerializer,
                                  InvoiceSerializer,
                                  InvoiceItemSerializer)
 from billing.stripe_utils import (handle_stripe_invoice_created,
-                                  handle_upcoming_invoice,
                                   handle_stripe_invoice_payment_status_change,
                                   handle_subscription_updated,
                                   cancel_subscriptions)
-from .signals import (invoice_payment_failure,
-                      invoice_payment_success,
-                      trial_expired)
 
 log = logging.getLogger('billing')
 
@@ -144,11 +140,7 @@ def stripe_invoice_created(request, *args, **kwargs):
 def stripe_invoice_payment_success(request, *args, **kwargs):
     body = request.body
     event_json = json.loads(body.decode("utf-8"))
-    signal_data = handle_stripe_invoice_payment_status_change(event_json)
-
-    if signal_data:
-        invoice_payment_success.send(sender=Event, **signal_data)
-
+    handle_stripe_invoice_payment_status_change(event_json)
     return HttpResponse(status=status.HTTP_200_OK)
 
 
@@ -157,22 +149,7 @@ def stripe_invoice_payment_success(request, *args, **kwargs):
 def stripe_invoice_payment_failed(request, *args, **kwargs):
     body = request.body
     event_json = json.loads(body.decode('utf-8'))
-
-    signal_data = handle_stripe_invoice_payment_status_change(event_json)
-
-    if signal_data:
-        invoice_payment_failure.send(sender=Event, **signal_data)
-
-    return HttpResponse(status=status.HTTP_200_OK)
-
-
-@require_POST
-@csrf_exempt
-def stripe_invoice_upcoming(request, *args, **kwargs):
-    body = request.body
-    event_json = json.loads(body.decode("utf-8"))
-    handle_upcoming_invoice(event_json)
-
+    handle_stripe_invoice_payment_status_change(event_json)
     return HttpResponse(status=status.HTTP_200_OK)
 
 
@@ -181,9 +158,5 @@ def stripe_invoice_upcoming(request, *args, **kwargs):
 def stripe_subscription_updated(request, *args, **kwargs):
     body = request.body
     event_json = json.loads(body.decode("utf-8"))
-    signal_data = handle_subscription_updated(event_json)
-
-    if signal_data:
-        trial_expired.send(sender=Event, **signal_data)
-
+    handle_subscription_updated(event_json)
     return HttpResponse(status=status.HTTP_200_OK)

@@ -84,7 +84,7 @@ class Plan:
         if stripe_id == "threeblades-free-plan":
             raise error.InvalidRequestError
         name = stripe_id.replace("-", " ").title()
-        if cls.plan is None:
+        if cls.plan is None or cls.plan['id'] != stripe_id:
             cls.plan = cls.create(id=stripe_id,
                                   object="plan",
                                   name=name,

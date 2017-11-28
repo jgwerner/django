@@ -10,8 +10,11 @@ from django.utils.text import slugify
 from django_redis import get_redis_connection
 
 from base.models import TBSQuerySet
+from users.models import User
 from servers.managers import ServerQuerySet
-from servers.spawners import DockerSpawner
+from servers.spawners import get_spawner_class
+
+Spawner = get_spawner_class()
 
 
 class Server(models.Model):
@@ -55,6 +58,8 @@ class Server(models.Model):
     last_start = models.DateTimeField(null=True)
 
     class Meta:
+        # Ensuring Projects will not have duplicate Server names
+        unique_together = (('project', 'name'),)
         permissions = (
             ('write_server', "Write server"),
             ('read_server', "Read server"),
@@ -93,7 +98,7 @@ class Server(models.Model):
 
     @property
     def status(self):
-        spawner = DockerSpawner(self)
+        spawner = Spawner(self)
         status = spawner.status()
         return status.decode() if isinstance(status, bytes) else status
 
@@ -147,6 +152,8 @@ class ServerSize(models.Model):
                                           help_text="Price in USD ($) per second it costs "
                                                     "to run a server of this size.",
                                           default=Decimal("0.000000"))
+    is_gpu = models.BooleanField(default=False)
+    is_metered = models.BooleanField(default=False)
 
     objects = TBSQuerySet.as_manager()
 
@@ -165,6 +172,17 @@ class ServerRunStatistics(models.Model):
     exit_code = models.IntegerField(blank=True, null=True)
     size = models.BigIntegerField(blank=True, null=True)
     stacktrace = models.TextField(blank=True)
+
+    # This next group of fields are used primarily for the purpose of billing.
+    # They are not normalized for the sake of performance.
+    duration = models.DurationField(null=True, blank=True)
+    server_size_cost_per_second = models.DecimalField(max_digits=7, decimal_places=6,
+                                                      null=True, blank=True)
+    server_size_memory = models.IntegerField(null=True)
+    server_size_is_metered = models.NullBooleanField()
+    server_size_is_gpu = models.NullBooleanField()
+    owner = models.ForeignKey(User, null=True)
+    project = models.ForeignKey("projects.Project", null=True)
 
     objects = TBSQuerySet.as_manager()
 

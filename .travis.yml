@@ -29,10 +29,13 @@ before_script:
 before_install:
   - docker --version  # document the version travis is using
   - export PATH=$PATH:$HOME/.local/bin # put aws in the path
+  - export export PYTHONPATH=`pwd`:$PYTHONPATH
   - export DJANGO_SETTINGS_MODULE="appdj.settings.test"
   - export REDIS_URL="redis://localhost:6379/0"
   - export DATABASE_URL="postgres://postgres:@localhost:5432/travis_ci_test"
   - export NVIDIA_DOCKER_HOST=http://localhost:3476
+  - export AWS_DEFAULT_REGION="us-west-2"
+  - export COVERAGE_PROCESS_START=".coveragerc"
 # command to install dependencies
 install:
   - pip install -U pip setuptools wheel
@@ -40,8 +43,7 @@ install:
   - pip install codecov
 
 script:
-  - 'if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then export MOCK_STRIPE=true; fi'
-  - coverage run --source='.' manage.py test && coverage report -m
+  - coverage run manage.py test --parallel 16 && coverage combine && coverage report -m
   - bash config/buildDockerImage.sh
 
 after_success:

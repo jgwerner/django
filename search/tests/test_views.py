@@ -161,3 +161,14 @@ class SearchTestCase(APITestCase):
         self.assertIn('next', response.data['servers'])
         self.assertIn('previous', response.data['servers'])
         self.assertEqual(response.data['servers']['count'], count)
+
+    def test_deleted_objects_not_included(self):
+        extra_user = UserFactory(username="foobar")
+        response = self.client.get(self.url, {'q': extra_user.username})
+        results = response.data['users']['results']
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]['username'], extra_user.username)
+        extra_user.delete()
+        response = self.client.get(self.url, {'q': "foobar"})
+        self.assertFalse("users" in response.data)
+
