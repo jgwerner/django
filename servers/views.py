@@ -14,7 +14,7 @@ from base.permissions import IsAdminUser
 from base.utils import get_object_or_404, validate_uuid
 from base.renderers import PlainTextRenderer
 from projects.permissions import ProjectChildPermission
-from projects.models import Collaborator
+from projects.models import Collaborator, Project
 from jwt_auth.views import JWTApiView
 from jwt_auth.serializers import VerifyJSONWebTokenServerSerializer
 from jwt_auth.utils import create_server_jwt
@@ -29,6 +29,23 @@ log = logging.getLogger('servers')
 jwt_response_payload_handler = api_settings.JWT_RESPONSE_PAYLOAD_HANDLER
 
 
+def check_project_details_before_lookup(self, request, **kwargs):
+    is_uuid = validate_uuid(kwargs['project_project'])
+    if is_uuid:
+        # Use UUID as pk in Project lookup
+        project = Project.objects.get(pk=kwargs['project_project'])
+    else:
+        # If not UUID, we first need to check if the project is from a user or team
+        if request.namespace.type == "user":
+            # If from a user, make sure user is also project owner
+            collaborators = Collaborator.objects.filter(user__username=request.namespace.name, owner=True)
+            project = collaborators.filter(project__name=kwargs['project_project']).first().project
+        else:
+            # If not UUID and not from a user, then it must be from a team
+            project = Project.objects.get(team__name=request.namespace.name,
+                                          name=kwargs['project_project'])
+    return project
+
 class ServerViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
     queryset = models.Server.objects.all()
     serializer_class = serializers.ServerSerializer
@@ -37,15 +54,7 @@ class ServerViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
     lookup_url_kwarg = 'server'
 
     def _update(self, request, partial, *args, **kwargs):
-        collaborators = Collaborator.objects.filter(user__username=request.namespace.name, owner=True)
-
-        # Check if 'project_project' is either a UUID or string
-        is_uuid = validate_uuid(kwargs['project_project'])
-        if is_uuid:
-            project = collaborators.filter(project__pk=kwargs['project_project']).first().project
-        else:
-            project = collaborators.filter(project__name=kwargs['project_project']).first().project
-
+        project = check_project_details_before_lookup(self, request, **kwargs)
         servers = Server.objects.filter(project=project)
         server = servers.tbs_filter(kwargs['server']).first()
 
@@ -74,15 +83,7 @@ class ServerViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
         return self._update(request, False, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
-        collaborators = Collaborator.objects.filter(user__username=request.namespace.name, owner=True)
-
-        # Check if 'project_project' is either a UUID or string
-        is_uuid = validate_uuid(kwargs['project_project'])
-        if is_uuid:
-            project = collaborators.filter(project__pk=kwargs['project_project']).first().project
-        else:
-            project = collaborators.filter(project__name=kwargs['project_project']).first().project
-
+        project = check_project_details_before_lookup(self, request, **kwargs)
         # Pass in required context keys
         serializer = self.get_serializer_class()(data=request.data,
                                                  context={
