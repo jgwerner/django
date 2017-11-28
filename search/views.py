@@ -20,6 +20,9 @@ class SearchView(ListAPIView):
         "users": UserSerializer,
     }
 
+    def _trim_results(self, pre_trim_results):
+        return [obj for obj in pre_trim_results if obj['id'] is not None]
+
     def list(self, request, *args, **kwargs):
         querysets = self.get_querysets()
         rep = {}
@@ -33,9 +36,9 @@ class SearchView(ListAPIView):
                 result['count'] = paginator.count
                 result['next'] = paginator.get_next_link()
                 result['previous'] = paginator.get_previous_link()
-                result['results'] = serializer.to_representation(page)
+                result['results'] = self._trim_results(serializer.to_representation(page))
             else:
-                result['results'] = serializer.to_representation(qs)
+                result['results'] = self._trim_results(serializer.to_representation(qs))
             if result['results']:
                 rep[typ] = result
         return Response(rep)
