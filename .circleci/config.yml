@@ -23,11 +23,12 @@ jobs:
       - NVIDIA_DOCKER_HOST: "http://localhost:3476"
       - AWS_DEFAULT_REGION: "us-west-2"
       - COVERAGE_PROCESS_START: ".coveragerc"
-      - DOCKER_IMAGE_NAME: "3blades/app-backend"
+      - DOCKER_IMAGE_NAME: "johngriebel/app-backend"
 
     working_directory: ~/repo
 
     steps:
+
       - checkout
 
       # Download and cache dependencies
@@ -55,7 +56,16 @@ jobs:
           command: |
             . venv/bin/activate
             python -W ignore tbs_coverage.py run manage.py test --parallel 16 && coverage combine && coverage report -m
-
-      - store_artifacts:
-          path: test-reports
-          destination: test-reports
+      - run:
+          name: generate test coverage
+          command: |
+            coverage combine && coverage report -m
+      - run:
+        name: report test coverage
+        command: |
+          bash <(curl -s https://codecov.io/bash)
+      - setup_remote_docker
+      - run:
+          name: build docker image
+          command: |
+            bash config/buildDockerImage.sh
