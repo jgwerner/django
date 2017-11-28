@@ -110,64 +110,61 @@ Restart docker service and confirm that setting is in place for CGroup:
 
 ### Environment Variables
 
-Modify environment variables located in `env` file with your local settings. You can also export env vars like so:
+Modify environment variables located in `env` file with your local settings. Below are short explanations for each variable:
 
 ```
-    AWS_ACCESS_KEY_ID=
-    AWS_SECRET_ACCESS_KEY=
-	AWS_DEFAULT_REGION=
-    AWS_SES_ACCESS_KEY_ID=
-    AWS_SES_SECRET_ACCESS_KEY=
-    AWS_SES_REGION_NAME=
-    AWS_SES_REGION_ENDPOINT=
-    AWS_STORAGE_BUCKET_NAME=
-    BILLING_BUCKET_SIZE_GB=
-    BUCKET_COST_USD=
-    C_ROOT=1
-    DATABASE_URL=postgres://postgres:@db:5432/postgres/
-    DEBUG=True
-    DEFAULT_FROM_EMAIL=
-    DEFAULT_STRIPE_PLAN_ID=
-    DJANGO_SETTINGS_MODULE=appdj.settings.prod
-    DOCKER_DOMAIN=172.17.0.1
-    DOCKER_EVENTS_URL=http://events:8000
-    DOCKER_PORT=2375
-    DOCKER_HOST=tcp://172.17.0.1:2375/
-    ECS_CLUSTER=
-    GETTING_STARTED_PROJECT=
-	  NVIDIA_DOCKER_HOST=http://172.17.0.1:3476
-    ELASTICSEARCH_URL=http://search:9200/
-    ELASTICSEARCH_USER=
-    ELASTICSEARCH_PASSWORD=
-    EMAIL_HOST=
-    EMAIL_PORT=
-    EMAIL_HOST_USER=
-    EMAIL_HOST_PASSWORD=
-    EMAIL_USE_SSL=
-    EMAIL_USE_TLS=
-    ENABLE_BILLING=True
-    GITHUB_CLIENT_ID=
-    GITHUB_CLIENT_SECRET=
-    GOOGLE_CLIENT_ID=
-    GOOGLE_CLIENT_SECRET=
-    INACTIVE_RESOURCE_DIR=/inactive
-    MAX_FILE_UPLOAD_SIZE=
-    MOCK_STRIPE=false
-    RABBITMQ_URL=amqp://broker/
-    REDIS_URL=redis://cache:6379/0
-    RESOURCE_DIR=
-    SERVER_RESOURCE_DIR=
-    SECRET_KEY=
-    SENTRY_DSN=
-    SLACK_KEY=
-    SLACK_SECRET=
-    STRIPE_SECRET_KEY=
-    TBS_DEFAULT_VERSION=
-    TBS_DOMAIN=localhost:3000
-    TBS_HOST=
-	  TBS_PORT=
-    TBS_HTTPS=
-    USAGE_WARNING_THRESHOLD=
+AWS_SES_ACCESS_KEY_ID: <string> Pair with AWS_SES_SECRET_ACCESS_KEY to access Simple Email Service (SES)
+AWS_SES_SECRET_ACCESS_KEY: <string> Pair with AWS_SES_ACCESS_KEY_ID to access Simple Email Service (SES)
+AWS_SES_REGION_NAME: <string> Name of AWS SES region, a geographic area containing Amazon data centers
+AWS_SES_REGION_ENDPOINT: <string> API endpoint associated with AWS_SES_REGION_NAME
+AWS_ACCESS_KEY_ID: <string> User identification associated with AWS_SECRET_ACCESS_KEY
+AWS_SECRET_ACCESS_KEY: <string> Unique key to access general Amazon Web Services (AWS)
+AWS_DEFAULT_REGION: <string> Default region for AWS access
+ECS_CLUSTER: <string> Name of Elastic Container Service (ECS) Cluster
+AWS_STORAGE_BUCKET_NAME: <string> Your AWS storage bucket name
+AWS_S3_CUSTOM_DOMAIN: <string> Domain of S3, if used as a Content Delivery Network (CDN)
+C_ROOT=1 ##### IS THIS SUPPOSED TO BE 'STATIC_ROOT'???
+DATABASE_URL: <string> Endpoint for your database
+DEBUG: <boolean> A switch for the app's debug mode
+DEFAULT_FROM_EMAIL: <email> Default email address for an email's "FROM" section
+DEFAULT_STRIPE_PLAN_ID: <string> Name of Stripe payment subscription plan
+DJANGO_SETTINGS_MODULE: <string> Location of current Django application settings file
+DOCKER_DOMAIN: <string> IP address of your Docker's domain
+DOCKER_HOST=tcp://192.168.46.20:2375
+DOCKER_EVENTS_URL=http://events:8000
+DOCKER_NET=tbs-net
+ELASTICSEARCH_URL=https://e06740b8cdf63ceb5615aaee2ddc889a.us-east-1.aws.found.io:9243
+ELASTICSEARCH_USER=elastic
+ELASTICSEARCH_PASSWORD=tQOBjkgwFArVO7zMk0l6HktJ
+EMAIL_HOST=email-smtp.us-west-2.amazonaws.com
+EMAIL_PORT=587
+EMAIL_HOST_USER=AKIAJFHIATSV7EUJZNAQ
+EMAIL_HOST_PASSWORD=Ar7x/tak+M+vovFlWmtf2peScqMwpbntJe3T9BhlRWVw
+EMAIL_USE_SSL=
+EMAIL_USE_TLS=true
+GITHUB_CLIENT_ID=e8f8036def6793a64b92
+GITHUB_CLIENT_SECRET=e8f417cf9c15763258f0df5a8cb33935bd219cf0
+GOOGLE_CLIENT_ID=330214233137-79dgn1ajjqsi97ggqc4cba42s6ioqa32.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=hxyswMcXMeh7KAkDcb72-Xkw
+GETTING_STARTED_PROJECT=GettingStarted
+NVIDIA_DOCKER_HOST=http://192.168.46.20:3476
+RABBITMQ_URL=amqp://broker
+REDIS_URL=redis://cache:6379/0
+RESOURCE_DIR=/workspaces
+SECRET_KEY=b1cd4956ea86eb683cef804eb0e661852de5a1da04115484
+SENTRY_DSN=c3e5c80465d7403180e9e75770cbc939:77afc1a577aa484caf1ada47c9c738d3
+SERVER_PORT=8000
+SERVER_RESOURCE_DIR=/resources
+SITE_ID=
+SLACK_KEY=7605478034.156595970196
+SLACK_SECRET=9a18776b2d408a043f31e0f39101c72c
+ENABLE_BILLING=true
+STRIPE_SECRET_KEY=sk_test_B0Zrx0iwcx9Wgk8j2QxGcIUk
+TBS_HOST=dev-api.3blades.ai
+TBS_DOMAIN=dev.3blades.ai
+TBS_HTTPS=true
+TRAVIS_PULL_REQUEST=false
+UI_API_URL=dev-api.3blades.ai
 ```
 
 > Obtain internal virtual machine IPv4 address with `ifconfig`. Usually enp0s3 or eth0 will be the IP address you need to configure for DOCKER_HOST env var. If you switch setup to use production configuration (`DJANGO_SETTINGS_MODULE='appdj.settings.prod`) make sure to set debug to false (`DEBUG=False`). By default, app-backend allows connections from `staging.3blades.io` and `localhost`. Additional host names or IP addresses can be added to the `TBS_HOST`.
