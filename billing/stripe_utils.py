@@ -263,37 +263,6 @@ def handle_stripe_invoice_created(stripe_obj):
         find_or_create_invoice(stripe_invoice)
 
 
-def calculate_compute_usage(customer_stripe_id):
-    usage_data = defaultdict(int)
-
-    usage_start_time = None
-    last_invoice = Invoice.objects.filter(
-        customer__stripe_id=customer_stripe_id).order_by("-period_end").first()
-    if last_invoice is not None:
-        usage_start_time = last_invoice.period_end
-    user = User.objects.get(customer__stripe_id=customer_stripe_id)
-
-    projects = user.collaborator_set.filter(owner=True).values_list('project__pk', flat=True)
-
-    servers = Server.objects.filter(project__pk__in=projects).select_related('server_size')
-    total_cost = 0
-    for server in servers:
-        this_server_data = get_server_usage([str(server.pk)], begin_measure_time=usage_start_time)
-        duration = this_server_data.get('duration')
-        if duration:
-            # server_size.cost_per_second is in _dollars_, we want cents
-            this_server_cost = (100 * server.server_size.cost_per_second *
-                                Decimal(duration.total_seconds()))
-        else:
-            this_server_cost = 0.0
-        usage_data[server] += this_server_cost
-        total_cost += this_server_cost
-
-    usage_data['total'] = total_cost
-
-    return usage_data
-
-
 def create_invoice_item_for_compute_usage(customer_stripe_id, usage_data):
     stripe_invoice_item = stripe.InvoiceItem.create(customer=customer_stripe_id,
                                                     amount=int(usage_data['total']),
@@ -313,16 +282,6 @@ def add_buckets_to_stripe_invoice(customer_stripe_id: str, buckets: int) -> Invo
     converted_data = convert_stripe_object(InvoiceItem, stripe_invoice_item)
     converted_data['quantity'] = 1
     return InvoiceItem.objects.create(**converted_data)
-
-
-def handle_upcoming_invoice(stripe_event):
-    event = create_event_from_webhook(stripe_event)
-    if event is not None:
-        customer_stripe_id = stripe_event['data']['object']['customer']
-        usage_data = calculate_compute_usage(customer_stripe_id)
-        invoice_item = create_invoice_item_for_compute_usage(customer_stripe_id,
-                                                             usage_data)
-        log.info(f"Created a new invoice item for {customer_stripe_id}: {invoice_item.stripe_id}")
 
 
 def assign_customer_to_default_plan(customer):
