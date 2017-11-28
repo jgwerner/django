@@ -1,3 +1,4 @@
+from datetime import datetime
 from unittest.mock import patch
 from guardian.shortcuts import assign_perm
 from django.urls import reverse
@@ -143,7 +144,7 @@ class ServerTest(APITestCase):
         self.assertIsNotNone(server_reloaded)
         self.assertFalse(server_reloaded.is_active)
 
-    @patch('servers.spawners.DockerSpawner.status')
+    @patch('servers.spawners.docker.DockerSpawner.status')
     def test_server_internal_running(self, server_status):
         server_status.return_value = Server.RUNNING
         server = ServerFactory(project=self.project, config={'ports': {'jupyter': '1234'}})
@@ -330,7 +331,7 @@ class ServerTestWithName(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertIsNone(Server.objects.filter(pk=server.pk, is_active=True).first())
 
-    @patch('servers.spawners.DockerSpawner.status')
+    @patch('servers.spawners.docker.DockerSpawner.status')
     def test_server_internal_running(self, server_status):
         server_status.return_value = Server.RUNNING
         server = ServerFactory(project=self.project, config={'ports': {'jupyter': '1234'}})
@@ -450,7 +451,9 @@ class ServerRunStatisticsTestCase(APITestCase):
         self.assertTrue(ServerRunStatistics.objects.filter(server=server).exists())
 
     def test_update_latest(self):
-        stats = ServerRunStatisticsFactory(server__project=self.project, stop=timezone.datetime(1, 1, 1))
+        stats = ServerRunStatisticsFactory(server__project=self.project,
+                                           project=self.project,
+                                           stop=timezone.make_aware(datetime(1, 1, 1)))
         url = reverse('serverrunstatistics-update-latest', kwargs={
             'namespace': self.project.get_owner_name(),
             'project_project': str(self.project.pk),
@@ -510,7 +513,9 @@ class ServerRunStatisticsTestCaseWithName(APITestCase):
         self.assertDictEqual(response.data, expected)
 
     def test_update_latest(self):
-        stats = ServerRunStatisticsFactory(server__project=self.project, stop=timezone.datetime(1, 1, 1))
+        stats = ServerRunStatisticsFactory(server__project=self.project,
+                                           project=self.project,
+                                           stop=timezone.make_aware(datetime(1, 1, 1)))
         url = reverse('serverrunstatistics-update-latest', kwargs={
             'namespace': self.project.get_owner_name(),
             'project_project': self.project.name,
@@ -521,7 +526,7 @@ class ServerRunStatisticsTestCaseWithName(APITestCase):
         data = dict(stop=stop.isoformat('T')[:-6] + 'Z')
         resp = self.client.post(url, data=data)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        stats.refresh_from_db()
+        stats = ServerRunStatistics.objects.get(pk=stats.pk)
         self.assertEqual(stats.stop, stop)
 
 

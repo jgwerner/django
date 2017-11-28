@@ -407,6 +407,8 @@ DEFAULT_STRIPE_PLAN_ID = os.getenv("DEFAULT_STRIPE_PLAN_ID", "threeblades-free-p
 
 NVIDIA_DOCKER_HOST = os.environ.get('NVIDIA_DOCKER_HOST')
 
+SPAWNER = 'servers.spawners.ecs.ECSSpawner'
+ECS_CLUSTER = os.environ.get('ECS_CLUSTER', 'default')
 REDIRECT_IS_HTTPS = True
 
 # Default server memory sizes in MB, implemented in /servers/management/commands/
@@ -418,3 +420,9 @@ SERVER_SIZE = {
 }
 
 GETTING_STARTED_PROJECT = os.environ.get("GETTING_STARTED_PROJECT", "GettingStarted")
+
+USAGE_WARNING_THRESHOLDS = os.environ.get("USAGE_WARNING_THRESHOLDS", "75,90,100")
+
+BILLING_BUCKET_SIZE_GB = os.environ.get("BILLING_BUCKET_SIZE_GB", 5)
+
+BUCKET_COST_USD = os.environ.get("BUCKET_COST_USD", 5)

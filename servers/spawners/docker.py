@@ -1,55 +1,20 @@
-import abc
-import os
-
 import logging
 import tarfile
-import requests
 from io import BytesIO
-from pathlib import Path
 
 from django.conf import settings
-from django.contrib.sites.models import Site
 from django.utils import timezone
 from django.utils.functional import cached_property
 import docker
 from docker.errors import APIError
 
-from jwt_auth.utils import create_auth_jwt
+from .base import BaseSpawner, GPUMixin, TraefikMixin
 
 
 logger = logging.getLogger("servers")
 
 
-class ServerSpawner(object):
-    """
-    Server service interface to allow start/stop/terminate servers
-    """
-    __metaclass__ = abc.ABCMeta
-
-    def __init__(self, server):
-        self.server = server
-
-    @abc.abstractmethod
-    def start(self, *args, **kwargs) -> None:
-        return None
-
-    @abc.abstractmethod
-    def stop(self) -> None:
-        return None
-
-    @abc.abstractmethod
-    def terminate(self) -> None:
-        return None
-
-    @abc.abstractmethod
-    def status(self) -> str:
-        """
-        Server statuses should be those defined in server model
-        """
-        return ''
-
-
-class DockerSpawner(ServerSpawner):
+class DockerSpawner(TraefikMixin, GPUMixin, BaseSpawner):
     def __init__(self, server, client=None):
         super().__init__(server)
         self.client = client or (server.host.client if server.host else docker.from_env())
@@ -60,16 +25,7 @@ class DockerSpawner(ServerSpawner):
         self.network_name = 'project_{}_network'.format(self.server.project.pk)
         self.gpu_info = None
 
-    def _get_envs(self) -> dict:
-        all_env_vars = {}
-        # get user defined env vars
-        all_env_vars.update(self.server.env_vars or {})
-        # get admin defined env vars
-        all_env_vars['TZ'] = self._get_user_timezone()
-        logger.info("Environment variables to create a container:'{}'".format(all_env_vars))
-        return all_env_vars
-
-    def start(self, *args, **kwargs) -> None:
+    def start(self) -> None:
         self.cmd = self._get_cmd()
         if not self._is_network_exists():
             self._create_network()
@@ -84,52 +40,19 @@ class DockerSpawner(ServerSpawner):
             raise
         self.server.last_start = timezone.now()
 
-    def _get_cmd(self):
-        command = '''/runner -key={token} -ns={server.project.owner.username} -version={version}
-        -projectID={server.project.pk} -serverID={server.pk} -root={domain} -secret={secret}'''.format(
-            token=create_auth_jwt(self.server.project.owner),
-            server=self.server,
-            domain=Site.objects.get_current(),
-            version=settings.DEFAULT_VERSION,
-            secret=settings.SECRET_KEY,
-        )
-        if 'script' in self.server.config:
-            command += " " + "-script=" + self.server.config["script"]
-        if 'function' in self.server.config:
-            command += " " + "-function=" + self.server.config["function"]
-        if "type" in self.server.config:
-            command += " -type=" + self.server.get_type()
-        if self.server.config['type'] in settings.SERVER_COMMANDS:
-            command += " " + settings.SERVER_COMMANDS[self.server.config['type']].format(
-                server=self.server, version=settings.DEFAULT_VERSION)
-        if "command" in self.server.config:
-            command += " " + self.server.config["command"]
-        return command
-
     def _get_host_config(self):
-        binds = ['{}:{}'.format(self.server.volume_path, settings.SERVER_RESOURCE_DIR)]
-        ssh_path = self._get_ssh_path()
-        if ssh_path:
-            binds.append('{}:{}/.ssh'.format(ssh_path, settings.SERVER_RESOURCE_DIR))
-        if self.server.startup_script:
-            binds.append('{}:/start.sh'.format(
-                str(Path(self.server.volume_path).joinpath(self.server.startup_script))))
-
         config = dict(
             mem_limit='{}m'.format(self.server.server_size.memory),
-            restart_policy=self.restart
+            restart_policy=self.restart,
+            binds=self._get_binds(),
         )
 
-        # The order of these conditionals *does* matter. RStudio images will blow up
-        if (not self.server.config['type'].lower() == 'rstudio') and self._is_gpu_instance:
-            binds.append(f"{self._gpu_driver_path}:/usr/local/nvidia:ro")
-            config['devices'] = ['/dev/nvidiactl:/dev/nvidiactl:rwm',
-                                 '/dev/nvidia-uvm:/dev/nvidia-uvm:rwm',
-                                 '/dev/nvidia0:/dev/nvidia0:rwm']
-        config['binds'] = binds
+        devices = self._get_devices()
+        if devices:
+            config['devices'] = devices
 
         if not self._is_swarm:
-            config['links'] = self._connected_links()
+            config['links'] = self._get_links()
         return config
 
     def _prepare_tar_file(self):
@@ -160,7 +83,7 @@ class DockerSpawner(ServerSpawner):
 
         volume_config = {}
 
-        if (not self.server.config['type'].lower() == 'rstudio') and self._is_gpu_instance:
+        if self._is_gpu_instance:
             logger.info("Creating a GPU enabled container.")
             volume_config['volume_driver'] = "nvidia-docker"
             volume_config['volumes'] = ["/usr/local/nvidia"]
@@ -171,7 +94,7 @@ class DockerSpawner(ServerSpawner):
         config = dict(
             image=self.server.image_name,
             command=self.cmd,
-            environment=self._get_envs(),
+            environment=self._get_env(),
             name=self.server.container_name,
             host_config=self.client.api.create_host_config(**self._get_host_config()),
             labels=self._get_traefik_labels(),
@@ -182,22 +105,6 @@ class DockerSpawner(ServerSpawner):
         if self.entry_point:
             config.update(dict(entrypoint=self.entry_point))
         return config
-
-    def _get_traefik_labels(self):
-        labels = {}
-        server_uri = f"/{settings.DEFAULT_VERSION}/{self.server.project.owner.username}/projects/{self.server.project_id}/servers/{self.server.id}/endpoint/"
-        domain = Site.objects.get_current().domain
-        scheme = 'https' if settings.HTTPS else 'http'
-        for port in self._get_exposed_ports():
-            endpoint = settings.SERVER_PORT_MAPPING.get(port)
-            if endpoint:
-                service_name = f"{self.server.id}-{endpoint}"
-                labels[f"traefik.{service_name}-path.port"] = port
-                labels[f"traefik.{service_name}-header.port"] = port
-                labels[f"traefik.{service_name}-path.frontend.rule"] = f"PathPrefix:{server_uri}{endpoint}"
-                labels[f"traefik.{service_name}-header.frontend.rule"] = \
-                    f"HeadersRegexp: Referer, {scheme}://{domain}{server_uri}{endpoint}.*"
-        return labels
 
     def _create_network_config(self):
         config = {'aliases': [self.server.name]}
@@ -277,33 +184,9 @@ class DockerSpawner(ServerSpawner):
                 'exited': self.server.STOPPED
             }[result['State']['Status']]
 
-    def _get_ssh_path(self):
-        ssh_path = os.path.abspath(os.path.join(self.server.volume_path, '..', '.ssh'))
-        if os.path.exists(ssh_path):
-            return str(ssh_path)
-        return ''
-
     def _compare_container_env(self, container) -> bool:
         old_envs = dict(env.split("=", maxsplit=1) for env in container.get('Config', {}).get('Env', []))
         return all(old_envs.get(key) == val for key, val in (self.server.env_vars or {}).items())
-
-    def _get_user_timezone(self):
-        tz = 'UTC'
-        try:
-            owner_profile = self.server.project.owner.profile
-        except self.server.project.owner._meta.model.profile.RelatedObjectDoesNotExist:
-            return tz
-        if owner_profile and owner_profile.timezone:
-            tz = owner_profile.timezone
-        return tz
-
-    def _connected_links(self):
-        links = {}
-        for source in self.server.connected.all():
-            if not source.is_running():
-                DockerSpawner(source).launch()
-            links[source.container_name] = source.name.lower()
-        return links
 
     def _create_network(self):
         driver = 'overlay' if self._is_swarm else 'bridge'
@@ -337,27 +220,8 @@ class DockerSpawner(ServerSpawner):
         result.extend([k.split('/')[0] for k in resp["Config"]["ExposedPorts"]])
         return result
 
-    def _gpu_info(self):
-        gpu_info_url = f"{settings.NVIDIA_DOCKER_HOST}/v1.0/gpu/info/json"
-        try:
-            resp = requests.get(gpu_info_url)
-        except requests.exceptions.ConnectionError:
-            return
-        if resp.status_code == 200:
-            self.gpu_info = resp.json()
 
-    @cached_property
-    def _gpu_driver_path(self):
-        driver = self.gpu_info['Version']['Driver']
-        return f'/var/lib/nvidia-docker/volumes/nvidia_driver/{driver}'
-
-    @cached_property
-    def _is_gpu_instance(self):
-        self._gpu_info()
-        return bool(self.gpu_info)
-
-
-class ServerDummySpawner(ServerSpawner):
+class ServerDummySpawner(BaseSpawner):
     def status(self) -> str:
         return 'running'
 
@@ -367,8 +231,4 @@ class ServerDummySpawner(ServerSpawner):
 
     def stop(self):
         self.server.status = self.server.STOPPED
-        return None
-
-    def terminate(self):
-        self.server.delete()
         return None

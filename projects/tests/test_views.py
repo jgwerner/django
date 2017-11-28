@@ -316,7 +316,7 @@ class ProjectTest(ProjectTestMixin, APITestCase):
                                                 'version': settings.DEFAULT_VERSION})
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertIsNone(Project.objects.filter(pk=project.pk).first())
+        self.assertIsNone(Project.objects.filter(pk=project.pk, is_active=True).first())
 
     def test_non_owner_cannot_delete_project(self):
         owner_collab = CollaboratorFactory()
@@ -462,7 +462,7 @@ class ProjectTestWithName(ProjectTestMixin, APITestCase):
                                                 'version': settings.DEFAULT_VERSION})
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertIsNone(Project.objects.filter(pk=project.pk).first())
+        self.assertIsNone(Project.objects.filter(pk=project.pk, is_active=True).first())
 
     def test_non_owner_cannot_delete_project(self):
         owner_collab = CollaboratorFactory()

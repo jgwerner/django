@@ -9,10 +9,9 @@ from base.serializers import SearchSerializerMixin
 from projects.models import (Project, Collaborator,
                              SyncedResource, ProjectFile)
 from .utils import create_ancillary_project_stuff
+from servers.utils import stop_all_servers_for_project
 
 User = get_user_model()
-import logging
-log = logging.getLogger('projects')
 
 
 class ProjectSerializer(SearchSerializerMixin, serializers.ModelSerializer):
@@ -121,9 +120,12 @@ class CollaboratorSerializer(serializers.ModelSerializer):
         project_id = self.context['view'].kwargs['project_project']
         project = Project.objects.tbs_get(project_id)
         owner = validated_data.get("owner", False)
-        if owner is True:
-            Collaborator.objects.filter(project=project).update(owner=False)
         user = User.objects.filter(Q(username=member) | Q(email=member), is_active=True).first()
+
+        if owner is True:
+            updated = Collaborator.objects.filter(project=project).exclude(user=user).update(owner=False)
+            if updated:
+                stop_all_servers_for_project(project)
 
         # Ensure that owners and users with write permissions get read permissions as well.
         # For some reason, they come through as a set instead of a list

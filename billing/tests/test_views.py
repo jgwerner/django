@@ -22,7 +22,6 @@ from billing.stripe_utils import create_stripe_customer_from_user, create_plan_i
 from billing.tests.utilities import delete_all_plans_created_by_tests
 from jwt_auth.utils import create_auth_jwt
 
-from notifications.models import Notification
 
 if settings.MOCK_STRIPE:
     from billing.tests import mock_stripe as stripe
@@ -159,7 +158,6 @@ class CardTest(APITestCase):
 
 
 class SubscriptionTest(APITestCase):
-    fixtures = ['notification_types.json']
 
     plans_to_delete = []
 
@@ -422,11 +420,6 @@ class InvoiceTest(TestCase):
         stripe_subscription = stripe.Subscription.retrieve(subscription.stripe_id)
         self.assertEqual(sub_reloaded.status, stripe_subscription['status'])
 
-        # We shouldn't create a notification if the subscription was previously in trialing status
-        notifications = Notification.objects.filter(user=self.user,
-                                                    type__name="invoice.payment_failed")
-        self.assertFalse(notifications.exists())
-
     def test_invoice_payment_success_webhook(self):
         url = reverse("stripe-invoice-payment-success",
                       kwargs={'version': settings.DEFAULT_VERSION})
@@ -450,10 +443,6 @@ class InvoiceTest(TestCase):
         sub_reloaded = Subscription.objects.get(pk=subscription.pk)
         stripe_subscription = stripe.Subscription.retrieve(subscription.stripe_id)
         self.assertEqual(sub_reloaded.status, stripe_subscription['status'])
-
-        notifications = Notification.objects.filter(user=self.user,
-                                                    type__name="invoice.payment_succeeded")
-        self.assertTrue(notifications.exists())
 
     def test_invoice_upcoming_webhook(self):
         url = reverse("stripe-invoice-upcoming", kwargs={'version': settings.DEFAULT_VERSION})
