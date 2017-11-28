@@ -242,7 +242,6 @@ class ServerTestWithName(APITestCase):
             config={'type': 'jupyter'},
         )
         response = self.client.post(url, data)
-        print("vars **** ", vars(response))
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_server(self):

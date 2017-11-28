@@ -1,4 +1,5 @@
 import logging
+from django.conf import settings
 from django.db.models import Sum, Max, F, Q
 from django.db.models.functions import Coalesce, Now
 from rest_framework import status, viewsets
@@ -38,6 +39,7 @@ class ServerViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
     def _update(self, request, partial, *args, **kwargs):
         collaborators = Collaborator.objects.filter(user__username=request.namespace.name, owner=True)
 
+        # Check if 'project_project' is either a UUID or string
         is_uuid = validate_uuid(kwargs['project_project'])
         if is_uuid:
             project = collaborators.filter(project__pk=kwargs['project_project']).first().project
@@ -51,7 +53,14 @@ class ServerViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
         if data.get('name') == server.name:
             data.pop('name')
 
-        serializer = self.get_serializer_class()(instance=server, data=data, partial=partial, context={'project': project})
+        # Pass in required context keys
+        serializer = self.get_serializer_class()(data=request.data,
+                                                 instance=server,
+                                                 context={
+                                                     'project': project,
+                                                     'request': request,
+                                                     'version': self.kwargs.get('version', settings.DEFAULT_VERSION)
+                                                 })
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
@@ -66,14 +75,21 @@ class ServerViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         collaborators = Collaborator.objects.filter(user__username=request.namespace.name, owner=True)
-        is_uuid = validate_uuid(kwargs['project_project'])
 
+        # Check if 'project_project' is either a UUID or string
+        is_uuid = validate_uuid(kwargs['project_project'])
         if is_uuid:
             project = collaborators.filter(project__pk=kwargs['project_project']).first().project
         else:
             project = collaborators.filter(project__name=kwargs['project_project']).first().project
 
-        serializer = self.get_serializer_class()(data=request.data, context={'project': project})
+        # Pass in required context keys
+        serializer = self.get_serializer_class()(data=request.data,
+                                                 context={
+                                                     'project': project,
+                                                     'request': request,
+                                                     'version': self.kwargs.get('version', settings.DEFAULT_VERSION)
+                                                 })
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
