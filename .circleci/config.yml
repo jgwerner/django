@@ -59,6 +59,7 @@ jobs:
       - run:
           name: generate test coverage
           command: |
+            . venv/bin/activate
             coverage combine && coverage report -m
       - run:
           name: report test coverage
