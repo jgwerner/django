@@ -17,7 +17,7 @@ from jwt_auth.views import JWTApiView
 from jwt_auth.serializers import VerifyJSONWebTokenServerSerializer
 from jwt_auth.utils import create_server_jwt
 from teams.permissions import TeamGroupPermission
-from .tasks import start_server, stop_server, terminate_server
+from .tasks import start_server, stop_server, terminate_server, deploy
 from .permissions import ServerChildPermission, ServerActionPermission
 from . import serializers, models
 from .utils import get_server_usage
@@ -177,3 +177,10 @@ class DeploymentViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, ProjectChildPermission, TeamGroupPermission)
     filter_fields = ("name",)
     lookup_url_kwarg = 'deployment'
+
+
+@api_view(['POST'])
+def deploy_deployment(request, **kwargs):
+    deployment = get_object_or_404(models.Deployment, kwargs.get('deployment'))
+    deploy.delay(deployment.pk)
+    return Response({'message': 'OK'})

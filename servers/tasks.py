@@ -1,6 +1,7 @@
 from celery import shared_task
 from .spawners import DockerSpawner
-from .models import Server
+from .models import Server, Deployment
+from .aws_lambda import LambdaDeployer
 
 
 def server_action(action: str, server: str):
@@ -22,3 +23,10 @@ def stop_server(server):
 @shared_task()
 def terminate_server(server):
     server_action('terminate', server)
+
+
+@shared_task()
+def deploy(deployment):
+    deployment = Deployment.objects.tbs_get(deployment)
+    deployer = LambdaDeployer(deployment)
+    deployer.deploy()

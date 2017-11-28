@@ -122,12 +122,24 @@ class Runtime(models.Model):
 class Framework(models.Model):
     name = models.CharField(max_length=50)
     version = models.CharField(max_length=10)
+    url = models.URLField()
 
     def __str__(self):
         return f"{self.name} {self.version}"
 
 
 class Deployment(ServerModelAbstract, models.Model):
+    PROD = 'prod'
+    DEV = 'dev'
+    STAGING = 'staging'
+
+    STAGE_CHOICES = (
+        (DEV, "Dev"),
+        (STAGING, "Staging"),
+        (PROD, "Production"),
+    )
+
+    stage = models.CharField(max_length=10, choices=STAGE_CHOICES, default=DEV)
     framework = models.ForeignKey(Framework, related_name='deployments', on_delete=models.SET_NULL,
                                   blank=True, null=True)
     runtime = models.ForeignKey(Runtime, related_name='deployments', on_delete=models.PROTECT)
