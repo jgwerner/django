@@ -17,7 +17,6 @@ from billing.serializers import (PlanSerializer, CardSerializer,
                                  InvoiceSerializer,
                                  InvoiceItemSerializer)
 from billing.stripe_utils import (handle_stripe_invoice_created,
-                                  handle_upcoming_invoice,
                                   handle_stripe_invoice_payment_status_change,
                                   handle_subscription_updated,
                                   cancel_subscriptions)
@@ -151,16 +150,6 @@ def stripe_invoice_payment_failed(request, *args, **kwargs):
     body = request.body
     event_json = json.loads(body.decode('utf-8'))
     handle_stripe_invoice_payment_status_change(event_json)
-    return HttpResponse(status=status.HTTP_200_OK)
-
-
-@require_POST
-@csrf_exempt
-def stripe_invoice_upcoming(request, *args, **kwargs):
-    body = request.body
-    event_json = json.loads(body.decode("utf-8"))
-    handle_upcoming_invoice(event_json)
-
     return HttpResponse(status=status.HTTP_200_OK)
 
 

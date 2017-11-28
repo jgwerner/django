@@ -444,38 +444,6 @@ class InvoiceTest(TestCase):
         stripe_subscription = stripe.Subscription.retrieve(subscription.stripe_id)
         self.assertEqual(sub_reloaded.status, stripe_subscription['status'])
 
-    def test_invoice_upcoming_webhook(self):
-        url = reverse("stripe-invoice-upcoming", kwargs={'version': settings.DEFAULT_VERSION})
-        from billing.tests import mock_stripe
-        subscription = self._create_subscription_in_stripe()
-
-        collaborator = CollaboratorFactory(user=self.user)
-        project = collaborator.project
-        run_stats = ServerRunStatisticsFactory(server__project=project)
-
-        expected_cost = (run_stats.server.server_size.cost_per_second *
-                         Decimal((run_stats.stop - run_stats.start).total_seconds())) * 100
-
-        webhook_data = mock_stripe.Event.get_webhook_event(event_type="invoice.upcoming",
-                                                           customer=self.customer.stripe_id,
-                                                           plan=subscription.plan.stripe_id,
-                                                           subscription=subscription.stripe_id,
-                                                           amount=subscription.plan.amount,
-                                                           interval=subscription.plan.interval,
-                                                           trial_period=subscription.plan.trial_period_days)
-        response = self.client.post(url, json.dumps(webhook_data), content_type="application/json")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        events = Event.objects.filter(stripe_id=webhook_data['id'])
-        self.assertEqual(events.count(), 1)
-        self.assertEqual(events.first().event_type, "invoice.upcoming")
-
-        # Note: Normally we would want to ensure that the invoice item was associated with the correct
-        # Invoice, but since the Invoice is still upcoming, it is not stored in our DB, thus the Item
-        # Has no association yet.
-        invoice_items = InvoiceItem.objects.all()
-        self.assertEqual(invoice_items.count(), 1)
-        self.assertEqual(invoice_items.first().amount, expected_cost)
-
     def test_sending_duplicate_event_does_nothing(self):
         existing_event = EventFactory()
         from billing.tests import mock_stripe
