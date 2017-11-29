@@ -1,9 +1,9 @@
 from celery import shared_task
 from .models import Server, Deployment
-from .aws_lambda import LambdaDeployer
-from .spawners import get_spawner_class
+from .spawners import get_spawner_class, get_deployer_class
 
 Spawner = get_spawner_class()
+Deployer = get_deployer_class()
 
 
 def server_action(action: str, server: str):
@@ -30,5 +30,5 @@ def terminate_server(server):
 @shared_task()
 def deploy(deployment):
     deployment = Deployment.objects.tbs_get(deployment)
-    deployer = LambdaDeployer(deployment)
+    deployer = Deployer(deployment)
     deployer.deploy()

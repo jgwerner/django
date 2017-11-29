@@ -1,17 +1,15 @@
 import os
 import boto3
-import uuid
 import requests
 import io
 import zipfile
 import base64
 from functools import partial
 from django.conf import settings
-from servers.models import Deployment
 
 
 class LambdaDeployer:
-    def __init__(self, deployment: Deployment):
+    def __init__(self, deployment):
         self.deployment = deployment
         self.lmbd = boto3.client('lambda')
         self.api_geatway = boto3.client('apigateway')
@@ -26,12 +24,10 @@ class LambdaDeployer:
             MemorySize=1536,
             Handler=self.deployment.config['handler'],
             Timeout=300,
-            Tags={'STAGE': self.deployment.stage}
         )
         self.deployment.config['function_arn'] = resp['FunctionArn']
         if 'rest_api_id' not in self.deployment.config:
             self.create_project_api()
-        self.deployment.save()
 
         # create resource
         resource_resp = self.api_gateway.create_resource(
@@ -68,39 +64,8 @@ class LambdaDeployer:
             integrationHttpMethod="POST",
             uri=uri,
         )
-
-        self.api_gateway.put_integration_response(
-            restApiId=self.deployment.config['rest_api_id'],
-            resourceId=resource_resp['id'],
-            httpMethod="POST",
-            statusCode="200",
-            selectionPattern=".*"
-        )
-
-        # create POST method response
-        self.api_gateway.put_method_response(
-            restApiId=self.deployment.config['rest_api_id'],
-            resourceId=resource_resp['id'],
-            httpMethod="GET",
-            statusCode="200",
-        )
-
-        uri_data['aws-api-id'] = self.deployment.config['rest_api_id']
-        source_arn = "arn:aws:execute-api:{aws-region}:{aws-acct-id}:{aws-api-id}/*/GET/{lambda-function-name}".format(**uri_data)
-
-        self.lmbd.add_permission(
-            FunctionName=self.deployment.name,
-            StatementId=uuid.uuid4().hex,
-            Action="lambda:InvokeFunction",
-            Principal="apigateway.amazonaws.com",
-            SourceArn=source_arn
-        )
-
-        # state 'your stage name' was already created via API Gateway GUI
-        self.api_gateway.create_deployment(
-            restApiId=self.deployment.config['rest_api_id'],
-            stageName=self.deployment.stage,
-        )
+        self.deployment.config['endpoint'] = f"https://{self.deployment.config['rest_api_id']}.execute-api.{settings.AWS_DEFAULT_REGION}.amazonaws.com/{self.deployment.name}"
+        self.deployment.save()
 
     def create_project_api(self):
         resp = self.api_gateway.create_rest_api(

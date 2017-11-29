@@ -10,9 +10,10 @@ from django.utils.text import slugify
 
 from base.models import TBSQuerySet
 from users.models import User
-from servers.spawners import get_spawner_class
+from servers.spawners import get_spawner_class, get_deployer_class
 
 Spawner = get_spawner_class()
+Deployer = get_deployer_class()
 
 
 class ServerModelAbstract(models.Model):
@@ -132,20 +133,14 @@ class Framework(models.Model):
 
 
 class Deployment(ServerModelAbstract, models.Model):
-    PROD = 'prod'
-    DEV = 'dev'
-    STAGING = 'staging'
-
-    STAGE_CHOICES = (
-        (DEV, "Dev"),
-        (STAGING, "Staging"),
-        (PROD, "Production"),
-    )
-
-    stage = models.CharField(max_length=10, choices=STAGE_CHOICES, default=DEV)
     framework = models.ForeignKey(Framework, related_name='deployments', on_delete=models.SET_NULL,
                                   blank=True, null=True)
     runtime = models.ForeignKey(Runtime, related_name='deployments', on_delete=models.PROTECT)
+
+    @property
+    def status(self):
+        deployer = Deployer()
+        return deployer.status()
 
 
 class ServerSize(models.Model):
