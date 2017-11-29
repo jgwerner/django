@@ -1,6 +1,6 @@
 import logging
 from django.conf import settings
-from django.db.models import Sum, Max, F, Q
+from django.db.models import Sum, Max, F
 from django.db.models.functions import Coalesce, Now
 from rest_framework import status, viewsets
 from rest_framework.decorators import api_view, permission_classes, renderer_classes, list_route
@@ -65,6 +65,7 @@ class ServerViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
         # Pass in required context keys
         serializer = self.get_serializer_class()(data=request.data,
                                                  instance=server,
+                                                 partial=partial,
                                                  context={
                                                      'project': project,
                                                      'request': request,
@@ -94,7 +95,6 @@ class ServerViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-        server = serializer.instance
 
     def perform_destroy(self, instance):
         terminate_server.apply_async(
