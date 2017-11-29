@@ -4,12 +4,12 @@ import logging
 from typing import List, Dict, Tuple
 from django.conf import settings
 
-from .base import BaseSpawner, GPUMixin, TraefikMixin
+from .base import BaseSpawner, GPUMixin
 
 logger = logging.getLogger("servers")
 
 
-class ECSSpawner(GPUMixin, TraefikMixin, BaseSpawner):
+class ECSSpawner(GPUMixin, BaseSpawner):
     def __init__(self, server, client=None) -> None:
         super().__init__(server)
         self.client = client or boto3.client('ecs')
@@ -134,3 +134,13 @@ class ECSSpawner(GPUMixin, TraefikMixin, BaseSpawner):
                 'containerPort': int(port)
             })
         return mappings
+
+    def _get_traefik_labels(self) -> Dict[str, str]:
+        labels = {"traefik.enable": "true"}
+        server_uri = f"/{settings.DEFAULT_VERSION}/{self.server.project.owner.username}/projects/{self.server.project_id}/servers/{self.server.id}/endpoint/"
+        for port in self._get_exposed_ports():
+            endpoint = settings.SERVER_PORT_MAPPING.get(port)
+            if endpoint:
+                labels["traefik.port"] = port
+                labels["traefik.frontend.rule"] = f"PathPrefix:{server_uri}{endpoint}"
+        return labels

@@ -361,3 +361,10 @@ class ECSSpawnerTestCase(TestCase):
         self.stubber.add_response('describe_tasks', describe_response, describe_params)
         self.stubber.activate()
         self.assertEqual(self.spawner.status(), 'Error')
+
+    def test_get_traefik_labels(self):
+        labels = self.spawner._get_traefik_labels()
+        self.assertIn("traefik.port", labels)
+        self.assertEqual(labels["traefik.port"], self.spawner._get_exposed_ports()[0])
+        self.assertIn("traefik.frontend.rule", labels)
+        self.assertIn(str(self.server.pk), labels["traefik.frontend.rule"])
