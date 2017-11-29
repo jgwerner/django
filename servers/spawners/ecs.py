@@ -40,7 +40,7 @@ class ECSSpawner(GPUMixin, TraefikMixin, BaseSpawner):
         if 'task_arn' not in self.server.config:
             return self.server.STOPPED
         try:
-            resp = self.client.describe_tasks(tasks=[self.server.config['task_arn']])
+            resp = self.client.describe_tasks(tasks=[self.server.config['task_arn']], cluster=settings.ECS_CLUSTER)
         except Exception as e:
             logger.exception("Error getting server status")
             return self.server.ERROR
