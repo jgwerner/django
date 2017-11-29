@@ -233,10 +233,10 @@ class ServerTestWithName(APITestCase):
 
     def test_validate_server_name_prevents_duplicate_name(self):
         # Passing a project server name identical to an existing server name should error
-        server = ServerFactory(project=self.project, name='test_name')
+        server = ServerFactory(project=self.project)
         url = reverse('server-list', kwargs=self.url_kwargs)
         data = dict(
-            name='test_name', # name should match name from duplicate ServerFactory
+            name=server.name, # name should match name from duplicate ServerFactory
             project=self.project.name, # project should also match
             connected=[],
             config={'type': 'jupyter'},
