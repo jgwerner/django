@@ -110,68 +110,7 @@ Restart docker service and confirm that setting is in place for CGroup:
 
 ### Environment Variables
 
-Modify environment variables located in `env` file with your local settings. Below are short explanations for each variable:
-
-```
-AWS_SES_ACCESS_KEY_ID: <string> Pair with AWS_SES_SECRET_ACCESS_KEY to access Simple Email Service (SES)
-AWS_SES_SECRET_ACCESS_KEY: <string> Pair with AWS_SES_ACCESS_KEY_ID to access Simple Email Service (SES)
-AWS_SES_REGION_NAME: <string> Name of AWS SES region, a geographic area containing Amazon data centers
-AWS_SES_REGION_ENDPOINT: <string> API endpoint associated with AWS_SES_REGION_NAME
-AWS_ACCESS_KEY_ID: <string> User account ID key to access general Amazon Web Services (AWS)
-AWS_SECRET_ACCESS_KEY: <string> Secret key associated with AWS_ACCESS_KEY_ID
-AWS_DEFAULT_REGION: <string> Default region for AWS access
-ECS_CLUSTER: <string> Name of Elastic Container Service (ECS) Cluster
-AWS_STORAGE_BUCKET_NAME: <string> Your AWS storage bucket name
-AWS_S3_CUSTOM_DOMAIN: <string> Domain of S3, if used as a Content Delivery Network (CDN)
-C_ROOT=1 ##### IS THIS SUPPOSED TO BE 'STATIC_ROOT'???
-DATABASE_URL: <string> Endpoint for your database
-DEBUG: <boolean> Enables the app's debug mode
-DEFAULT_FROM_EMAIL: <email> Default email address for an email's "FROM" section
-DEFAULT_STRIPE_PLAN_ID: <string> Name of Stripe payment subscription plan
-DJANGO_SETTINGS_MODULE: <string> Location of current Django application settings file
-DOCKER_DOMAIN: <string> IP address of your Docker's domain
-DOCKER_HOST: <string> TCP address of your Docker's host
-DOCKER_EVENTS_URL: <string> URL for your Docker's events distributor
-DOCKER_NET: <string> Name of Docker Net
-ELASTICSEARCH_URL: <string> URL for Elasticsearch endpoint
-ELASTICSEARCH_USER: <string> Elasticsearch username
-ELASTICSEARCH_PASSWORD: <string> Password user for Elasticsearch account
-EMAIL_HOST: <string> Host address for email client
-EMAIL_PORT: <integer> Port number for email client
-EMAIL_HOST_USER: <string> Email host username
-EMAIL_HOST_PASSWORD: <string> Password associated with EMAIL_HOST_USER
-EMAIL_USE_TLS: <boolean> Enables Transport Layer Security (TLS) when talking to SMTP server
-EMAIL_USE_SSL: <boolean> Enables implicit TLS (commonly known as "SSL") when talking to SMTP server
-GITHUB_CLIENT_ID: <string> Client ID for Github account
-GITHUB_CLIENT_SECRET: <string> Secret access key associated with GITHUB_CLIENT_ID
-GOOGLE_CLIENT_ID: <string> Client ID for Google account
-GOOGLE_CLIENT_SECRET: <string> Secret access key associated with GOOGLE_CLIENT_ID
-GETTING_STARTED_PROJECT: <string> Name of "Getting Started" project
-NVIDIA_DOCKER_HOST: <string> URL for NVIDIA Docker host
-RABBITMQ_URL: <string> URL for RabbitMQ message broker
-REDIS_URL: <string> URL for Redis data store/notifications
-RESOURCE_DIR: <string> Name of project's top-level directory
-SECRET_KEY: <string> Secret key used for Django-related security
-SENTRY_DSN: <string> Data Source Name (DSN) for Sentry's error tracking and monitoring service
-SERVER_PORT: <integer> Port number for main application environment
-SERVER_RESOURCE_DIR: <string> Name of server's top-level resource directory
-SITE_ID: <>
-SLACK_KEY: <string> Slack account ID key
-SLACK_SECRET: <string> Secret access key associated with SLACK_KEY
-ENABLE_BILLING: <boolean> Enables 3Blades application billing-related features
-STRIPE_SECRET_KEY: <string> Secret key associated with Stripe payment information
-TBS_DOMAIN: <string> Domain of 3Blades main development environment
-TBS_HOST: <string> An additional host name or IP address from which the application will allow connections
-TBS_HTTPS: <boolean> Enables application's use of secure HTTP
-TRAVIS_PULL_REQUEST: <boolean> Enables Travis CI's automated Docker image building upon pull request submission
-UI_API_URL: <string> URL for 3Blades user interface client to access API endpoints
-```
-
-> Obtain internal virtual machine IPv4 address with `ifconfig`. Usually enp0s3 or eth0 will be the IP address you need to configure for DOCKER_HOST env var. If you switch setup to use production configuration (`DJANGO_SETTINGS_MODULE='appdj.settings.prod`) make sure to set debug to false (`DEBUG=False`). By default, app-backend allows connections from `staging.3blades.io` and `localhost`. An additional host name or IP address can be added to the `TBS_HOST`.
-
-> When launching stack with `dev` environment, `EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'` will always print emails to the console, regardless of what values are set.
-
-A volume mount is used to persist files used by docker containers. By default, `docker-compose.yml` uses the `/workspaces` directory. You can either add that directory or change `docker-compose.yml` to use another one.
+On-premise installation of the 3Blades application is no longer supported. It is not recommended to edit environment variables, unless needed for development purposes. An explanation of important environment variables is located in /app-backend/docs/ directory.
 
 ### Launch Stack
 
@@ -320,8 +259,7 @@ Log into Vagrant terminal with `vagrant ssh` and manage docker directly from the
 
 Requirements:
 
-- Vagrant may be used with several VM solutions. We recommend [VirtualBox](https://www.virtualbox.org/wiki/Downloads).
-- [Vagrant](https://www.vagrantup.com/downloads.html)
+- [Vagrant](https://www.vagrantup.com/downloads.html) may be used with several VM solutions. We recommend [VirtualBox](https://www.virtualbox.org/wiki/Downloads).
 
 > If using Windows 10, we recommend setting up [Ubuntu based bash shell](https://msdn.microsoft.com/en-us/commandline/wsl/install_guide) and run setup natively as described [in next section](https://github.com/3Blades/app-backend#native-dev-setup-on-linux-and-mac-systems). If using previous versions of Windows, consider using VirtualBox with Ubuntu Xenial (16.04).
 
