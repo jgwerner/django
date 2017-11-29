@@ -336,7 +336,7 @@ class ECSSpawnerTestCase(TestCase):
         task_arn = 'abc'
         self.server.config['task_arn'] = task_arn
         self.server.save()
-        describe_params = dict(tasks=[task_arn])
+        describe_params = dict(tasks=[task_arn], cluster=settings.ECS_CLUSTER)
         describe_response = dict(tasks=[dict(lastStatus='Running')])
         self.stubber.add_response('describe_tasks', describe_response, describe_params)
         self.stubber.activate()
