@@ -16,9 +16,9 @@ The 3Blades/app-backend application interacts with various internal applications
 | AWS_S3_CUSTOM_DOMAIN | <string> | Domain of S3, if used as a Content Delivery Network (CDN) |
 | DATABASE_URL | <string> | Endpoint for your database |
 | DEBUG | <boolean> | Enables the app's debug mode |
-| DEFAULT_FROM_EMAIL | <email> | Default email address for an email's "FROM" section |
+| DEFAULT_FROM_EMAIL | <email> | Default email address for sending app-backend messages |
 | DEFAULT_STRIPE_PLAN_ID | <string> | Name of Stripe subscription plan (also the default for new users) |
-| DJANGO_SETTINGS_MODULE | <string> | Location of current Django application settings file |
+| DJANGO_SETTINGS_MODULE | <string> | Module name of Django application settings file |
 | DOCKER_DOMAIN | <string> | IP address of your Docker's domain |
 | DOCKER_HOST | <string> | TCP address of your Docker's host |
 | DOCKER_EVENTS_URL | <string> | URL for your Docker's events distributor |
@@ -32,26 +32,27 @@ The 3Blades/app-backend application interacts with various internal applications
 | EMAIL_HOST_PASSWORD | <string> | Password associated with EMAIL_HOST_USER |
 | EMAIL_USE_TLS | <boolean> | Enables Transport Layer Security (TLS) when talking to SMTP server |
 | EMAIL_USE_SSL | <boolean> | Enables implicit TLS (commonly known as "SSL") when talking to SMTP server |
-| ENABLE_BILLING | <boolean> | Enables 3Blades application billing-related features |
+| ENABLE_BILLING | <boolean> | Enables 3Blades application billing-related features for development purposes |
 | GITHUB_CLIENT_ID | <string> | Client ID for Github account |
 | GITHUB_CLIENT_SECRET | <string> | Secret access key associated with GITHUB_CLIENT_ID |
 | GOOGLE_CLIENT_ID | <string> | Client ID for Google account |
 | GOOGLE_CLIENT_SECRET | <string> | Secret access key associated with GOOGLE_CLIENT_ID |
 | GETTING_STARTED_PROJECT | <string> | Name of "Getting Started" project |
+| MOCK_STRIPE | <boolean> | Enables use of mock connections to Stripe for development purposes |
 | NVIDIA_DOCKER_HOST | <string> | URL for NVIDIA Docker host |
 | RABBITMQ_URL | <string> | URL for RabbitMQ message broker |
 | REDIS_URL | <string> | URL for Redis data store/notifications |
-| RESOURCE_DIR | <string> | Path to project's top-level directory |
+| RESOURCE_DIR | <string> | Root level directory for all user directories |
 | SECRET_KEY | <string> | Secret key used for Django-related security |
 | SENTRY_DSN | <string> | Data Source Name (DSN) for Sentry's error tracking and monitoring service |
 | SERVER_PORT | <integer> | Port number for main application environment |
-| SERVER_RESOURCE_DIR | <string> | Path to server's top-level resource directory |
+| SERVER_RESOURCE_DIR | <string> | Name of relevant project's resource directory |
 | SLACK_KEY | <string> | Slack account ID key |
 | SLACK_SECRET | <string> | Secret access key associated with SLACK_KEY |
 | STATIC_ROOT | <string> | Absolute path to the directory static files should be collected to. |
 | STRIPE_SECRET_KEY | <string> | Secret key associated with Stripe payment information |
 | TBS_DOMAIN | <string> | Domain of 3Blades main development environment |
-| TBS_HOST | <string> | An additional host name or IP address from which the application will allow connections |
+| TBS_HOST | <string> | An additional host name or IP address from which the application will allow connections, added to Django's ALLOWED_HOSTS |
 | TBS_HTTPS | <boolean> | Enables application's use of secure HTTP |
 | TRAVIS_PULL_REQUEST | <boolean> | Enables Travis CI's automated Docker image building upon pull request submission |
 | UI_API_URL | <string> | URL for 3Blades UI accessing the API |
