@@ -337,7 +337,7 @@ class ECSSpawnerTestCase(TestCase):
         self.server.config['task_arn'] = task_arn
         self.server.save()
         describe_params = dict(tasks=[task_arn])
-        describe_response = dict(tasks=[dict(lastStatus='Running')])
+        describe_response = dict(tasks=[dict(lastStatus='RUNNING')])
         self.stubber.add_response('describe_tasks', describe_response, describe_params)
         self.stubber.activate()
         self.assertEqual(self.spawner.status(), 'Running')
