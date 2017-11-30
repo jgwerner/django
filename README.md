@@ -110,71 +110,7 @@ Restart docker service and confirm that setting is in place for CGroup:
 
 ### Environment Variables
 
-Modify environment variables located in `env` file with your local settings. You can also export env vars like so:
-
-```
-    AWS_ACCESS_KEY_ID=
-    AWS_SECRET_ACCESS_KEY=
-	AWS_DEFAULT_REGION=
-    AWS_SES_ACCESS_KEY_ID=
-    AWS_SES_SECRET_ACCESS_KEY=
-    AWS_SES_REGION_NAME=
-    AWS_SES_REGION_ENDPOINT=
-    AWS_STORAGE_BUCKET_NAME=
-    BILLING_BUCKET_SIZE_GB=
-    BUCKET_COST_USD=
-    C_ROOT=1
-    DATABASE_URL=postgres://postgres:@db:5432/postgres/
-    DEBUG=True
-    DEFAULT_FROM_EMAIL=
-    DEFAULT_STRIPE_PLAN_ID=
-    DJANGO_SETTINGS_MODULE=appdj.settings.prod
-    DOCKER_DOMAIN=172.17.0.1
-    DOCKER_EVENTS_URL=http://events:8000
-    DOCKER_PORT=2375
-    DOCKER_HOST=tcp://172.17.0.1:2375/
-    ECS_CLUSTER=
-    GETTING_STARTED_PROJECT=
-	  NVIDIA_DOCKER_HOST=http://172.17.0.1:3476
-    ELASTICSEARCH_URL=http://search:9200/
-    ELASTICSEARCH_USER=
-    ELASTICSEARCH_PASSWORD=
-    EMAIL_HOST=
-    EMAIL_PORT=
-    EMAIL_HOST_USER=
-    EMAIL_HOST_PASSWORD=
-    EMAIL_USE_SSL=
-    EMAIL_USE_TLS=
-    ENABLE_BILLING=True
-    GITHUB_CLIENT_ID=
-    GITHUB_CLIENT_SECRET=
-    GOOGLE_CLIENT_ID=
-    GOOGLE_CLIENT_SECRET=
-    INACTIVE_RESOURCE_DIR=/inactive
-    MAX_FILE_UPLOAD_SIZE=
-    MOCK_STRIPE=false
-    RABBITMQ_URL=amqp://broker/
-    REDIS_URL=redis://cache:6379/0
-    RESOURCE_DIR=
-    SERVER_RESOURCE_DIR=
-    SECRET_KEY=
-    SENTRY_DSN=
-    SLACK_KEY=
-    SLACK_SECRET=
-    STRIPE_SECRET_KEY=
-    TBS_DEFAULT_VERSION=
-    TBS_DOMAIN=localhost:3000
-    TBS_HOST=
-	  TBS_PORT=
-    TBS_HTTPS=
-    USAGE_WARNING_THRESHOLD=
-```
-
-> Obtain internal virtual machine IPv4 address with `ifconfig`. Usually enp0s3 or eth0 will be the IP address you need to configure for DOCKER_HOST env var. If you switch setup to use production configuration (`DJANGO_SETTINGS_MODULE='appdj.settings.prod`) make sure to set debug to false (`DEBUG=False`). By default, app-backend allows connections from `staging.3blades.io` and `localhost`. Additional host names or IP addresses can be added to the `TBS_HOST`.
-
-> When launching stack with `dev` environment, `EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'` will always print emails to the console, regardless of what values are set.
-
-A volume mount is used to persist files used by docker containers. By default, `docker-compose.yml` uses the `/workspaces` directory. You can either add that directory or change `docker-compose.yml` to use another one.
+On-premise installation of the 3Blades application is no longer supported. It is not recommended to edit environment variables, unless needed for development purposes. An explanation of important environment variables is located in /app-backend/docs/ directory.
 
 ### Launch Stack
 
@@ -323,8 +259,7 @@ Log into Vagrant terminal with `vagrant ssh` and manage docker directly from the
 
 Requirements:
 
-- Vagrant may be used with several VM solutions. We recommend [VirtualBox](https://www.virtualbox.org/wiki/Downloads).
-- [Vagrant](https://www.vagrantup.com/downloads.html)
+- [Vagrant](https://www.vagrantup.com/downloads.html) may be used with several VM solutions. We recommend [VirtualBox](https://www.virtualbox.org/wiki/Downloads).
 
 > If using Windows 10, we recommend setting up [Ubuntu based bash shell](https://msdn.microsoft.com/en-us/commandline/wsl/install_guide) and run setup natively as described [in next section](https://github.com/3Blades/app-backend#native-dev-setup-on-linux-and-mac-systems). If using previous versions of Windows, consider using VirtualBox with Ubuntu Xenial (16.04).
 

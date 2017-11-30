@@ -10,7 +10,6 @@ from servers.models import (ServerSize, Server,
                             ServerRunStatistics,
                             ServerStatistics,
                             SshTunnel)
-from projects.models import Project
 from projects.serializers import ProjectSerializer
 log = logging.getLogger('servers')
 
@@ -50,11 +49,21 @@ class ServerSerializer(SearchSerializerMixin, BaseServerSerializer):
             raise serializers.ValidationError(f"{server_type} is not a valid server type")
         return value
 
+    def validate_name(self, value):
+        # Ensure Server names remain unique within a project
+        project = self.context['project']
+        if not (value and project):
+            raise serializers.ValidationError("Server name and project name must be provided.")
+        else:
+            if Server.objects.filter(name=value, project=project).exists():
+                raise serializers.ValidationError("A server with that name already exists in this project.")
+        return value
+
     def create(self, validated_data):
         config = validated_data.pop("config", {})
         server_size = (validated_data.pop('server_size', None) or
                        ServerSize.objects.order_by('created_at').first())
-        project = Project.objects.tbs_filter(self.context['view'].kwargs['project_project']).first()
+        project = self.context['project']
         user = self.context['request'].user
         pk = uuid.uuid4()
         return Server.objects.create(pk=pk,
@@ -88,7 +97,7 @@ class ServerSerializer(SearchSerializerMixin, BaseServerSerializer):
         return self._get_url(obj, scheme='wss' if self._is_secure else 'ws', url='/status/')
 
     def _get_url(self, obj, **kwargs):
-        version = self.context['view'].kwargs.get('version', settings.DEFAULT_VERSION)
+        version = self.context.get('version', settings.DEFAULT_VERSION)
         request = self.context['request']
         return '{scheme}://{host}/{version}/{namespace}/projects/{project_id}/servers/{id}{url}'.format(
             host=get_current_site(request).domain,
