@@ -408,6 +408,7 @@ DEFAULT_STRIPE_PLAN_ID = os.getenv("DEFAULT_STRIPE_PLAN_ID", "threeblades-free-p
 NVIDIA_DOCKER_HOST = os.environ.get('NVIDIA_DOCKER_HOST')
 
 SPAWNER = 'servers.spawners.ecs.ECSSpawner'
+DEPLOYER = 'servers.spawners.aws_lambda.LambdaDeployer'
 ECS_CLUSTER = os.environ.get('ECS_CLUSTER', 'default')
 REDIRECT_IS_HTTPS = True
 

@@ -45,7 +45,7 @@ class ECSSpawner(GPUMixin, TraefikMixin, BaseSpawner):
             logger.exception("Error getting server status")
             return self.server.ERROR
         try:
-            return resp['tasks'][0]['lastStatus']
+            return resp['tasks'][0]['lastStatus'].title()
         except IndexError:
             logger.debug(resp)
             return self.server.ERROR

@@ -139,7 +139,7 @@ class Deployment(ServerModelAbstract, models.Model):
 
     @property
     def status(self):
-        deployer = Deployer()
+        deployer = Deployer(self)
         return deployer.status()
 
 

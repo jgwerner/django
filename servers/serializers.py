@@ -163,7 +163,16 @@ class SshTunnelSerializer(serializers.ModelSerializer):
 
 
 class DeploymentSerializer(serializers.ModelSerializer):
+    created_by = serializers.PrimaryKeyRelatedField(read_only=True, default=serializers.CurrentUserDefault())
+
     class Meta:
         model = Deployment
         fields = ('id', 'name', 'project', 'created_at', 'created_by', 'config', 'status', 'runtime', 'framework')
         read_only_fields = ('project', 'created_at', 'created_by')
+
+    def create(self, validated_data):
+        instance = Deployment(**validated_data)
+        project_pk = self.context['view'].kwargs.get('project_project')
+        instance.project = Project.objects.tbs_get(project_pk)
+        instance.save()
+        return instance

@@ -129,6 +129,8 @@ urlpatterns = [
         servers_views.VerifyJSONWebTokenServer.as_view(), name='server-api-key-verify'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/auth/$',
         servers_views.check_token, name='server-auth'),
+    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/deployments/(?P<deployment>[^/.]+)/deploy/$',
+        servers_views.deploy_deployment, name='deploy'),
     url(r'^servers/', include(servers_router.urls)),
     url(r'^webhooks/incoming/billing/invoice_created/$', billing_views.stripe_invoice_created,
         name='stripe-invoice-created'),
