@@ -231,6 +231,19 @@ class ServerTestWithName(APITestCase):
         token = create_auth_jwt(self.user)
         self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
+    def test_validate_server_name_prevents_duplicate_name(self):
+        # Passing a project server name identical to an existing server name should error
+        server = ServerFactory(project=self.project)
+        url = reverse('server-list', kwargs=self.url_kwargs)
+        data = dict(
+            name=server.name, # name should match name from duplicate ServerFactory
+            project=self.project.name, # project should also match
+            connected=[],
+            config={'type': 'jupyter'},
+        )
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_create_server(self):
         url = reverse('server-list', kwargs=self.url_kwargs)
         data = dict(
