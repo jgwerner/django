@@ -110,7 +110,7 @@ Restart docker service and confirm that setting is in place for CGroup:
 
 ### Environment Variables
 
-On-premise installation of the 3Blades application is no longer supported. It is not recommended to edit environment variables, unless needed for development purposes. An explanation of important environment variables is located in /app-backend/docs/ directory.
+On-premise installation of the 3Blades application is not currently supported. For development purposes, an explanation of environment variables is located in the /docs directory.
 
 ### Launch Stack
 
