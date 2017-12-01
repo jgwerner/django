@@ -21,90 +21,91 @@ class TbsStorage(FileSystemStorage):
     copy/pasting.
     """
     def _save(self, name, content):
-        full_path = self.path(name)
+        if not self.project_root_included:
+            full_path = self.path(name)
 
-        # Create any intermediate directories that do not exist.
-        # Note that there is a race between os.path.exists and os.makedirs:
-        # if os.makedirs fails with EEXIST, the directory was created
-        # concurrently, and we can continue normally. Refs #16082.
-        directory = os.path.dirname(full_path)
-        if not os.path.exists(directory):
-            try:
-                if self.directory_permissions_mode is not None:
-                    # os.makedirs applies the global umask, so we reset it,
-                    # for consistency with file_permissions_mode behavior.
-                    old_umask = os.umask(0)
-                    try:
-                        os.makedirs(directory, self.directory_permissions_mode)
-                    finally:
-                        os.umask(old_umask)
+            # Create any intermediate directories that do not exist.
+            # Note that there is a race between os.path.exists and os.makedirs:
+            # if os.makedirs fails with EEXIST, the directory was created
+            # concurrently, and we can continue normally. Refs #16082.
+            directory = os.path.dirname(full_path)
+            if not os.path.exists(directory):
+                try:
+                    if self.directory_permissions_mode is not None:
+                        # os.makedirs applies the global umask, so we reset it,
+                        # for consistency with file_permissions_mode behavior.
+                        old_umask = os.umask(0)
+                        try:
+                            os.makedirs(directory, self.directory_permissions_mode)
+                        finally:
+                            os.umask(old_umask)
+                    else:
+                        os.makedirs(directory)
+                except OSError as e:
+                    if e.errno != errno.EEXIST:
+                        raise
+            if not os.path.isdir(directory):
+                raise IOError("%s exists and is not a directory." % directory)
+
+            # There's a potential race condition between get_available_name and
+            # saving the file; it's possible that two threads might return the
+            # same name, at which point all sorts of fun happens. So we need to
+            # try to create the file, but if it already exists we have to go back
+            # to get_available_name() and try again.
+
+            while True:
+                try:
+                    # This file has a file path that we can move.
+                    if hasattr(content, 'temporary_file_path'):
+                        file_move_safe(content.temporary_file_path(), full_path)
+
+                    # This is a normal uploadedfile that we can stream.
+                    else:
+                        # This fun binary flag incantation makes os.open throw an
+                        # OSError if the file already exists before we open it.
+                        flags = (os.O_WRONLY | os.O_CREAT | os.O_EXCL |
+                                 getattr(os, 'O_BINARY', 0))
+                        # The current umask value is masked out by os.open!
+                        fd = os.open(full_path, flags, 0o666)
+                        _file = None
+                        try:
+                            locks.lock(fd, locks.LOCK_EX)
+                            for chunk in content.chunks():
+                                if _file is None:
+                                    mode = 'wb' if isinstance(chunk, bytes) else 'wt'
+                                    _file = os.fdopen(fd, mode)
+                                _file.write(chunk)
+                        finally:
+                            locks.unlock(fd)
+                            if _file is not None:
+                                _file.close()
+                            else:
+                                os.close(fd)
+                except OSError as e:
+                    if e.errno == errno.EEXIST:
+                        # Ooops, the file exists.
+                        # We're trying to "upload" a file that already exists,
+                        # so do nothing. This happens thanks to some wonderful
+                        # vagaries surrounding NFS and Jupyter notebooks.
+                        # The likelihood of this race condition occurring is about
+                        # 1 in 7 billion, and even lower when considering
+                        # That files are scoped by project, and so on.
+                        # Since this isn't a fighter jet or something, we're going to
+                        # assume that the file on disk is indeed the one we intended to write.
+                        log.warning(f"File {name} already exists on disk. It's almost certainly a file from"
+                                    f" a jupyter notebook, but it is possible that a genuine race condition happened."
+                                    f" Heres the stacktrace:")
+                        log.exception(e)
+                        break
+                    else:
+                        log.exception(e)
+                        raise
                 else:
-                    os.makedirs(directory)
-            except OSError as e:
-                if e.errno != errno.EEXIST:
-                    raise
-        if not os.path.isdir(directory):
-            raise IOError("%s exists and is not a directory." % directory)
-
-        # There's a potential race condition between get_available_name and
-        # saving the file; it's possible that two threads might return the
-        # same name, at which point all sorts of fun happens. So we need to
-        # try to create the file, but if it already exists we have to go back
-        # to get_available_name() and try again.
-
-        while True:
-            try:
-                # This file has a file path that we can move.
-                if hasattr(content, 'temporary_file_path'):
-                    file_move_safe(content.temporary_file_path(), full_path)
-
-                # This is a normal uploadedfile that we can stream.
-                else:
-                    # This fun binary flag incantation makes os.open throw an
-                    # OSError if the file already exists before we open it.
-                    flags = (os.O_WRONLY | os.O_CREAT | os.O_EXCL |
-                             getattr(os, 'O_BINARY', 0))
-                    # The current umask value is masked out by os.open!
-                    fd = os.open(full_path, flags, 0o666)
-                    _file = None
-                    try:
-                        locks.lock(fd, locks.LOCK_EX)
-                        for chunk in content.chunks():
-                            if _file is None:
-                                mode = 'wb' if isinstance(chunk, bytes) else 'wt'
-                                _file = os.fdopen(fd, mode)
-                            _file.write(chunk)
-                    finally:
-                        locks.unlock(fd)
-                        if _file is not None:
-                            _file.close()
-                        else:
-                            os.close(fd)
-            except OSError as e:
-                if e.errno == errno.EEXIST:
-                    # Ooops, the file exists.
-                    # We're trying to "upload" a file that already exists,
-                    # so do nothing. This happens thanks to some wonderful
-                    # vagaries surrounding NFS and Jupyter notebooks.
-                    # The likelihood of this race condition occurring is about
-                    # 1 in 7 billion, and even lower when considering
-                    # That files are scoped by project, and so on.
-                    # Since this isn't a fighter jet or something, we're going to
-                    # assume that the file on disk is indeed the one we intended to write.
-                    log.warning(f"File {name} already exists on disk. It's almost certainly a file from"
-                                f" a jupyter notebook, but it is possible that a genuine race condition happened."
-                                f" Heres the stacktrace:")
-                    log.exception(e)
+                    # OK, the file save worked. Break out of the loop.
                     break
-                else:
-                    log.exception(e)
-                    raise
-            else:
-                # OK, the file save worked. Break out of the loop.
-                break
 
-        if self.file_permissions_mode is not None:
-            os.chmod(full_path, self.file_permissions_mode)
+            if self.file_permissions_mode is not None:
+                os.chmod(full_path, self.file_permissions_mode)
 
         # Store filenames with forward slashes, even on Windows.
         return force_text(name.replace('\\', '/'))
