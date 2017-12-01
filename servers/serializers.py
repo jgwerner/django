@@ -1,5 +1,6 @@
 import uuid
 import logging
+from django.db import transaction
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
 from rest_framework import serializers
@@ -55,7 +56,7 @@ class ServerSerializer(SearchSerializerMixin, BaseServerSerializer):
         if not (value and project):
             raise serializers.ValidationError("Server name and project name must be provided.")
         else:
-            if Server.objects.filter(name=value, project=project).exists():
+            if Server.objects.filter(name=value, project=project, is_active=True).exists():
                 raise serializers.ValidationError("A server with that name already exists in this project.")
         return value
 
