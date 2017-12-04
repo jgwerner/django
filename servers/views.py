@@ -46,6 +46,7 @@ def check_project_details_before_lookup(self, request, **kwargs):
                                           name=kwargs['project_project'])
     return project
 
+
 class ServerViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
     queryset = models.Server.objects.all()
     serializer_class = serializers.ServerSerializer
@@ -55,7 +56,7 @@ class ServerViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
 
     def _update(self, request, partial, *args, **kwargs):
         project = check_project_details_before_lookup(self, request, **kwargs)
-        servers = Server.objects.filter(project=project)
+        servers = Server.objects.filter(project=project, is_active=True)
         server = servers.tbs_filter(kwargs['server']).first()
 
         data = request.data
