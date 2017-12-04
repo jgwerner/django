@@ -1,9 +1,11 @@
 import os
 import boto3
 import requests
+import uuid
 import zipfile
 from functools import partial
 from django.conf import settings
+from django.utils.functional import cached_property
 
 
 class LambdaDeployer:
@@ -13,8 +15,14 @@ class LambdaDeployer:
         self.api_gateway = boto3.client('apigateway')
 
     def deploy(self):
+        if 'function_arn' in self.deployment.config:
+            self.lmbd.update_function_code(
+                FunctionName=str(self.deployment.pk),
+                ZipFile=self.prepare_package(),
+            )
+            return
         resp = self.lmbd.create_function(
-            FunctionName=self.deployment.name,
+            FunctionName=str(self.deployment.pk),
             Runtime=self.deployment.runtime.name,
             Code={
                 'ZipFile': self.prepare_package()
@@ -22,7 +30,7 @@ class LambdaDeployer:
             MemorySize=1536,
             Handler=self.deployment.config['handler'],
             Timeout=300,
-            Role='arn:aws:iam::860100747351:role/lambda_basic_execution',
+            Role=settings.AWS_DEPLOYMENT_ROLE,
         )
         self.deployment.config['function_arn'] = resp['FunctionArn']
         if 'rest_api_id' not in self.deployment.config:
@@ -31,7 +39,8 @@ class LambdaDeployer:
         # create resource
         resource_resp = self.api_gateway.create_resource(
             restApiId=self.deployment.config['rest_api_id'],
-            pathPart=self.deployment.name
+            pathPart=str(self.deployment.pk),
+            parentId=self.api_root
         )
 
         # create POST method
@@ -49,7 +58,7 @@ class LambdaDeployer:
             "aws-region": settings.AWS_DEFAULT_REGION,
             "api-version": lambda_version,
             "aws-acct-id": settings.AWS_ACCOUNT_ID,
-            "lambda-function-name": self.deployment.name,
+            "lambda-function-name": str(self.deployment.pk),
         }
 
         uri = "arn:aws:apigateway:{aws-region}:lambda:path/{api-version}/functions/arn:aws:lambda:{aws-region}:{aws-acct-id}:function:{lambda-function-name}/invocations".format(**uri_data)
@@ -59,12 +68,27 @@ class LambdaDeployer:
             restApiId=self.deployment.config['rest_api_id'],
             resourceId=resource_resp['id'],
             httpMethod="GET",
-            type="AWS",
+            type="AWS_PROXY",
             integrationHttpMethod="POST",
             uri=uri,
         )
+        uri_data['aws-api-id'] = self.deployment.config['rest_api_id']
+        source_arn = "arn:aws:execute-api:{aws-region}:{aws-acct-id}:{aws-api-id}/*/GET/{lambda-function-name}".format(**uri_data)
+
+        self.lmbd.add_permission(
+            FunctionName=str(self.deployment.pk),
+            StatementId=uuid.uuid4().hex,
+            Action="lambda:InvokeFunction",
+            Principal="apigateway.amazonaws.com",
+            SourceArn=source_arn
+        )
         self.deployment.config['endpoint'] = f"https://{self.deployment.config['rest_api_id']}.execute-api.{settings.AWS_DEFAULT_REGION}.amazonaws.com/{self.deployment.name}"
         self.deployment.save()
+
+    @cached_property
+    def api_root(self):
+        resp = self.api_gateway.get_resources(restApiId=self.deployment.config['rest_api_id'])
+        return next(x for x in resp['items'][::-1] if x['path'] == '/')['id']
 
     def create_project_api(self):
         resp = self.api_gateway.create_rest_api(

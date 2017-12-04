@@ -184,3 +184,16 @@ def deploy_deployment(request, **kwargs):
     deployment = get_object_or_404(models.Deployment, kwargs.get('deployment'))
     deploy.delay(deployment.pk)
     return Response({'message': 'OK'})
+
+
+@api_view(['POST'])
+@permission_classes((AllowAny,))
+def deployment_auth(request):
+    serializer = serializers.DeploymentAuthSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status.HTTP_401_UNAUTHORIZED)
+    deployment = models.Deployment.objects.only('access_token').filter(
+        config__function_arn=serializer.validated_data['function_arn'])
+    if deployment.access_token != serializer.validated_data['token']:
+        return Response({'token': "Token is invalid"}, status.HTTP_401_UNAUTHORIZED)
+    return Response({'message': 'OK'})

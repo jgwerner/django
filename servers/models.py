@@ -23,6 +23,7 @@ class ServerModelAbstract(models.Model):
     project = models.ForeignKey('projects.Project', related_name='%(class)ss')
     config = JSONField(default={})
     is_active = models.BooleanField(default=True)
+    access_token = models.TextField(blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='%(class)ss')
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -85,7 +86,6 @@ class Server(ServerModelAbstract, models.Model):
     connected = models.ManyToManyField('self', blank=True, related_name='servers')
     image_name = models.CharField(max_length=100, blank=True)
     host = models.ForeignKey('infrastructure.DockerHost', related_name='servers', null=True, blank=True)
-    access_token = models.TextField(blank=True)
     last_start = models.DateTimeField(null=True)
 
     @property

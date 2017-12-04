@@ -171,8 +171,16 @@ class DeploymentSerializer(serializers.ModelSerializer):
         read_only_fields = ('project', 'created_at', 'created_by')
 
     def create(self, validated_data):
-        instance = Deployment(**validated_data)
+        pk = uuid.uuid4()
+        user = self.context['request'].user
+        instance = Deployment(pk=pk, **validated_data)
         project_pk = self.context['view'].kwargs.get('project_project')
         instance.project = Project.objects.tbs_get(project_pk)
+        instance.access_token = create_server_jwt(user, str(pk)),
         instance.save()
         return instance
+
+
+class DeploymentAuthSerializer(serializers.Serializer):
+    token = serializers.TextField()
+    function_arn = serializers.TextField()
