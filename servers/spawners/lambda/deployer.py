@@ -43,6 +43,8 @@ class LambdaDeployer:
             parentId=self.api_root
         )
 
+        self.deployment.config['resource_id'] = resource_resp['id']
+
         # create POST method
         self.api_gateway.put_method(
             restApiId=self.deployment.config['rest_api_id'],
@@ -84,6 +86,14 @@ class LambdaDeployer:
         )
         self.deployment.config['endpoint'] = f"https://{self.deployment.config['rest_api_id']}.execute-api.{settings.AWS_DEFAULT_REGION}.amazonaws.com/{self.deployment.name}"
         self.deployment.save()
+
+    def delete(self):
+        if 'resource_id' in self.deployment.config:
+            self.lmbd.delete_function(FunctionName=str(self.deployment.pk))
+            self.api_gateway.delete_resource(
+                restApiId=self.deployment.config['rest_api_id'],
+                resourceId=self.deployment.config['resource_id']
+            )
 
     @cached_property
     def api_root(self):

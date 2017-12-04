@@ -17,7 +17,7 @@ from jwt_auth.views import JWTApiView
 from jwt_auth.serializers import VerifyJSONWebTokenServerSerializer
 from jwt_auth.utils import create_server_jwt
 from teams.permissions import TeamGroupPermission
-from .tasks import start_server, stop_server, terminate_server, deploy
+from .tasks import start_server, stop_server, terminate_server, deploy, delete_deployment
 from .permissions import ServerChildPermission, ServerActionPermission
 from . import serializers, models
 from .utils import get_server_usage
@@ -178,6 +178,14 @@ class DeploymentViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
     filter_fields = ("name",)
     lookup_url_kwarg = 'deployment'
 
+    def perform_destroy(self, instance):
+        delete_deployment.apply_async(
+            args=[instance.pk],
+            task_id=str(self.request.action.pk)
+        )
+        instance.is_active = False
+        instance.save()
+
 
 @api_view(['POST'])
 def deploy_deployment(request, **kwargs):
@@ -193,7 +201,13 @@ def deployment_auth(request):
     if not serializer.is_valid():
         return Response(serializer.errors, status.HTTP_401_UNAUTHORIZED)
     deployment = models.Deployment.objects.only('access_token').filter(
-        config__function_arn=serializer.validated_data['function_arn'])
+        is_active=True, config__resource_id=serializer.validated_data['resource_id']).first()
+    if deployment is None:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    data = {'user_id': str(deployment.project.owner.pk)}
+    log.info(deployment.access_token)
+    log.info(serializer.validated_data['token'])
     if deployment.access_token != serializer.validated_data['token']:
-        return Response({'token': "Token is invalid"}, status.HTTP_401_UNAUTHORIZED)
-    return Response({'message': 'OK'})
+        data['token'] = "Token is invalid"
+        return Response(data, status.HTTP_401_UNAUTHORIZED)
+    return Response(data)

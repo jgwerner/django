@@ -167,8 +167,8 @@ class DeploymentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Deployment
-        fields = ('id', 'name', 'project', 'created_at', 'created_by', 'config', 'status', 'runtime', 'framework')
-        read_only_fields = ('project', 'created_at', 'created_by')
+        fields = ('id', 'name', 'project', 'created_at', 'created_by', 'config', 'status', 'runtime', 'framework', 'access_token')
+        read_only_fields = ('project', 'created_at', 'created_by', 'access_token')
 
     def create(self, validated_data):
         pk = uuid.uuid4()
@@ -176,11 +176,11 @@ class DeploymentSerializer(serializers.ModelSerializer):
         instance = Deployment(pk=pk, **validated_data)
         project_pk = self.context['view'].kwargs.get('project_project')
         instance.project = Project.objects.tbs_get(project_pk)
-        instance.access_token = create_server_jwt(user, str(pk)),
+        instance.access_token = create_server_jwt(user, str(pk))
         instance.save()
         return instance
 
 
 class DeploymentAuthSerializer(serializers.Serializer):
-    token = serializers.TextField()
-    function_arn = serializers.TextField()
+    token = serializers.CharField()
+    resource_id = serializers.CharField()

@@ -27,8 +27,17 @@ def terminate_server(server):
     server_action('terminate', server)
 
 
-@shared_task()
-def deploy(deployment):
+def deployment_action(action, deployment):
     deployment = Deployment.objects.tbs_get(deployment)
     deployer = Deployer(deployment)
-    deployer.deploy()
+    getattr(deployer, action)()
+
+
+@shared_task()
+def deploy(deployment):
+    deployment_action('deploy', deployment)
+
+
+@shared_task()
+def delete_deployment(deployment):
+    deployment_action('delete', deployment)
