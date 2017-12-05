@@ -59,6 +59,26 @@ class ServerTest(APITestCase):
         self.assertEqual(db_server.server_size, self.server_size)
         self.assertEqual(db_server.server_size.name, 'Nano')
 
+    def test_create_server_with_same_name_as_deleted_server(self):
+        url = reverse("server-list", kwargs=self.url_kwargs)
+        old_server = ServerFactory(project=self.project,
+                                   is_active=False)
+        data = {'name': old_server.name,
+                'project': str(self.project.pk),
+                'connected': [],
+                'config': {'type': "jupyter"}}
+        from django.db import transaction
+        import logging
+        log = logging.getLogger('servers')
+        try:
+            with transaction.atomic():
+                response = self.client.post(url, data=data)
+        except Exception as e:
+            log.exception(e)
+            raise e
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data.get('name'), old_server.name)
+
     def test_create_server_rejects_invalid_server_type(self):
         url = reverse('server-list', kwargs=self.url_kwargs)
         data = dict(
@@ -230,6 +250,19 @@ class ServerTestWithName(APITestCase):
         ServerSizeFactory()
         token = create_auth_jwt(self.user)
         self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
+
+    def test_validate_server_name_prevents_duplicate_name(self):
+        # Passing a project server name identical to an existing server name should error
+        server = ServerFactory(project=self.project)
+        url = reverse('server-list', kwargs=self.url_kwargs)
+        data = dict(
+            name=server.name, # name should match name from duplicate ServerFactory
+            project=self.project.name, # project should also match
+            connected=[],
+            config={'type': 'jupyter'},
+        )
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_server(self):
         url = reverse('server-list', kwargs=self.url_kwargs)
