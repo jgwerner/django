@@ -106,8 +106,14 @@ class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewS
 @api_view(['post'])
 def project_copy(request, *args, **kwargs):
     proj_identifier = request.data['project']
+    new_project_name = request.data.get('name')
+
+    if new_project_name:
+        # If user explicitly provided a project name via request, ensure it isn't a duplicate
+        ProjectSerializer.validate_name(new_project_name)
 
     try:
+        # If user didn't provide a name, perform_project_copy() will handle duplicates appropriately
         new_project = perform_project_copy(user=request.user,
                                            project_id=proj_identifier,
                                            request=request)
