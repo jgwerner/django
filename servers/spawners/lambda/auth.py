@@ -1,3 +1,7 @@
+"""
+This file is part of lambda function to authorize deployment calls.
+"""
+
 import os
 import json
 import urllib.request
@@ -24,11 +28,11 @@ def handle(event, context):
         resp = urllib.request.urlopen(req, data)
     except urllib.error.HTTPError as e:
         status = e.code
-        resp_data = json.load(e)
+        resp_data = {}
     else:
         status = resp.getcode()
         resp_data = json.load(resp)
-    print(resp_data)
+
     # Create policy
     user_id = resp_data.get('user_id', '00000000-0000-0000-0000-000000000000')
     policy = AuthPolicy(user_id, aws_account_id)
@@ -40,7 +44,6 @@ def handle(event, context):
         policy.denyAllMethods()
         context = resp_data
     else:
-        print(resp_data)
         policy.allowMethod("GET", event['path'])
 
     auth_resp = policy.build()

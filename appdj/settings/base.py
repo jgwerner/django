@@ -226,6 +226,8 @@ AWS_QUERYSTRING_AUTH = False
 AWS_DEFAULT_REGION = os.environ.get('AWS_DEFAULT_REGION')
 AWS_ACCOUNT_ID = os.environ.get('AWS_ACCOUNT_ID')
 AWS_DEPLOYMENT_ROLE = os.environ.get('AWS_DEPLOYMENT_ROLE')
+AWS_LAMBDA_AUTHORIZER = os.environ.get('AWS_LAMBDA_AUTHORIZER')
+AWS_AUTHORIZER_ROLE = os.environ.get('AWS_AUTHORIZER_ROLE')
 
 SWAGGER_SETTINGS = {
     'SUPPORTED_SUBMIT_METHODS': ['head', 'get', 'post', 'put', 'delete', 'patch']

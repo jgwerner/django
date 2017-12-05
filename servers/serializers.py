@@ -167,8 +167,8 @@ class DeploymentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Deployment
-        fields = ('id', 'name', 'project', 'created_at', 'created_by', 'config', 'status', 'runtime', 'framework', 'access_token')
-        read_only_fields = ('project', 'created_at', 'created_by', 'access_token')
+        fields = ('id', 'name', 'project', 'created_at', 'created_by', 'config', 'status', 'runtime', 'framework')
+        read_only_fields = ('project', 'created_at', 'created_by')
 
     def create(self, validated_data):
         pk = uuid.uuid4()
