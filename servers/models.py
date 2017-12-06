@@ -60,7 +60,7 @@ class ServerModelAbstract(models.Model):
         return os.path.join(settings.RESOURCE_DIR, self.project.get_owner_name(), str(self.project.pk))
 
 
-class Server(ServerModelAbstract, models.Model):
+class Server(ServerModelAbstract):
     # statuses
     STOPPED = "Stopped"
     STOPPING = "Stopping"
@@ -132,7 +132,7 @@ class Framework(models.Model):
         return f"{self.name} {self.version}"
 
 
-class Deployment(ServerModelAbstract, models.Model):
+class Deployment(ServerModelAbstract):
     framework = models.ForeignKey(Framework, related_name='deployments', on_delete=models.SET_NULL,
                                   blank=True, null=True)
     runtime = models.ForeignKey(Runtime, related_name='deployments', on_delete=models.PROTECT)

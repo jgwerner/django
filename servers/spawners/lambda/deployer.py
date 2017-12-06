@@ -65,7 +65,6 @@ class LambdaDeployer:
 
             self.deployment.config['resource_id'] = resource_resp['id']
 
-            # create POST method
             self.api_gateway.put_method(
                 restApiId=self.api_id,
                 resourceId=resource_resp['id'],
