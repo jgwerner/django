@@ -223,11 +223,11 @@ STATICFILES_DIRS = [
 AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
 AWS_QUERYSTRING_AUTH = False
-AWS_DEFAULT_REGION = os.environ.get('AWS_DEFAULT_REGION')
-AWS_ACCOUNT_ID = os.environ.get('AWS_ACCOUNT_ID')
-AWS_DEPLOYMENT_ROLE = os.environ.get('AWS_DEPLOYMENT_ROLE')
-AWS_LAMBDA_AUTHORIZER = os.environ.get('AWS_LAMBDA_AUTHORIZER')
-AWS_AUTHORIZER_ROLE = os.environ.get('AWS_AUTHORIZER_ROLE')
+AWS_DEFAULT_REGION = os.environ.get('AWS_DEFAULT_REGION', 'us-west-2')
+AWS_ACCOUNT_ID = os.environ.get('AWS_ACCOUNT_ID', '')
+AWS_DEPLOYMENT_ROLE = os.environ.get('AWS_DEPLOYMENT_ROLE', '')
+AWS_LAMBDA_AUTHORIZER = os.environ.get('AWS_LAMBDA_AUTHORIZER', '')
+AWS_AUTHORIZER_ROLE = os.environ.get('AWS_AUTHORIZER_ROLE', '')
 
 SWAGGER_SETTINGS = {
     'SUPPORTED_SUBMIT_METHODS': ['head', 'get', 'post', 'put', 'delete', 'patch']
@@ -411,7 +411,7 @@ DEFAULT_STRIPE_PLAN_ID = os.getenv("DEFAULT_STRIPE_PLAN_ID", "threeblades-free-p
 NVIDIA_DOCKER_HOST = os.environ.get('NVIDIA_DOCKER_HOST')
 
 SPAWNER = 'servers.spawners.ecs.ECSSpawner'
-DEPLOYER = 'servers.spawners.lambda.deployer.LambdaDeployer'
+DEPLOYER = 'servers.spawners.aws_lambda.deployer.LambdaDeployer'
 ECS_CLUSTER = os.environ.get('ECS_CLUSTER', 'default')
 REDIRECT_IS_HTTPS = True
 
