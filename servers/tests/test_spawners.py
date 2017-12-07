@@ -414,8 +414,12 @@ class LambdaDeployerTestCase(TestCase):
     def test_deploy_without_api(self):
         api_id = self.mock_api_id(api_id='')
         self.mock_create_lambda_function()
+        self.api_stubber.add_response('get_rest_apis', {'items': []}, {'limit': 60})
+        self.mock_create_api()
+        self.mock_api_root()
         self.mock_create_api_resource()
         self.mock_create_api_method()
+        self.mock_create_api_integration()
         self.mock_add_permission()
         self.mock_create_deployment()
         self.api_stubber.activate()
@@ -457,6 +461,7 @@ class LambdaDeployerTestCase(TestCase):
         self.deployer.deploy()
 
     def test_api_root(self):
+        self.mock_api_id()
         self.mock_api_root()
         self.api_stubber.activate()
         out = self.deployer.api_root
@@ -469,6 +474,7 @@ class LambdaDeployerTestCase(TestCase):
         self.assertEqual(api_id, out)
 
     def test_authorizer_id(self):
+        self.mock_api_id()
         auth_id = self.mock_authorizer_id()
         self.api_stubber.activate()
         out = self.deployer.authorizer_id
@@ -487,6 +493,7 @@ class LambdaDeployerTestCase(TestCase):
         self.assertEqual(self.dep.config['function_arn'], 'test')
 
     def test_create_api_resource_success(self):
+        self.mock_api_id()
         self.mock_api_root()
         response = self.mock_create_api_resource()
         with self.api_stubber:
@@ -495,6 +502,7 @@ class LambdaDeployerTestCase(TestCase):
 
     def test_create_api_method(self):
         response = {'id': '123'}
+        self.mock_api_id()
         self.mock_create_api_method()
         self.api_stubber.activate()
         self.deployer._create_api_method(response)
@@ -503,17 +511,20 @@ class LambdaDeployerTestCase(TestCase):
         self.dep.config['function_arn'] = 'test'
         self.dep.save()
         response = {'id': '123'}
+        self.mock_api_id()
         self.mock_create_api_integration()
         self.api_stubber.activate()
         self.deployer._create_api_integration(response)
 
     def test_add_permission(self):
+        self.mock_api_id()
         self.mock_add_permission()
         self.lmbd_stubber.activate()
         self.api_stubber.activate()
         self.deployer._add_permission()
 
     def test_create_deployment(self):
+        self.mock_api_id()
         self.mock_create_deployment()
         self.api_stubber.activate()
         self.deployer._create_deployment()
@@ -524,8 +535,9 @@ class LambdaDeployerTestCase(TestCase):
         self.api_stubber.add_response('get_resources', response, params)
 
     def mock_api_id(self, api_id='abc123'):
-        response = dict(items=[{'name': 'deploymentApi-0', 'id': api_id}])
-        self.api_stubber.add_response('get_rest_apis', response, {'limit': 60})
+        if api_id:
+            response = dict(items=[{'name': 'deploymentApi-0', 'id': api_id}])
+            self.api_stubber.add_response('get_rest_apis', response, {'limit': 60})
         return api_id
 
     def mock_authorizer_id(self, auth_id='123xyz'):
@@ -534,10 +546,10 @@ class LambdaDeployerTestCase(TestCase):
         self.api_stubber.add_response('get_authorizers', response, params)
         return auth_id
 
-    def mock_create_api(self, api_id='123'):
+    def mock_create_api(self, api_id='abc123'):
         self.api_stubber.add_response('create_rest_api', {'id': api_id}, {'name': 'deploymentApi-0'})
         auth_params = dict(
-            restApiId='123',
+            restApiId='abc123',
             name='deploymentAuthorizer-0',
             type='REQUEST',
             identitySource='method.request.querystring.access_token',
@@ -589,12 +601,10 @@ class LambdaDeployerTestCase(TestCase):
         self.api_stubber.add_response('put_method', {}, params)
 
     def mock_create_api_integration(self):
-        self.dep.config['function_arn'] = 'test'
-        self.dep.save()
         uri = ''.join([
             f"arn:aws:apigateway:{settings.AWS_DEFAULT_REGION}:",
             f"lambda:path/{self.deployer.lambda_version}/functions/",
-            f"{self.dep.config['function_arn']}/invocations"
+            f"test/invocations"
         ])
 
         params = dict(
