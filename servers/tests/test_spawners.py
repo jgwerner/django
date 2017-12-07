@@ -290,7 +290,7 @@ class ECSSpawnerTestCase(TestCase):
         self.spawner = ECSSpawner(self.server, client)
 
     def test_start(self):
-        register_params = self.spawner._task_definition_args()
+        register_params = self.spawner._task_definition_args
         register_response = {'taskDefinition': {'taskDefinitionArn': '123'}}
         self.stubber.add_response('register_task_definition', register_response, register_params)
         run_params = dict(
