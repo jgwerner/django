@@ -3,6 +3,7 @@ import re
 import boto3
 import requests
 import uuid
+import tempfile
 import zipfile
 from functools import partial
 from botocore.exceptions import ClientError
@@ -66,26 +67,31 @@ class LambdaDeployer:
             )
 
     def prepare_package(self) -> bytes:
-        tmp_path = f'/tmp/{self.deployment.pk}.zip'
-        if self.deployment.framework.url:
-            resp = requests.get(self.deployment.framework.url)
-            resp.raise_for_status()
-            with open(tmp_path, 'wb') as tmp:
+        with tempfile.NamedTemporaryFile() as tmp:
+            if self.deployment.framework.url:
+                resp = requests.get(self.deployment.framework.url)
+                resp.raise_for_status()
                 for chunk in resp.iter_content(1024):
                     if chunk:
                         tmp.write(chunk)
-        with zipfile.ZipFile(tmp_path, 'a') as package:
+        with zipfile.ZipFile(tmp.name, 'a') as package:
             join = partial(os.path.join, self.deployment.volume_path)
             for user_file in self.deployment.config['files']:
                 package.write(join(user_file), arcname=user_file)
-        with open(tmp_path, 'rb') as tp:
-            return tp.read()
-        return b''
+        out = b''
+        with open(tmp.name, 'rb') as tp:
+            out = tp.read()
+        os.remove(tmp.name)
+        return out
 
     @cached_property
     def api_root(self):
         resp = self.api_gateway.get_resources(restApiId=self.api_id)
-        return next(x for x in resp['items'][::-1] if x['path'] == '/')['id']
+        # reversing items because root is usually at the end
+        items = resp['items'][::-1]
+        for resource in items:
+            if resource['path'] == '/':
+                return resource['id']
 
     @cached_property
     def api_id(self) -> str:
