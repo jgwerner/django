@@ -19,7 +19,7 @@ from jwt_auth.views import JWTApiView
 from jwt_auth.serializers import VerifyJSONWebTokenServerSerializer
 from jwt_auth.utils import create_server_jwt
 from teams.permissions import TeamGroupPermission
-from .tasks import start_server, stop_server, terminate_server
+from .tasks import start_server, stop_server, terminate_server, deploy, delete_deployment
 from .permissions import ServerChildPermission, ServerActionPermission
 from . import serializers, models
 from .utils import get_server_usage
@@ -233,3 +233,45 @@ def server_internal_details(request, version, project_project, server_server, se
     server_ip = server.get_private_ip()
     port = server.config.get('ports', {}).get(service)
     return Response(f"{server_ip}:{port}")
+
+
+class DeploymentViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
+    queryset = models.Deployment.objects.all()
+    serializer_class = serializers.DeploymentSerializer
+    permission_classes = (IsAuthenticated, ProjectChildPermission, TeamGroupPermission)
+    filter_fields = ("name",)
+    lookup_url_kwarg = 'deployment'
+
+    def perform_destroy(self, instance):
+        delete_deployment.apply_async(
+            args=[instance.pk],
+            task_id=str(self.request.action.pk)
+        )
+        instance.is_active = False
+        instance.save()
+
+
+@api_view(['POST'])
+def deploy_deployment(request, **kwargs):
+    deployment = get_object_or_404(models.Deployment, kwargs.get('deployment'))
+    deploy.delay(deployment.pk)
+    return Response({'message': 'OK'})
+
+
+@api_view(['POST'])
+@permission_classes((AllowAny,))
+def deployment_auth(request):
+    serializer = serializers.DeploymentAuthSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status.HTTP_401_UNAUTHORIZED)
+    deployment = models.Deployment.objects.only('access_token').filter(
+        is_active=True, config__resource_id=serializer.validated_data['resource_id']).first()
+    if deployment is None:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    data = {'user_id': str(deployment.project.owner.pk)}
+    log.info(deployment.access_token)
+    log.info(serializer.validated_data['token'])
+    if deployment.access_token != serializer.validated_data['token']:
+        data['token'] = "Token is invalid"
+        return Response(data, status.HTTP_401_UNAUTHORIZED)
+    return Response(data)

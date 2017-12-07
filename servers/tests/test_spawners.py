@@ -2,6 +2,8 @@ import os
 import socket
 import requests
 import json
+import uuid
+import zipfile
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from threading import Thread
 from unittest.mock import patch
@@ -15,7 +17,8 @@ from projects.tests.factories import CollaboratorFactory
 from servers.tests.fake_docker_api_client.fake_api import FAKE_CONTAINER_ID
 from ..spawners.docker import DockerSpawner
 from ..spawners.ecs import ECSSpawner
-from .factories import ServerSizeFactory, ServerFactory
+from ..spawners.aws_lambda.deployer import LambdaDeployer
+from .factories import ServerSizeFactory, ServerFactory, DeploymentFactory
 from .fake_docker_api_client.fake_api_client import make_fake_client
 
 
@@ -287,7 +290,7 @@ class ECSSpawnerTestCase(TestCase):
         self.spawner = ECSSpawner(self.server, client)
 
     def test_start(self):
-        register_params = self.spawner._task_definition_args()
+        register_params = self.spawner._task_definition_args
         register_response = {'taskDefinition': {'taskDefinitionArn': '123'}}
         self.stubber.add_response('register_task_definition', register_response, register_params)
         run_params = dict(
@@ -368,3 +371,284 @@ class ECSSpawnerTestCase(TestCase):
         self.assertEqual(labels["traefik.port"], self.spawner._get_exposed_ports()[0])
         self.assertIn("traefik.frontend.rule", labels)
         self.assertIn(str(self.server.pk), labels["traefik.frontend.rule"])
+
+
+class LambdaDeployerTestCase(TestCase):
+    def setUp(self):
+        col = CollaboratorFactory()
+        self.project = col.project
+        api_client = botocore.session.get_session().create_client('apigateway')
+        self.api_stubber = Stubber(api_client)
+        lmbd_client = botocore.session.get_session().create_client('lambda')
+        self.lmbd_stubber = Stubber(lmbd_client)
+        self.dep = DeploymentFactory(config={'handler': 'main.handle', 'files': ['lambda.py']}, project=self.project)
+        self.statement_id = uuid.uuid4().hex
+        self.deployer = LambdaDeployer(self.dep, lambda_client=lmbd_client, api_gateway_client=api_client,
+                                       statement_id=self.statement_id)
+
+    def test_deploy(self):
+        api_id = self.mock_api_id()
+        self.mock_create_lambda_function()
+        self.mock_api_root()
+        self.mock_create_api_resource()
+        self.mock_create_api_method()
+        self.mock_create_api_integration()
+        self.mock_add_permission()
+        self.mock_create_deployment()
+        self.api_stubber.activate()
+        self.lmbd_stubber.activate()
+        self.deployer.deploy()
+
+        self.dep.refresh_from_db()
+        self.assertIn('function_arn', self.dep.config)
+        self.assertIn('resource_id', self.dep.config)
+        self.assertIn('endpoint', self.dep.config)
+        self.assertIn('execute-api', self.dep.config['endpoint'])
+        self.assertIn(api_id, self.dep.config['endpoint'])
+        self.assertIn(settings.AWS_DEFAULT_REGION, self.dep.config['endpoint'])
+        self.assertIn(self.deployer.stage, self.dep.config['endpoint'])
+        self.assertIn(str(self.dep.pk), self.dep.config['endpoint'])
+        self.assertIn('access_token', self.dep.config['endpoint'])
+        self.assertIn(self.dep.access_token, self.dep.config['endpoint'])
+
+    def test_deploy_without_api(self):
+        api_id = self.mock_api_id(api_id='')
+        self.mock_create_lambda_function()
+        self.api_stubber.add_response('get_rest_apis', {'items': []}, {'limit': 60})
+        self.mock_create_api()
+        self.mock_api_root()
+        self.mock_create_api_resource()
+        self.mock_create_api_method()
+        self.mock_create_api_integration()
+        self.mock_add_permission()
+        self.mock_create_deployment()
+        self.api_stubber.activate()
+        self.lmbd_stubber.activate()
+        self.deployer.deploy()
+
+        self.dep.refresh_from_db()
+        self.assertIn('endpoint', self.dep.config)
+        self.assertIn('execute-api', self.dep.config['endpoint'])
+        self.assertIn(api_id, self.dep.config['endpoint'])
+        self.assertIn(settings.AWS_DEFAULT_REGION, self.dep.config['endpoint'])
+        self.assertIn(self.deployer.stage, self.dep.config['endpoint'])
+        self.assertIn(str(self.dep.pk), self.dep.config['endpoint'])
+        self.assertIn('access_token', self.dep.config['endpoint'])
+        self.assertIn(self.dep.access_token, self.dep.config['endpoint'])
+
+    def test_delete(self):
+        self.dep.config['resource_id'] = 'abc'
+        self.dep.save()
+        params = dict(
+            restApiId=self.mock_api_id(),
+            resourceId='abc'
+        )
+        self.api_stubber.add_response('delete_resource', {}, params)
+        self.lmbd_stubber.add_response('delete_function', {}, {'FunctionName': str(self.dep.pk)})
+        self.api_stubber.activate()
+        self.lmbd_stubber.activate()
+        self.deployer.delete()
+
+    def test_deploy_update(self):
+        self.dep.config['endpoint'] = 'test'
+        self.dep.save()
+        self.mock_api_id()
+        params = dict(
+            FunctionName=str(self.dep.pk),
+            ZipFile=self._zip_file()
+        )
+        self.lmbd_stubber.add_response('update_function_code', {}, params)
+        self.api_stubber.activate()
+        self.lmbd_stubber.activate()
+        self.deployer.deploy()
+
+    def test_api_root(self):
+        self.mock_api_id()
+        self.mock_api_root()
+        self.lmbd_stubber.activate()
+        self.api_stubber.activate()
+        out = self.deployer.api_root
+        self.assertEqual(out, '123')
+
+    def test_api_id(self):
+        api_id = self.mock_api_id()
+        self.api_stubber.activate()
+        out = self.deployer.api_id
+        self.assertEqual(api_id, out)
+
+    def test_authorizer_id(self):
+        self.mock_api_id()
+        auth_id = self.mock_authorizer_id()
+        self.api_stubber.activate()
+        out = self.deployer.authorizer_id
+        self.assertEqual(auth_id, out)
+
+    def test_create_api(self):
+        api_id = self.mock_create_api()
+        self.api_stubber.activate()
+        out = self.deployer._create_api()
+        self.assertEqual(api_id, out)
+
+    def test_create_lambda_function(self):
+        self.mock_create_lambda_function()
+        self.lmbd_stubber.activate()
+        self.deployer._create_lambda_function()
+        self.assertEqual(self.dep.config['function_arn'], 'test')
+
+    def test_create_api_resource_success(self):
+        self.mock_api_id()
+        self.mock_api_root()
+        response = self.mock_create_api_resource()
+        with self.api_stubber:
+            self.deployer._create_api_resource()
+        self.assertEqual(self.dep.config['resource_id'], response['id'])
+
+    def test_create_api_method(self):
+        response = {'id': '123'}
+        self.mock_api_id()
+        self.mock_create_api_method()
+        self.api_stubber.activate()
+        self.deployer._create_api_method(response)
+
+    def test_create_api_integration(self):
+        self.dep.config['function_arn'] = 'test'
+        self.dep.save()
+        response = {'id': '123'}
+        self.mock_api_id()
+        self.mock_create_api_integration()
+        self.api_stubber.activate()
+        self.deployer._create_api_integration(response)
+
+    def test_add_permission(self):
+        self.mock_api_id()
+        self.mock_add_permission()
+        self.lmbd_stubber.activate()
+        self.api_stubber.activate()
+        self.deployer._add_permission()
+
+    def test_create_deployment(self):
+        self.mock_api_id()
+        self.mock_create_deployment()
+        self.api_stubber.activate()
+        self.deployer._create_deployment()
+
+    def mock_api_root(self):
+        params = dict(restApiId='abc123')
+        response = dict(items=[{'id': '123', 'path': '/'}, {'id': '456', 'path': '/test'}])
+        self.api_stubber.add_response('get_resources', response, params)
+
+    def mock_api_id(self, api_id='abc123'):
+        if api_id:
+            response = dict(items=[{'name': 'deploymentApi-0', 'id': api_id}])
+            self.api_stubber.add_response('get_rest_apis', response, {'limit': 60})
+        return api_id
+
+    def mock_authorizer_id(self, auth_id='123xyz'):
+        params = dict(restApiId='abc123')
+        response = dict(items=[{'id': auth_id, 'name': 'deploymentAuthorizer-0'}])
+        self.api_stubber.add_response('get_authorizers', response, params)
+        return auth_id
+
+    def mock_create_api(self, api_id='abc123'):
+        self.api_stubber.add_response('create_rest_api', {'id': api_id}, {'name': 'deploymentApi-0'})
+        auth_params = dict(
+            restApiId='abc123',
+            name='deploymentAuthorizer-0',
+            type='REQUEST',
+            identitySource='method.request.querystring.access_token',
+            authorizerUri=''.join([
+                f'arn:aws:apigateway:{settings.AWS_DEFAULT_REGION}:',
+                f'lambda:path/{self.deployer.lambda_version}/functions/',
+                f'{settings.AWS_LAMBDA_AUTHORIZER}/invocations'
+            ]),
+            authorizerCredentials=settings.AWS_AUTHORIZER_ROLE,
+        )
+        self.api_stubber.add_response('create_authorizer', {}, auth_params)
+        return api_id
+
+    def mock_create_lambda_function(self):
+        params = dict(
+            FunctionName=str(self.dep.pk),
+            Runtime=self.dep.runtime.name,
+            Code={
+                'ZipFile': self._zip_file()
+            },
+            MemorySize=1536,
+            Handler=self.dep.config['handler'],
+            Timeout=300,
+            Role=settings.AWS_DEPLOYMENT_ROLE,
+        )
+        response = dict(FunctionArn='test')
+        self.lmbd_stubber.add_response('create_function', response, params)
+
+    def mock_create_api_resource(self):
+        params = dict(
+            restApiId='abc123',
+            pathPart=str(self.dep.pk),
+            parentId='123'
+        )
+        response = dict(id='123')
+        self.api_stubber.add_response('create_resource', response, params)
+        return response
+
+    def mock_create_api_method(self):
+        auth_id = self.mock_authorizer_id()
+        params = dict(
+            restApiId='abc123',
+            resourceId='123',
+            httpMethod="GET",
+            authorizationType="CUSTOM",
+            authorizerId=auth_id,
+            apiKeyRequired=False,
+        )
+        self.api_stubber.add_response('put_method', {}, params)
+
+    def mock_create_api_integration(self):
+        uri = ''.join([
+            f"arn:aws:apigateway:{settings.AWS_DEFAULT_REGION}:",
+            f"lambda:path/{self.deployer.lambda_version}/functions/",
+            f"test/invocations"
+        ])
+
+        params = dict(
+            restApiId='abc123',
+            resourceId='123',
+            httpMethod="GET",
+            type="AWS_PROXY",
+            integrationHttpMethod="POST",
+            uri=uri,
+        )
+        self.api_stubber.add_response('put_integration', {}, params)
+
+    def mock_add_permission(self):
+        source_arn = ''.join([
+            f"arn:aws:execute-api:{settings.AWS_DEFAULT_REGION}:",
+            f"{settings.AWS_ACCOUNT_ID}:abc123/*/GET/{self.dep.pk}"
+        ])
+        params = dict(
+            FunctionName=str(self.dep.pk),
+            StatementId=self.statement_id,
+            Action="lambda:InvokeFunction",
+            Principal="apigateway.amazonaws.com",
+            SourceArn=source_arn
+        )
+        self.lmbd_stubber.add_response('add_permission', {}, params)
+
+    def mock_create_deployment(self):
+        params = dict(
+            restApiId='abc123',
+            stageName=self.deployer.stage,
+        )
+        self.api_stubber.add_response('create_deployment', {}, params)
+
+    def _zip_file(self):
+        root = self.project.resource_root()
+        root.mkdir(parents=True, exist_ok=True)
+        py_path = root.joinpath('lambda.py')
+        zip_path = root.joinpath('lambda.zip')
+        with py_path.open('w') as lf:
+            lf.write("import this")
+        with zipfile.ZipFile(str(zip_path), 'w') as zf:
+            zf.write(py_path, arcname='lambda.py')
+        with zip_path.open('rb') as of:
+            return of.read()

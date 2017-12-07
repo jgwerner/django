@@ -43,6 +43,7 @@ router.register(r'projects', project_views.ProjectViewSet)
 project_router = routers.NestedSimpleRouter(router, r'projects', lookup='project')
 project_router.register(r'collaborators', project_views.CollaboratorViewSet)
 project_router.register(r'servers', servers_views.ServerViewSet)
+project_router.register(r'deployments', servers_views.DeploymentViewSet)
 project_router.register(r'project_files', project_views.ProjectFileViewSet)
 server_router = routers.NestedSimpleRouter(project_router, r'servers', lookup='server')
 server_router.register(r'ssh-tunnels', servers_views.SshTunnelViewSet)
@@ -128,6 +129,8 @@ urlpatterns = [
         servers_views.VerifyJSONWebTokenServer.as_view(), name='server-api-key-verify'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/auth/$',
         servers_views.check_token, name='server-auth'),
+    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/deployments/(?P<deployment>[^/.]+)/deploy/$',
+        servers_views.deploy_deployment, name='deploy'),
     url(r'^servers/', include(servers_router.urls)),
     url(r'^webhooks/incoming/billing/invoice_created/$', billing_views.stripe_invoice_created,
         name='stripe-invoice-created'),

@@ -25,6 +25,7 @@ project_router = routers.NestedSimpleRouter(router, r'projects', lookup='project
 project_router.register(r'collaborators', project_views.CollaboratorViewSet)
 project_router.register(r'project_files', project_views.ProjectFileViewSet)
 project_router.register(r'servers', servers_views.ServerViewSet)
+project_router.register(r'deployments', servers_views.DeploymentViewSet)
 
 urlpatterns = [
     url(r'^project-copy-check$',
