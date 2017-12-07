@@ -458,12 +458,14 @@ class LambdaDeployerTestCase(TestCase):
             ZipFile=self._zip_file()
         )
         self.lmbd_stubber.add_response('update_function_code', {}, params)
+        self.api_stubber.activate()
         self.lmbd_stubber.activate()
         self.deployer.deploy()
 
     def test_api_root(self):
         self.mock_api_id()
         self.mock_api_root()
+        self.lmbd_stubber.activate()
         self.api_stubber.activate()
         out = self.deployer.api_root
         self.assertEqual(out, '123')
