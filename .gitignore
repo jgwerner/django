@@ -97,3 +97,6 @@ resources/
 
 static/
 logs/
+
+# NPM node modules
+node_modules/
