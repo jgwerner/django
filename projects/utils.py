@@ -155,11 +155,9 @@ def perform_project_copy(user: User, project_id: str, request: Request) -> Proje
 
     return new_proj
 
-
-def sync_project_files_from_disk(project: Project) -> None:
-    log.info(f"Synchronizing files for project f{project.pk}")
+def read_project_files(project_dir: str) -> List:
     leaf_nodes = []
-    for root, dirs, files in os.walk(str(project.resource_root())):
+    for root, dirs, files in os.walk(project_dir):
         for f in files:
             if f[:4].lower() == ".nfs":
                 log.info("Came across some nfs system files during sync process. Skipping them.")
@@ -167,6 +165,30 @@ def sync_project_files_from_disk(project: Project) -> None:
 
             full_path = os.path.join(root, f)
             leaf_nodes.append(full_path)
+    return leaf_nodes
+
+def create_project_files(project: Project, paths_to_create: list) -> None:
+    new_project_file_objs = []
+    for path in paths_to_create:
+        log.info(f"Attempting to create a project file object for file at"
+                 f" path {path}.")
+        file_obj = open(path, "r")
+        django_file = File(file_obj)
+        # Note that ProjectFile uses a custom storage backend that
+        # will properly handle a file that already exists on disk.
+        proj_file = ProjectFile(project=project,
+                                author=project.owner,
+                                file=django_file)
+        new_project_file_objs.append(proj_file)
+
+        log.info("ProjectFile created successfully. Not yet stored in DB.")
+        
+    num_created = ProjectFile.objects.bulk_create(new_project_file_objs)
+    log.info(f"Created {num_created} ProjectFile objects in the database.")
+
+def sync_project_files_from_disk(project: Project) -> None:
+    log.info(f"Synchronizing files for project f{project.pk}")
+    leaf_nodes = read_project_files(str(project.resource_root()))
 
     project_files = ProjectFile.objects.filter(project=project)
 
@@ -189,23 +211,7 @@ def sync_project_files_from_disk(project: Project) -> None:
     num_deleted = ProjectFile.objects.filter(pk__in=to_delete).delete()
     log.info(f"Deleted {num_deleted} files for project {project.pk}.")
 
-    new_project_file_objs = []
-    for path in paths_to_create:
-        log.info(f"Attempting to create a project file object for file at"
-                 f" path {path}.")
-        file_obj = open(path, "r")
-        django_file = File(file_obj)
-        # Note that ProjectFile uses a custom storage backend that
-        # will properly handle a file that already exists on disk.
-        proj_file = ProjectFile(project=project,
-                                author=project.owner,
-                                file=django_file)
-        new_project_file_objs.append(proj_file)
-
-        log.info("ProjectFile created successfully. Not yet stored in DB.")
-
-    num_created = ProjectFile.objects.bulk_create(new_project_file_objs)
-    log.info(f"Created {num_created} ProjectFile objects in the database.")
+    create_project_files(project, paths_to_create)
     log.info("Done with file sync.")
 
 

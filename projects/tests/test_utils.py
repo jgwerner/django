@@ -1,11 +1,12 @@
 import os
 import shutil
+from unittest.mock import patch, mock_open
 from pathlib import Path
 from django.conf import settings
 from django.test import TestCase
 from users.models import User
 from projects.models import ProjectFile, Project
-from projects.utils import sync_project_files_from_disk, create_templates
+from projects.utils import sync_project_files_from_disk, create_templates, read_project_files, create_project_files
 from .utils import generate_random_file_content
 from .factories import CollaboratorFactory, ProjectFileFactory
 
@@ -17,6 +18,71 @@ class ProjectUtilsTest(TestCase):
     def tearDown(self):
         for directory in self.dirs_to_destroy:
             shutil.rmtree(str(directory))
+
+    #read_project_files
+    @patch('os.walk')
+    def test_read_project_files__root_files__return_root_files(self, mock_os_walk):        
+        proj = CollaboratorFactory().project
+        test_file = "test_file_foo.txt"
+        mock_os_walk.return_value = [(str(proj.resource_root()), [], [test_file])]
+        files = read_project_files(str(proj.resource_root()))
+        self.assertEqual(len(files), 1)
+        self.assertEqual(files[0], str(proj.resource_root()) + "/" + test_file)
+
+    @patch('os.walk')
+    def test_read_project_files__nested_files__return_nested_files(self, mock_os_walk):
+        proj = CollaboratorFactory().project
+        nested_path = "foo/bar/"
+        test_file = "test_file_foo.txt"
+        mock_os_walk.return_value = [(str(proj.resource_root()), ["foo"], []),
+                                     (str(proj.resource_root()) + "/foo", ["bar"], []),
+                                     (str(proj.resource_root()) + "/foo/bar", [], [test_file])]
+        files = read_project_files(str(proj.resource_root()))
+        self.assertEqual(len(files), 1)
+        self.assertEqual(files[0], str(proj.resource_root()) + "/" + nested_path + test_file)
+
+    @patch('projects.utils.log')
+    @patch('os.walk')
+    def test_read_project_files__nfs_file__log_skipped_nfs_file(self, mock_os_walk, mock_logger):
+        proj = CollaboratorFactory().project
+        test_file = ".nfs_test_file_foo.txt"
+        mock_os_walk.return_value = [(str(proj.resource_root()), [], [test_file])]
+        files = read_project_files(str(proj.resource_root()))
+        self.assertEqual(len(files), 0)
+        mock_logger.info.assert_called_with("Came across some nfs system files during sync process. Skipping them.")
+
+    @patch('os.walk')
+    def test_read_project_files__no_files__return_empty_list(self, mock_os_walk):
+        proj = CollaboratorFactory().project
+        mock_os_walk.return_value = [(str(proj.resource_root()), [], [])]
+        files = read_project_files(str(proj.resource_root()))
+        self.assertEqual(len(files), 0)
+    #end read_project_files
+
+    #create_project_files
+    def mocked_bulk_create(files):
+            return len(files)
+
+    @patch('projects.utils.open', mock_open(read_data='foo\nbar\nbaz\n'))
+    @patch('projects.utils.log')
+    @patch('projects.models.ProjectFile.objects.bulk_create', side_effect=mocked_bulk_create)
+    def test_create_project_files__3_files__creates_3_project_files(self, mock_bulk_create, mock_log):
+        proj = CollaboratorFactory().project
+        paths_to_create = ["foo/bar/test1.txt", "foo/bar/test2.txt", "foo/bar/test3.txt"]
+        create_project_files(proj, paths_to_create)
+        self.assertEqual(mock_bulk_create.called, True)
+        mock_log.info.assert_called_with(f"Created {len(paths_to_create)} ProjectFile objects in the database.")
+
+    @patch('projects.utils.open', mock_open(read_data='foo\nbar\nbaz\n'))
+    @patch('projects.utils.log')
+    @patch('projects.models.ProjectFile.objects.bulk_create', side_effect=mocked_bulk_create)
+    def test_create_project_files__no_files__creates_0_project_files(self, mock_bulk_create, mock_log):
+        proj = CollaboratorFactory().project
+        paths_to_create = []
+        create_project_files(proj, paths_to_create)
+        self.assertEqual(mock_bulk_create.called, True)
+        mock_log.info.assert_called_with(f"Created {len(paths_to_create)} ProjectFile objects in the database.")
+    #end create_project_files
 
     def test_sync_project_files(self):
         proj = CollaboratorFactory().project
