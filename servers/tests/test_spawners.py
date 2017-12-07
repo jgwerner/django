@@ -452,6 +452,7 @@ class LambdaDeployerTestCase(TestCase):
     def test_deploy_update(self):
         self.dep.config['endpoint'] = 'test'
         self.dep.save()
+        self.mock_api_id()
         params = dict(
             FunctionName=str(self.dep.pk),
             ZipFile=self._zip_file()
