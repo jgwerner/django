@@ -60,27 +60,29 @@ class ProjectUtilsTest(TestCase):
     #end read_project_files
 
     #create_project_files
-    def mocked_bulk_create(files):
-            return len(files)
-
-    @patch('projects.utils.open', mock_open(read_data='foo\nbar\nbaz\n'))
+    @patch('projects.utils.open', mock_open())
+    @patch('projects.utils.File')
     @patch('projects.utils.log')
-    @patch('projects.models.ProjectFile.objects.bulk_create', side_effect=mocked_bulk_create)
-    def test_create_project_files__3_files__creates_3_project_files(self, mock_bulk_create, mock_log):
+    def test_create_project_files__3_files__creates_3_project_files(self, mock_log, mock_file):
         proj = CollaboratorFactory().project
         paths_to_create = ["foo/bar/test1.txt", "foo/bar/test2.txt", "foo/bar/test3.txt"]
+        mock_file.side_effect = paths_to_create
         create_project_files(proj, paths_to_create)
-        self.assertEqual(mock_bulk_create.called, True)
+        new_pf = ProjectFile.objects.filter(project=proj)
+        self.assertEqual(new_pf.count(), len(paths_to_create))
         mock_log.info.assert_called_with(f"Created {len(paths_to_create)} ProjectFile objects in the database.")
 
-    @patch('projects.utils.open', mock_open(read_data='foo\nbar\nbaz\n'))
+
+    @patch('projects.utils.open', mock_open())
+    @patch('projects.utils.File')
     @patch('projects.utils.log')
-    @patch('projects.models.ProjectFile.objects.bulk_create', side_effect=mocked_bulk_create)
-    def test_create_project_files__no_files__creates_0_project_files(self, mock_bulk_create, mock_log):
+    def test_create_project_files__no_files__creates_0_project_files(self, mock_log, mock_file):
         proj = CollaboratorFactory().project
         paths_to_create = []
+        mock_file.side_effect = paths_to_create
         create_project_files(proj, paths_to_create)
-        self.assertEqual(mock_bulk_create.called, True)
+        new_pf = ProjectFile.objects.filter(project=proj)
+        self.assertEqual(new_pf.count(), len(paths_to_create))
         mock_log.info.assert_called_with(f"Created {len(paths_to_create)} ProjectFile objects in the database.")
     #end create_project_files
 
