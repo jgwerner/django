@@ -4,13 +4,14 @@ const util = require('util');
 const config = require('./config');
 
 let login = ((username, password) => {
-    let uri = util.format('%s/%s', config.base_address, 'auth/jwt-token-auth/')
+    let uri = get_request_uri('auth/jwt-token-auth/', true);
     let options = {
+        uri: uri,
         json: {
             username: username,
             password: password
         }        
-    }
+    };
     return new Promise((resolve, reject) => {
         request.post(uri, options, (err, resp, body) => {
             if (err) {
@@ -27,7 +28,7 @@ let login = ((username, password) => {
 let loginAsync = ((username, password) => {
     login_done = false;
     token = ''
-    console.log("Attempting to login to api-backend...");
+    console.log("Attempting to login...");
     login(username, password)
         .then(t => {
             console.log("Login Successful!")
@@ -42,6 +43,15 @@ let loginAsync = ((username, password) => {
     return token;
 });
 
+let get_request_uri = (api_path, exclude_version = false) => {
+    let uri = util.format("%s:%s/%s/%s", config.host, config.port, config.version, api_path);
+    if(exclude_version) {
+        uri = uri.replace('/' + config.version, '');
+    }
+    return uri;
+}
+
 module.exports = {
-    login: loginAsync
+    login: loginAsync,
+    get_request_uri: get_request_uri
 }

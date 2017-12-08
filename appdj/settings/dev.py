@@ -29,7 +29,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 
 RAVEN_CONFIG = {
-    'dsn': f'https://{os.getenv("SENTRY_DSN")}@sentry.io/241782',
+    # 'dsn': f'https://{os.getenv("SENTRY_DSN")}@sentry.io/241782',
     # If you are using git, you can also automatically configure the
     # release based on the git info.
     'release': raven.fetch_git_sha(os.path.dirname(os.pardir)),

@@ -1,0 +1,9 @@
+FROM node
+COPY package-lock.json /chakram/
+COPY package.json /chakram/
+COPY api_tests /chakram/api_tests
+WORKDIR /chakram/
+RUN apt-get install curl -y
+RUN npm install
+RUN chmod +x ./api_tests/wait_for_api.sh
+CMD bash ./api_tests/wait_for_api.sh npm test

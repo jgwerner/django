@@ -1,15 +1,25 @@
 version: '2'
 services:
+  test:
+    build: 
+      context: .
+      dockerfile: Dockerfile.Test
+    depends_on:
+      - api
+    env_file: env
   api:
     build: .
-    command: /srv/env/bin/python /srv/app/manage.py runserver $PORT
+    command: /srv/env/bin/gunicorn --bind 0.0.0.0:80 --reload --workers 1 --log-level=DEBUG --error-logfile=- --access-logfile=- appdj.wsgi
     volumes:
       - .:/srv/app
       - /workspaces:/workspaces
     env_file: env
+    ports:
+      - 80:80
     depends_on:
       - db
       - cache
+      - search
   db:
     image: postgres:alpine
     ports:
@@ -18,3 +28,7 @@ services:
     image: redis:alpine
     ports:
       - "6379:6379"
+  search:
+    image: elasticsearch:5-alpine
+    ports:
+      - "9200:9200"
