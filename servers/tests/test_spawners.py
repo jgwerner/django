@@ -323,9 +323,14 @@ class ECSSpawnerTestCase(TestCase):
         self.spawner.stop()
 
     def test_terminate(self):
+        task_arn = 'abc'
+        self.server.config['task_arn'] = task_arn
         task_definition_arn = '123'
         self.server.config['task_definition_arn'] = task_definition_arn
         self.server.save()
+        stop_params = dict(task=task_arn, cluster=settings.ECS_CLUSTER, reason='User request')
+        stop_response = dict(task=dict(taskArn=task_arn))
+        self.stubber.add_response('stop_task', stop_response, stop_params)
         terminate_params = dict(taskDefinition=task_definition_arn)
         terminate_response = dict(taskDefinition=dict(taskDefinitionArn=task_definition_arn))
         self.stubber.add_response('deregister_task_definition', terminate_response, terminate_params)
