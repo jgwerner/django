@@ -62,5 +62,5 @@ script:
 # notifications:
 #   slack: 3blades:RouLDGyG58awmaGkjgvh9Yuz
 env:
-  - DOCKER_COMPOSE_VERSION=1.4.2
+  - DOCKER_COMPOSE_VERSION=1.16.1
 #   - $DOCKER_IMAGE_NAME="3blades/app-backend"
