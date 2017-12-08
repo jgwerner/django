@@ -1,5 +1,5 @@
 #!/bin/bash
-# wait-for-postgres.sh
+# wait_for_api.sh
 
 set -e
 
