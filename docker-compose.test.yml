@@ -23,12 +23,12 @@ services:
   db:
     image: postgres:alpine
     ports:
-      - "5433:5433"  
+      - "5432:5433"  
   cache:
     image: redis:alpine
     ports:
-      - "6380:6380"
+      - "6379:6380"
   search:
     image: elasticsearch:5-alpine
     ports:
-      - "9201:9201"
+      - "9200:9201"
