@@ -18,13 +18,13 @@ services:
   - postgresql
   - redis-server
 before_script:
-  - travis/${BEFORE_SCRIPT}
+  - bash travis/${BEFORE_SCRIPT}
 #  - sleep 10
 before_install:
-  - travis/${BEFORE_INSTALL}
+  - bash travis/${BEFORE_INSTALL}
 # command to install dependencies
 install:
-  - travis/${INSTALL}
+  - bash travis/${INSTALL}
 
 script:
   - ls
