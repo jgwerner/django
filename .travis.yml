@@ -17,7 +17,6 @@ services:
   - docker
   # - postgresql
   # - redis-server
-  # - node
 # before_script:
 #   - echo "listen_addresses = '*'" | sudo tee -a /etc/postgresql/9.*/main/postgresql.conf
 #   - echo "host all all 0.0.0.0/0 trust" | sudo tee -a /etc/postgresql/9.*/main/pg_hba.conf
@@ -48,13 +47,10 @@ install:
   # - pip install -U pip setuptools wheel
   # - pip install -r requirements/dev.txt
   # - pip install codecov
-  # - npm install
 
 script:
-  - docker ps
   - docker-compose -f docker-compose.test.yml up --abort-on-container-exit
   # - python -W ignore tbs_coverage.py run manage.py test --parallel 16 && coverage combine && coverage report -m
-  # - python manage.py runserver 8000
   # - bash config/buildDockerImage.sh
 
 # after_success:
