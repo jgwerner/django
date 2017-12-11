@@ -32,7 +32,6 @@ before_install:
   - sudo mv docker-compose /usr/local/bin
   - docker --version
   - docker-compose --version
-  - docker-compose --help
   - export PATH=$PATH:$HOME/.local/bin # put aws in the path
   - export PYTHONPATH=`pwd`:$PYTHONPATH
   - export DJANGO_SETTINGS_MODULE="appdj.settings.test"
@@ -41,7 +40,6 @@ before_install:
   - export NVIDIA_DOCKER_HOST=http://localhost:3476
   - export AWS_DEFAULT_REGION="us-west-2"
   - export COVERAGE_PROCESS_START=".coveragerc"
-  - export BASE_ADDRESS="https://127.0.0.1:8000"
 # command to install dependencies
 install:
   - pip install -U pip setuptools wheel
