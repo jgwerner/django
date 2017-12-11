@@ -18,48 +18,31 @@ services:
   - postgresql
   - redis-server
 before_script:
-  - echo "listen_addresses = '*'" | sudo tee -a /etc/postgresql/9.*/main/postgresql.conf
-  - echo "host all all 0.0.0.0/0 trust" | sudo tee -a /etc/postgresql/9.*/main/pg_hba.conf
-  - sudo /etc/init.d/postgresql stop
-  - sudo /etc/init.d/postgresql start 9.4
-  - psql template1 -c 'CREATE EXTENSION IF NOT EXISTS hstore;' -U postgres
-  - psql -c 'create database travis_ci_test;' -U postgres
+  - travis/${BEFORE_SCRIPT}
 #  - sleep 10
 before_install:
-  - sudo rm /usr/local/bin/docker-compose
-  - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
-  - chmod +x docker-compose
-  - sudo mv docker-compose /usr/local/bin
-  - docker --version
-  - docker-compose --version
-  - export PATH=$PATH:$HOME/.local/bin # put aws in the path
-  - export PYTHONPATH=`pwd`:$PYTHONPATH
-  - export DJANGO_SETTINGS_MODULE="appdj.settings.test"
-  - export REDIS_URL="redis://localhost:6379/0"
-  - export DATABASE_URL="postgres://postgres:@localhost:5432/travis_ci_test"
-  - export NVIDIA_DOCKER_HOST=http://localhost:3476
-  - export AWS_DEFAULT_REGION="us-west-2"
-  - export COVERAGE_PROCESS_START=".coveragerc"
+  - travis/${BEFORE_INSTALL}
 # command to install dependencies
 install:
-  - pip install -U pip setuptools wheel
-  - pip install -r requirements/dev.txt
-  - pip install codecov
+  - travis/${INSTALL}
 
 script:
   - ls
-  - bash travis/${TEST_SCRIPT}
-  # - bash config/buildDockerImage.sh
+  - bash travis/${SCRIPT}
 
 # after_success:
 #   - bash <(curl -s https://codecov.io/bash)
 
 # notifications:
 #   slack: 3blades:RouLDGyG58awmaGkjgvh9Yuz
+matrix:
+  include:
+    - python: 3.6
+      env: SCRIPT=apitests_script.sh INSTALL=apitests_install.sh BEFORE_INSTALL=apitests_before_install.sh BEFORE_SCRIPT=apitests_before_script.sh
+    - python: 3.6
+      env:
+        - SCRIPT=unittests_script.sh INSTALL=unittests_install.sh BEFORE_INSTALL=unittests_before_install.sh BEFORE_SCRIPT=unittests_before_script.sh
 env:
   global:
     - DOCKER_IMAGE_NAME="3blades/app-backend"
     - DOCKER_COMPOSE_VERSION=1.16.1
-  matrix:
-    - TEST_SCRIPT=apitests_script.sh
-    - TEST_SCRIPT=unittests_script.sh
