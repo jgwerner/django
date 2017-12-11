@@ -47,7 +47,8 @@ install:
   - pip install codecov
 
 script:
-  - ${TEST_SCRIPT}
+  - ls
+  - bash travis/${TEST_SCRIPT}
   # - bash config/buildDockerImage.sh
 
 # after_success:
@@ -60,5 +61,5 @@ env:
     - DOCKER_IMAGE_NAME="3blades/app-backend"
     - DOCKER_COMPOSE_VERSION=1.16.1
   matrix:
-    - TEST_SCRIPT="bash travis/apitests_script.sh"
-    - TEST_SCRIPT="bash travis/unittests_script.sh"
+    - TEST_SCRIPT=apitests_script.sh
+    - TEST_SCRIPT=unittests_script.sh
