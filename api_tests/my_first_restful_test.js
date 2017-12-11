@@ -43,7 +43,7 @@ describe('Verify Login', () => {
         expect(response).to.have.schema(me_schema);
         expect(response).to.have.json('username', config.username);
         expect(response).to.have.json('email', config.email);
-        expect(response).to.have.header('content-type', 'application/json');
+        expect(response).to.have.header('content-type', 'application/jso');
         return chakram.wait();
     });
 })
