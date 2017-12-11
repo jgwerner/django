@@ -68,6 +68,7 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+*.ipynb
 
 # pyenv
 .python-version
@@ -91,6 +92,9 @@ ENV/
 # Rope project settings
 .ropeproject
 
+# Exuberant Ctags
+tags
+
 .idea/
 
 resources/
@@ -98,5 +102,7 @@ resources/
 static/
 logs/
 
-# NPM node modules
+# npm node modules
 node_modules/
+
+celerybeat.pid

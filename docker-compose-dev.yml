@@ -88,6 +88,43 @@ services:
       - "traefik.nginx.frontend.rule=PathPrefix:/media"
     volumes:
       - /workspaces:/workspaces
+  sentry:
+    image: sentry
+    depends_on:
+      - cache
+      - db
+    ports:
+      - 9000:9000
+    environment:
+      SENTRY_SECRET_KEY: 'ZiGTnxn6Om4N8mTZdiGvKQaXp1eo8u2T'
+      SENTRY_POSTGRES_HOST: db
+      SENTRY_DB_NAME: sentry
+      SENTRY_DB_USER: postgres
+      SENTRY_REDIS_HOST: cache
+  sentry-worker:
+    image: sentry
+    command: "sentry run worker"
+    depends_on:
+      - cache
+      - db
+    environment:
+      SENTRY_SECRET_KEY: 'ZiGTnxn6Om4N8mTZdiGvKQaXp1eo8u2T'
+      SENTRY_POSTGRES_HOST: db
+      SENTRY_DB_NAME: sentry
+      SENTRY_DB_USER: postgres
+      SENTRY_REDIS_HOST: cache
+  sentry-cron:
+    image: sentry
+    command: "sentry run cron"
+    depends_on:
+      - cache
+      - db
+    environment:
+      SENTRY_SECRET_KEY: 'ZiGTnxn6Om4N8mTZdiGvKQaXp1eo8u2T'
+      SENTRY_POSTGRES_HOST: db
+      SENTRY_DB_NAME: sentry
+      SENTRY_DB_USER: postgres
+      SENTRY_REDIS_HOST: cache
 
 networks:
   default:

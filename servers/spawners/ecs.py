@@ -3,6 +3,7 @@ import boto3
 import logging
 from typing import List, Dict, Tuple
 from django.conf import settings
+from django.utils.functional import cached_property
 
 from .base import BaseSpawner, GPUMixin
 
@@ -32,6 +33,7 @@ class ECSSpawner(GPUMixin, BaseSpawner):
         )
 
     def terminate(self) -> None:
+        self.stop()
         self.client.deregister_task_definition(
             taskDefinition=self.server.config['task_definition_arn']
         )
@@ -51,9 +53,10 @@ class ECSSpawner(GPUMixin, BaseSpawner):
             return self.server.ERROR
 
     def _register_task_definition(self) -> str:
-        resp = self.client.register_task_definition(**self._task_definition_args())
+        resp = self.client.register_task_definition(**self._task_definition_args)
         return resp['taskDefinition']['taskDefinitionArn']
 
+    @cached_property
     def _task_definition_args(self):
         volumes, mount_points = self._get_volumes_and_mount_points()
         return dict(
