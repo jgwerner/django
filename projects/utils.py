@@ -88,11 +88,10 @@ def has_copy_permission(request=None, user=None, project=None):
 
     if request is not None:
         user = request.user
-        # We have to use request.GET when request.method is GET or HEAD
-        proj_pk = request.data.get('project') or request.GET.get('project')
+        proj_pk = request.data.get("project")
         project = Project.objects.get(pk=proj_pk)
     elif user is None or project is None:
-        log.error("Someone attempted to call has_copy_permission without specifying enough information.")
+        log.error("Attempted to call has_copy_permission without specifying enough information.")
         raise ValueError("When calling has_copy_function, either request or both user and project must be specified.")
 
     has_perm = False

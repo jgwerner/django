@@ -110,6 +110,7 @@ def project_copy(request, *args, **kwargs):
 
     if new_project_name:
         # If user explicitly provided a project name via request, ensure it isn't a duplicate
+        log.info(f"The project_copy request contains a project name. Validating name: {new_project_name}")
         ProjectSerializer.validate_name(new_project_name)
 
     try:
@@ -123,6 +124,8 @@ def project_copy(request, *args, **kwargs):
         log.exception(e)
         resp_status = status.HTTP_500_INTERNAL_SERVER_ERROR
         resp_data = {'message': "Internal Server Error when attempting to copy project."}
+
+        return Response(data=resp_data, status=resp_status)
     else:
         if new_project is not None:
             resp_status = status.HTTP_201_CREATED

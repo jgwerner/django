@@ -53,6 +53,14 @@ class ProjectTest(ProjectTestMixin, APITestCase):
         self.assertEqual(Project.objects.count(), 1)
         self.assertEqual(Project.objects.get().name, data['name'])
 
+    def test_copy_project_with_deliberately_same_name_fails(self):
+        # If a user copies a project and provides a name already-existing, the copy should fail
+        # create project with a name
+        # create a duplicate project w/ name to pass through a request
+        # self.assertRaises(request, <failure?>)
+        # self.assertEqual(request, <HTTP_STATUS_404?>
+        pass
+
     def test_copy_public_project(self):
         proj = CollaboratorFactory(project__private=False,
                                    project__copying_enabled=True).project
