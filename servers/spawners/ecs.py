@@ -33,6 +33,7 @@ class ECSSpawner(GPUMixin, BaseSpawner):
         )
 
     def terminate(self) -> None:
+        self.stop()
         self.client.deregister_task_definition(
             taskDefinition=self.server.config['task_definition_arn']
         )
