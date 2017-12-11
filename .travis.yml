@@ -4,8 +4,8 @@ cache:
   - apt
 sudo: required
 dist: trusty
-# addons:
-#   postgresql: "9.6"
+addons:
+  postgresql: "9.6"
 python:
   - "3.6"
 # whitelist
@@ -15,15 +15,15 @@ branches:
 services:
 # enable docker service inside travis
   - docker
-  # - postgresql
-  # - redis-server
-# before_script:
-#   - echo "listen_addresses = '*'" | sudo tee -a /etc/postgresql/9.*/main/postgresql.conf
-#   - echo "host all all 0.0.0.0/0 trust" | sudo tee -a /etc/postgresql/9.*/main/pg_hba.conf
-#   - sudo /etc/init.d/postgresql stop
-#   - sudo /etc/init.d/postgresql start 9.4
-#   - psql template1 -c 'CREATE EXTENSION IF NOT EXISTS hstore;' -U postgres
-#   - psql -c 'create database travis_ci_test;' -U postgres
+  - postgresql
+  - redis-server
+before_script:
+  - echo "listen_addresses = '*'" | sudo tee -a /etc/postgresql/9.*/main/postgresql.conf
+  - echo "host all all 0.0.0.0/0 trust" | sudo tee -a /etc/postgresql/9.*/main/pg_hba.conf
+  - sudo /etc/init.d/postgresql stop
+  - sudo /etc/init.d/postgresql start 9.4
+  - psql template1 -c 'CREATE EXTENSION IF NOT EXISTS hstore;' -U postgres
+  - psql -c 'create database travis_ci_test;' -U postgres
 #  - sleep 10
 before_install:
   - sudo rm /usr/local/bin/docker-compose
@@ -33,24 +33,23 @@ before_install:
   - docker --version
   - docker-compose --version
   - docker-compose --help
-  # - export PATH=$PATH:$HOME/.local/bin # put aws in the path
-  # - export PYTHONPATH=`pwd`:$PYTHONPATH
-  # - export DJANGO_SETTINGS_MODULE="appdj.settings.test"
-  # - export REDIS_URL="redis://localhost:6379/0"
-  # - export DATABASE_URL="postgres://postgres:@localhost:5432/travis_ci_test"
-  # - export NVIDIA_DOCKER_HOST=http://localhost:3476
-  # - export AWS_DEFAULT_REGION="us-west-2"
-  # - export COVERAGE_PROCESS_START=".coveragerc"
-  # - export BASE_ADDRESS="https://127.0.0.1:8000"
+  - export PATH=$PATH:$HOME/.local/bin # put aws in the path
+  - export PYTHONPATH=`pwd`:$PYTHONPATH
+  - export DJANGO_SETTINGS_MODULE="appdj.settings.test"
+  - export REDIS_URL="redis://localhost:6379/0"
+  - export DATABASE_URL="postgres://postgres:@localhost:5432/travis_ci_test"
+  - export NVIDIA_DOCKER_HOST=http://localhost:3476
+  - export AWS_DEFAULT_REGION="us-west-2"
+  - export COVERAGE_PROCESS_START=".coveragerc"
+  - export BASE_ADDRESS="https://127.0.0.1:8000"
 # command to install dependencies
 install:
-  # - pip install -U pip setuptools wheel
-  # - pip install -r requirements/dev.txt
-  # - pip install codecov
+  - pip install -U pip setuptools wheel
+  - pip install -r requirements/dev.txt
+  - pip install codecov
 
 script:
-  - docker-compose -f docker-compose.test.yml up --abort-on-container-exit
-  # - python -W ignore tbs_coverage.py run manage.py test --parallel 16 && coverage combine && coverage report -m
+  - ${TEST_SCRIPT}
   # - bash config/buildDockerImage.sh
 
 # after_success:
@@ -60,4 +59,6 @@ script:
 #   slack: 3blades:RouLDGyG58awmaGkjgvh9Yuz
 env:
   - DOCKER_COMPOSE_VERSION=1.16.1
+  - TEST_SCRIPT="docker-compose -f docker-compose.test.yml up --abort-on-container-exit"
+  - TEST_SCRIPT="python -W ignore tbs_coverage.py run manage.py test --parallel 16 && coverage combine && coverage report -m"
 #   - $DOCKER_IMAGE_NAME="3blades/app-backend"
