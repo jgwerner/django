@@ -13,7 +13,7 @@ services:
     volumes:
       - .:/srv/app
       - /workspaces:/workspaces
-    env_file: env
+    env_file: api_tests/env
     ports:
       - 80:80
     depends_on:
