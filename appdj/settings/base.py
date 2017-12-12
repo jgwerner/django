@@ -69,6 +69,7 @@ INSTALLED_APPS = [
     'jwt_auth',
     'search',
     'teams',
+    'silk'
 ]
 
 MIDDLEWARE = [
