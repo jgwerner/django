@@ -63,7 +63,7 @@ class ECSSpawner(GPUMixin, BaseSpawner):
             family='userspace',
             containerDefinitions=[
                 {
-                    'name': str(self.server.name),
+                    'name': str(self.server.pk),
                     'image': self.server.image_name,
                     'cpu': self.server.server_size.cpu,
                     'memory': self.server.server_size.memory,
@@ -116,7 +116,10 @@ class ECSSpawner(GPUMixin, BaseSpawner):
                 'name': 'script',
                 'host': {'sourcePath': os.path.join(self.server.volume_path, self.server.startup_script)}
             })
-            mount_points.append({'sourceVolume': 'script', 'containerPath': f'{settings.SERVER_RESOURCE_DIR}/start.sh'})
+            mount_points.append({
+                'sourceVolume': 'script',
+                'containerPath': f'{settings.SERVER_RESOURCE_DIR}/start.sh'
+            })
         if self._is_gpu_instance:
             volumes.append({
                 'name': 'gpu',
@@ -140,7 +143,12 @@ class ECSSpawner(GPUMixin, BaseSpawner):
 
     def _get_traefik_labels(self) -> Dict[str, str]:
         labels = {"traefik.enable": "true"}
-        server_uri = f"/{settings.DEFAULT_VERSION}/{self.server.project.owner.username}/projects/{self.server.project_id}/servers/{self.server.id}/endpoint/"
+        server_uri = ''.join([
+            f"/{settings.DEFAULT_VERSION}",
+            "/{self.server.project.owner.username}",
+            "/projects/{self.server.project_id}/servers",
+            "/{self.server.id}/endpoint/"
+        ])
         for port in self._get_exposed_ports():
             endpoint = settings.SERVER_PORT_MAPPING.get(port)
             if endpoint:
