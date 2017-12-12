@@ -45,7 +45,7 @@ Pillow==4.2.1
 djoser==0.6.0
 boto==2.48.0
 django-ses==0.8.2
-google-compute-engine==2.4.1
+google-compute-engine==2.7.2
 raven==6.2.1
 celery-redbeat==0.10.0
 django-treebeard==4.1.2
