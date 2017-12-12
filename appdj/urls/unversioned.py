@@ -23,7 +23,6 @@ from rest_framework_nested import routers
 from projects import views as project_views
 from servers import views as servers_views
 from users import views as user_views
-from infrastructure import views as infra_views
 from triggers import views as trigger_views
 from teams import views as team_views
 from billing import views as billing_views
@@ -31,7 +30,6 @@ from search.views import SearchView
 
 router = routers.SimpleRouter()
 
-router.register(r'hosts', infra_views.DockerHostViewSet)
 router.register(r'triggers', trigger_views.TriggerViewSet)
 
 user_router = routers.SimpleRouter()
