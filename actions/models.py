@@ -4,6 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import JSONField
 from django.db import models
 from django.urls import reverse
+from django.utils import timezone
 from requests import Session, Request
 
 from jwt_auth.utils import create_auth_jwt
@@ -46,7 +47,7 @@ class Action(models.Model):
     method = models.CharField(max_length=7)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='actions', null=True, blank=True)
     user_agent = models.CharField(max_length=255)
-    start_date = models.DateTimeField(auto_now_add=True)
+    start_date = models.DateTimeField(default=timezone.now)
     end_date = models.DateTimeField(blank=True, null=True)
     state = models.PositiveSmallIntegerField(choices=STATE_CHOICES)
     ip = models.GenericIPAddressField(null=True)

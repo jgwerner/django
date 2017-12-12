@@ -1,4 +1,5 @@
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 
 from .models import Action
@@ -20,6 +21,18 @@ class ActionSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'object_id': {'write_only': True, 'required': False},
         }
+
+    def validate(self, data):
+        if 'content_type' in data and 'object_id' in data:
+            content_type = data['content_type']
+            object_id = data['object_id']
+            content_type_obj = ContentType.objects.filter(**content_type).first()
+            try:
+                content_type_obj.get_object_for_this_type(pk=object_id)
+            except ObjectDoesNotExist:
+                raise serializers.ValidationError(
+                    f"Object with id {object_id} with content type {content_type} does not exists")
+        return data
 
     def create(self, validated_data):
         action_name = validated_data.pop('action_name', '')

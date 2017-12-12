@@ -559,6 +559,28 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
         path_obj = Path(full_path)
         self.assertTrue(path_obj.is_file())
 
+    def test_create_file_as_collaborator(self):
+        url = reverse('projectfile-list', kwargs=self.url_kwargs)
+        test_file = open("projects/tests/file_upload_test_1.txt", "rb")
+        data = {'file': test_file}
+        other_user = CollaboratorFactory(project=self.project,
+                                         owner=False).user
+        assign_perm("read_project", other_user, self.project)
+        assign_perm("write_project", other_user, self.project)
+
+        token = create_auth_jwt(other_user)
+        other_client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
+
+        response = other_client.post(url, data, format="multipart")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        created_file = ProjectFile.objects.filter(project=self.project,
+                                                  author=other_user).first()
+        self.assertIsNotNone(created_file)
+        full_path = Path(settings.MEDIA_ROOT, created_file.file.name)
+        self.assertEqual(full_path, Path(self.project_root, "file_upload_test_1.txt"))
+
+
+
     def test_create_file_in_nested_location(self):
         url = reverse('projectfile-list', kwargs=self.url_kwargs)
         test_file = open("projects/tests/file_upload_test_1.txt", "rb")
