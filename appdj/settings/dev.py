@@ -21,7 +21,6 @@ INSTALLED_APPS.extend([
     'rest_framework_swagger',
     'swagger_docs',
     'raven.contrib.django.raven_compat',
-    'silk'
 ])
 
 MIDDLEWARE.extend([
@@ -35,7 +34,6 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 MIGRATION_MODULES.update({
-    'silk': 'appdj.migrations.silk',
 })
 
 
