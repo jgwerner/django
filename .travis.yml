@@ -41,29 +41,12 @@ script:
   - echo "Script $TEST_SUITE"
   - bash travis/script.sh
 
-# after_success:
-#   - bash <(curl -s https://codecov.io/bash)
-
-# notifications:
-#   slack: 3blades:RouLDGyG58awmaGkjgvh9Yuz
-# matrix:
-#   include:
-#     - python: 3.6
-#       env: SCRIPT=apitests_script.sh INSTALL=apitests_install.sh BEFORE_INSTALL=apitests_before_install.sh BEFORE_SCRIPT=apitests_before_script.sh
-#     - python: 3.6
-#       env: SCRIPT=unittests_script.sh INSTALL=unittests_install.sh BEFORE_INSTALL=unittests_before_install.sh BEFORE_SCRIPT=unittests_before_script.sh
 jobs:
   include:
-    # - stage: test
-    #   before_script: bash travis/before_script.sh
-    #   before_install: bash travis/before_install.sh
-    #   install: bash travis/install.sh
-    #   script: bash travis/script.sh
     - stage: deploy
-      before_script: echo before script
-      before_install: echo before install
-      install: echo install
+      env: TEST_SUITE=none
       script: echo "Deploying..."
+
 env:
   global:
     - DOCKER_IMAGE_NAME="3blades/app-backend"
