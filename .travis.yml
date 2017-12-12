@@ -51,9 +51,6 @@ script:
 #       env: SCRIPT=unittests_script.sh INSTALL=unittests_install.sh BEFORE_INSTALL=unittests_before_install.sh BEFORE_SCRIPT=unittests_before_script.sh
 jobs:
   include:
-    - stage: test
-      env: SCRIPT=unittests_script.sh INSTALL=unittests_install.sh BEFORE_INSTALL=unittests_before_install.sh BEFORE_SCRIPT=unittests_before_script.sh
-      env: SCRIPT=apitests_script.sh INSTALL=apitests_install.sh BEFORE_INSTALL=apitests_before_install.sh BEFORE_SCRIPT=apitests_before_script.sh
     - stage: deploy
       before_script: echo before script
       before_install: echo before install
@@ -63,3 +60,6 @@ env:
   global:
     - DOCKER_IMAGE_NAME="3blades/app-backend"
     - DOCKER_COMPOSE_VERSION=1.16.1
+  matrix:
+    env: SCRIPT=unittests_script.sh INSTALL=unittests_install.sh BEFORE_INSTALL=unittests_before_install.sh BEFORE_SCRIPT=unittests_before_script.sh
+    env: SCRIPT=apitests_script.sh INSTALL=apitests_install.sh BEFORE_INSTALL=apitests_before_install.sh BEFORE_SCRIPT=apitests_before_script.sh
