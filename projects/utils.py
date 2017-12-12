@@ -91,7 +91,7 @@ def has_copy_permission(request=None, user=None, project=None):
         proj_pk = request.data.get("project")
         project = Project.objects.get(pk=proj_pk)
     elif user is None or project is None:
-        log.error("Attempted to call has_copy_permission without specifying enough information.")
+        log.error("has_copy_permission() called without specifying enough information.")
         raise ValueError("When calling has_copy_function, either request or both user and project must be specified.")
 
     has_perm = False
@@ -125,7 +125,7 @@ def perform_project_copy(user: User, project_id: str, request: Request) -> Proje
     old_resource_root = proj_to_copy.resource_root()
 
     if has_copy_permission(user=user, project=proj_to_copy):
-        log.info(f"User has the correct permissions to copy, doing it.")
+        log.info(f"User has approved copy permissions, proceeding.")
         new_proj = deepcopy(proj_to_copy)
         new_proj.pk = None
 
