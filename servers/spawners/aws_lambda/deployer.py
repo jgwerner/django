@@ -20,6 +20,7 @@ class LambdaDeployer:
         self.lambda_version = self.lmbd.meta.service_model.api_version
         self.api_name = ''
         self.statement_id = statement_id or uuid.uuid4().hex
+        self.function_method = self.deployment.config.get('method', 'GET')
 
     def deploy(self):
         if not self.api_id:
@@ -169,7 +170,7 @@ class LambdaDeployer:
         self.api_gateway.put_method(
             restApiId=self.api_id,
             resourceId=resource['id'],
-            httpMethod="GET",
+            httpMethod=self.function_method,
             authorizationType="CUSTOM",
             authorizerId=self.authorizer_id,
             apiKeyRequired=False,
@@ -186,7 +187,7 @@ class LambdaDeployer:
         self.api_gateway.put_integration(
             restApiId=self.api_id,
             resourceId=resource['id'],
-            httpMethod="GET",
+            httpMethod=self.function_method,
             type="AWS_PROXY",
             integrationHttpMethod="POST",
             uri=uri,
@@ -195,7 +196,7 @@ class LambdaDeployer:
     def _add_permission(self):
         source_arn = ''.join([
             f"arn:aws:execute-api:{settings.AWS_DEFAULT_REGION}:",
-            f"{settings.AWS_ACCOUNT_ID}:{self.api_id}/*/GET/{self.deployment.pk}"
+            f"{settings.AWS_ACCOUNT_ID}:{self.api_id}/*/{self.function_method}/{self.deployment.pk}"
         ])
         self.lmbd.add_permission(
             FunctionName=str(self.deployment.pk),
