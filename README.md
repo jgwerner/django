@@ -134,7 +134,7 @@ Access API docs page and login:
 
 > You may have to explicitly pull images, even though they are using the latest tag.
 
-### Re Launch Stack after Code Update
+### Relaunch Stack After Code Update
 
 Code updates are frequent and may require you to re launch stack. These steps should allow you to relaunch a development stack using updated code base:
 
