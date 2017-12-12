@@ -20,6 +20,8 @@ services:
       - .:/srv/app
       - /workspaces:/workspaces
     env_file: env
+    environment:
+      - STRIPE_SECRET_KEY=sk_test_B0Zrx0iwcx9Wgk8j2QxGcIUk
     ports:
       - 80:80
     depends_on:
