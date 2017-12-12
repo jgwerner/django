@@ -1,7 +1,7 @@
 import os
 import re
 import boto3
-import requests
+import urllib.request
 import uuid
 import tempfile
 import zipfile
@@ -67,21 +67,17 @@ class LambdaDeployer:
             )
 
     def prepare_package(self) -> bytes:
-        with tempfile.NamedTemporaryFile() as tmp:
-            if self.deployment.framework.url:
-                resp = requests.get(self.deployment.framework.url)
-                resp.raise_for_status()
-                for chunk in resp.iter_content(1024):
-                    if chunk:
-                        tmp.write(chunk)
-        with zipfile.ZipFile(tmp.name, 'a') as package:
+        _, tmp = tempfile.mkstemp()
+        if self.deployment.framework.url:
+            tmp, headers = urllib.request.urlretrieve(self.deployment.framework.url, filename=tmp)
+        with zipfile.ZipFile(tmp, 'a') as package:
             join = partial(os.path.join, self.deployment.volume_path)
             for user_file in self.deployment.config['files']:
                 package.write(join(user_file), arcname=user_file)
         out = b''
-        with open(tmp.name, 'rb') as tp:
+        with open(tmp, 'rb') as tp:
             out = tp.read()
-        os.remove(tmp.name)
+        os.remove(tmp)
         return out
 
     @cached_property
