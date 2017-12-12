@@ -89,7 +89,3 @@ services:
       - "traefik.nginx.frontend.rule=PathPrefix:/media"
     volumes:
       - /workspaces:/workspaces
-networks:
-  default:
-    external:
-      name: tbs-net      
