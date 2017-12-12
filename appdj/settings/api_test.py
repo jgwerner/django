@@ -26,7 +26,6 @@ INSTALLED_APPS.extend([
 
 MIDDLEWARE.extend([
     'debug_toolbar.middleware.DebugToolbarMiddleware',
-    'silk.middleware.SilkyMiddleware',
 ])
 
 INTERNAL_IPS = ['127.0.0.1']
@@ -34,7 +33,3 @@ INTERNAL_IPS = ['127.0.0.1']
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
-
-MIGRATION_MODULES.update({
-    'silk': 'appdj.migrations.silk',
-})
