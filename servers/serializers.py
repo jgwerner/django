@@ -1,6 +1,5 @@
 import uuid
 import logging
-from django.db import transaction
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
 from rest_framework import serializers
@@ -10,7 +9,9 @@ from jwt_auth.utils import create_server_jwt
 from servers.models import (ServerSize, Server,
                             ServerRunStatistics,
                             ServerStatistics,
-                            SshTunnel)
+                            SshTunnel,
+                            Deployment)
+from projects.models import Project
 from projects.serializers import ProjectSerializer
 log = logging.getLogger('servers')
 
@@ -170,3 +171,26 @@ class SshTunnelSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'host', 'local_port', 'remote_port', 'endpoint', 'username', 'server')
         read_only_fields = ('server',)
 
+
+class DeploymentSerializer(serializers.ModelSerializer):
+    created_by = serializers.PrimaryKeyRelatedField(read_only=True, default=serializers.CurrentUserDefault())
+
+    class Meta:
+        model = Deployment
+        fields = ('id', 'name', 'project', 'created_at', 'created_by', 'config', 'status', 'runtime', 'framework')
+        read_only_fields = ('project', 'created_at', 'created_by')
+
+    def create(self, validated_data):
+        pk = uuid.uuid4()
+        user = self.context['request'].user
+        instance = Deployment(pk=pk, **validated_data)
+        project_pk = self.context['view'].kwargs.get('project_project')
+        instance.project = Project.objects.tbs_get(project_pk)
+        instance.access_token = create_server_jwt(user, str(pk))
+        instance.save()
+        return instance
+
+
+class DeploymentAuthSerializer(serializers.Serializer):
+    token = serializers.CharField()
+    resource_id = serializers.CharField()

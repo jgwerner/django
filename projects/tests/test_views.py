@@ -53,6 +53,34 @@ class ProjectTest(ProjectTestMixin, APITestCase):
         self.assertEqual(Project.objects.count(), 1)
         self.assertEqual(Project.objects.get().name, data['name'])
 
+
+    def test_create_project_with_the_same_name(self):
+        collaborator = CollaboratorFactory(user=self.user, owner=True)
+        project = collaborator.project
+        url = reverse('project-list', kwargs={'namespace': self.user.username,
+                                              'version': settings.DEFAULT_VERSION})
+        data = dict(
+            name=project.name,
+            description='Test description',
+        )
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(Project.objects.count(), 1)
+
+
+    def test_copy_project_with_existing_name(self):
+        to_copy = CollaboratorFactory(project__private=False,
+                                      project__copying_enabled=True).project
+        CollaboratorFactory(project__private=False,
+                            project__copying_enabled=True,
+                            project__name=to_copy.name,
+                            user=self.user)
+
+        url = reverse("project-copy", kwargs={'version': settings.DEFAULT_VERSION,
+                                              'namespace': self.user.username})
+        data = {'project': str(to_copy.pk)}
+        response = self.client.post(url, data=data)
+
     def test_copy_public_project(self):
         proj = CollaboratorFactory(project__private=False,
                                    project__copying_enabled=True).project
@@ -218,19 +246,6 @@ class ProjectTest(ProjectTestMixin, APITestCase):
         project = Project.objects.get()
         self.assertEqual(project.name, data['name'])
         self.assertEqual(project.get_owner_name(), self.user.username)
-
-    def test_create_project_with_the_same_name(self):
-        collaborator = CollaboratorFactory(user=self.user, owner=True)
-        project = collaborator.project
-        url = reverse('project-list', kwargs={'namespace': self.user.username,
-                                              'version': settings.DEFAULT_VERSION})
-        data = dict(
-            name=project.name,
-            description='Test description',
-        )
-        response = self.client.post(url, data)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(Project.objects.count(), 1)
 
     def test_list_projects(self):
         projects_count = 4
@@ -558,6 +573,28 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
         full_path = os.path.join(settings.MEDIA_ROOT, created_file.file.name)
         path_obj = Path(full_path)
         self.assertTrue(path_obj.is_file())
+
+    def test_create_file_as_collaborator(self):
+        url = reverse('projectfile-list', kwargs=self.url_kwargs)
+        test_file = open("projects/tests/file_upload_test_1.txt", "rb")
+        data = {'file': test_file}
+        other_user = CollaboratorFactory(project=self.project,
+                                         owner=False).user
+        assign_perm("read_project", other_user, self.project)
+        assign_perm("write_project", other_user, self.project)
+
+        token = create_auth_jwt(other_user)
+        other_client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
+
+        response = other_client.post(url, data, format="multipart")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        created_file = ProjectFile.objects.filter(project=self.project,
+                                                  author=other_user).first()
+        self.assertIsNotNone(created_file)
+        full_path = Path(settings.MEDIA_ROOT, created_file.file.name)
+        self.assertEqual(full_path, Path(self.project_root, "file_upload_test_1.txt"))
+
+
 
     def test_create_file_in_nested_location(self):
         url = reverse('projectfile-list', kwargs=self.url_kwargs)

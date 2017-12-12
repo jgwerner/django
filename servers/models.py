@@ -7,57 +7,30 @@ from django.contrib.postgres.fields import HStoreField, JSONField
 from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
-from django_redis import get_redis_connection
 
 from base.models import TBSQuerySet
 from users.models import User
-from servers.managers import ServerQuerySet
-from servers.spawners import get_spawner_class
+from servers.spawners import get_spawner_class, get_deployer_class
 
 Spawner = get_spawner_class()
+Deployer = get_deployer_class()
 
 
-class Server(models.Model):
+class ServerModelAbstract(models.Model):
     NATURAL_KEY = "name"
-    # statuses
-    STOPPED = "Stopped"
-    STOPPING = "Stopping"
-    RUNNING = "Running"
-    PENDING = "Pending"
-    LAUNCHING = "Launching"
 
-    ERROR = "Error"
-    TERMINATED = "Terminated"
-    TERMINATING = "Terminating"
-
-    SERVER_STATE_CACHE_PREFIX = 'server_state_'
-
-    STOP = 'stop'
-    START = 'start'
-    TERMINATE = 'terminate'
-
-    objects = ServerQuerySet.as_manager()
-
-    private_ip = models.CharField(max_length=19)
-    public_ip = models.CharField(max_length=19)
-    created_at = models.DateTimeField(auto_now_add=True)
     name = models.CharField(max_length=50)
-    container_id = models.CharField(max_length=100, blank=True)
-    server_size = models.ForeignKey('ServerSize')
-    env_vars = HStoreField(default={})
-    startup_script = models.CharField(max_length=50, blank=True)
-    project = models.ForeignKey('projects.Project', related_name='servers')
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='servers')
+    project = models.ForeignKey('projects.Project', related_name='%(class)ss')
     config = JSONField(default={})
-    auto_restart = models.BooleanField(default=False)
-    connected = models.ManyToManyField('self', blank=True, related_name='servers')
-    image_name = models.CharField(max_length=100, blank=True)
-    host = models.ForeignKey('infrastructure.DockerHost', related_name='servers', null=True, blank=True)
-    access_token = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
-    last_start = models.DateTimeField(null=True)
+    access_token = models.TextField(blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='%(class)ss')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    objects = TBSQuerySet.as_manager()
 
     class Meta:
+        abstract = True
         permissions = (
             ('write_server', "Write server"),
             ('read_server', "Read server"),
@@ -83,41 +56,47 @@ class Server(models.Model):
         return self.project.namespace_name
 
     @property
-    def container_name(self):
-        return slugify(str(self.pk))
-
-    @property
     def volume_path(self):
         return os.path.join(settings.RESOURCE_DIR, self.project.get_owner_name(), str(self.project.pk))
 
+
+class Server(ServerModelAbstract):
+    # statuses
+    STOPPED = "Stopped"
+    STOPPING = "Stopping"
+    RUNNING = "Running"
+    PENDING = "Pending"
+    LAUNCHING = "Launching"
+
+    ERROR = "Error"
+    TERMINATED = "Terminated"
+    TERMINATING = "Terminating"
+
+    STOP = 'stop'
+    START = 'start'
+    TERMINATE = 'terminate'
+
+    private_ip = models.CharField(max_length=19)
+    public_ip = models.CharField(max_length=19)
+    container_id = models.CharField(max_length=100, blank=True)
+    server_size = models.ForeignKey('ServerSize')
+    env_vars = HStoreField(default={})
+    startup_script = models.CharField(max_length=50, blank=True)
+    auto_restart = models.BooleanField(default=False)
+    connected = models.ManyToManyField('self', blank=True, related_name='servers')
+    image_name = models.CharField(max_length=100, blank=True)
+    host = models.ForeignKey('infrastructure.DockerHost', related_name='servers', null=True, blank=True)
+    last_start = models.DateTimeField(null=True)
+
     @property
-    def state_cache_key(self):
-        return '{}{}'.format(self.SERVER_STATE_CACHE_PREFIX, self.pk)
+    def container_name(self):
+        return slugify(str(self.pk))
 
     @property
     def status(self):
         spawner = Spawner(self)
         status = spawner.status()
         return status.decode() if isinstance(status, bytes) else status
-
-    def needs_update(self):
-        cache = get_redis_connection("default")
-        return bool(cache.hexists(self.state_cache_key, "update"))
-
-    @property
-    def update_message(self):
-        cache = get_redis_connection("default")
-        return cache.hget(self.state_cache_key, "update").decode()
-
-    @update_message.setter
-    def update_message(self, value):
-        cache = get_redis_connection("default")
-        cache.hset(self.state_cache_key, "update", value)
-
-    @update_message.deleter
-    def update_message(self):
-        cache = get_redis_connection("default")
-        cache.hdel(self.state_cache_key, "update")
 
     def script_name_len(self):
         return len(self.config.get('script', '').split('.')[0])
@@ -135,6 +114,33 @@ class Server(models.Model):
             return self.config['type']
         if self.config['type'] in settings.SERVER_TYPE_MAPPING:
             return settings.SERVER_TYPE_MAPPING[self.config['type']]
+
+
+class Runtime(models.Model):
+    name = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.name
+
+
+class Framework(models.Model):
+    name = models.CharField(max_length=50)
+    version = models.CharField(max_length=10)
+    url = models.URLField()
+
+    def __str__(self):
+        return f"{self.name} {self.version}"
+
+
+class Deployment(ServerModelAbstract):
+    framework = models.ForeignKey(Framework, related_name='deployments', on_delete=models.SET_NULL,
+                                  blank=True, null=True)
+    runtime = models.ForeignKey(Runtime, related_name='deployments', on_delete=models.PROTECT)
+
+    @property
+    def status(self):
+        deployer = Deployer(self)
+        return deployer.status()
 
 
 class ServerSize(models.Model):

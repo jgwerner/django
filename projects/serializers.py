@@ -14,6 +14,18 @@ from servers.utils import stop_all_servers_for_project
 User = get_user_model()
 
 
+def check_project_name_exists(request, existing_pk, name):
+    qs = Project.objects.filter(name=name).exclude(pk=existing_pk)
+    if request.namespace.type == 'user':
+        qs = qs.filter(
+            collaborator__user=request.user,
+            collaborator__owner=True)
+    else:
+        qs = qs.filter(team=request.namespace.object)
+
+    return qs.exists()
+
+
 class ProjectSerializer(SearchSerializerMixin, serializers.ModelSerializer):
     owner = serializers.CharField(source='get_owner_name', read_only=True)
     collaborators = serializers.StringRelatedField(many=True, read_only=True)
@@ -26,14 +38,7 @@ class ProjectSerializer(SearchSerializerMixin, serializers.ModelSerializer):
     def validate_name(self, value):
         request = self.context['request']
         existing_pk = self.context.get("pk")
-        qs = Project.objects.filter(name=value).exclude(pk=existing_pk)
-        if request.namespace.type == 'user':
-            qs = qs.filter(
-                collaborator__user=request.user,
-                collaborator__owner=True)
-        else:
-            qs = qs.filter(team=request.namespace.object)
-        if qs.exists():
+        if check_project_name_exists(request, existing_pk, value):
             raise serializers.ValidationError("You can have only one project named %s" % value)
         return value
 

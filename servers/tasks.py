@@ -1,8 +1,9 @@
 from celery import shared_task
-from .spawners import get_spawner_class
-from .models import Server
+from .models import Server, Deployment
+from .spawners import get_spawner_class, get_deployer_class
 
 Spawner = get_spawner_class()
+Deployer = get_deployer_class()
 
 
 def server_action(action: str, server: str):
@@ -24,3 +25,19 @@ def stop_server(server):
 @shared_task()
 def terminate_server(server):
     server_action('terminate', server)
+
+
+def deployment_action(action, deployment):
+    deployment = Deployment.objects.tbs_get(deployment)
+    deployer = Deployer(deployment)
+    getattr(deployer, action)()
+
+
+@shared_task()
+def deploy(deployment):
+    deployment_action('deploy', deployment)
+
+
+@shared_task()
+def delete_deployment(deployment):
+    deployment_action('delete', deployment)
