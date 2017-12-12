@@ -6,14 +6,20 @@ services:
       dockerfile: Dockerfile.Test
     depends_on:
       - api
-    env_file: api_tests/env
+    environment:
+      - TEST_USER=admin
+      - TEST_USER_EMAIL=admin@example.com
+      - TEST_USER_PASSWORD=admin
+      - HOST=http://api
+      - PORT=80
+      - VERSION=v1
   api:
     build: .
     command: /srv/env/bin/gunicorn --bind 0.0.0.0:80 --reload --workers 1 --log-level=DEBUG --error-logfile=- --access-logfile=- appdj.wsgi
     volumes:
       - .:/srv/app
       - /workspaces:/workspaces
-    env_file: api_tests/env
+    env_file: env
     ports:
       - 80:80
     depends_on:
