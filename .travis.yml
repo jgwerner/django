@@ -11,7 +11,6 @@ python:
 # whitelist
 branches:
   only:
-    - setup_restful_tests
     - master
     - prod
 services:
@@ -21,7 +20,6 @@ services:
   - redis-server
 before_script:
   - bash travis/${BEFORE_SCRIPT}
-#  - sleep 10
 before_install:
   - bash travis/${BEFORE_INSTALL}
   - export PATH=$PATH:$HOME/.local/bin # put aws in the path
@@ -45,15 +43,21 @@ script:
 
 # notifications:
 #   slack: 3blades:RouLDGyG58awmaGkjgvh9Yuz
-matrix:
-  include:
-    - python: 3.6
-      env: SCRIPT=apitests_script.sh INSTALL=apitests_install.sh BEFORE_INSTALL=apitests_before_install.sh BEFORE_SCRIPT=apitests_before_script.sh
-    - python: 3.6
-      env: SCRIPT=unittests_script.sh INSTALL=unittests_install.sh BEFORE_INSTALL=unittests_before_install.sh BEFORE_SCRIPT=unittests_before_script.sh
+# matrix:
+#   include:
+#     - python: 3.6
+#       env: SCRIPT=apitests_script.sh INSTALL=apitests_install.sh BEFORE_INSTALL=apitests_before_install.sh BEFORE_SCRIPT=apitests_before_script.sh
+#     - python: 3.6
+#       env: SCRIPT=unittests_script.sh INSTALL=unittests_install.sh BEFORE_INSTALL=unittests_before_install.sh BEFORE_SCRIPT=unittests_before_script.sh
 jobs:
   include:
+    - stage: test
+      env: SCRIPT=unittests_script.sh INSTALL=unittests_install.sh BEFORE_INSTALL=unittests_before_install.sh BEFORE_SCRIPT=unittests_before_script.sh
+      env: SCRIPT=apitests_script.sh INSTALL=apitests_install.sh BEFORE_INSTALL=apitests_before_install.sh BEFORE_SCRIPT=apitests_before_script.sh
     - stage: deploy
+      before_script: echo before script
+      before_install: echo before install
+      install: echo install
       script: echo "Deploying..."
 env:
   global:
