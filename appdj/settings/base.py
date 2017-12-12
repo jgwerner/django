@@ -347,6 +347,7 @@ MIGRATION_MODULES = {
     'social_django': 'appdj.migrations.social_django',
     'guardian': 'appdj.migrations.guardian',
     'django_ses': 'appdj.migrations.django_ses',
+    'silk': 'appdj.migrations.silk'
 }
 
 
