@@ -13,7 +13,7 @@ before(() => {
     }
 });
 
-describe('Verify Login', () => {
+describe('me', () => {
 
     const me_schema = {
         "type": "object",
@@ -36,7 +36,7 @@ describe('Verify Login', () => {
         }
     }
 
-    it('I should be logged in', () => {
+    it('GET me should return me', () => {
         let uri = tools.get_request_uri("me");
         let response = chakram.get(uri, this.options);
         expect(response).to.have.status(200);
@@ -45,5 +45,26 @@ describe('Verify Login', () => {
         expect(response).to.have.json('email', config.email);
         expect(response).to.have.header('content-type', 'application/json');
         return chakram.wait();
+    });
+
+    it('POST me/teams should create a new team', () => {
+        let uri = tools.get_request_uri("me/teams/");
+        let team_json = {
+            name: "TestTeam",
+            description: "TestTeam",
+            website: "http://mywebsite.com",
+            location: "here"
+        };
+        return chakram.post(uri, team_json, this.options)
+            .then(response => {
+                expect(response).to.have.status(201);
+                expect(response).to.comprise.of.json(team_json);
+                uri += team_json.name
+                return chakram.get(uri, this.options);
+            })
+            .then(response => {
+                expect(response).to.have.status(200);
+                expect(response).to.comprise.of.json(team_json);
+            });
     });
 })
