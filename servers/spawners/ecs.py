@@ -145,9 +145,9 @@ class ECSSpawner(GPUMixin, BaseSpawner):
         labels = {"traefik.enable": "true"}
         server_uri = ''.join([
             f"/{settings.DEFAULT_VERSION}",
-            "/{self.server.project.owner.username}",
-            "/projects/{self.server.project_id}/servers",
-            "/{self.server.id}/endpoint/"
+            f"/{self.server.project.owner.username}",
+            f"/projects/{self.server.project_id}/servers",
+            f"/{self.server.id}/endpoint/"
         ])
         for port in self._get_exposed_ports():
             endpoint = settings.SERVER_PORT_MAPPING.get(port)
