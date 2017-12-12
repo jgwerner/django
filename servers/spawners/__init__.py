@@ -4,3 +4,7 @@ from django.utils.module_loading import import_string
 
 def get_spawner_class():
     return import_string(settings.SPAWNER)
+
+
+def get_deployer_class():
+    return import_string(settings.DEPLOYER)

@@ -70,3 +70,30 @@ class SSHTunnelFactory(factory.django.DjangoModelFactory):
     remote_port = factory.Faker('pyint')
     username = factory.Faker('user_name')
     server = factory.SubFactory(ServerFactory)
+
+
+class RuntimeFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = models.Runtime
+
+    name = 'python2.7'
+
+
+class FrameworkFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = models.Framework
+
+    name = 'Tensorflow'
+    version = '1.4'
+
+
+class DeploymentFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = models.Deployment
+
+    name = factory.Sequence(lambda n: f'deployment_{n}')
+    project = factory.SubFactory(ProjectFactory)
+    created_by = factory.SubFactory(UserFactory)
+    is_active = True
+    framework = factory.SubFactory(FrameworkFactory)
+    runtime = factory.SubFactory(RuntimeFactory)

@@ -9,6 +9,7 @@ from oauth2_provider import views as oauth2_views
 from jwt_auth import views as jwt_views
 from base.views import tbs_status
 from users import views as users_views
+from servers import views as servers_views
 
 
 urlpatterns = [
@@ -20,6 +21,7 @@ urlpatterns = [
     url(r'^auth/activate/$', djoser_views.ActivationView.as_view(), name='activate'),
     url(r'^auth/authorize/?$', oauth2_views.AuthorizationView.as_view(), name="authorize"),
     url(r'^auth/token/?$', oauth2_views.TokenView.as_view(), name="token"),
+    url(r'^auth/deployment/?$', servers_views.deployment_auth, name="deployment-auth"),
     url(r'^auth/', include('social_django.urls', namespace="social")),
     url(r'^auth/password/reset/$', djoser_views.PasswordResetView.as_view(), name="password-reset"),
     url(r'^auth/password/reset/confirm/$', djoser_views.PasswordResetConfirmView.as_view(),
@@ -39,5 +41,6 @@ if settings.DEBUG:
     urlpatterns += [
         url(r'^__debug__/', include(debug_toolbar.urls)),
         url(r'^swagger/$', schema_view),
+        url(r'^silk/', include('silk.urls', namespace='silk')),
     ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns = staticfiles_urlpatterns() + urlpatterns

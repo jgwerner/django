@@ -3,6 +3,7 @@ import boto3
 import logging
 from typing import List, Dict, Tuple
 from django.conf import settings
+from django.utils.functional import cached_property
 
 from .base import BaseSpawner, GPUMixin
 
@@ -32,6 +33,7 @@ class ECSSpawner(GPUMixin, BaseSpawner):
         )
 
     def terminate(self) -> None:
+        self.stop()
         self.client.deregister_task_definition(
             taskDefinition=self.server.config['task_definition_arn']
         )
@@ -51,16 +53,17 @@ class ECSSpawner(GPUMixin, BaseSpawner):
             return self.server.ERROR
 
     def _register_task_definition(self) -> str:
-        resp = self.client.register_task_definition(**self._task_definition_args())
+        resp = self.client.register_task_definition(**self._task_definition_args)
         return resp['taskDefinition']['taskDefinitionArn']
 
+    @cached_property
     def _task_definition_args(self):
         volumes, mount_points = self._get_volumes_and_mount_points()
         return dict(
             family='userspace',
             containerDefinitions=[
                 {
-                    'name': str(self.server.name),
+                    'name': str(self.server.pk),
                     'image': self.server.image_name,
                     'cpu': self.server.server_size.cpu,
                     'memory': self.server.server_size.memory,
@@ -113,7 +116,10 @@ class ECSSpawner(GPUMixin, BaseSpawner):
                 'name': 'script',
                 'host': {'sourcePath': os.path.join(self.server.volume_path, self.server.startup_script)}
             })
-            mount_points.append({'sourceVolume': 'script', 'containerPath': f'{settings.SERVER_RESOURCE_DIR}/start.sh'})
+            mount_points.append({
+                'sourceVolume': 'script',
+                'containerPath': f'{settings.SERVER_RESOURCE_DIR}/start.sh'
+            })
         if self._is_gpu_instance:
             volumes.append({
                 'name': 'gpu',
@@ -137,7 +143,12 @@ class ECSSpawner(GPUMixin, BaseSpawner):
 
     def _get_traefik_labels(self) -> Dict[str, str]:
         labels = {"traefik.enable": "true"}
-        server_uri = f"/{settings.DEFAULT_VERSION}/{self.server.project.owner.username}/projects/{self.server.project_id}/servers/{self.server.id}/endpoint/"
+        server_uri = ''.join([
+            f"/{settings.DEFAULT_VERSION}",
+            f"/{self.server.project.owner.username}",
+            f"/projects/{self.server.project_id}/servers",
+            f"/{self.server.id}/endpoint/"
+        ])
         for port in self._get_exposed_ports():
             endpoint = settings.SERVER_PORT_MAPPING.get(port)
             if endpoint:
