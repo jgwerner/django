@@ -124,7 +124,7 @@ def user_project_directory_path(instance, filename):
              originally included in the filename.
     """
     project_root_included = False
-    base_path = "{usr}/{proj}/".format(usr=instance.author.username,
+    base_path = "{usr}/{proj}/".format(usr=instance.project.owner.username,
                                        proj=instance.project.pk)
     if compare_project_root_to_file_path(instance.project, filename):
         log.info(f"The file name {filename} include the project's base path,"
