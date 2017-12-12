@@ -4,5 +4,5 @@ then
     coverage combine && coverage report -m
 elif [ "$TEST_SUITE" = "API" ]
 then
-    docker-compose -f docker-compose.test.yml up --abort-on-container-exit
+    docker-compose -f docker-compose-test.yml up --abort-on-container-exit
 fi

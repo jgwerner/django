@@ -44,12 +44,21 @@ script:
   - echo "Script $TEST_SUITE"
   - bash travis/script.sh
 
+after_success:
+  - echo "After Success $TEST_SUITE"
+  - bash travis/after_success.sh
+
+# notifications:
+#   slack: 3blades:RouLDGyG58awmaGkjgvh9Yuz
+
 #Adds a jobs that will run after the tests are successful
 jobs:
   include:
     - stage: deploy
       env: TEST_SUITE=none
-      script: echo "Deploying..."
+      script: 
+        - echo "Deploying..."
+        # - bash config/buildDockerImage.sh
 
 env:
   global:
