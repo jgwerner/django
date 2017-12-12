@@ -1,1 +1,0 @@
-echo "No before script steps"

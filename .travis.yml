@@ -18,25 +18,25 @@ services:
   - docker
   - postgresql
   - redis-server
-before_script:
-  - bash travis/${BEFORE_SCRIPT}
-before_install:
-  - bash travis/${BEFORE_INSTALL}
-  - export PATH=$PATH:$HOME/.local/bin # put aws in the path
-  - export PYTHONPATH=`pwd`:$PYTHONPATH
-  - export DJANGO_SETTINGS_MODULE="appdj.settings.test"
-  - export REDIS_URL="redis://localhost:6379/0"
-  - export DATABASE_URL="postgres://postgres:@localhost:5432/travis_ci_test"
-  - export NVIDIA_DOCKER_HOST=http://localhost:3476
-  - export AWS_DEFAULT_REGION="us-west-2"
-  - export COVERAGE_PROCESS_START=".coveragerc"
-# command to install dependencies
-install:
-  - bash travis/${INSTALL}
+# before_script:
+#   - bash travis/${BEFORE_SCRIPT}
+# before_install:
+#   - bash travis/${BEFORE_INSTALL}
+#   - export PATH=$PATH:$HOME/.local/bin # put aws in the path
+#   - export PYTHONPATH=`pwd`:$PYTHONPATH
+#   - export DJANGO_SETTINGS_MODULE="appdj.settings.test"
+#   - export REDIS_URL="redis://localhost:6379/0"
+#   - export DATABASE_URL="postgres://postgres:@localhost:5432/travis_ci_test"
+#   - export NVIDIA_DOCKER_HOST=http://localhost:3476
+#   - export AWS_DEFAULT_REGION="us-west-2"
+#   - export COVERAGE_PROCESS_START=".coveragerc"
+# # command to install dependencies
+# install:
+#   - bash travis/${INSTALL}
 
-script:
-  - ls
-  - bash travis/${SCRIPT}
+# script:
+#   - ls
+#   - bash travis/${SCRIPT}
 
 # after_success:
 #   - bash <(curl -s https://codecov.io/bash)
@@ -51,6 +51,14 @@ script:
 #       env: SCRIPT=unittests_script.sh INSTALL=unittests_install.sh BEFORE_INSTALL=unittests_before_install.sh BEFORE_SCRIPT=unittests_before_script.sh
 jobs:
   include:
+    - stage: test
+      env:
+        - TEST=UNIT
+        - TEST=API
+      before_script: bash travis/before_script.sh
+      before_install: bash travis/before_install.sh
+      install: bash travis/install.sh
+      script: bash travis/script.sh
     - stage: deploy
       before_script: echo before script
       before_install: echo before install
