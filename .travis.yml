@@ -48,8 +48,7 @@ matrix:
     - python: 3.6
       env: SCRIPT=apitests_script.sh INSTALL=apitests_install.sh BEFORE_INSTALL=apitests_before_install.sh BEFORE_SCRIPT=apitests_before_script.sh
     - python: 3.6
-      env:
-        - SCRIPT=unittests_script.sh INSTALL=unittests_install.sh BEFORE_INSTALL=unittests_before_install.sh BEFORE_SCRIPT=unittests_before_script.sh
+      env: SCRIPT=unittests_script.sh INSTALL=unittests_install.sh BEFORE_INSTALL=unittests_before_install.sh BEFORE_SCRIPT=unittests_before_script.sh
 env:
   global:
     - DOCKER_IMAGE_NAME="3blades/app-backend"
