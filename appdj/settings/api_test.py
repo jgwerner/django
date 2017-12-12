@@ -16,13 +16,25 @@ REST_FRAMEWORK['DEFAULT_PARSER_CLASSES'] = (
     'rest_framework.parsers.MultiPartParser'
 )
 
-INSTALLED_APPS.extend(['debug_toolbar', 'rest_framework_swagger',
-                       'swagger_docs', 'raven.contrib.django.raven_compat', 'silk'])
+INSTALLED_APPS.extend([
+    'debug_toolbar',
+    'rest_framework_swagger',
+    'swagger_docs',
+    'raven.contrib.django.raven_compat',
+    'silk'
+])
 
-MIDDLEWARE.append('debug_toolbar.middleware.DebugToolbarMiddleware')
+MIDDLEWARE.extend([
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
+    'silk.middleware.SilkyMiddleware',
+])
 
 INTERNAL_IPS = ['127.0.0.1']
 
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
+
+MIGRATION_MODULES.update({
+    'silk': 'appdj.migrations.silk',
+})
