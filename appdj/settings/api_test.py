@@ -17,7 +17,7 @@ REST_FRAMEWORK['DEFAULT_PARSER_CLASSES'] = (
 )
 
 INSTALLED_APPS.extend(['debug_toolbar', 'rest_framework_swagger',
-                       'swagger_docs', 'raven.contrib.django.raven_compat'])
+                       'swagger_docs', 'raven.contrib.django.raven_compat', 'silk'])
 
 MIDDLEWARE.append('debug_toolbar.middleware.DebugToolbarMiddleware')
 
