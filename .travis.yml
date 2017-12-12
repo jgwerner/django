@@ -18,25 +18,28 @@ services:
   - docker
   - postgresql
   - redis-server
-# before_script:
-#   - bash travis/${BEFORE_SCRIPT}
-# before_install:
-#   - bash travis/${BEFORE_INSTALL}
-#   - export PATH=$PATH:$HOME/.local/bin # put aws in the path
-#   - export PYTHONPATH=`pwd`:$PYTHONPATH
-#   - export DJANGO_SETTINGS_MODULE="appdj.settings.test"
-#   - export REDIS_URL="redis://localhost:6379/0"
-#   - export DATABASE_URL="postgres://postgres:@localhost:5432/travis_ci_test"
-#   - export NVIDIA_DOCKER_HOST=http://localhost:3476
-#   - export AWS_DEFAULT_REGION="us-west-2"
-#   - export COVERAGE_PROCESS_START=".coveragerc"
-# # command to install dependencies
-# install:
-#   - bash travis/${INSTALL}
+before_script:
+  - echo "Before Script $TEST_SUITE"
+  - bash travis/before_script.sh
+before_install:
+  - echo "Before Install $TEST_SUITE"
+  - bash travis/before_install.sh
+  - export PATH=$PATH:$HOME/.local/bin # put aws in the path
+  - export PYTHONPATH=`pwd`:$PYTHONPATH
+  - export DJANGO_SETTINGS_MODULE="appdj.settings.test"
+  - export REDIS_URL="redis://localhost:6379/0"
+  - export DATABASE_URL="postgres://postgres:@localhost:5432/travis_ci_test"
+  - export NVIDIA_DOCKER_HOST=http://localhost:3476
+  - export AWS_DEFAULT_REGION="us-west-2"
+  - export COVERAGE_PROCESS_START=".coveragerc"
+# command to install dependencies
+install:
+  - echo "Install $TEST_SUITE"
+  - bash travis/install.sh
 
-# script:
-#   - ls
-#   - bash travis/${SCRIPT}
+script:
+  - echo "Script $TEST_SUITE"
+  - bash travis/script.sh
 
 # after_success:
 #   - bash <(curl -s https://codecov.io/bash)
@@ -51,14 +54,11 @@ services:
 #       env: SCRIPT=unittests_script.sh INSTALL=unittests_install.sh BEFORE_INSTALL=unittests_before_install.sh BEFORE_SCRIPT=unittests_before_script.sh
 jobs:
   include:
-    - stage: test
-      env:
-        - TEST=UNIT
-        - TEST=API
-      before_script: bash travis/before_script.sh
-      before_install: bash travis/before_install.sh
-      install: bash travis/install.sh
-      script: bash travis/script.sh
+    # - stage: test
+    #   before_script: bash travis/before_script.sh
+    #   before_install: bash travis/before_install.sh
+    #   install: bash travis/install.sh
+    #   script: bash travis/script.sh
     - stage: deploy
       before_script: echo before script
       before_install: echo before install
@@ -68,3 +68,6 @@ env:
   global:
     - DOCKER_IMAGE_NAME="3blades/app-backend"
     - DOCKER_COMPOSE_VERSION=1.16.1
+  matrix:
+    - TEST_SUITE=API
+    - TEST_SUITE=UNIT
