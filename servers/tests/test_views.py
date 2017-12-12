@@ -12,10 +12,13 @@ from jwt_auth.utils import create_server_jwt, create_auth_jwt
 from projects.tests.factories import CollaboratorFactory
 from servers.models import Server, SshTunnel, ServerRunStatistics
 from users.tests.factories import UserFactory
+from servers.models import Deployment
 from servers.tests.factories import (ServerSizeFactory,
                                      ServerStatisticsFactory,
                                      ServerRunStatisticsFactory,
-                                     ServerFactory)
+                                     ServerFactory,
+                                     RuntimeFactory,
+                                     FrameworkFactory)
 
 
 class ServerTest(APITestCase):
@@ -651,3 +654,30 @@ class ServerSizeTestCase(APITestCase):
         url = reverse("serversize-list", kwargs={'version': settings.DEFAULT_VERSION})
         response = client.post(url, data=data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class DeploymentTest(APITestCase):
+    def setUp(self):
+        collaborator = CollaboratorFactory()
+        self.user = collaborator.user
+        self.project = collaborator.project
+
+    def test_create_deployment_for_project_duplicate(self):
+        proj = CollaboratorFactory(project__name=self.project.name).project
+        token = create_auth_jwt(proj.owner)
+        client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
+
+        runtime = RuntimeFactory()
+        framework = FrameworkFactory()
+
+        url = reverse("deployment-list", kwargs={'version': settings.DEFAULT_VERSION,
+                                                 'namespace': proj.owner.username,
+                                                 'project_project': proj.name})
+        data = {'name': "Deployment",
+                'runtime': str(runtime.pk),
+                'framework': str(framework.pk),
+                'config': {}}
+        response = client.post(url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        deployment = Deployment.objects.get(pk=response.data['id'])
+        self.assertEqual(deployment.project, proj)

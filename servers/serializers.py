@@ -5,13 +5,14 @@ from django.contrib.sites.shortcuts import get_current_site
 from rest_framework import serializers
 
 from base.serializers import SearchSerializerMixin
+from base.utils import validate_uuid
 from jwt_auth.utils import create_server_jwt
 from servers.models import (ServerSize, Server,
                             ServerRunStatistics,
                             ServerStatistics,
                             SshTunnel,
                             Deployment)
-from projects.models import Project
+from projects.models import Project, Collaborator
 from projects.serializers import ProjectSerializer
 log = logging.getLogger('servers')
 
@@ -185,7 +186,13 @@ class DeploymentSerializer(serializers.ModelSerializer):
         user = self.context['request'].user
         instance = Deployment(pk=pk, **validated_data)
         project_pk = self.context['view'].kwargs.get('project_project')
-        instance.project = Project.objects.tbs_get(project_pk)
+        if validate_uuid(project_pk):
+            instance.project = Project.objects.tbs_get(project_pk)
+        else:
+            project = Collaborator.objects.filter(user=self.context['request'].namespace.object,
+                                                  project__name=project_pk,
+                                                  owner=True).first().project
+            instance.project = project
         instance.access_token = create_server_jwt(user, str(pk))
         instance.save()
         return instance
