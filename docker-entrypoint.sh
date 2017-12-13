@@ -2,7 +2,7 @@
 
 set -e
 
-source /srv/app/wait_for_search.sh
+sleep 1
 
 /srv/env/bin/python /srv/app/manage.py migrate
 /srv/env/bin/python /srv/app/manage.py create_admin

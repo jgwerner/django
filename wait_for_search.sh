@@ -1,9 +1,6 @@
 #!/bin/bash
 # wait_for_search.sh
 
-set -e
-
-cmd="$@"
 echo "Attempting to reach $ELASTICSEARCH_URL"
 max_attempts=60
 attempt=0
@@ -19,3 +16,4 @@ then
 fi
 
 echo "$ELASTICSEARCH_URL is up"
+exec "$@"

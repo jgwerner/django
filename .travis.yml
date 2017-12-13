@@ -19,7 +19,7 @@ services:
   - postgresql
   - redis-server
 
-# All build steps use $TEST_SUITE env variable to run correct steps in corresponding bash script
+# all build steps use $TEST_SUITE env variable to run correct steps in corresponding bash script
 before_script:
   - echo "Before Script $TEST_SUITE"
   - bash travis/before_script.sh
@@ -51,7 +51,7 @@ after_success:
 notifications:
   slack: 3blades:RouLDGyG58awmaGkjgvh9Yuz
 
-#Adds a jobs that will run after the tests are successful
+# adds a jobs that will run after the tests are successful
 jobs:
   include:
     - stage: deploy
@@ -64,7 +64,7 @@ env:
   global:
     - DOCKER_IMAGE_NAME="3blades/app-backend"
     - DOCKER_COMPOSE_VERSION=1.16.1
-#Tells travis to run two builds, one for api tests and one for unit tests
+# tells travis to run two builds, one for api tests and one for unit tests
   matrix:
     - TEST_SUITE=API
     - TEST_SUITE=UNIT
