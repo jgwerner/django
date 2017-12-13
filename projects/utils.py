@@ -119,7 +119,7 @@ def copy_servers(old_project: Project, new_project: Project) -> None:
         log.info(f"Copied {server.pk}")
 
 
-def perform_project_copy(user: User, project_id: str, request: Request) -> Project:
+def perform_project_copy(user: User, project_id: str, request: Request, new_name:str=None) -> Project:
     log.info(f"Attempting to copy project {project_id} for user {user}")
     new_proj = None
     proj_to_copy = Project.objects.get(pk=project_id)
@@ -128,6 +128,8 @@ def perform_project_copy(user: User, project_id: str, request: Request) -> Proje
     if has_copy_permission(user=user, project=proj_to_copy):
         log.info(f"User {user} has approved copy permissions, proceeding.")
         new_proj = deepcopy(proj_to_copy)
+        if new_name is not None:
+            new_proj.name = new_name
         new_proj.pk = None
 
         project_with_same_name = Collaborator.objects.filter(owner=True,

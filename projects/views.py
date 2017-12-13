@@ -110,19 +110,16 @@ def project_copy(request, *args, **kwargs):
     new_project_name = request.data.get('name')
 
     if new_project_name:
-        # If user explicitly provided a project name via request, ensure it isn't a duplicate
         log.info(f"Project name found in request during project copy. Validating name: {new_project_name}")
         check_project_name_exists(new_project_name)
 
     try:
-        # If user didn't provide a name, perform_project_copy() will handle duplicates appropriately
         new_project = perform_project_copy(user=request.user,
                                            project_id=proj_identifier,
-                                           request=request)
+                                           request=request,
+                                           new_name=new_project_name)
     except Exception as e:
-        log.error(f"There was a problem attempting to copy project {proj_identifier}. "
-                  f"Stacktrace incoming.")
-        log.exception(e)
+        log.exception(f"There was a problem attempting to copy project {proj_identifier}.", e)
         resp_status = status.HTTP_500_INTERNAL_SERVER_ERROR
         resp_data = {'message': "Internal Server Error when attempting to copy project."}
     else:
