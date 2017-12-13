@@ -8,22 +8,10 @@ from social_django.models import UserSocialAuth
 from base.serializers import SearchSerializerMixin
 from projects.models import (Project, Collaborator,
                              SyncedResource, ProjectFile)
-from .utils import create_ancillary_project_stuff
+from .utils import create_ancillary_project_stuff, check_project_name_exists
 from servers.utils import stop_all_servers_for_project
 
 User = get_user_model()
-
-
-def check_project_name_exists(request, existing_pk, name):
-    qs = Project.objects.filter(name=name).exclude(pk=existing_pk)
-    if request.namespace.type == 'user':
-        qs = qs.filter(
-            collaborator__user=request.user,
-            collaborator__owner=True)
-    else:
-        qs = qs.filter(team=request.namespace.object)
-
-    return qs.exists()
 
 
 class ProjectSerializer(SearchSerializerMixin, serializers.ModelSerializer):

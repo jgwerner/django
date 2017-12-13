@@ -18,7 +18,8 @@ from projects.models import ProjectFile
 from projects.utils import (get_files_from_request,
                             has_copy_permission,
                             perform_project_copy,
-                            sync_project_files_from_disk)
+                            sync_project_files_from_disk,
+                            check_project_name_exists)
 from teams.permissions import TeamGroupPermission
 
 User = get_user_model()
@@ -110,8 +111,8 @@ def project_copy(request, *args, **kwargs):
 
     if new_project_name:
         # If user explicitly provided a project name via request, ensure it isn't a duplicate
-        log.info(f"The project_copy request contains a project name. Validating name: {new_project_name}")
-        ProjectSerializer.validate_name(new_project_name)
+        log.info(f"Project name found in request during project copy. Validating name: {new_project_name}")
+        check_project_name_exists(new_project_name)
 
     try:
         # If user didn't provide a name, perform_project_copy() will handle duplicates appropriately
@@ -124,8 +125,6 @@ def project_copy(request, *args, **kwargs):
         log.exception(e)
         resp_status = status.HTTP_500_INTERNAL_SERVER_ERROR
         resp_data = {'message': "Internal Server Error when attempting to copy project."}
-
-        return Response(data=resp_data, status=resp_status)
     else:
         if new_project is not None:
             resp_status = status.HTTP_201_CREATED
@@ -135,7 +134,7 @@ def project_copy(request, *args, **kwargs):
             resp_status = status.HTTP_404_NOT_FOUND
             resp_data = {'message': f"Project {proj_identifier} not found."}
 
-        return Response(data=resp_data, status=resp_status)
+    return Response(data=resp_data, status=resp_status)
 
 
 @api_view(['post'])

@@ -92,7 +92,7 @@ def has_copy_permission(request=None, user=None, project=None):
         proj_pk = request.data.get("project")
         project = Project.objects.get(pk=proj_pk)
     elif user is None or project is None:
-        log.error("has_copy_permission() called without specifying enough information.")
+        log.error(f"Called has_copy_permission() without enough information. User: {user}, Project: {project}.")
         raise ValueError("When calling has_copy_function, either request or both user and project must be specified.")
 
     has_perm = False
@@ -126,7 +126,7 @@ def perform_project_copy(user: User, project_id: str, request: Request) -> Proje
     old_resource_root = proj_to_copy.resource_root()
 
     if has_copy_permission(user=user, project=proj_to_copy):
-        log.info(f"User has approved copy permissions, proceeding.")
+        log.info(f"User {user} has approved copy permissions, proceeding.")
         new_proj = deepcopy(proj_to_copy)
         new_proj.pk = None
 
@@ -162,7 +162,7 @@ def read_project_files(project_dir: str) -> List:
     for root, dirs, files in os.walk(project_dir):
         for f in files:
             if f[:4].lower() == ".nfs":
-                log.info("Came across some nfs system files during sync process. Skipping them.")
+                log.info("NFS system files found during sync process. Skipping them.")
                 continue
 
             full_path = os.path.join(root, f)
@@ -253,4 +253,16 @@ def create_templates(projects: List[str]=[settings.GETTING_STARTED_PROJECT]):
             shutil.copy(full_path, str(project.resource_root()) + "/")
 
         sync_project_files_from_disk(project)
+
+
+def check_project_name_exists(request, existing_pk, name):
+    qs = Project.objects.filter(name=name).exclude(pk=existing_pk)
+    if request.namespace.type == 'user':
+        qs = qs.filter(
+            collaborator__user=request.user,
+            collaborator__owner=True)
+    else:
+        qs = qs.filter(team=request.namespace.object)
+
+    return qs.exists()
 
