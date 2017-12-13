@@ -21,12 +21,10 @@ INSTALLED_APPS.extend([
     'rest_framework_swagger',
     'swagger_docs',
     'raven.contrib.django.raven_compat',
-    'silk'
 ])
 
 MIDDLEWARE.extend([
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
-    'silk.middleware.SilkyMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware'
 ])
 
 INTERNAL_IPS = ['127.0.0.1']
@@ -34,10 +32,6 @@ INTERNAL_IPS = ['127.0.0.1']
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
-
-MIGRATION_MODULES.update({
-    'silk': 'appdj.migrations.silk',
-})
 
 
 RAVEN_CONFIG = {

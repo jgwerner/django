@@ -53,7 +53,6 @@ class ProjectTest(ProjectTestMixin, APITestCase):
         self.assertEqual(Project.objects.count(), 1)
         self.assertEqual(Project.objects.get().name, data['name'])
 
-
     def test_create_project_with_the_same_name(self):
         collaborator = CollaboratorFactory(user=self.user, owner=True)
         project = collaborator.project
@@ -66,7 +65,6 @@ class ProjectTest(ProjectTestMixin, APITestCase):
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(Project.objects.count(), 1)
-
 
     def test_copy_project_with_existing_name(self):
         to_copy = CollaboratorFactory(project__private=False,
@@ -246,6 +244,32 @@ class ProjectTest(ProjectTestMixin, APITestCase):
         project = Project.objects.get()
         self.assertEqual(project.name, data['name'])
         self.assertEqual(project.get_owner_name(), self.user.username)
+
+    def test_project_copy_assigns_to_correct_user(self):
+        proj = CollaboratorFactory(project__private=False,
+                                   project__copying_enabled=True).project
+        url = reverse("project-copy", kwargs={'version': settings.DEFAULT_VERSION,
+                                              'namespace': proj.owner.username})
+        data = {'project': str(proj.pk)}
+        response = self.client.post(url, data=data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        copied_project = Project.objects.filter(id=str(response.data['id'])).first()
+        self.assertIsNotNone(copied_project)
+        self.assertEqual(copied_project.owner, self.user)
+
+    def test_create_project_with_the_same_name(self):
+        collaborator = CollaboratorFactory(user=self.user, owner=True)
+        project = collaborator.project
+        url = reverse('project-list', kwargs={'namespace': self.user.username,
+                                              'version': settings.DEFAULT_VERSION})
+        data = dict(
+            name=project.name,
+            description='Test description',
+        )
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(Project.objects.count(), 1)
 
     def test_list_projects(self):
         projects_count = 4

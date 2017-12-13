@@ -51,6 +51,7 @@ def get_files_from_request(request):
 
 def assign_to_user(user: User, project: Project) -> None:
     log.info(f"Creating default collaborator, assigning permissions, and creating project resource root.")
+    Collaborator.objects.filter(project=project, owner=True).delete()
     Collaborator.objects.create(project=project, owner=True, user=user)
     assign_perm('write_project', user, project)
     assign_perm('read_project', user, project)
@@ -139,9 +140,10 @@ def perform_project_copy(user: User, project_id: str, request: Request) -> Proje
 
         new_proj.save()
 
-        user_to_pass = None
         if request is None:
             user_to_pass = user
+        else:
+            user_to_pass = request.user
 
         create_ancillary_project_stuff(request, new_proj, user=user_to_pass)
 
@@ -154,6 +156,7 @@ def perform_project_copy(user: User, project_id: str, request: Request) -> Proje
 
     return new_proj
 
+
 def read_project_files(project_dir: str) -> List:
     leaf_nodes = []
     for root, dirs, files in os.walk(project_dir):
@@ -165,6 +168,7 @@ def read_project_files(project_dir: str) -> List:
             full_path = os.path.join(root, f)
             leaf_nodes.append(full_path)
     return leaf_nodes
+
 
 def create_project_files(project: Project, paths_to_create: list) -> None:
     new_project_file_objs = []
@@ -184,6 +188,7 @@ def create_project_files(project: Project, paths_to_create: list) -> None:
         
     num_created = ProjectFile.objects.bulk_create(new_project_file_objs)
     log.info(f"Created {len(num_created)} ProjectFile objects in the database.")
+
 
 def sync_project_files_from_disk(project: Project) -> None:
     log.info(f"Synchronizing files for project f{project.pk}")
