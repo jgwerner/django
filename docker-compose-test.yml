@@ -1,4 +1,4 @@
-version: '2'
+version: '2.1'
 services:
   test:
     build: 
@@ -15,17 +15,19 @@ services:
       - VERSION=v1
   api:
     build: .
-    command: sh wait_for_search.sh /srv/env/bin/gunicorn --bind 0.0.0.0:80 --reload --workers 1 --log-level=DEBUG --error-logfile=- --access-logfile=- appdj.wsgi
+    command: /srv/env/bin/gunicorn --bind 0.0.0.0:80 --reload --workers 1 --log-level=DEBUG --error-logfile=- --access-logfile=- appdj.wsgi
     volumes:
       - .:/srv/app
-      - /workspaces:/workspaces
+      - /workspaces:/workspaces    
     env_file: api_tests/env
     ports:
       - "80:80"
+    healthcheck:
+      test: "sh search_healthcheck.sh"
     depends_on:
+      - search
       - db
       - cache
-      - search
       - broker
     labels:
       - "traefik.enable=true"
@@ -55,7 +57,7 @@ services:
     ports:
       - "6379"
   search:
-    image: elasticsearch:5-alpine
+    image: elasticsearch:5-alpine    
     ports:
       - "9200"
   server:
