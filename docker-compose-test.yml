@@ -22,13 +22,15 @@ services:
     env_file: api_tests/env
     ports:
       - "80:80"
-    healthcheck:
-      test: "sh search_healthcheck.sh"
     depends_on:
-      - search
-      - db
-      - cache
-      - broker
+      search:
+        condition: service_healthy
+      db:
+        condition: service_started
+      cache:
+        condition: service_started
+      broker:
+        condition: service_started
     labels:
       - "traefik.enable=true"
       - "traefik.backend=api"
@@ -57,7 +59,9 @@ services:
     ports:
       - "6379"
   search:
-    image: elasticsearch:5-alpine    
+    image: elasticsearch:5-alpine
+    healthcheck:
+      test: exit 0
     ports:
       - "9200"
   server:
