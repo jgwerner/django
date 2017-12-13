@@ -9,7 +9,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from jwt_auth.utils import create_server_jwt, create_auth_jwt
-from projects.tests.factories import CollaboratorFactory
+from projects.tests.factories import CollaboratorFactory, ProjectFactory
 from servers.models import Server, SshTunnel, ServerRunStatistics
 from users.tests.factories import UserFactory
 from servers.models import Deployment
@@ -269,8 +269,8 @@ class ServerTestWithName(APITestCase):
         server = ServerFactory(project=self.project)
         url = reverse('server-list', kwargs=self.url_kwargs)
         data = dict(
-            name=server.name, # name should match name from duplicate ServerFactory
-            project=self.project.name, # project should also match
+            name=server.name,  # name should match name from duplicate ServerFactory
+            project=self.project.name,  # project should also match
             connected=[],
             config={'type': 'jupyter'},
         )
@@ -278,6 +278,7 @@ class ServerTestWithName(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_server(self):
+        ProjectFactory.create_batch(2, name=self.project.name)
         url = reverse('server-list', kwargs=self.url_kwargs)
         data = dict(
             name='test',

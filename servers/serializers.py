@@ -54,7 +54,9 @@ class ServerSerializer(SearchSerializerMixin, BaseServerSerializer):
 
     def validate_name(self, value):
         # Ensure Server names remain unique within a project
-        project = Project.objects.tbs_get(self.context['view'].kwargs['project_project'])
+        request = self.context['request']
+        project_kwarg = self.context['view'].kwargs['project_project']
+        project = Project.objects.namespace(request.namespace).tbs_get(project_kwarg)
         if not (value and project):
             raise serializers.ValidationError("Server name and project name must be provided.")
         else:
