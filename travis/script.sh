@@ -4,4 +4,5 @@ then
 elif [ "$TEST_SUITE" = "API" ]
 then
     docker-compose -f docker-compose-test.yml up --abort-on-container-exit
+    docker logs appbackend_test_1
 fi

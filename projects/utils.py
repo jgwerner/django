@@ -184,7 +184,6 @@ def create_project_files(project: Project, paths_to_create: list) -> None:
         log.info("ProjectFile created successfully. Not yet stored in DB.")
         
     num_created = ProjectFile.objects.bulk_create(new_project_file_objs)
-
     log.info(f"Created {len(num_created)} ProjectFile objects in the database.")
 
 def sync_project_files_from_disk(project: Project) -> None:
