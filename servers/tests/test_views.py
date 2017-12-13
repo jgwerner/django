@@ -104,6 +104,16 @@ class ServerTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), servers_count)
 
+    def test_list_servers_statuses(self):
+        servers_count = 4
+        ServerFactory.create_batch(4, project=self.project)
+        url = reverse('server-statuses', kwargs=self.url_kwargs)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), servers_count)
+        for st in response.data:
+            self.assertEqual(st['status'], Server.RUNNING)
+
     def test_list_servers_respects_is_active(self):
         ServerFactory.create_batch(2, project=self.project)
         ServerFactory.create_batch(2,

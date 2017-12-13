@@ -54,7 +54,7 @@ class ServerSerializer(SearchSerializerMixin, BaseServerSerializer):
 
     def validate_name(self, value):
         # Ensure Server names remain unique within a project
-        project = self.context['project']
+        project = Project.objects.tbs_get(self.context['view'].kwargs['project_project'])
         if not (value and project):
             raise serializers.ValidationError("Server name and project name must be provided.")
         else:
@@ -66,7 +66,8 @@ class ServerSerializer(SearchSerializerMixin, BaseServerSerializer):
         config = validated_data.pop("config", {})
         server_size = (validated_data.pop('server_size', None) or
                        ServerSize.objects.order_by('created_at').first())
-        project = self.context['project']
+        project_pk = self.context['view'].kwargs['project_project']
+        project = Project.objects.tbs_get(project_pk)
         user = self.context['request'].user
         pk = uuid.uuid4()
         return Server.objects.create(pk=pk,
@@ -100,7 +101,7 @@ class ServerSerializer(SearchSerializerMixin, BaseServerSerializer):
         return self._get_url(obj, scheme='wss' if self._is_secure else 'ws', url='/status/')
 
     def _get_url(self, obj, **kwargs):
-        version = self.context.get('version', settings.DEFAULT_VERSION)
+        version = self.context['view'].kwargs.get('version', settings.DEFAULT_VERSION)
         request = self.context['request']
         return '{scheme}://{host}/{version}/{namespace}/projects/{project_id}/servers/{id}{url}'.format(
             host=get_current_site(request).domain,
@@ -114,6 +115,12 @@ class ServerSerializer(SearchSerializerMixin, BaseServerSerializer):
     @property
     def _is_secure(self):
         return settings.HTTPS
+
+
+class ServerStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Server
+        fields = ('status', 'id')
 
 
 class ServerSearchSerializer(SearchSerializerMixin, BaseServerSerializer):
