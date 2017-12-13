@@ -44,3 +44,4 @@ HAYSTACK_CONNECTIONS = {
 }
 
 ENABLE_BILLING = True
+SPAWNER = 'servers.spawners.dummy.DummySpawner'
