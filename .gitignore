@@ -102,4 +102,7 @@ resources/
 static/
 logs/
 
+# npm node modules
+node_modules/
+
 celerybeat.pid

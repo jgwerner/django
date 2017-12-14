@@ -18,16 +18,15 @@ services:
   - docker
   - postgresql
   - redis-server
+
+# all build steps use $TEST_SUITE env variable to run correct steps in corresponding bash script
 before_script:
-  - echo "listen_addresses = '*'" | sudo tee -a /etc/postgresql/9.*/main/postgresql.conf
-  - echo "host all all 0.0.0.0/0 trust" | sudo tee -a /etc/postgresql/9.*/main/pg_hba.conf
-  - sudo /etc/init.d/postgresql stop
-  - sudo /etc/init.d/postgresql start 9.4
-  - psql template1 -c 'CREATE EXTENSION IF NOT EXISTS hstore;' -U postgres
-  - psql -c 'create database travis_ci_test;' -U postgres
-#  - sleep 10
+  - echo "Before Script $TEST_SUITE"
+  - bash travis/before_script.sh
+
 before_install:
-  - docker --version  # document the version travis is using
+  - echo "Before Install $TEST_SUITE"
+  - bash travis/before_install.sh
   - export PATH=$PATH:$HOME/.local/bin # put aws in the path
   - export PYTHONPATH=`pwd`:$PYTHONPATH
   - export DJANGO_SETTINGS_MODULE="appdj.settings.test"
@@ -36,20 +35,36 @@ before_install:
   - export NVIDIA_DOCKER_HOST=http://localhost:3476
   - export AWS_DEFAULT_REGION="us-west-2"
   - export COVERAGE_PROCESS_START=".coveragerc"
-# command to install dependencies
+
 install:
-  - pip install -U pip setuptools wheel
-  - pip install -r requirements/dev.txt
-  - pip install codecov
+  - echo "Install $TEST_SUITE"
+  - bash travis/install.sh
 
 script:
-  - python -W ignore tbs_coverage.py run manage.py test --parallel 16 && coverage combine && coverage report -m
-  - bash config/buildDockerImage.sh
+  - echo "Script $TEST_SUITE"
+  - bash travis/script.sh
 
 after_success:
-  - bash <(curl -s https://codecov.io/bash)
+  - echo "After Success $TEST_SUITE"
+  - bash travis/after_success.sh
 
 notifications:
   slack: 3blades:RouLDGyG58awmaGkjgvh9Yuz
+
+# adds a jobs that will run after the tests are successful
+jobs:
+  include:
+    - stage: deploy
+      env: TEST_SUITE=none
+      script: 
+        - echo "Deploying..."
+        - bash config/buildDockerImage.sh
+
 env:
-  - $DOCKER_IMAGE_NAME="3blades/app-backend"
+  global:
+    - DOCKER_IMAGE_NAME="3blades/app-backend"
+    - DOCKER_COMPOSE_VERSION=1.16.1
+# tells travis to run two builds, one for api tests and one for unit tests
+  matrix:
+    - TEST_SUITE=API
+    - TEST_SUITE=UNIT
