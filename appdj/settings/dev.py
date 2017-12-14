@@ -33,6 +33,8 @@ STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
+MIGRATION_MODULES.update({
+})
 
 RAVEN_CONFIG = {
     'dsn': os.getenv("SENTRY_DSN"),

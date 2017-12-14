@@ -69,9 +69,11 @@ INSTALLED_APPS = [
     'jwt_auth',
     'search',
     'teams',
+    'silk'
 ]
 
 MIDDLEWARE = [
+    'silk.middleware.SilkyMiddleware',
     'jwt_auth.middleware.OAuthUIMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -345,6 +347,7 @@ MIGRATION_MODULES = {
     'social_django': 'appdj.migrations.social_django',
     'guardian': 'appdj.migrations.guardian',
     'django_ses': 'appdj.migrations.django_ses',
+    'silk': 'appdj.migrations.silk'
 }
 
 

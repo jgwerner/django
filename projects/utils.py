@@ -126,6 +126,7 @@ def perform_project_copy(user: User, project_id: str, request: Request, new_name
     old_resource_root = proj_to_copy.resource_root()
 
     if has_copy_permission(user=user, project=proj_to_copy):
+
         log.info(f"User {user} has approved copy permissions, proceeding.")
         new_proj = deepcopy(proj_to_copy)
         if new_name is not None:
