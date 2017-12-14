@@ -53,13 +53,13 @@ script:
 #   slack: 3blades:RouLDGyG58awmaGkjgvh9Yuz
 
 # adds a jobs that will run after the tests are successful
-jobs:
-  include:
-    - stage: deploy
-      env: TEST_SUITE=none
-      script: 
-        - echo "Deploying..."
-        # - bash config/buildDockerImage.sh 
+# jobs:
+#   include:
+#     - stage: deploy
+#       env: TEST_SUITE=none
+#       script: 
+#         - echo "Deploying..."
+        # - bash config/buildDockerImage.sh
 
 env:
   global:
