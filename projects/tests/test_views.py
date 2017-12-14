@@ -175,6 +175,21 @@ class ProjectTest(ProjectTestMixin, APITestCase):
         self.assertIsNotNone(copied_project)
         self.assertEqual(copied_project.name, to_copy.name + "-1")
 
+    def test_copy_user_project_with_deliberately_duplicate_name_fails(self):
+        to_copy = CollaboratorFactory(project__private=False,
+                                      project__copying_enabled=True).project
+        CollaboratorFactory(project__private=False,
+                            project__copying_enabled=True,
+                            project__name=to_copy.name,
+                            user=self.user)
+
+        url = reverse("project-copy", kwargs={'version': settings.DEFAULT_VERSION,
+                                              'namespace': self.user.username})
+        # data.name must match to_copy.name
+        data = {'project': str(to_copy.pk), 'name': to_copy.name}
+        with self.assertRaises(ValueError):
+            self.client.post(url, data=data)
+
     def test_copy_project_with_existing_name_multiple(self):
         name = "foo"
         to_copy = CollaboratorFactory(project__name=name,

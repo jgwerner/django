@@ -111,7 +111,9 @@ def project_copy(request, *args, **kwargs):
 
     if new_project_name:
         log.info(f"Project name found in request during project copy. Validating name: {new_project_name}")
-        check_project_name_exists(new_project_name)
+        if check_project_name_exists(new_project_name, request, None):
+            log.exception(f"Project {new_project_name} already exists.")
+            raise ValueError(f"A project named {new_project_name} already exists.")
 
     try:
         new_project = perform_project_copy(user=request.user,
