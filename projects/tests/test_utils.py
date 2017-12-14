@@ -60,6 +60,7 @@ class ProjectUtilsTest(TestCase):
     #end read_project_files
 
     #create_project_files
+
     @patch('projects.utils.open', mock_open())
     @patch('projects.utils.File')
     @patch('projects.utils.log')

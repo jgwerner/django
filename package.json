@@ -1,0 +1,29 @@
+{
+  "name": "app-backend-restful-tests",
+  "version": "1.0.0",
+  "description": "Used for running restful tests against the app-backend rest api",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "chakram": "^1.5.0",
+    "deasync": "^0.1.11",
+    "request": "^2.83.0",
+    "mocha": "^4.0.1"
+  },
+  "scripts": {
+    "test": "node_modules/.bin/mocha api_tests/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/starrett67/app-backend.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/starrett67/app-backend/issues"
+  },
+  "homepage": "https://github.com/starrett67/app-backend#readme"
+}
