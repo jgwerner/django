@@ -3,8 +3,10 @@ from .base import *
 
 ALLOWED_HOSTS = ['api-dev.3blades.ai', 'localhost']
 if 'TBS_HOST' in os.environ:
-    hosts = os.environ['TBS_HOST'].split(",")
-    ALLOWED_HOSTS.extend(hosts)
+    ALLOWED_HOSTS.append(os.environ['TBS_HOST'])
+
+if 'LOAD_BALANCER_HOST' in os.environ:
+    ALLOWED_HOSTS.append(os.environ['LOAD_BALANCER_HOST'])
 
 INSTALLED_APPS.append('raven.contrib.django.raven_compat')
 
