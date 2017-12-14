@@ -116,6 +116,7 @@ def project_copy(request, *args, **kwargs):
             raise ValueError(f"A project named {new_project_name} already exists.")
 
     try:
+        # If user didn't provide a name, perform_project_copy() will handle duplicates appropriately
         new_project = perform_project_copy(user=request.user,
                                            project_id=proj_identifier,
                                            request=request,
@@ -124,6 +125,8 @@ def project_copy(request, *args, **kwargs):
         log.exception(f"There was a problem attempting to copy project {proj_identifier}.", e)
         resp_status = status.HTTP_500_INTERNAL_SERVER_ERROR
         resp_data = {'message': "Internal Server Error when attempting to copy project."}
+
+        return Response(data=resp_data, status=resp_status)
     else:
         if new_project is not None:
             resp_status = status.HTTP_201_CREATED
