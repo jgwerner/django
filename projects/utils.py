@@ -89,11 +89,10 @@ def has_copy_permission(request=None, user=None, project=None):
 
     if request is not None:
         user = request.user
-        # We have to use request.GET when request.method is GET or HEAD
-        proj_pk = request.data.get('project') or request.GET.get('project')
+        proj_pk = request.data.get("project")
         project = Project.objects.get(pk=proj_pk)
     elif user is None or project is None:
-        log.error("Someone attempted to call has_copy_permission without specifying enough information.")
+        log.error(f"Called has_copy_permission() without enough information. User: {user}, Project: {project}.")
         raise ValueError("When calling has_copy_function, either request or both user and project must be specified.")
 
     has_perm = False
@@ -120,15 +119,18 @@ def copy_servers(old_project: Project, new_project: Project) -> None:
         log.info(f"Copied {server.pk}")
 
 
-def perform_project_copy(user: User, project_id: str, request: Request) -> Project:
+def perform_project_copy(user: User, project_id: str, request: Request, new_name:str=None) -> Project:
     log.info(f"Attempting to copy project {project_id} for user {user}")
     new_proj = None
     proj_to_copy = Project.objects.get(pk=project_id)
     old_resource_root = proj_to_copy.resource_root()
 
     if has_copy_permission(user=user, project=proj_to_copy):
-        log.info(f"User has the correct permissions to copy, doing it.")
+
+        log.info(f"User {user} has approved copy permissions, proceeding.")
         new_proj = deepcopy(proj_to_copy)
+        if new_name is not None:
+            new_proj.name = new_name
         new_proj.pk = None
 
         project_with_same_name = Collaborator.objects.filter(owner=True,
@@ -163,7 +165,7 @@ def read_project_files(project_dir: str) -> List:
     for root, dirs, files in os.walk(project_dir):
         for f in files:
             if f[:4].lower() == ".nfs":
-                log.info("Came across some nfs system files during sync process. Skipping them.")
+                log.info("NFS system files found during sync process. Skipping them.")
                 continue
 
             full_path = os.path.join(root, f)
@@ -254,4 +256,16 @@ def create_templates(projects: List[str]=[settings.GETTING_STARTED_PROJECT]):
             shutil.copy(full_path, str(project.resource_root()) + "/")
 
         sync_project_files_from_disk(project)
+
+
+def check_project_name_exists(name: str, request: Request, existing_pk:str=None):
+    qs = Project.objects.filter(name=name).exclude(pk=existing_pk)
+    if request.namespace.type == 'user':
+        qs = qs.filter(
+            collaborator__user=request.user,
+            collaborator__owner=True)
+    else:
+        qs = qs.filter(team=request.namespace.object)
+
+    return qs.exists()
 

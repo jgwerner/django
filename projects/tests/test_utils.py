@@ -49,7 +49,7 @@ class ProjectUtilsTest(TestCase):
         mock_os_walk.return_value = [(str(proj.resource_root()), [], [test_file])]
         files = read_project_files(str(proj.resource_root()))
         self.assertEqual(len(files), 0)
-        mock_logger.info.assert_called_with("Came across some nfs system files during sync process. Skipping them.")
+        mock_logger.info.assert_called_with("NFS system files found during sync process. Skipping them.")
 
     @patch('os.walk')
     def test_read_project_files__no_files__return_empty_list(self, mock_os_walk):
