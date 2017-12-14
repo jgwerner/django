@@ -1,3 +1,5 @@
+set -e
+
 if [ "$TEST_SUITE" = "API" ]
 then
     sudo rm /usr/local/bin/docker-compose
