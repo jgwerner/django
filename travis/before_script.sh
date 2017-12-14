@@ -1,3 +1,5 @@
+set -e
+
 if [ "$TEST_SUITE" = "UNIT" ]
 then
     echo "listen_addresses = '*'" | sudo tee -a /etc/postgresql/9.*/main/postgresql.conf
