@@ -59,7 +59,7 @@ jobs:
       env: TEST_SUITE=none
       script: 
         - echo "Deploying..."
-        # - bash config/buildDockerImage.sh
+        # - bash config/buildDockerImage.sh 
 
 env:
   global:
