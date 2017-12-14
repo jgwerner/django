@@ -38,7 +38,6 @@ The 3Blades/app-backend application interacts with various internal applications
 | GOOGLE_CLIENT_ID | <string> | Client ID for Google account |
 | GOOGLE_CLIENT_SECRET | <string> | Secret access key associated with GOOGLE_CLIENT_ID |
 | GETTING_STARTED_PROJECT | <string> | Name of "Getting Started" project |
-| LOAD_BALANCER_HOST | <string> | URL of the application load balancer, to be added to ALLOWED_HOSTS. Should typically of the form `.elb.amazonaws.com`
 | MOCK_STRIPE | <boolean> | Enables use of mock connections to Stripe for development purposes |
 | NVIDIA_DOCKER_HOST | <string> | URL for NVIDIA Docker host |
 | RABBITMQ_URL | <string> | URL for RabbitMQ message broker |
