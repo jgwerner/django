@@ -125,8 +125,6 @@ def project_copy(request, *args, **kwargs):
         log.exception(f"There was a problem attempting to copy project {proj_identifier}.", e)
         resp_status = status.HTTP_500_INTERNAL_SERVER_ERROR
         resp_data = {'message': "Internal Server Error when attempting to copy project."}
-
-        return Response(data=resp_data, status=resp_status)
     else:
         if new_project is not None:
             resp_status = status.HTTP_201_CREATED
