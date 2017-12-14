@@ -9,7 +9,8 @@ RUN apk update \
     postgresql-dev \
     libffi-dev \
     libjpeg \
-    jpeg-dev
+    jpeg-dev \
+    curl
 
 RUN pip install virtualenv
 
