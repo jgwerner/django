@@ -200,8 +200,8 @@ class ProjectTest(ProjectTestMixin, APITestCase):
                                               'namespace': self.user.username})
         # data.name must match to_copy.name
         data = {'project': str(to_copy.pk), 'name': to_copy.name}
-        with self.assertRaises(ValueError):
-            self.client.post(url, data=data)
+        response = self.client.post(url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_copy_project_separate_users_same_name_passes(self):
         # project_copy() should pass if an unassociated user duplicates a project name

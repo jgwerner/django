@@ -113,7 +113,9 @@ def project_copy(request, *args, **kwargs):
         log.info(f"Project name found in request during project copy. Validating name: {new_project_name}")
         if check_project_name_exists(new_project_name, request, None):
             log.exception(f"Project {new_project_name} already exists.")
-            raise ValueError(f"A project named {new_project_name} already exists.")
+            resp_status = status.HTTP_400_BAD_REQUEST
+            resp_data = {'message': f"A project named {new_project_name} already exists."}
+            return Response(data=resp_data, status=resp_status)
 
     try:
         # If user didn't provide a name, perform_project_copy() will handle duplicates appropriately
@@ -133,7 +135,6 @@ def project_copy(request, *args, **kwargs):
         else:
             resp_status = status.HTTP_404_NOT_FOUND
             resp_data = {'message': f"Project {proj_identifier} not found."}
-
     return Response(data=resp_data, status=resp_status)
 
 
