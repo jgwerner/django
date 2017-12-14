@@ -49,17 +49,12 @@ def create_ssh_key(user):
 
 def deactivate_user(user):
     user.is_active = False
-    old_resource = user.profile.resource_root()
-    if old_resource.exists():
-        new_resource_path = Path(settings.INACTIVE_RESOURCE_DIR,
-                                 user.username +
-                                 "_{uuid}".format(uuid=user.pk))
-        log.info("About to move {user}'s resource directory from {old} to {new}".format(user=user.username,
-                                                                                        old=str(old_resource),
-                                                                                        new=str(new_resource_path)))
-        shutil.move(str(old_resource), str(new_resource_path))
+    if user.profile.resource_root().exists():
+        log.info(f"Deleting user {user.username}'s files from disk.")
+        log.info(f"Path to be deleted: {user.profile.resource_root()}")
+        shutil.rmtree(str(user.profile.resource_root()))
     else:
-        log.info(f"User {user} had no files created yet. Not moving anything.")
+        log.info(f"User {user} had no files created yet. Nothing to delete.")
 
 
 class UJSONSerializer(BaseSerializer):
