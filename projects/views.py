@@ -126,7 +126,7 @@ def project_copy(request, *args, **kwargs):
             resp_status = status.HTTP_404_NOT_FOUND
             resp_data = {'message': f"Project {proj_identifier} not found."}
 
-        return Response(data=resp_data, status=resp_status)
+    return Response(data=resp_data, status=resp_status)
 
 
 @api_view(['post'])

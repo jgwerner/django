@@ -39,13 +39,9 @@ class UserViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
 
     def _update(self, request, partial, *args, **kwargs):
         data = request.data
-        url_kwarg = kwargs.get(self.lookup_url_kwarg)
-        user = User.objects.tbs_filter(url_kwarg).first()
-        log.debug(user)
+        user = self.get_object()
 
-        # The given User exists, and there is an attempt to change the username
-        # User could be none if the client is using PUT to create a user.
-        if user is not None and request.data.get("username", user.username) != user.username:
+        if request.data.get("username", user.username) != user.username:
             return Response(data={'message': "Username cannot be changed after creation."},
                             status=status.HTTP_400_BAD_REQUEST)
 
@@ -55,20 +51,8 @@ class UserViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
 
         serializer = self.get_serializer(instance=user, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
-        if user is None:
-            # A user is being created via PUT
-            response_status = status.HTTP_201_CREATED
-        else:
-            response_status = status.HTTP_200_OK
-
-        if validate_uuid(url_kwarg):
-            serializer.save(id=url_kwarg)
-        else:
-            serializer.save(username=url_kwarg)
-
-        user = serializer.instance
-        user.is_active = True
-        user.save()
+        serializer.update(instance=user, validated_data=data)
+        response_status = status.HTTP_200_OK
 
         return Response(data=serializer.data,
                         status=response_status)
@@ -98,7 +82,7 @@ class UserViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         if self._check_for_permission_to_destroy():
-            instance = User.objects.tbs_get(kwargs.get('user'))
+            instance = self.get_object()
             deactivate_user(instance)
             sub_ids = Subscription.objects.filter(customer=instance.customer).values_list('id')
             cancel_subscriptions(sub_ids)
