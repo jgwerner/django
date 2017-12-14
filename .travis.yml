@@ -13,6 +13,7 @@ branches:
   only:
     - master
     - prod
+    - complete-integration-tests#607
 services:
 # enable docker service inside travis
   - docker
@@ -44,12 +45,12 @@ script:
   - echo "Script $TEST_SUITE"
   - bash travis/script.sh
 
-after_success:
-  - echo "After Success $TEST_SUITE"
-  - bash travis/after_success.sh
+# after_success:
+#   - echo "After Success $TEST_SUITE"
+#   - bash travis/after_success.sh
 
-notifications:
-  slack: 3blades:RouLDGyG58awmaGkjgvh9Yuz
+# notifications:
+#   slack: 3blades:RouLDGyG58awmaGkjgvh9Yuz
 
 # adds a jobs that will run after the tests are successful
 jobs:
@@ -58,7 +59,7 @@ jobs:
       env: TEST_SUITE=none
       script: 
         - echo "Deploying..."
-        - bash config/buildDockerImage.sh
+        # - bash config/buildDockerImage.sh
 
 env:
   global:
@@ -67,4 +68,4 @@ env:
 # tells travis to run two builds, one for api tests and one for unit tests
   matrix:
     - TEST_SUITE=API
-    - TEST_SUITE=UNIT
+    # - TEST_SUITE=UNIT

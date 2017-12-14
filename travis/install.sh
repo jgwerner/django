@@ -1,3 +1,5 @@
+set -e
+
 if [ "$TEST_SUITE" = "UNIT" ]
 then
     pip install -U pip setuptools wheel
