@@ -55,6 +55,7 @@ notifications:
 jobs:
   include:
     - stage: deploy
+      if: branch = master AND type = push
       env: TEST_SUITE=none
       script: 
         - echo "Deploying..."
