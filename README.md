@@ -1,7 +1,6 @@
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/6ba00ac8f94e4105b9b160287d1b62ec)](https://www.codacy.com/app/3Blades/app-backend?utm_source=github.com&utm_medium=referral&utm_content=3Blades/app-backend&utm_campaign=badger)
-[![Build Status](https://travis-ci.org/3Blades/app-backend.svg?branch=master)](https://travis-ci.org/3Blades/app-backend)
-[![Docker Hub](https://img.shields.io/badge/docker-ready-blue.svg)](https://hub.docker.com/r/3blades/app-backend/)
-[![codecov](https://codecov.io/gh/3Blades/app-backend/branch/master/graph/badge.svg)](https://codecov.io/gh/3Blades/app-backend)
+[![Build Status](https://travis-ci.com/3Blades/app-backend.svg?token=y3jvxynhJQZHELnDYJdy&branch=master)](https://travis-ci.com/3Blades/app-backend)
+[![codecov](https://codecov.io/gh/3Blades/app-backend/branch/master/graph/badge.svg?token=Gp4eGe0AaM)](https://codecov.io/gh/3Blades/app-backend)
 [![slack in](https://slack.3blades.io/badge.svg)](https://slack.3blades.io)
 
 # 3Blades Backend Server
@@ -92,11 +91,11 @@ Edit the docker service file to add connections to docker daemon using tcp:
     With Line:      ExecStart=/usr/bin/dockerd -H fd:// -H tcp://0.0.0.0:2375
 
 Restart docker service and confirm that setting is in place for CGroup:
-     
-    sudo systemctl daemon-reload 
+
+    sudo systemctl daemon-reload
     sudo systemctl restart docker
     systemctl status docker
-    
+
     ``` docker.service - Docker Application Container Engine
    Loaded: loaded (/lib/systemd/system/docker.service; enabled; vendor preset: enabled)
    Active: active (running) since Fri 2017-07-21 02:32:48 UTC; 1 weeks 0 days ago
