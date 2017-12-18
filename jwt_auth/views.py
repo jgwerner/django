@@ -34,7 +34,6 @@ class JWTApiView(JSONWebTokenAPIView):
                                     httponly=True)
                 user.last_login = datetime.now()
             return response
-
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
