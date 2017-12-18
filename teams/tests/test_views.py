@@ -12,7 +12,6 @@ from billing.tests.test_views import create_plan_dict
 from users.tests.factories import UserFactory, EmailFactory
 from projects.tests.factories import ProjectFactory
 from servers.tests.factories import ServerFactory, ServerSizeFactory
-from notifications.models import Notification
 from jwt_auth.utils import create_auth_jwt
 
 from .factories import TeamFactory
@@ -116,7 +115,7 @@ class TeamTest(APITransactionTestCase):
     def test_team_group_permission_for_server(self):
         srv_size = ServerSizeFactory()
         team, cli = self._create_base_permission_test()
-        project = ProjectFactory()
+        project = ProjectFactory(team=team)
         server_url = reverse('server-list', kwargs={
             'version': settings.DEFAULT_VERSION, 'namespace': team.name, 'project_project': str(project.pk)})
         data = dict(
