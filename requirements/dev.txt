@@ -5,3 +5,4 @@ django-debug-toolbar==1.6
 https://github.com/3Blades/django-swagger-docs/archive/master.zip
 coverage==4.4.1
 tblib==1.3.2
+requests-mock==1.4.0
