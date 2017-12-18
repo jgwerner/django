@@ -15,7 +15,41 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.backend=api"
+      - "traefik.frontend.priority=1"
       - "traefik.frontend.rule=PathPrefix:/"
+  channels:
+    build: .
+    command: /srv/env/bin/daphne -p 80 -b 0.0.0.0 -v 2 appdj.asgi:channel_layer
+    volumes:
+      - .:/srv/app
+      - /workspaces:/workspaces
+    env_file: env
+    depends_on:
+      - db
+      - cache
+      - broker
+      - search
+    ports:
+      - "9000:80"
+    entrypoint: ''
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=sockets"
+      - "traefik.frontend.priority=2"
+      - "traefik.frontend.rule=Path:/sns/{server}/,/{version}/{namespace}/projects/{project}/servers/{server}/status/"
+  channel_worker:
+    build: .
+    command: /srv/env/bin/python manage.py runworker -v 2
+    volumes:
+      - .:/srv/app
+      - /workspaces:/workspaces
+    env_file: env
+    depends_on:
+      - db
+      - cache
+      - broker
+      - search
+    entrypoint: ''
   celery:
     build: .
     command: /srv/env/bin/celery -A appdj worker -l info
@@ -65,16 +99,6 @@ services:
     ports:
       - "5000:80"
       - "8081:8080"
-  events:
-    image: 3blades/docker-events
-    env_file: env
-    labels:
-      - "traefik.enable=true"
-      - "traefik.backend=events"
-      - "traefik.status.frontend.rule=Path:/{version}/{namespace}/projects/{project}/servers/{server}/status/"
-      - "traefik.logs.frontend.rule=Path:/{version}/{namespace}/projects/{project}/servers/{server}/logs/"
-    ports:
-      - "8000:8000"
   nginx:
     image: 3blades/nginx
     command: /nginx/sbin/nginx -p '' -g 'daemon off;'

@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.postgres',
     'django.contrib.sites',
 
+    'channels',
     'rest_framework',
     'oauth2_provider',
     'social_django',
@@ -127,6 +128,19 @@ EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
 
 DATABASES = {
     'default': dj_database_url.config(conn_max_age=600, default='postgres://postgres:@localhost:5432/postgres')
+}
+
+# Channels
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "asgi_redis.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [os.environ.get('REDIS_URL')],
+            "symmetric_encryption_keys": [SECRET_KEY],
+        },
+        "ROUTING": "appdj.routing.routing",
+    }
 }
 
 AUTHENTICATION_BACKENDS = (

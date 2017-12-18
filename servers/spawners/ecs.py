@@ -78,6 +78,13 @@ class ECSSpawner(GPUMixin, BaseSpawner):
                     },
                     'mountPoints': mount_points,
                     'dockerLabels': self._get_traefik_labels(),
+                    'logConfiguration': {
+                        'logDriver': 'awslogs',
+                        'options': {
+                            'awslogs-group': 'devUserspace',
+                            'awslogs-region': settings.AWS_DEFAULT_REGION
+                        }
+                    },
                 }
             ],
             volumes=volumes,

@@ -1,7 +1,9 @@
 import logging
+import json
+import requests
 from django.db.models import Sum, Max, F
 from django.db.models.functions import Coalesce, Now
-from rest_framework import status, viewsets
+from rest_framework import status, viewsets, views
 from rest_framework.decorators import api_view, permission_classes, renderer_classes, list_route
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
@@ -17,6 +19,7 @@ from jwt_auth.views import JWTApiView
 from jwt_auth.serializers import VerifyJSONWebTokenServerSerializer
 from jwt_auth.utils import create_server_jwt
 from teams.permissions import TeamGroupPermission
+from .consumers import ServerStatusConsumer
 from .tasks import start_server, stop_server, terminate_server, deploy, delete_deployment
 from .permissions import ServerChildPermission, ServerActionPermission
 from . import serializers, models
@@ -217,3 +220,30 @@ def deployment_auth(request):
         data['token'] = "Token is invalid"
         return Response(data, status.HTTP_401_UNAUTHORIZED)
     return Response(data)
+
+
+class SNSView(views.APIView):
+    permission_classes = (AllowAny,)
+
+    def post(self, request):
+        sns_message_type_header = 'HTTP_X_AMZ_SNS_MESSAGE_TYPE'
+        if sns_message_type_header not in request.META:
+            return Response({"message": "OK"})
+        payload = json.loads(request.body.decode('utf-8'))
+        log.debug("SNS payload: %s" % payload)
+        message_type = request.META[sns_message_type_header]
+        if message_type == 'SubscriptionConfirmation':
+            url = payload.get('SubscribeURL', '')
+            resp = requests.get(url)
+            if resp.status_code != 200:
+                log.error("SNS verification failed.", extra={
+                    'verification_response': resp.content,
+                    'sns_payload': self.request.body
+                })
+                return Response({}, status=400)
+            return Response({"message": "OK"})
+        if message_type == 'Notification':
+            message = json.loads(payload['Message'])
+            server_id = message['detail']['overrides']['containerOverrides'][0]['name']
+            ServerStatusConsumer.update_status(server_id, message['detail']['desiredStatus'])
+        return Response({"message": "OK"})

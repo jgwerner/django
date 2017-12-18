@@ -13,6 +13,7 @@ from servers import views as servers_views
 
 
 urlpatterns = [
+    url(r'^sns/$', servers_views.SNSView.as_view(), name='sns'),
     url(r'^auth/jwt-token-auth/$', jwt_views.ObtainJSONWebToken.as_view(), name='obtain-jwt'),
     url(r'^auth/temp-token-auth/$', users_views.my_api_key, name='temp-token-auth'),
     url(r'^auth/jwt-token-refresh/$', jwt_views.RefreshJSONWebToken.as_view(), name='refresh-jwt'),
