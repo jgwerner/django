@@ -245,5 +245,6 @@ class SNSView(views.APIView):
         if message_type == 'Notification':
             message = json.loads(payload['Message'])
             server_id = message['detail']['overrides']['containerOverrides'][0]['name']
-            ServerStatusConsumer.update_status(server_id, message['detail']['desiredStatus'])
+            if models.Server.objects.filter(is_active=True, pk=server_id).exists():
+                ServerStatusConsumer.update_status(server_id, message['detail']['desiredStatus'])
         return Response({"message": "OK"})

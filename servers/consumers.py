@@ -11,16 +11,16 @@ class ServerStatusConsumer(JsonWebsocketConsumer):
     group_prefix = 'statuses'
 
     def connection_groups(self, **kwargs):
-        namespace = kwargs.get('namespace')
-        server = kwargs.get('server')
-        project = kwargs.get('project')
-        self.namespace = Namespace.from_name(namespace)
-        pr = Project.objects.namespace(self.namespace).tbs_filter(project).first()
+        namespace_arg = kwargs.get('namespace')
+        server_arg = kwargs.get('server')
+        project_arg = kwargs.get('project')
+        namespace = Namespace.from_name(namespace_arg)
+        project = Project.objects.namespace(namespace).tbs_filter(project_arg).first()
         try:
-            srv = Server.objects.filter(project=pr).tbs_get(server)
+            server = Server.objects.filter(project=project).tbs_get(server_arg)
         except Server.DoesNotExist:
             self.close()
-        return [f'{self.group_prefix}_{srv.pk}']
+        return [f'{self.group_prefix}_{server.pk}']
 
     @classmethod
     def update_status(cls, server_id: str, status: str):
