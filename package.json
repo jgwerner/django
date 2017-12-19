@@ -15,7 +15,7 @@
     "request": "^2.83.0"
   },
   "scripts": {
-    "test": "node_modules/.bin/mocha api_tests/ --timeout 5000"
+    "test": "node_modules/.bin/mocha api_tests/ --timeout 6000"
   },
   "repository": {
     "type": "git",

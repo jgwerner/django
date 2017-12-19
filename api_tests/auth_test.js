@@ -138,7 +138,7 @@ describe('auth/register/', () => {
                 expect(response).to.have.status(201);
                 expect(response).to.comprise.of.json(expect_json);
             });
-    }).timeout(5000);
+    });
 });
 
 

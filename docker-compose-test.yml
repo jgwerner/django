@@ -18,7 +18,7 @@ services:
     command: /srv/env/bin/gunicorn --bind 0.0.0.0:80 --reload --workers 1 --log-level=DEBUG --error-logfile=- --access-logfile=- appdj.wsgi
     volumes:
       - .:/srv/app
-      - /workspaces:/workspaces    
+      - /workspaces:/workspaces
     env_file: api_tests/env
     ports:
       - "80:80"

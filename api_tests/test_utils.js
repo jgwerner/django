@@ -10,42 +10,44 @@ let login = ((username, password) => {
         json: {
             username: username,
             password: password
-        }        
+        }
     };
     return new Promise((resolve, reject) => {
         request.post(uri, options, (err, resp, body) => {
             if (err) {
-                throw(err);
+                throw (err);
             }
             else if (!body || !body.token) {
-                throw("Something went wrong when logging in. No token found.")
+                throw ("Something went wrong when logging in. No token found.")
             }
+            global.token = body.token;
             resolve(body.token);
         });
     });
 });
 
-let loginAsync = ((username, password) => {
-    login_done = false;
-    token = ''
-    console.log("Attempting to login...");
-    login(username, password)
-        .then(t => {
-            console.log("Login Successful!")
-            token = t;
-            login_done = true;
-        })
-        .catch(err => {
-            console.log("Login failed:");
-            console.log(err);
-        })
-    deasync.loopWhile(() => { return !login_done; })
-    return token;
+let loginAsync = ((username, password, refresh = false) => {
+    if (refresh) {
+        global.token = undefined;
+    }
+    if (!global.token) {
+        console.log("Attempting to login...");
+        login(username, password)
+            .then(t => {
+                console.log("Login Successful!")
+            })
+            .catch(err => {
+                console.log("Login failed:");
+                console.log(err);
+            })
+    }
+    deasync.loopWhile(() => { return !global.token; })
+    return global.token;
 });
 
 let get_request_uri = (api_path, exclude_version = false) => {
     let uri = util.format("%s:%s/%s/%s", config.host, config.port, config.version, api_path);
-    if(exclude_version) {
+    if (exclude_version) {
         uri = uri.replace('/' + config.version, '');
     }
     return uri;
