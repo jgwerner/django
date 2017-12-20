@@ -1,5 +1,6 @@
 import logging
 import math
+from typing import Union
 from datetime import datetime, timedelta
 from decimal import Decimal, getcontext
 from django.conf import settings
@@ -9,7 +10,8 @@ from django.db.models.functions import Greatest
 from django.utils import timezone
 from billing.models import Invoice
 from billing.stripe_utils import add_buckets_to_stripe_invoice
-from servers.models import ServerRunStatistics
+from servers.models import ServerRunStatistics, Server
+from servers.tasks import stop_server
 from notifications.models import Notification, NotificationType
 from notifications.utils import create_notification
 log = logging.getLogger('servers')
@@ -35,6 +37,21 @@ class MeteredBillingData:
             buckets = math.ceil(overage / settings.BILLING_BUCKET_SIZE_GB)
         return buckets
 
+    def _notify(self, notification_type: NotificationType) -> Union[Notification, None]:
+        # TODO: This will only ever send one notification, and for the lowest threshold.
+        # Need to make separate notif types for each threshold or something
+        already_been_notified = Notification.objects.filter(user=self.user,
+                                                            type=notification_type,
+                                                            timestamp__gt=self.invoice.period_start).exists()
+        if not already_been_notified:
+            log.info(f"User {self.user} has used {self.usage_percent}% of their plan. Sending a notification.")
+            notif = create_notification(user=self.user,
+                                        actor=self.invoice,
+                                        target=None,
+                                        notif_type=notification_type)
+            return notif
+        return None
+
     def create_notification_if_necessary(self, notification_type: NotificationType) -> Notification:
         notif = None
 
@@ -52,16 +69,14 @@ class MeteredBillingData:
 
         for threshold in warning_thresholds:
             if self.usage_percent >= threshold:
-                already_been_notified = Notification.objects.filter(user=self.user,
-                                                                    type=notification_type,
-                                                                    timestamp__gt=self.invoice.period_start).exists()
-                if not already_been_notified:
-                    log.info(f"User {self.user} has used {self.usage_percent}% of their plan. Sending a notification.")
-                    notif = create_notification(user=self.user,
-                                                actor=self.invoice,
-                                                target=None,
-                                                notif_type=notification_type)
-                    break
+                notif = self._notify(notification_type)
+                if threshold == 100 and self.subscription.plan.stripe_id == "threeblades-free-plan":
+                    servers = Server.objects.filter(created_by=self.user,
+                                                    is_active=True)
+                    to_stop = filter(lambda server: server.is_running(), servers)
+                    for svr in to_stop:
+                        stop_server(svr)
+                break
         return notif
 
 

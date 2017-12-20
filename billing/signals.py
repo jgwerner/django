@@ -43,7 +43,7 @@ def create_plan_in_stripe_from_admin(sender, instance, **kwargs):
             for attr in ["stripe_id", "created", "livemode"]:
                 value = getattr(duplicate_plan, attr)
                 setattr(instance, attr, value)
-        else:
+        elif instance.pk is not None:
             data.update({attr: getattr(instance, attr) for attr in updateable_attrs})
             update_plan_in_stripe(data)
 

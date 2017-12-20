@@ -81,8 +81,8 @@ class Plan:
 
     @classmethod
     def retrieve(cls, stripe_id):
-        if stripe_id == "threeblades-free-plan":
-            raise error.InvalidRequestError
+        # if stripe_id == "threeblades-free-plan":
+        #     raise error.InvalidRequestError
         name = stripe_id.replace("-", " ").title()
         if cls.plan is None or cls.plan['id'] != stripe_id:
             cls.plan = cls.create(id=stripe_id,

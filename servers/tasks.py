@@ -1,3 +1,4 @@
+from typing import Union
 from celery import shared_task
 from .models import Server, Deployment
 from .spawners import get_spawner_class, get_deployer_class
@@ -6,8 +7,9 @@ Spawner = get_spawner_class()
 Deployer = get_deployer_class()
 
 
-def server_action(action: str, server: str):
-    server = Server.objects.tbs_get(server)
+def server_action(action: str, server: Union[str, Server]):
+    if isinstance(server, str):
+        server = Server.objects.tbs_get(server)
     spawner = Spawner(server)
     getattr(spawner, action)()
 
