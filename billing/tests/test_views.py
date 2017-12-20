@@ -1,5 +1,6 @@
 import json
-from decimal import Decimal, getcontext
+from unittest.mock import patch
+from decimal import getcontext
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.conf import settings
@@ -8,10 +9,8 @@ from rest_framework.test import APITestCase
 
 from billing.models import (Card,
                             Plan, Subscription,
-                            Invoice, Event, InvoiceItem)
+                            Invoice, Event)
 from users.tests.factories import UserFactory, EmailFactory
-from projects.tests.factories import CollaboratorFactory
-from servers.tests.factories import ServerRunStatisticsFactory
 from billing.tests.factories import (PlanFactory,
                                      CardFactory,
                                      SubscriptionFactory,
@@ -264,14 +263,18 @@ class SubscriptionTest(APITestCase):
         self.assertIsNotNone(sub_reloaded.canceled_at)
         self.assertIsNotNone(sub_reloaded.ended_at)
 
-    def test_subscription_updated_webhook(self):
+    @patch("stripe.Webhook.construct_event")
+    def test_subscription_updated_webhook(self, mock_construct):
+        mock_construct.return_value = True
         url = reverse("stripe-subscription-updated", kwargs={'version': settings.DEFAULT_VERSION})
         from billing.tests import mock_stripe
         subscription = self._create_subscription_in_stripe()
         webhook_data = mock_stripe.Event.get_sub_updated_evt(customer=self.customer.stripe_id,
                                                              subscription=subscription.stripe_id,
                                                              status=Subscription.PAST)
-        response = self.client.post(url, json.dumps(webhook_data), content_type="application/json")
+        response = self.client.post(url, json.dumps(webhook_data),
+                                    content_type="application/json",
+                                    HTTP_STRIPE_SIGNATURE="foo")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         events = Event.objects.filter(stripe_id=webhook_data['id'])
         self.assertEqual(events.count(), 1)
@@ -280,7 +283,9 @@ class SubscriptionTest(APITestCase):
         sub_reloaded = Subscription.objects.get(pk=subscription.pk)
         self.assertEqual(sub_reloaded.status, Subscription.PAST)
 
-    def test_subscription_updated_to_active_status(self):
+    @patch("stripe.Webhook.construct_event")
+    def test_subscription_updated_to_active_status(self, mock_construct):
+        mock_construct.return_value = True
         url = reverse("stripe-subscription-updated", kwargs={'version': settings.DEFAULT_VERSION})
         from billing.tests import mock_stripe
         subscription = self._create_subscription_in_stripe()
@@ -375,7 +380,9 @@ class InvoiceTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['id'], str(item.id))
 
-    def test_invoice_created_webhook(self):
+    @patch("stripe.Webhook.construct_event")
+    def test_invoice_created_webhook(self, mock_construct):
+        mock_construct.return_value = True
         url = reverse("stripe-invoice-created",
                       kwargs={'version': settings.DEFAULT_VERSION})
         # Always use Mock stripe for these tests, configuring webhooks for testing is near impossible.
@@ -396,7 +403,9 @@ class InvoiceTest(TestCase):
         self.assertEqual(events.count(), 1)
         self.assertEqual(events.first().event_type, "invoice.created")
 
-    def test_invoice_payment_failed_webhook(self):
+    @patch("stripe.Webhook.construct_event")
+    def test_invoice_payment_failed_webhook(self, mock_construct):
+        mock_construct.return_value = True
         url = reverse("stripe-invoice-payment-failed",
                       kwargs={'version': settings.DEFAULT_VERSION})
         # Always use Mock stripe for these tests, configuring webhooks for testing is near impossible.
@@ -420,7 +429,9 @@ class InvoiceTest(TestCase):
         stripe_subscription = stripe.Subscription.retrieve(subscription.stripe_id)
         self.assertEqual(sub_reloaded.status, stripe_subscription['status'])
 
-    def test_invoice_payment_success_webhook(self):
+    @patch("stripe.Webhook.construct_event")
+    def test_invoice_payment_success_webhook(self, mock_construct):
+        mock_construct.return_value = True
         url = reverse("stripe-invoice-payment-success",
                       kwargs={'version': settings.DEFAULT_VERSION})
         # Always use Mock stripe for these tests, configuring webhooks for testing is near impossible.
@@ -444,7 +455,9 @@ class InvoiceTest(TestCase):
         stripe_subscription = stripe.Subscription.retrieve(subscription.stripe_id)
         self.assertEqual(sub_reloaded.status, stripe_subscription['status'])
 
-    def test_sending_duplicate_event_does_nothing(self):
+    @patch("stripe.Webhook.construct_event")
+    def test_sending_duplicate_event_does_nothing(self, mock_construct):
+        mock_construct.return_value = True
         existing_event = EventFactory()
         from billing.tests import mock_stripe
         url = reverse("stripe-invoice-created", kwargs={'version': settings.DEFAULT_VERSION})

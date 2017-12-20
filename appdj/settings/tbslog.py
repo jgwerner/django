@@ -34,7 +34,7 @@ TBS_LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
-            'format': "[%(asctime)s] %(levelname)s [%(module)s:%(filename)s:%(lineno)s] %(message)s",
+            'format': "[%(asctime)s] %(levelname)s [%(filename)s:%(lineno)s] %(message)s",
         }
     },
     'handlers': handlers,

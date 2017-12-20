@@ -42,13 +42,13 @@ class MeteredBillingData:
             warning_thresholds = sorted(map(int, settings.USAGE_WARNING_THRESHOLDS.split(",")),
                                         # We sort in reverse order because it's easier to notify in order of
                                         # precedence later in this method.
-                                        key=lambda val: -val)
+                                        reverse=True)
         except ValueError as e:
             log.warning(f"Unable to cast USAGE_WARNING_THRESHOLDS to a list of ints. "
                         f"This was the value: {settings.USAGE_WARNING_THRESHOLDS}. "
                         f"Falling back to defaults of 75, 90, 100.")
             log.exception(e)
-            warning_thresholds = [75, 90, 100]
+            warning_thresholds = [100, 90, 75]
 
         for threshold in warning_thresholds:
             if self.usage_percent >= threshold:

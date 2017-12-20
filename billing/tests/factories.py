@@ -2,11 +2,13 @@ import factory
 from uuid import uuid4
 from datetime import datetime, timedelta
 from django.utils import timezone
+from django.db.models.signals import pre_save
 from factory import fuzzy
 from users.tests.factories import UserFactory
 from billing.models import (Customer, Plan, Card,
                             Subscription, Event,
                             Invoice, InvoiceItem)
+from billing.signals import create_plan_in_stripe_from_admin
 
 
 class CustomerFactory(factory.django.DjangoModelFactory):
@@ -41,6 +43,14 @@ class PlanFactory(factory.django.DjangoModelFactory):
     name = fuzzy.FuzzyText(length=255)
     statement_descriptor = fuzzy.FuzzyText()
     trial_period_days = fuzzy.FuzzyInteger(low=0, high=90)
+
+    @classmethod
+    def _generate(cls, create, attrs):
+        pre_save.disconnect(create_plan_in_stripe_from_admin, Plan)
+        plan = super()._generate(create, attrs)
+        plan.save()
+        pre_save.connect(create_plan_in_stripe_from_admin, Plan)
+        return plan
 
 
 class CardFactory(factory.django.DjangoModelFactory):

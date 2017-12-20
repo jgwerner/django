@@ -20,6 +20,7 @@ from billing.stripe_utils import (handle_stripe_invoice_created,
                                   handle_stripe_invoice_payment_status_change,
                                   handle_subscription_updated,
                                   cancel_subscriptions)
+from billing.decorators import verify_signature
 
 log = logging.getLogger('billing')
 
@@ -128,6 +129,7 @@ class InvoiceItemViewSet(NamespaceMixin,
 
 @require_POST
 @csrf_exempt
+@verify_signature
 def stripe_invoice_created(request, *args, **kwargs):
     body = request.body
     event_json = json.loads(body.decode("utf-8"))
@@ -137,6 +139,7 @@ def stripe_invoice_created(request, *args, **kwargs):
 
 @require_POST
 @csrf_exempt
+@verify_signature
 def stripe_invoice_payment_success(request, *args, **kwargs):
     body = request.body
     event_json = json.loads(body.decode("utf-8"))
@@ -146,6 +149,7 @@ def stripe_invoice_payment_success(request, *args, **kwargs):
 
 @require_POST
 @csrf_exempt
+@verify_signature
 def stripe_invoice_payment_failed(request, *args, **kwargs):
     body = request.body
     event_json = json.loads(body.decode('utf-8'))
@@ -155,6 +159,7 @@ def stripe_invoice_payment_failed(request, *args, **kwargs):
 
 @require_POST
 @csrf_exempt
+@verify_signature
 def stripe_subscription_updated(request, *args, **kwargs):
     body = request.body
     event_json = json.loads(body.decode("utf-8"))

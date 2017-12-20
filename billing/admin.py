@@ -4,4 +4,4 @@ from billing.models import Plan
 
 @admin.register(Plan)
 class PlanAdmin(admin.ModelAdmin):
-    exclude = ("stripe_id", "created", "metadata", "livemode")
+    exclude = ("stripe_id", "created", "livemode")

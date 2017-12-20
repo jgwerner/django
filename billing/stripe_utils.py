@@ -106,6 +106,14 @@ def create_stripe_customer_from_user(auth_user):
     return customer
 
 
+def update_plan_in_stripe(data: dict):
+    stripe_id = data.pop("id")
+    stripe_obj = stripe.Plan.retrieve(stripe_id)
+    for attr, val in data.items():
+        setattr(stripe_obj, attr, val)
+    stripe_obj.save()
+
+
 def create_plan_in_stripe(validated_data):
     plan_stripe_id = validated_data.get('name').lower().replace(" ", "-")
     try:
