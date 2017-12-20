@@ -26,6 +26,7 @@ class MeteredBillingData:
         self.plan_limit = self.subscription.plan.metadata.get('gb_hours')
         self.usage = usage
         self.usage_percent = Decimal((self.usage / self.plan_limit) * 100)
+        self.stop_all_servers = False
 
     def __str__(self):
         return f"{self.user}: {self.usage} GB of {self.plan_limit} GB - {self.usage_percent}%."
@@ -71,13 +72,16 @@ class MeteredBillingData:
             if self.usage_percent >= threshold:
                 notif = self._notify(notification_type)
                 if threshold == 100 and self.subscription.plan.stripe_id == "threeblades-free-plan":
-                    servers = Server.objects.filter(created_by=self.user,
-                                                    is_active=True)
-                    to_stop = filter(lambda server: server.is_running(), servers)
-                    for svr in to_stop:
-                        stop_server(svr)
+                    self.stop_all_servers = True
+                    log.info(f"Will be stopping all servers for user {self.user.username} "
+                             f"because they are on the free plan and have exceeded the 100% threshold.")
                 break
         return notif
+
+    def update_invoice(self):
+        self.invoice.metadata['raw_usage'] = self.usage
+        self.invoice.metadata['usage_percent'] = self.usage_percent
+        self.invoice.save()
 
 
 def calculate_usage_for_period(closing_from: datetime=None, closing_to: datetime=None) -> dict:
@@ -146,6 +150,8 @@ def calculate_usage_for_period(closing_from: datetime=None, closing_to: datetime
             usage_data = MeteredBillingData(user=user,
                                             invoice=inv,
                                             usage=usage_in_gb_hours)
+            # TODO: This may be a performance concern
+            usage_data.update_invoice()
             user_runs_mapping[user.pk] = usage_data
 
             notif = usage_data.create_notification_if_necessary(notification_type)
