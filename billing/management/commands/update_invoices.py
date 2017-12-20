@@ -15,6 +15,6 @@ class Command(BaseCommand):
         # Something about this query makes me feel like it might be incorrect
         # TODO: Write a unit test for this
         servers_to_stop = Server.objects.filter(project__collaborator__user__pk__in=[shutdown_users],
-                                                owner=True)
+                                                project__collaborator__owner=True)
         for server in servers_to_stop:
             stop_server.apply_async(server)
