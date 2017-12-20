@@ -45,7 +45,7 @@ class ECSEvents:
             method='POST',
             object_id=self.url_kwargs['server_id'],
             content_type='server',
-            state=4,
+            state=4,  # actions.models.Action.SUCCESS
             user_agent="ECS stats",
             start_date=event['detail']['createdAt']
         )
