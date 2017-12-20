@@ -72,7 +72,7 @@ describe('actions', () => {
     },
   }
 
-  it.skip('GET 5 actions should return 5 actions', async () => {
+  it.skip('GET 5 actions should return 5 actions | DISABLED', async () => {
     let uri = tools.get_request_uri('actions/')
     let limit = 5
     uri += '?limit=' + limit

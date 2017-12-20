@@ -16,14 +16,7 @@ const invalid_login = {
 }
 
 describe('auth/jwt-token-auth/', () => {
-  const schema = {
-    type: 'object',
-    properties: {
-      token: {
-        type: 'string',
-      },
-    },
-  }
+  const schema = tools.get_schema('auth', 'jwt-token-auth/')
 
   it('POST valid credentials should provide an authorization token', async () => {
     const response = await chakram.post(auth_uri, valid_login)
@@ -39,14 +32,7 @@ describe('auth/jwt-token-auth/', () => {
 
 describe('auth/jwt-token-refresh/', () => {
   const refresh_uri = tools.get_request_uri('auth/jwt-token-refresh/', true)
-  const schema = {
-    type: 'object',
-    properties: {
-      token: {
-        type: 'string',
-      },
-    },
-  }
+  const schema = tools.get_schema('auth', 'jwt-token-refresh/')
 
   it('POST valid authentication token should return a valid refreshed token', async () => {
     const response = await chakram.post(auth_uri, valid_login)
@@ -118,7 +104,7 @@ describe('auth/temp-token-auth/', () => {
 describe('auth/register/', () => {
   const new_user = {
     username: faker.internet.userName(),
-    email: faker.internet.email(),
+    email: faker.internet.exampleEmail(),
     first_name: faker.name.firstName(),
     last_name: faker.name.lastName(),
     password: faker.internet.password(),

@@ -66,7 +66,7 @@ describe('users/profiles/', () => {
   beforeEach(() => {
     this.new_user = {
       username: faker.internet.userName(),
-      email: faker.internet.email(),
+      email: faker.internet.exampleEmail(),
       first_name: faker.name.firstName(),
       last_name: faker.name.lastName(),
       password: faker.internet.password(),
@@ -132,7 +132,7 @@ describe('users/{user_id}/emails/', async () => {
 
   beforeEach(() => {
     this.email = {
-      address: faker.internet.email(),
+      address: faker.internet.exampleEmail(),
       public: true,
       unsubscribed: true,
     }
@@ -158,7 +158,7 @@ describe('users/{user_id}/emails/', async () => {
 
   it('PUT changing the address should return the new address', async () => {
     let modified_email = JSON.parse(JSON.stringify(this.email))
-    modified_email.address = faker.internet.email()
+    modified_email.address = faker.internet.exampleEmail()
     const response = await chakram.post(email_uri, this.email, this.options)
     expect(response).to.have.status(201)
     expect(response).comprise.of.json(this.email)
@@ -172,7 +172,7 @@ describe('users/{user_id}/emails/', async () => {
 
   it('PATCH changing the address should return the new address', async () => {
     let modified_email = JSON.parse(JSON.stringify(this.email))
-    modified_email.address = faker.internet.email()
+    modified_email.address = faker.internet.exampleEmail()
     const response = await chakram.post(email_uri, this.email, this.options)
     expect(response).to.have.status(201)
     expect(response).comprise.of.json(this.email)
@@ -218,9 +218,9 @@ describe('users/{user_id}/api-key/', () => {
     expect(response).to.have.schema(schema)
   })
 
-  it.skip('POST refresh key should retrieve a new valid api key', async () => {
+  it.skip('POST refresh key should retrieve a new valid api key | endpoint missing', async () => {
     const refresh_uri = api_key_uri + 'reset/'
-    const response = await chakram.post(api_key_uri + 'reset/', {}, this.options)
+    const response = await chakram.post(refresh_uri, {}, this.options)
     expect(response).to.have.status(201)
     expect(response).to.have.schema(schema)
   })

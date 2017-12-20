@@ -1,10 +1,11 @@
 const request = require('request-promise')
 const util = require('util')
 const config = require('./config')
+const faker = require('faker')
 
-let login = async (username, password) => {
-  let uri = get_request_uri('auth/jwt-token-auth/', true)
-  let options = {
+const login = async (username, password) => {
+  const uri = get_request_uri('auth/jwt-token-auth/', true)
+  const options = {
     uri: uri,
     json: {
       username: username,
@@ -18,7 +19,7 @@ let login = async (username, password) => {
   return response.token
 }
 
-let getToken = async (username, password, refresh = false) => {
+const getToken = async (username, password, refresh = false) => {
   if (refresh) {
     global.token = undefined
   }
@@ -34,7 +35,7 @@ let getToken = async (username, password, refresh = false) => {
   return global.token
 }
 
-let get_request_uri = (api_path, exclude_version = false) => {
+const get_request_uri = (api_path, exclude_version = false) => {
   let uri = util.format('%s:%s/%s/%s', config.host, config.port, config.version, api_path)
   if (exclude_version) {
     uri = uri.replace('/' + config.version, '')
@@ -42,7 +43,35 @@ let get_request_uri = (api_path, exclude_version = false) => {
   return uri
 }
 
+const generate_project = () => {
+  return {
+    name: faker.lorem.words(1) + faker.random.number(9999999),
+    description: faker.lorem.sentence(),
+    private: true,
+    copying_enabled: true,
+  }
+}
+
+const generate_server = server_size => {
+  return {
+    name: faker.lorem.words(1) + faker.random.number(99999),
+    image_name: 'datascience-notebook',
+    server_size: server_size,
+    config: {
+      type: 'restful',
+    },
+  }
+}
+
+const get_schema = (api, endpoint) => {
+  const schema_file = util.format('./schemas/%s', api)
+  return require(schema_file)[endpoint]
+}
+
 module.exports = {
   login: getToken,
   get_request_uri: get_request_uri,
+  generate_project: generate_project,
+  generate_server: generate_server,
+  get_schema: get_schema,
 }
