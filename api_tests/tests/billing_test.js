@@ -1,8 +1,8 @@
 const chakram = require('chakram')
 const util = require('util')
-const config = require('./config')
-const tools = require('./test_utils')
-const generator = require('./generator')
+const config = require('../config')
+const tools = require('../test_utils')
+const generator = require('../generator')
 const expect = chakram.expect
 
 const namespace = config.username

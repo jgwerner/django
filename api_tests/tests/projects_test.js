@@ -1,8 +1,8 @@
 const chakram = require('chakram')
 const util = require('util')
-const config = require('./config')
-const tools = require('./test_utils')
-const generator = require('./generator')
+const config = require('../config')
+const tools = require('../test_utils')
+const generator = require('../generator')
 const fs = require('fs')
 const expect = chakram.expect
 
@@ -117,10 +117,7 @@ describe('{namespace}/projects/', () => {
 
     const put_response = await chakram.put(uri, mod_proj, this.options)
     expect(put_response).to.have.status(200)
-
-    const get_response = await chakram.get(uri, this.options)
-    expect(get_response).to.have.status(200)
-    expect(get_response).to.comprise.of.json(mod_proj)
+    expect(put_response).to.comprise.of.json(mod_proj)
   })
 
   it('PATCH a project should replace the project', async () => {
@@ -133,10 +130,7 @@ describe('{namespace}/projects/', () => {
 
     const patch_response = await chakram.patch(project_uri, mod_proj, this.options)
     expect(patch_response).to.have.status(200)
-
-    const get_response = await chakram.get(project_uri, this.options)
-    expect(get_response).to.have.status(200)
-    expect(get_response).to.comprise.of.json(mod_proj)
+    expect(patch_response).to.comprise.of.json(mod_proj)
   })
 
   it('POST copy a project should create a new copy of the project', async () => {

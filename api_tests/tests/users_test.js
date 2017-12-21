@@ -1,9 +1,9 @@
 const chakram = require('chakram')
 const util = require('util')
-const config = require('./config')
-const tools = require('./test_utils')
 const faker = require('faker')
-const generator = require('./generator')
+const config = require('../config')
+const tools = require('../test_utils')
+const generator = require('../generator')
 const expect = chakram.expect
 
 before(async () => {
@@ -146,13 +146,6 @@ describe('users/{user_id}/api-key/', () => {
   it('GET user api key should retrieve a valid api key', async () => {
     const response = await chakram.get(api_key_uri, this.options)
     expect(response).to.have.status(200)
-    expect(response).to.have.schema(schema)
-  })
-
-  it.skip('POST refresh key should retrieve a new valid api key | endpoint missing', async () => {
-    const refresh_uri = api_key_uri + 'reset/'
-    const response = await chakram.post(refresh_uri, {}, this.options)
-    expect(response).to.have.status(201)
     expect(response).to.have.schema(schema)
   })
 })
