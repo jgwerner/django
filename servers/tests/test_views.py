@@ -553,6 +553,23 @@ class ServerRunStatisticsTestCase(APITestCase):
         stats = ServerRunStatistics.objects.get(server=server)
         self.assertEqual(stats.stop, stop)
 
+    def test_run_stats_is_created_with_owner(self):
+        server = ServerFactory(project=self.project)
+        url = reverse('serverrunstatistics-list', kwargs={
+            'namespace': self.project.get_owner_name(),
+            'project_project': str(self.project.pk),
+            'server_server': str(server.pk),
+            'version': settings.DEFAULT_VERSION
+        })
+        data = dict(
+            start=timezone.now(),
+        )
+        resp = self.client.post(url, data)
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        run_stats = ServerRunStatistics.objects.filter(server=server).first()
+        self.assertIsNotNone(run_stats)
+        self.assertEqual(run_stats.owner, self.project.owner)
+
 
 class ServerRunStatisticsTestCaseWithName(APITestCase):
     def setUp(self):
