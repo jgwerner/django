@@ -23,7 +23,7 @@ from .consumers import ServerStatusConsumer
 from .tasks import start_server, stop_server, terminate_server, deploy, delete_deployment
 from .permissions import ServerChildPermission, ServerActionPermission
 from . import serializers, models
-from .utils import get_server_usage
+from .utils import get_server_usage, server_can_be_started
 
 log = logging.getLogger('servers')
 jwt_response_payload_handler = api_settings.JWT_RESPONSE_PAYLOAD_HANDLER
@@ -54,10 +54,12 @@ class ServerViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
 @api_view(['post'])
 @permission_classes([IsAuthenticated, ServerActionPermission, TeamGroupPermission])
 def start(request, version, *args, **kwargs):
-    start_server.apply_async(
-        args=[kwargs.get('server')],
-        task_id=str(request.action.pk)
-    )
+    server = models.Server.objects.tbs_get(kwargs.get("server"))
+    if server.can_be_started:
+        start_server.apply_async(
+            args=[server],
+            task_id=str(request.action.pk)
+        )
     return Response(status=status.HTTP_201_CREATED)
 
 

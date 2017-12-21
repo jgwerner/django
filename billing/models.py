@@ -47,6 +47,14 @@ class Customer(StripeModel):
         return has_sub
 
     @property
+    def current_invoice(self):
+        try:
+            invoice = self.invoice_set.get(open=True)
+        except Invoice.DoesNotExist:
+            invoice = None
+        return invoice
+
+    @property
     def namespace_name(self):
         return self.user.username
 
