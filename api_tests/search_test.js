@@ -2,7 +2,6 @@ const chakram = require('chakram')
 const util = require('util')
 const config = require('./config')
 const tools = require('./test_utils')
-const faker = require('faker')
 const expect = chakram.expect
 
 const namespace = config.username
@@ -18,27 +17,7 @@ before(async () => {
 
 describe('{namespace}/search/', () => {
   const search_uri = tools.get_request_uri(util.format('%s/search/', namespace))
-  const schema = {
-    type: 'object',
-    properties: {
-      servers: {
-        type: 'object',
-        properties: {
-          results: {
-            type: 'array',
-          },
-        },
-      },
-      users: {
-        type: 'object',
-        properties: {
-          results: {
-            type: 'array',
-          },
-        },
-      },
-    },
-  }
+  const schema = tools.get_schema('search', 'search/')
 
   it('GET search for admin should return admin', async () => {
     const query = '?q=admin'

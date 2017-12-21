@@ -1,0 +1,23 @@
+{
+  "search/": {
+    "type": "object",
+    "properties": {
+      "servers": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array"
+          }
+        }
+      },
+      "users": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array"
+          }
+        }
+      }
+    }
+  }
+}

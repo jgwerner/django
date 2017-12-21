@@ -2,10 +2,11 @@ const chakram = require('chakram')
 const util = require('util')
 const config = require('./config')
 const tools = require('./test_utils')
-const faker = require('faker')
+const generator = require('./generator')
 const expect = chakram.expect
 
-let auth_uri = tools.get_request_uri('auth/jwt-token-auth/', true)
+const auth_uri = tools.get_request_uri('auth/jwt-token-auth/', true)
+const schema = tools.get_schema('auth', 'auth/')
 const valid_login = {
   username: config.username,
   password: config.password,
@@ -16,8 +17,6 @@ const invalid_login = {
 }
 
 describe('auth/jwt-token-auth/', () => {
-  const schema = tools.get_schema('auth', 'jwt-token-auth/')
-
   it('POST valid credentials should provide an authorization token', async () => {
     const response = await chakram.post(auth_uri, valid_login)
     expect(response).to.have.status(201)
@@ -32,7 +31,6 @@ describe('auth/jwt-token-auth/', () => {
 
 describe('auth/jwt-token-refresh/', () => {
   const refresh_uri = tools.get_request_uri('auth/jwt-token-refresh/', true)
-  const schema = tools.get_schema('auth', 'jwt-token-refresh/')
 
   it('POST valid authentication token should return a valid refreshed token', async () => {
     const response = await chakram.post(auth_uri, valid_login)
@@ -51,14 +49,6 @@ describe('auth/jwt-token-refresh/', () => {
 
 describe('auth/jwt-token-verify/', () => {
   const verify_uri = tools.get_request_uri('auth/jwt-token-verify/', true)
-  const schema = {
-    type: 'object',
-    properties: {
-      token: {
-        type: 'string',
-      },
-    },
-  }
 
   it('POST valid authentication token should return return the verified token', async () => {
     const response = await chakram.post(auth_uri, valid_login)
@@ -77,14 +67,6 @@ describe('auth/jwt-token-verify/', () => {
 
 describe('auth/temp-token-auth/', () => {
   const temp_token = tools.get_request_uri('auth/temp-token-auth/', true)
-  const schema = {
-    type: 'object',
-    properties: {
-      token: {
-        type: 'string',
-      },
-    },
-  }
 
   it('GET valid login should return a valid temp token', async () => {
     const response = await chakram.post(auth_uri, valid_login)
@@ -102,18 +84,7 @@ describe('auth/temp-token-auth/', () => {
 })
 
 describe('auth/register/', () => {
-  const new_user = {
-    username: faker.internet.userName(),
-    email: faker.internet.exampleEmail(),
-    first_name: faker.name.firstName(),
-    last_name: faker.name.lastName(),
-    password: faker.internet.password(),
-    profile: {
-      bio: faker.lorem.sentence(),
-      location: faker.address.country(),
-      company: faker.company.companyName(),
-    },
-  }
+  const new_user = generator.user()
   const register_uri = tools.get_request_uri('auth/register/', true)
 
   it('POST valid username should return a valid user object', async () => {

@@ -1,7 +1,6 @@
 const request = require('request-promise')
 const util = require('util')
 const config = require('./config')
-const faker = require('faker')
 
 const login = async (username, password) => {
   const uri = get_request_uri('auth/jwt-token-auth/', true)
@@ -43,26 +42,6 @@ const get_request_uri = (api_path, exclude_version = false) => {
   return uri
 }
 
-const generate_project = () => {
-  return {
-    name: faker.lorem.words(1) + faker.random.number(9999999),
-    description: faker.lorem.sentence(),
-    private: true,
-    copying_enabled: true,
-  }
-}
-
-const generate_server = server_size => {
-  return {
-    name: faker.lorem.words(1) + faker.random.number(99999),
-    image_name: 'datascience-notebook',
-    server_size: server_size,
-    config: {
-      type: 'restful',
-    },
-  }
-}
-
 const get_schema = (api, endpoint) => {
   const schema_file = util.format('./schemas/%s', api)
   return require(schema_file)[endpoint]
@@ -71,7 +50,5 @@ const get_schema = (api, endpoint) => {
 module.exports = {
   login: getToken,
   get_request_uri: get_request_uri,
-  generate_project: generate_project,
-  generate_server: generate_server,
   get_schema: get_schema,
 }

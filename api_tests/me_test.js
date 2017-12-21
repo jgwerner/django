@@ -2,7 +2,7 @@ const chakram = require('chakram')
 const util = require('util')
 const config = require('./config')
 const tools = require('./test_utils')
-const faker = require('faker')
+const generator = require('./generator')
 const expect = chakram.expect
 
 before(async () => {
@@ -17,26 +17,7 @@ before(async () => {
 const teams_uri = tools.get_request_uri('me/teams/')
 
 describe('me', () => {
-  const me_schema = {
-    type: 'object',
-    properties: {
-      id: {
-        type: 'string',
-      },
-      username: {
-        type: 'string',
-      },
-      email: {
-        type: 'string',
-      },
-      first_name: {
-        type: 'string',
-      },
-      last_name: {
-        type: 'string',
-      },
-    },
-  }
+  const me_schema = tools.get_schema('me', 'me/')
 
   it('GET should return me', async () => {
     const uri = tools.get_request_uri('me')
@@ -51,12 +32,7 @@ describe('me', () => {
 
 describe('me/teams', () => {
   beforeEach(() => {
-    this.team_json = {
-      name: faker.lorem.words(1),
-      description: faker.lorem.sentence(),
-      website: 'http://' + faker.internet.domainName(),
-      location: faker.address.country(),
-    }
+    this.team_json = generator.team()
   })
   afterEach(async () => {
     if (this.team) {
@@ -122,13 +98,7 @@ describe('me/teams', () => {
 
 describe('me/teams/{team}/groups', () => {
   before(async () => {
-    this.uri
-    this.team_json = {
-      name: faker.lorem.words(1),
-      description: faker.lorem.sentence(),
-      website: 'http://' + faker.internet.domainName(),
-      location: faker.address.country(),
-    }
+    this.team_json = generator.team()
     const response = await chakram.post(teams_uri, this.team_json, this.options)
     expect(response).to.have.status(201)
     expect(response).to.comprise.of.json(this.team_json)
@@ -143,57 +113,17 @@ describe('me/teams/{team}/groups', () => {
   })
 
   it('GET groups should return a list of groups', async () => {
-    const schema = {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          id: {
-            type: 'string',
-          },
-          team: {
-            type: 'string',
-          },
-          name: {
-            type: 'string',
-          },
-          permissions: {
-            type: 'array',
-            items: {
-              type: 'string',
-            },
-          },
-          members: {
-            type: 'array',
-            items: {
-              type: 'string',
-            },
-          },
-          private: {
-            type: 'boolean',
-          },
-          parent: {
-            type: ['null', 'string'],
-          },
-        },
-      },
-    }
+    const schema = tools.get_schema('me', 'groups/')
     const response = await chakram.get(this.uri, this.options)
     expect(response).to.have.status(200)
     expect(response).to.have.schema(schema)
   })
 
   it('POST a group should return a valid group', async () => {
-    let group_parent
-    const group = {
-      name: faker.lorem.words(1),
-      permissions: [],
-      private: true,
-      parent: '',
-    }
+    const group = generator.group()
     const response = await chakram.get(this.uri, this.options)
     expect(response).to.have.status(200)
-    group_parent = response.body[0].name
+    const group_parent = response.body[0].name
     group.parent = response.body[0].id
 
     const post_response = await chakram.post(this.uri, group, this.options)

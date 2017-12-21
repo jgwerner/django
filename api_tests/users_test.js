@@ -3,6 +3,7 @@ const util = require('util')
 const config = require('./config')
 const tools = require('./test_utils')
 const faker = require('faker')
+const generator = require('./generator')
 const expect = chakram.expect
 
 before(async () => {
@@ -16,66 +17,10 @@ before(async () => {
 
 describe('users/profiles/', () => {
   const profile_uri = tools.get_request_uri('users/profiles/')
-  const user_schema = {
-    type: 'array',
-    items: {
-      type: 'object',
-      properties: {
-        id: {
-          type: 'string',
-        },
-        username: {
-          type: 'string',
-        },
-        email: {
-          type: 'string',
-        },
-        first_name: {
-          type: 'string',
-        },
-        last_name: {
-          type: 'string',
-        },
-        profile: {
-          type: 'object',
-          properties: {
-            bio: {
-              type: ['null', 'string'],
-            },
-            url: {
-              type: ['null', 'string'],
-            },
-            location: {
-              type: ['null', 'string'],
-            },
-            company: {
-              type: ['null', 'string'],
-            },
-            timezone: {
-              type: ['null', 'string'],
-            },
-            avatar: {
-              type: ['null', 'string'],
-            },
-          },
-        },
-      },
-    },
-  }
+  const user_schema = tools.get_schema('users', 'profiles/')
 
   beforeEach(() => {
-    this.new_user = {
-      username: faker.internet.userName(),
-      email: faker.internet.exampleEmail(),
-      first_name: faker.name.firstName(),
-      last_name: faker.name.lastName(),
-      password: faker.internet.password(),
-      profile: {
-        bio: faker.lorem.sentence(),
-        location: faker.address.country(),
-        company: faker.company.companyName(),
-      },
-    }
+    this.new_user = generator.user()
   })
 
   it('GET all user profiles should return a list of profiles', async () => {
@@ -85,13 +30,12 @@ describe('users/profiles/', () => {
   })
 
   it('DELETE deleting a new user should remove the user', async () => {
-    let user_uri
     const response = await chakram.post(profile_uri, this.new_user, this.options)
     let expect_json = JSON.parse(JSON.stringify(this.new_user))
     delete expect_json.password
     expect(response).to.have.status(201)
     expect(response).to.comprise.of.json(expect_json)
-    user_uri = profile_uri + response.body.id + '/'
+    const user_uri = profile_uri + response.body.id + '/'
 
     const del_response = await chakram.delete(user_uri, {}, this.options)
     expect(del_response).to.have.status(204)
@@ -101,14 +45,13 @@ describe('users/profiles/', () => {
   })
 
   it('PATCH changing a users email should update the email', async () => {
-    let user_uri
     let modified_user = JSON.parse(JSON.stringify(this.new_user))
     modified_user.profile.bio = faker.lorem.sentence()
     delete modified_user.username
     delete modified_user.password
     const response = await chakram.post(profile_uri, this.new_user, this.options)
     expect(response).to.have.status(201)
-    user_uri = profile_uri + response.body.id + '/'
+    const user_uri = profile_uri + response.body.id + '/'
 
     const patch_response = await chakram.patch(user_uri, modified_user, this.options)
     expect(patch_response).to.have.status(200)
@@ -119,8 +62,7 @@ describe('users/profiles/', () => {
 })
 
 describe('users/{user_id}/emails/', async () => {
-  let me
-  let email_uri
+  let me, email_uri
   before(async () => {
     const me_uri = tools.get_request_uri('me/')
 
@@ -131,11 +73,7 @@ describe('users/{user_id}/emails/', async () => {
   })
 
   beforeEach(() => {
-    this.email = {
-      address: faker.internet.exampleEmail(),
-      public: true,
-      unsubscribed: true,
-    }
+    this.email = generator.email()
   })
 
   afterEach(async () => {
@@ -195,14 +133,7 @@ describe('users/{user_id}/emails/', async () => {
 })
 
 describe('users/{user_id}/api-key/', () => {
-  let schema = {
-    type: 'object',
-    properties: {
-      token: {
-        type: 'string',
-      },
-    },
-  }
+  let schema = tools.get_schema('users', 'api-key/')
   let api_key_uri
   before(async () => {
     const me_uri = tools.get_request_uri('me/')
@@ -226,14 +157,9 @@ describe('users/{user_id}/api-key/', () => {
   })
 })
 
-describe('users/{user_id}/ssh-key', () => {
+describe('users/{user_id}/ssh-key/', () => {
   let ssh_key_uri
-  const ssh_schema = {
-    type: 'object',
-    key: {
-      type: 'string',
-    },
-  }
+  const ssh_schema = tools.get_schema('users', 'ssh-key/')
   before(async () => {
     const me_uri = tools.get_request_uri('me/')
     const response = await chakram.get(me_uri, this.options)

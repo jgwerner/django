@@ -1,0 +1,164 @@
+{
+  "cards/": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": ["null", "string"]
+      },
+      "address_line1": {
+        "type": ["null", "string"]
+      },
+      "address_line2": {
+        "type": ["null", "string"]
+      },
+      "address_city": {
+        "type": ["null", "string"]
+      },
+      "address_state": {
+        "type": ["null", "string"]
+      },
+      "address_zip": {
+        "type": ["null", "string"]
+      },
+      "address_country": {
+        "type": ["null", "string"]
+      },
+      "exp_month": {
+        "type": "integer"
+      },
+      "exp_year": {
+        "type": "integer"
+      },
+      "id": {
+        "type": "string"
+      },
+      "address_line1_check": {
+        "type": ["null", "string"]
+      },
+      "address_zip_check": {
+        "type": ["null", "string"]
+      },
+      "brand": {
+        "type": "string"
+      },
+      "cvc_check": {
+        "type": ["null", "string"]
+      },
+      "last4": {
+        "type": "string"
+      },
+      "fingerprint": {
+        "type": "string"
+      },
+      "funding": {
+        "type": "string"
+      },
+      "stripe_id": {
+        "type": "string"
+      },
+      "created": {
+        "type": "string"
+      },
+      "customer": {
+        "type": "string"
+      }
+    }
+  },
+  "plans/": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "stripe_id": {
+        "type": "string"
+      },
+      "created": {
+        "type": "string"
+      },
+      "metadata": {
+        "type": ["null", "string"]
+      },
+      "livemode": {
+        "type": "boolean"
+      },
+      "amount": {
+        "type": "integer"
+      },
+      "currency": {
+        "type": "string"
+      },
+      "interval": {
+        "type": "string"
+      },
+      "interval_count": {
+        "type": "integer"
+      },
+      "name": {
+        "type": "string"
+      },
+      "statement_descriptor": {
+        "type": ["null", "string"]
+      },
+      "trial_period_days": {
+        "type": "integer"
+      }
+    }
+  },
+  "subscriptions/": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "plan": {
+        "type": "string"
+      },
+      "stripe_id": {
+        "type": "string"
+      },
+      "created": {
+        "type": "string"
+      },
+      "livemode": {
+        "type": "boolean"
+      },
+      "application_fee_percent": {
+        "type": ["null", "string"]
+      },
+      "cancel_at_period_end": {
+        "type": "boolean"
+      },
+      "canceled_at": {
+        "type": ["null", "string"]
+      },
+      "current_period_start": {
+        "type": "string"
+      },
+      "current_period_end": {
+        "type": "string"
+      },
+      "start": {
+        "type": "string"
+      },
+      "ended_at": {
+        "type": ["null", "string"]
+      },
+      "quantity": {
+        "type": "integer"
+      },
+      "status": {
+        "type": "string"
+      },
+      "trial_start": {
+        "type": "string"
+      },
+      "trial_end": {
+        "type": "string"
+      },
+      "customer": {
+        "type": "string"
+      }
+    }
+  }
+}

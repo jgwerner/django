@@ -2,7 +2,7 @@ const chakram = require('chakram')
 const util = require('util')
 const config = require('./config')
 const tools = require('./test_utils')
-const faker = require('faker')
+const generator = require('./generator')
 const fs = require('fs')
 const expect = chakram.expect
 
@@ -19,7 +19,7 @@ before(async () => {
 
   // seed a project for tests
   const proj_uri = tools.get_request_uri(util.format('%s/projects/', namespace))
-  const shared_proj = tools.generate_project()
+  const shared_proj = generator.project()
 
   const response = await chakram.post(proj_uri, shared_proj, this.options)
   expect(response).to.have.status(201)
@@ -33,7 +33,7 @@ before(async () => {
   this.servers_uri = tools.get_request_uri(
     util.format('%s/projects/%s/servers/', namespace, this.shared_proj.id),
   )
-  const server = tools.generate_server(this.nano.id)
+  const server = generator.server(this.nano.id)
   const server_response = await chakram.post(this.servers_uri, server, this.options)
   expect(response).to.have.status(201)
   this.shared_server = server_response.body
@@ -44,41 +44,7 @@ before(async () => {
 
 describe('{namespace}/projects/', () => {
   let proj_uri = tools.get_request_uri(util.format('%s/projects/', namespace))
-  let object_schema = {
-    type: 'object',
-    properties: {
-      id: {
-        type: 'string',
-      },
-      name: {
-        type: 'string',
-      },
-      description: {
-        type: 'string',
-      },
-      private: {
-        type: 'boolean',
-      },
-      last_updated: {
-        type: 'string',
-      },
-      team: {
-        type: ['null', 'string'],
-      },
-      owner: {
-        type: 'string',
-      },
-      collaborators: {
-        type: 'array',
-        items: {
-          type: 'string',
-        },
-      },
-      copying_enabled: {
-        type: 'boolean',
-      },
-    },
-  }
+  let object_schema = tools.get_schema('projects', 'projects/')
   let array_schema = {
     type: 'array',
     items: object_schema,
@@ -94,7 +60,7 @@ describe('{namespace}/projects/', () => {
   })
 
   it('POST a valid project should create the project', async () => {
-    let new_proj = tools.generate_project()
+    let new_proj = generator.project()
     let response = await chakram.post(proj_uri, new_proj, this.options)
     expect(response).to.have.status(201)
     expect(response).to.comprise.of.json(new_proj)
@@ -102,7 +68,7 @@ describe('{namespace}/projects/', () => {
   })
 
   it('GET all projects should return a list of projects', async () => {
-    let new_proj = tools.generate_project()
+    let new_proj = generator.project()
     const post_response = await chakram.post(proj_uri, new_proj, this.options)
     expect(post_response).to.have.status(201)
     expect(post_response).to.comprise.of.json(new_proj)
@@ -114,7 +80,7 @@ describe('{namespace}/projects/', () => {
   })
 
   it('GET specific project should return the project', async () => {
-    let new_proj = tools.generate_project()
+    let new_proj = generator.project()
     const post_response = await chakram.post(proj_uri, new_proj, this.options)
     expect(post_response).to.have.status(201)
     expect(post_response).to.comprise.of.json(new_proj)
@@ -128,12 +94,11 @@ describe('{namespace}/projects/', () => {
   })
 
   it.skip('DELETE a project should remove the project | ISSUE #624', async () => {
-    let project_uri
-    let new_proj = tools.generate_project()
+    const new_proj = generator.project()
     const post_response = await chakram.post(proj_uri, new_proj, this.options)
     expect(post_response).to.have.status(201)
     expect(post_response).to.comprise.of.json(new_proj)
-    project_uri = proj_uri + response.body.id + '/'
+    const project_uri = proj_uri + response.body.id + '/'
 
     const delete_response = await chakram.delete(project_uri, {}, this.options)
     expect(delete_response).to.have.status(204)
@@ -143,8 +108,8 @@ describe('{namespace}/projects/', () => {
   })
 
   it('PUT a project should replace the project', async () => {
-    let new_proj = tools.generate_project()
-    let mod_proj = tools.generate_project()
+    const new_proj = generator.project()
+    const mod_proj = generator.project()
     const post_response = await chakram.post(proj_uri, new_proj, this.options)
     expect(post_response).to.have.status(201)
     expect(post_response).to.comprise.of.json(new_proj)
@@ -159,13 +124,12 @@ describe('{namespace}/projects/', () => {
   })
 
   it('PATCH a project should replace the project', async () => {
-    let project_uri
-    let new_proj = tools.generate_project()
-    let mod_proj = tools.generate_project()
+    const new_proj = generator.project()
+    const mod_proj = generator.project()
     const post_response = await chakram.post(proj_uri, new_proj, this.options)
     expect(post_response).to.have.status(201)
     expect(post_response).to.comprise.of.json(new_proj)
-    project_uri = proj_uri + post_response.body.id + '/'
+    const project_uri = proj_uri + post_response.body.id + '/'
 
     const patch_response = await chakram.patch(project_uri, mod_proj, this.options)
     expect(patch_response).to.have.status(200)
@@ -176,13 +140,13 @@ describe('{namespace}/projects/', () => {
   })
 
   it('POST copy a project should create a new copy of the project', async () => {
-    let new_proj = tools.generate_project()
+    let new_proj = generator.project()
     const proj_response = await chakram.post(proj_uri, new_proj, this.options)
     expect(proj_response).to.have.status(201)
     expect(proj_response).to.comprise.of.json(new_proj)
     this.project_id = proj_response.body.id
-    let copy_uri = proj_uri + 'project-copy/'
-    let project = { project: this.project_id }
+    const copy_uri = proj_uri + 'project-copy/'
+    const project = { project: this.project_id }
 
     const copy_response = await chakram.post(copy_uri, project, this.options)
     new_proj.name += '-1'
@@ -191,27 +155,27 @@ describe('{namespace}/projects/', () => {
   })
 
   it('POST copy check on project with copy enabled should return 200', async () => {
-    let new_proj = tools.generate_project()
+    const new_proj = generator.project()
     const proj_response = await chakram.post(proj_uri, new_proj, this.options)
     expect(proj_response).to.have.status(201)
     expect(proj_response).to.comprise.of.json(new_proj)
     this.project_id = proj_response.body.id
-    let copy_uri = proj_uri + 'project-copy-check/'
-    let project = { project: this.project_id }
+    const copy_uri = proj_uri + 'project-copy-check/'
+    const project = { project: this.project_id }
 
     const copy_response = await chakram.post(copy_uri, project, this.options)
     expect(copy_response).to.have.status(200)
   })
 
   it('POST copy check on project with copy disabled should return 404', async () => {
-    let new_proj = tools.generate_project()
+    let new_proj = generator.project()
     new_proj.copying_enabled = false
     const proj_response = await chakram.post(proj_uri, new_proj, this.options)
     expect(proj_response).to.have.status(201)
     expect(proj_response).to.comprise.of.json(new_proj)
     this.project_id = proj_response.body.id
-    let copy_uri = proj_uri + 'project-copy-check/'
-    let project = { project: this.project_id }
+    const copy_uri = proj_uri + 'project-copy-check/'
+    const project = { project: this.project_id }
 
     const copy_response = await chakram.post(copy_uri, project, this.options)
     expect(copy_response).to.have.status(404)
@@ -220,44 +184,7 @@ describe('{namespace}/projects/', () => {
 
 describe('{namespace}/projects/{project}/collaborators/', () => {
   let collabs_uri, collaborator, project
-  let object_schema = {
-    type: 'object',
-    properties: {
-      id: {
-        type: 'string',
-      },
-      owner: {
-        type: 'boolean',
-      },
-      project: {
-        type: 'string',
-      },
-      user: {
-        type: 'string',
-      },
-      joined: {
-        type: 'string',
-      },
-      username: {
-        type: 'string',
-      },
-      email: {
-        type: 'string',
-      },
-      first_name: {
-        type: 'string',
-      },
-      last_name: {
-        type: 'string',
-      },
-      permissions: {
-        type: 'array',
-        items: {
-          type: 'string',
-        },
-      },
-    },
-  }
+  let object_schema = tools.get_schema('projects', 'collaborators/')
   let array_schema = {
     type: 'array',
     items: object_schema,
@@ -265,20 +192,21 @@ describe('{namespace}/projects/{project}/collaborators/', () => {
   //Create a user and project to be used in the tests.
   before(async () => {
     let prof_uri = tools.get_request_uri('users/profiles/')
-    let new_user = {
-      username: faker.internet.userName(),
-      email: faker.internet.exampleEmail(),
-      first_name: faker.name.firstName(),
-      last_name: faker.name.lastName(),
-      password: faker.internet.password(),
-    }
+    let new_user = generator.user()
+
+    // collab test need their own project to not affect other tests
+    const proj_uri = tools.get_request_uri(util.format('%s/projects/', namespace))
+    const collab_proj = generator.project()
+
+    const proj_response = await chakram.post(proj_uri, collab_proj, this.options)
+    expect(proj_response).to.have.status(201)
 
     const user_response = await chakram.post(prof_uri, new_user, this.options)
     expect(user_response).to.have.status(201)
     collaborator = user_response.body
 
     collabs_uri = tools.get_request_uri(
-      util.format('%s/projects/%s/collaborators/', namespace, this.shared_proj.id),
+      util.format('%s/projects/%s/collaborators/', namespace, proj_response.body.id),
     )
   })
 
@@ -323,29 +251,7 @@ describe('{namespace}/projects/{project}/collaborators/', () => {
 })
 
 describe('{namespace}/projects/{project}/project_files/', () => {
-  const object_schema = {
-    type: 'object',
-    properties: {
-      id: {
-        type: 'string',
-      },
-      author: {
-        type: 'string',
-      },
-      project: {
-        type: 'string',
-      },
-      name: {
-        type: 'string',
-      },
-      path: {
-        type: 'string',
-      },
-      content: {
-        type: ['null', 'string'],
-      },
-    },
-  }
+  const object_schema = tools.get_schema('projects', 'project_files/')
   const array_schema = {
     type: 'array',
     items: object_schema,
@@ -363,7 +269,7 @@ describe('{namespace}/projects/{project}/project_files/', () => {
     }
     const proj_uri = tools.get_request_uri(util.format('%s/projects/', namespace))
 
-    let new_proj = tools.generate_project()
+    let new_proj = generator.project()
     const response = await chakram.post(proj_uri, new_proj, this.options)
     expect(response).to.have.status(201)
     this.files_uri = tools.get_request_uri(
@@ -441,81 +347,21 @@ describe('{namespace}/projects/{project}/project_files/', () => {
 })
 
 describe('{namespace}/projects/{project}/servers/', () => {
-  const object_schema = {
-    type: 'object',
-    properties: {
-      id: {
-        type: 'string',
-      },
-      name: {
-        type: 'string',
-      },
-      created_at: {
-        type: 'string',
-      },
-      image_name: {
-        type: 'string',
-      },
-      server_size: {
-        type: 'string',
-      },
-      startup_script: {
-        type: 'string',
-      },
-      config: {
-        type: 'object',
-        additionalProperties: false,
-        properties: {
-          type: {
-            type: 'string',
-          },
-        },
-      },
-      status: {
-        type: 'string',
-      },
-      connected: {
-        type: 'array',
-        items: {
-          $id: 'kermodebear',
-          title: 'Empty Object',
-          description: "This accepts anything, as long as it's valid JSON.",
-        },
-      },
-      host: {
-        type: 'null',
-      },
-      project: {
-        type: 'string',
-      },
-      created_by: {
-        type: 'string',
-      },
-      endpoint: {
-        type: 'string',
-      },
-      logs_url: {
-        type: 'string',
-      },
-      status_url: {
-        type: 'string',
-      },
-    },
-  }
+  const object_schema = tools.get_schema('projects', 'servers/')
   const array_schema = {
     type: 'array',
     items: object_schema,
   }
 
   it('POST a server should return a new server object', async () => {
-    const server = tools.generate_server(this.nano.id)
+    const server = generator.server(this.nano.id)
     const response = await chakram.post(this.servers_uri, server, this.options)
     expect(response).to.have.status(201)
     expect(response).to.comprise.of.json(server)
   })
 
   it('GET all servers should return a list of servers', async () => {
-    const server = tools.generate_server(this.nano.id)
+    const server = generator.server(this.nano.id)
     const response = await chakram.post(this.servers_uri, server, this.options)
     expect(response).to.have.status(201)
 
@@ -525,7 +371,7 @@ describe('{namespace}/projects/{project}/servers/', () => {
   })
 
   it('GET specific server should return the server', async () => {
-    const server = tools.generate_server(this.nano.id)
+    const server = generator.server(this.nano.id)
     const response = await chakram.post(this.servers_uri, server, this.options)
     expect(response).to.have.status(201)
     const server_uri = this.servers_uri + response.body.id + '/'
@@ -536,8 +382,8 @@ describe('{namespace}/projects/{project}/servers/', () => {
   })
 
   it('PUT a server should replace the server', async () => {
-    const server = tools.generate_server(this.nano.id)
-    const update_server = tools.generate_server(this.nano.id)
+    const server = generator.server(this.nano.id)
+    const update_server = generator.server(this.nano.id)
     const response = await chakram.post(this.servers_uri, server, this.options)
     expect(response).to.have.status(201)
     const server_uri = this.servers_uri + response.body.id + '/'
@@ -548,8 +394,8 @@ describe('{namespace}/projects/{project}/servers/', () => {
   })
 
   it('PATCH a server should update the server', async () => {
-    const server = tools.generate_server(this.nano.id)
-    const update_server = tools.generate_server(this.nano.id)
+    const server = generator.server(this.nano.id)
+    const update_server = generator.server(this.nano.id)
     const response = await chakram.post(this.servers_uri, server, this.options)
     expect(response).to.have.status(201)
     const server_uri = this.servers_uri + response.body.id + '/'
@@ -560,7 +406,7 @@ describe('{namespace}/projects/{project}/servers/', () => {
   })
 
   it('DELETE a server should remove the server', async () => {
-    const server = tools.generate_server(this.nano.id)
+    const server = generator.server(this.nano.id)
     const response = await chakram.post(this.servers_uri, server, this.options)
     expect(response).to.have.status(201)
     const server_uri = this.servers_uri + response.body.id + '/'
@@ -573,6 +419,203 @@ describe('{namespace}/projects/{project}/servers/', () => {
   })
 })
 
-describe('{namespace}/projects/{project}/servers/run-stats/', () => {
-  before(async () => {})
+describe('{namespace}/projects/{project}/servers/{server}/run-stats/', () => {
+  // https://github.com/3Blades/openapi/issues/186
+})
+
+describe('{namespace}/projects/{project}/servers/{server}/ssh-tunnels/', () => {
+  const object_schema = tools.get_schema('projects', 'ssh-tunnels/')
+  const array_schema = {
+    type: 'array',
+    items: object_schema,
+  }
+  before(() => {
+    this.tunnels_uri = tools.get_request_uri(
+      util.format(
+        '%s/projects/%s/servers/%s/ssh-tunnels/',
+        namespace,
+        this.shared_proj.id,
+        this.shared_server.id,
+      ),
+    )
+  })
+  it('POST a SSH tunnel should add a new SSH tunnel', async () => {
+    const ssh_tunnel = generator.ssh_tunnel()
+    const response = await chakram.post(this.tunnels_uri, ssh_tunnel, this.options)
+    expect(response).to.have.status(201)
+    expect(response).to.comprise.of.json(ssh_tunnel)
+    expect(response).to.have.schema(object_schema)
+  })
+  it('GET all tunnels should return a list of tunnels', async () => {
+    const ssh_tunnel = generator.ssh_tunnel()
+    const response = await chakram.post(this.tunnels_uri, ssh_tunnel, this.options)
+    expect(response).to.have.status(201)
+
+    const get_response = await chakram.get(this.tunnels_uri, this.options)
+    expect(get_response).to.have.status(200)
+    expect(get_response).to.have.schema(array_schema)
+  })
+  it('GET specific tunnel should return the tunnel', async () => {
+    const ssh_tunnel = generator.ssh_tunnel()
+    const response = await chakram.post(this.tunnels_uri, ssh_tunnel, this.options)
+    expect(response).to.have.status(201)
+    const tunnel_uri = this.tunnels_uri + response.body.id + '/'
+
+    const get_response = await chakram.get(tunnel_uri, this.options)
+    expect(get_response).to.have.status(200)
+    expect(get_response).to.have.schema(object_schema)
+    expect(get_response).to.comprise.of.json(ssh_tunnel)
+  })
+  it('PUT a modified tunnel should replace the existing tunnel', async () => {
+    const ssh_tunnel = generator.ssh_tunnel()
+    const put_tunnel = generator.ssh_tunnel()
+    const response = await chakram.post(this.tunnels_uri, ssh_tunnel, this.options)
+    expect(response).to.have.status(201)
+    const tunnel_uri = this.tunnels_uri + response.body.id + '/'
+
+    const put_response = await chakram.put(tunnel_uri, put_tunnel, this.options)
+    expect(put_response).to.have.status(200)
+    expect(put_response).to.have.schema(object_schema)
+    expect(put_response).to.comprise.of.json(put_tunnel)
+  })
+  it('PATCH a modified tunnel should update the existing tunnel', async () => {
+    const ssh_tunnel = generator.ssh_tunnel()
+    const patch_tunnel = generator.ssh_tunnel()
+    const response = await chakram.post(this.tunnels_uri, ssh_tunnel, this.options)
+    expect(response).to.have.status(201)
+    const tunnel_uri = this.tunnels_uri + response.body.id + '/'
+
+    const patch_response = await chakram.patch(tunnel_uri, patch_tunnel, this.options)
+    expect(patch_response).to.have.status(200)
+    expect(patch_response).to.have.schema(object_schema)
+    expect(patch_response).to.comprise.of.json(patch_tunnel)
+  })
+  it('DELETE a tunnel should remove the tunnel', async () => {
+    const ssh_tunnel = generator.ssh_tunnel()
+    const response = await chakram.post(this.tunnels_uri, ssh_tunnel, this.options)
+    expect(response).to.have.status(201)
+    const tunnel_uri = this.tunnels_uri + response.body.id + '/'
+
+    const del_response = await chakram.delete(tunnel_uri, {}, this.options)
+    expect(del_response).to.have.status(204)
+
+    const get_response = await chakram.get(tunnel_uri, this.options)
+    expect(get_response).to.have.status(404)
+  })
+})
+
+describe('{namespace}/projects/{project}/servers/{server}/triggers/', () => {
+  const object_schema = tools.get_schema('projects', 'triggers/')
+  const array_schema = {
+    type: 'array',
+    items: object_schema,
+  }
+  before(() => {
+    this.triggers_uri = tools.get_request_uri(
+      util.format(
+        '%s/projects/%s/servers/%s/triggers/',
+        namespace,
+        this.shared_proj.id,
+        this.shared_server.id,
+      ),
+    )
+  })
+  it('POST a trigger should return a new trigger', async () => {
+    const trigger = generator.trigger()
+    const response = await chakram.post(this.triggers_uri, trigger, this.options)
+    expect(response).to.have.status(201)
+    expect(response).to.comprise.of.json(trigger)
+    expect(response).to.have.schema(object_schema)
+  })
+  it('GET all triggers should a list of triggers', async () => {
+    const trigger = generator.trigger()
+    const response = await chakram.post(this.triggers_uri, trigger, this.options)
+    expect(response).to.have.status(201)
+
+    const get_response = await chakram.get(this.triggers_uri, this.options)
+    expect(get_response).to.have.status(200)
+    expect(get_response).to.have.schema(array_schema)
+  })
+  it('GET specific trigger should return the trigger', async () => {
+    const trigger = generator.trigger()
+    const response = await chakram.post(this.triggers_uri, trigger, this.options)
+    expect(response).to.have.status(201)
+    const trigger_uri = this.triggers_uri + response.body.id + '/'
+
+    const get_response = await chakram.get(trigger_uri, this.options)
+    expect(get_response).to.have.status(200)
+    expect(get_response).to.have.schema(object_schema)
+    expect(get_response).to.comprise.of.json(trigger)
+  })
+  it('PUT a modified trigger should replace the trigger', async () => {
+    const trigger = generator.trigger()
+    const put_trigger = generator.trigger()
+    const response = await chakram.post(this.triggers_uri, trigger, this.options)
+    expect(response).to.have.status(201)
+    const trigger_uri = this.triggers_uri + response.body.id + '/'
+
+    const put_response = await chakram.put(trigger_uri, put_trigger, this.options)
+    expect(put_response).to.have.status(200)
+    expect(put_response).to.have.schema(object_schema)
+    expect(put_response).to.comprise.of.json(put_trigger)
+  })
+  it('PATCH a modified trigger should update the trigger', async () => {
+    const trigger = generator.trigger()
+    const patch_trigger = generator.trigger()
+    const response = await chakram.post(this.triggers_uri, trigger, this.options)
+    expect(response).to.have.status(201)
+    const trigger_uri = this.triggers_uri + response.body.id + '/'
+
+    const patch_response = await chakram.patch(trigger_uri, patch_trigger, this.options)
+    expect(patch_response).to.have.status(200)
+    expect(patch_response).to.have.schema(object_schema)
+    expect(patch_response).to.comprise.of.json(patch_trigger)
+  })
+  it('DELETE a trigger should remove the trigger', async () => {
+    const trigger = generator.trigger()
+    const response = await chakram.post(this.triggers_uri, trigger, this.options)
+    expect(response).to.have.status(201)
+    const trigger_uri = this.triggers_uri + response.body.id + '/'
+
+    const del_response = await chakram.delete(trigger_uri, {}, this.options)
+    expect(del_response).to.have.status(204)
+
+    const get_response = await chakram.get(trigger_uri, this.options)
+    expect(get_response).to.have.status(404)
+  })
+})
+
+describe('{namespace}/projects/{project}/servers/{server}/api-key/', () => {
+  const schema = tools.get_schema('projects', 'api-key/')
+  before(() => {
+    this.key_uri = tools.get_request_uri(
+      util.format(
+        '%s/projects/%s/servers/%s/api-key/',
+        namespace,
+        this.shared_proj.id,
+        this.shared_server.id,
+      ),
+    )
+  })
+  it('GET api-key should return a valid token', async () => {
+    const response = await chakram.get(this.key_uri, this.options)
+    expect(response).to.have.status(200)
+    expect(response).to.have.schema(schema)
+  })
+  it('POST reset api-key shourl return a new valid token', async () => {
+    const refresh_uri = this.key_uri + 'reset/'
+    const response = await chakram.post(refresh_uri, undefined, this.options)
+    expect(response).to.have.status(201)
+    expect(response).to.have.schema(schema)
+  })
+  it('POST verify a token should return 200', async () => {
+    const response = await chakram.get(this.key_uri, this.options)
+    expect(response).to.have.status(200)
+    expect(response).to.have.schema(schema)
+    const token = response.body
+    const verify_uri = this.key_uri + 'auth/'
+
+    const verify_response = await chakram.post(verify_uri, token, this.options)
+    expect(response).to.have.status(200)
+  })
 })
