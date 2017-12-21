@@ -22,6 +22,8 @@ class MeteredBillingData:
     def __init__(self, user, invoice, usage):
         self.user = user
         self.invoice = invoice
+        if self.invoice.metadata is None:
+            self.invoice.metadata = {}
         self.subscription = invoice.subscription
         self.plan_limit = self.subscription.plan.metadata.get('gb_hours')
         self.usage = usage
@@ -176,10 +178,23 @@ def calculate_usage_for_period(closing_from: datetime=None, closing_to: datetime
     return user_runs_mapping
 
 
+def shutdown_servers_for_free_users(usage_map: dict):
+    shutdown_users = [pk for pk, bill_data in usage_map.items() if bill_data.stop_all_servers]
+    log.info(f"Shutting down servers for {len(shutdown_users)}.")
+    log.info(f"PKs of users affected: {shutdown_users}")
+    # Something about this query makes me feel like it might be incorrect
+    # TODO: Write a unit test for this
+    servers_to_stop = Server.objects.filter(project__collaborator__user__pk__in=[shutdown_users],
+                                            project__collaborator__owner=True)
+    for server in servers_to_stop:
+        stop_server.apply_async(server)
+
+
 def update_invoices_with_usage(ending_in: int=30):
     end_time = timezone.now() + timedelta(seconds=ending_in * 60)
     current_usage_map = calculate_usage_for_period(closing_from=timezone.now(),
                                                    closing_to=end_time)
+    shutdown_servers_for_free_users(current_usage_map)
     # Something in the following loop is using a LOT of time. is it the Stripe call?
     # No, I'm mocking stripe at the moment.
     for user in current_usage_map:
