@@ -14,7 +14,7 @@ from servers.models import ServerRunStatistics, Server
 from servers.tasks import stop_server
 from notifications.models import Notification, NotificationType
 from notifications.utils import create_notification
-log = logging.getLogger('servers')
+log = logging.getLogger('billing')
 getcontext().prec = 6
 
 
@@ -71,7 +71,7 @@ class MeteredBillingData:
             warning_thresholds = [100, 90, 75]
 
         for threshold in warning_thresholds:
-            already_been_notified = self.invoice.metadata.get("notified_for_threshold") == threshold
+            already_been_notified = self.invoice.metadata.get("notified_for_threshold") == str(threshold)
             if self.usage_percent >= threshold and (not already_been_notified):
                 notif = self._notify(notification_type, threshold)
                 # Should the plan check be for DEFAULT_STRIPE_PLAN_ID instead?
@@ -92,12 +92,11 @@ class MeteredBillingData:
         return notif
 
     def update_invoice(self, threshold: int=None):
-        self.invoice.metadata['raw_usage'] = self.usage
-        self.invoice.metadata['usage_percent'] = self.usage_percent
+        self.invoice.metadata['raw_usage'] = str(self.usage)
+        self.invoice.metadata['usage_percent'] = str(self.usage_percent)
 
         if threshold is not None:
-            self.invoice.metadata['notified_for_threshold'] = threshold
-
+            self.invoice.metadata['notified_for_threshold'] = str(threshold)
         self.invoice.save()
 
 
@@ -184,10 +183,11 @@ def shutdown_servers_for_free_users(usage_map: dict):
     log.info(f"PKs of users affected: {shutdown_users}")
     # Something about this query makes me feel like it might be incorrect
     # TODO: Write a unit test for this
-    servers_to_stop = Server.objects.filter(project__collaborator__user__pk__in=[shutdown_users],
-                                            project__collaborator__owner=True)
-    for server in servers_to_stop:
-        stop_server.apply_async(server)
+    if shutdown_users:
+        servers_to_stop = Server.objects.filter(project__collaborator__user__pk__in=[shutdown_users],
+                                                project__collaborator__owner=True)
+        for server in servers_to_stop:
+            stop_server.apply_async(server)
 
 
 def update_invoices_with_usage(ending_in: int=30):

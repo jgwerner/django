@@ -103,7 +103,7 @@ class Server(ServerModelAbstract):
         customer = self.project.owner.customer
         invoice = customer.current_invoice
         if (invoice.subscription.plan.stripe_id == "threeblades-free-plan"
-            and invoice.metadata.get("notified_for_threshold") == 100):
+            and invoice.metadata.get("notified_for_threshold") == "100"):
             return False
         return True
 

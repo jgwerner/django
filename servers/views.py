@@ -23,7 +23,7 @@ from .consumers import ServerStatusConsumer
 from .tasks import start_server, stop_server, terminate_server, deploy, delete_deployment
 from .permissions import ServerChildPermission, ServerActionPermission
 from . import serializers, models
-from .utils import get_server_usage, server_can_be_started
+from .utils import get_server_usage
 
 log = logging.getLogger('servers')
 jwt_response_payload_handler = api_settings.JWT_RESPONSE_PAYLOAD_HANDLER
