@@ -2,21 +2,25 @@ from typing import Union
 from celery import shared_task
 from .models import Server, Deployment
 from .spawners import get_spawner_class, get_deployer_class
-
+import logging
+log = logging.getLogger('servers')
 Spawner = get_spawner_class()
 Deployer = get_deployer_class()
 
 
-def server_action(action: str, server: Union[str, Server]):
+def server_action(action: str, server: Union[str, Server]) -> bool:
     if isinstance(server, str):
         server = Server.objects.tbs_get(server)
-    spawner = Spawner(server)
-    getattr(spawner, action)()
+    if action != "start" or server.can_be_started:
+        spawner = Spawner(server)
+        getattr(spawner, action)()
+        return True
+    return False
 
 
 @shared_task()
-def start_server(server):
-    server_action('start', server)
+def start_server(server: str) -> bool:
+    return server_action('start', server)
 
 
 @shared_task()

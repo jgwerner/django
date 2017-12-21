@@ -284,6 +284,22 @@ class SubscriptionTest(APITestCase):
         self.assertEqual(sub_reloaded.status, Subscription.PAST)
 
     @patch("stripe.Webhook.construct_event")
+    @patch("billing.decorators.log")
+    def test_construct_event_value_error(self, mock_log, mock_construct):
+        mock_construct.side_effect = ValueError("foo")
+        url = reverse("stripe-subscription-updated", kwargs={'version': settings.DEFAULT_VERSION})
+        from billing.tests import mock_stripe
+        subscription = self._create_subscription_in_stripe()
+        webhook_data = mock_stripe.Event.get_sub_updated_evt(customer=self.customer.stripe_id,
+                                                             subscription=subscription.stripe_id,
+                                                             status=Subscription.PAST)
+        response = self.client.post(url, json.dumps(webhook_data),
+                                    content_type="application/json",
+                                    HTTP_STRIPE_SIGNATURE="foo")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        mock_log.warning_assert_called_with(f"Received an invalid webhook payload at stripe_subscription_updated:")
+
+    @patch("stripe.Webhook.construct_event")
     def test_subscription_updated_to_active_status(self, mock_construct):
         mock_construct.return_value = True
         url = reverse("stripe-subscription-updated", kwargs={'version': settings.DEFAULT_VERSION})

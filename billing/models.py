@@ -49,7 +49,7 @@ class Customer(StripeModel):
     @property
     def current_invoice(self):
         try:
-            invoice = self.invoice_set.get(open=True)
+            invoice = self.invoice_set.get(closed=True)
         except Invoice.DoesNotExist:
             invoice = None
         return invoice

@@ -54,13 +54,14 @@ class ServerViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
 @api_view(['post'])
 @permission_classes([IsAuthenticated, ServerActionPermission, TeamGroupPermission])
 def start(request, version, *args, **kwargs):
-    server = models.Server.objects.tbs_get(kwargs.get("server"))
-    if server.can_be_started:
-        start_server.apply_async(
-            args=[server],
-            task_id=str(request.action.pk)
-        )
-    return Response(status=status.HTTP_201_CREATED)
+    task_started = start_server.apply_async(args=[kwargs.get("server")],
+                                            task_id=str(request.action.pk))
+    if task_started:
+        resp_status = status.HTTP_201_CREATED
+    else:
+        resp_status = status.HTTP_402_PAYMENT_REQUIRED
+
+    return Response(status=resp_status)
 
 
 @api_view(['post'])

@@ -12,6 +12,7 @@ from rest_framework_jwt.settings import api_settings
 
 from actions.views import ActionList
 from appdj.celery import set_action_state
+from projects.tests.factories import CollaboratorFactory
 from servers.tests.factories import ServerFactory
 from users.tests.factories import UserFactory
 from jwt_auth.utils import create_auth_jwt
@@ -86,7 +87,8 @@ class ActionMiddlewareFunctionalTest(TestCase):
 
     def test_post_cancellable(self):
         task_postrun.disconnect(set_action_state)
-        server = ServerFactory()
+        collab = CollaboratorFactory()
+        server = ServerFactory(project=collab.project)
         assign_perm('write_project', self.user, server.project)
         url = reverse('server-start', kwargs={
             'namespace': self.user.username,
