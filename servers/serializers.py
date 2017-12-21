@@ -142,6 +142,9 @@ class ServerRunStatisticsSerializer(serializers.ModelSerializer):
         instance = ServerRunStatistics(**validated_data)
         server_pk = self.context['view'].kwargs.get('server_server')
         server = Server.objects.tbs_get(server_pk)
+        project_pk = self.context['view'].kwargs.get("project_project")
+        project = Project.objects.tbs_get(project_pk)
+        instance.owner = project.owner
         instance.server = server
         instance.server_size_cost_per_second = server.server_size.cost_per_second
         instance.server_size_memory = server.server_size.memory
