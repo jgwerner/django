@@ -92,7 +92,7 @@ def convert_stripe_object(model, stripe_obj):
     return converted
 
 
-def create_stripe_customer_from_user(auth_user):
+def create_stripe_customer_from_user(auth_user: User) -> Customer:
     stripe_response = stripe.Customer.create(description=auth_user.first_name + " " + auth_user.last_name,
                                              email=auth_user.email)
 
@@ -292,7 +292,7 @@ def add_buckets_to_stripe_invoice(customer_stripe_id: str, buckets: int) -> Invo
     return InvoiceItem.objects.create(**converted_data)
 
 
-def assign_customer_to_default_plan(customer):
+def assign_customer_to_default_plan(customer: Customer):
     existing_sub = Subscription.objects.filter(customer=customer)
     if not existing_sub.exists():
         log.info(f"Creating subscription to default plan for {customer.user.username}.")
@@ -305,7 +305,8 @@ def assign_customer_to_default_plan(customer):
                               'currency': "usd",
                               'interval': "month",
                               'interval_count': 1,
-                              'trial_period_days': 14}
+                              'trial_period_days': 14,
+                              'metadata': {"gb_hours": 10}}
             try:
                 log.warning("Since the default plan did not exist in the DB, the system will now add the "
                             "user to a free plan to avoid failure.")

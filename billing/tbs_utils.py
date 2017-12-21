@@ -1,5 +1,6 @@
 import logging
 import math
+import itertools
 from typing import Union
 from datetime import datetime, timedelta
 from decimal import Decimal, getcontext
@@ -14,12 +15,13 @@ from servers.models import ServerRunStatistics, Server
 from servers.tasks import stop_server
 from notifications.models import Notification, NotificationType
 from notifications.utils import create_notification
+from users.models import User
 log = logging.getLogger('billing')
 getcontext().prec = 6
 
 
 class MeteredBillingData:
-    def __init__(self, user, invoice, usage):
+    def __init__(self, user: User, invoice: Invoice, usage: Decimal, servers: list):
         self.user = user
         self.invoice = invoice
         if self.invoice.metadata is None:
@@ -29,6 +31,7 @@ class MeteredBillingData:
         self.usage = usage
         self.usage_percent = Decimal((self.usage / self.plan_limit) * 100)
         self.stop_all_servers = False
+        self.servers = servers
 
     def __str__(self):
         return f"{self.user}: {self.usage} GB of {self.plan_limit} GB - {self.usage_percent}%."
@@ -73,6 +76,8 @@ class MeteredBillingData:
         for threshold in warning_thresholds:
             already_been_notified = self.invoice.metadata.get("notified_for_threshold") == str(threshold)
             if self.usage_percent >= threshold and (not already_been_notified):
+                # TODO: This method call takes up to *5* seconds in some cases, but almost no time in others.
+                # What the hell
                 notif = self._notify(notification_type, threshold)
                 # Should the plan check be for DEFAULT_STRIPE_PLAN_ID instead?
                 if threshold == 100 and self.subscription.plan.stripe_id == "threeblades-free-plan":
@@ -144,7 +149,7 @@ def calculate_usage_for_period(closing_from: datetime=None, closing_to: datetime
         """
 
         user_runs = ServerRunStatistics.objects.filter(Q(stop=None) | Q(stop__gte=inv.period_start),
-                                                       owner=inv.customer.user)
+                                                       owner=inv.customer.user).select_related('server')
         cust_start = inv.customer.last_invoice_sync or inv.period_start
         usage_in_mb_seconds = user_runs.aggregate(usage=Sum(Case(When(stop__isnull=False,
                                                                       then=ExpressionWrapper((F('stop') - Greatest(
@@ -163,9 +168,11 @@ def calculate_usage_for_period(closing_from: datetime=None, closing_to: datetime
             usage_in_mb_seconds = Decimal(usage_in_mb_seconds.total_seconds())
             # Divide by 1024 to get gigabytes, then 3600 to get hours. MB Seconds -> GB Hours
             usage_in_gb_hours = Decimal(usage_in_mb_seconds / 1024 / 3600)
+            servers = list(user_runs.values_list('server__pk', flat=True))
             usage_data = MeteredBillingData(user=user,
                                             invoice=inv,
-                                            usage=usage_in_gb_hours)
+                                            usage=usage_in_gb_hours,
+                                            servers=servers)
 
             user_runs_mapping[user.pk] = usage_data
             notif = usage_data.create_notification_if_necessary(notification_type)
@@ -177,17 +184,19 @@ def calculate_usage_for_period(closing_from: datetime=None, closing_to: datetime
     return user_runs_mapping
 
 
-def shutdown_servers_for_free_users(usage_map: dict):
-    shutdown_users = [pk for pk, bill_data in usage_map.items() if bill_data.stop_all_servers]
-    log.info(f"Shutting down servers for {len(shutdown_users)}.")
-    log.info(f"PKs of users affected: {shutdown_users}")
-    # Something about this query makes me feel like it might be incorrect
-    # TODO: Write a unit test for this
-    if shutdown_users:
-        servers_to_stop = Server.objects.filter(project__collaborator__user__pk__in=[shutdown_users],
-                                                project__collaborator__owner=True)
-        for server in servers_to_stop:
-            stop_server.apply_async(server)
+def shutdown_servers_for_free_users(usage_map: dict) -> list:
+    servers_stopped = []
+
+    servers_to_stop = set(list(itertools.chain.from_iterable([bill_data.servers
+                                                              for user_pk, bill_data
+                                                              in usage_map.items()
+                                                              if bill_data.stop_all_servers])))
+    for server in servers_to_stop:
+        log.info(f"Stopping Server w/PK {str(server)} because user is on free tier and exceeded limits.")
+        # TODO: Should this have apply_async appended? If so, what should the task ID be?
+        stop_server(str(server))
+        servers_stopped.append(server)
+    return servers_stopped
 
 
 def update_invoices_with_usage(ending_in: int=30):

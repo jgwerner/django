@@ -1,4 +1,5 @@
 import random
+from unittest.mock import patch
 from decimal import Decimal, getcontext
 from datetime import timedelta
 from django.conf import settings
@@ -6,14 +7,17 @@ from django.utils import timezone
 from django.test import TestCase
 from users.models import User
 from users.tests.factories import UserFactory
-from billing.models import Invoice, InvoiceItem
-from billing.stripe_utils import create_stripe_customer_from_user
+from billing.models import Invoice, InvoiceItem, Subscription
+from billing.stripe_utils import (create_stripe_customer_from_user,
+                                  assign_customer_to_default_plan)
 from billing.tbs_utils import (calculate_usage_for_period,
-                               update_invoices_with_usage)
+                               update_invoices_with_usage,
+                               MeteredBillingData,
+                               shutdown_servers_for_free_users)
 from billing.tests.factories import (PlanFactory,
                                      SubscriptionFactory,
                                      InvoiceFactory)
-from notifications.models import Notification
+from notifications.models import Notification, NotificationType
 from projects.tests.factories import CollaboratorFactory
 from servers.models import ServerRunStatistics
 from servers.tests.factories import ServerRunStatisticsFactory
@@ -30,9 +34,12 @@ class TestTbsUtils(TestCase):
                                 interval_count=1,
                                 metadata={'gb_hours': 5})
 
-    def _setup_basics_for_user(self, user: User, duration: int=1, server_memory: int=512) -> ServerRunStatistics:
-        subscription = SubscriptionFactory(customer=user.customer,
-                                           plan=self.plan)
+    def _setup_basics_for_user(self, user: User, duration: int=1,
+                               server_memory: int=512,
+                               subscription: Subscription=None) -> ServerRunStatistics:
+        if subscription is None:
+            subscription = SubscriptionFactory(customer=user.customer,
+                                               plan=self.plan)
         # Just so period_start and period_end are relative to the exact same time...
         now = timezone.now()
         InvoiceFactory(customer=user.customer,
@@ -197,3 +204,42 @@ class TestTbsUtils(TestCase):
         notifs = Notification.objects.filter(user=self.user,
                                              type__name="usage_warning")
         self.assertEqual(notifs.count(), 1)
+
+    @patch("billing.tbs_utils.stop_server")
+    def test_shutdown_free_servers(self, mock_stop_server):
+        assign_customer_to_default_plan(self.user.customer)
+        subscription = Subscription.objects.get(customer=self.user.customer)
+        run_stats = self._setup_basics_for_user(user=self.user,
+                                                duration=10,
+                                                server_memory=1024,
+                                                subscription=subscription)
+        usage_dict = calculate_usage_for_period()
+        servers = shutdown_servers_for_free_users(usage_dict)
+        mock_stop_server.assert_called_with(str(run_stats.server.pk))
+        self.assertEqual(servers, [run_stats.server.pk])
+
+
+class TestMeteredBillingData(TestCase):
+    fixtures = ['notification_types.json']
+
+    def setUp(self):
+        self.user = UserFactory()
+        customer = create_stripe_customer_from_user(self.user)
+        assign_customer_to_default_plan(customer)
+        InvoiceFactory(customer=customer,
+                       subscription=Subscription.objects.get(customer=customer),
+                       closed=False)
+
+    def test_metered_billing_data_updates_invoice_when_100_threshold_met(self):
+        billing_data = MeteredBillingData(user=self.user,
+                                          invoice=self.user.customer.current_invoice,
+                                          usage=Decimal(10), servers=[])
+        notification_type = NotificationType.objects.get(name="usage_warning")
+        notif = billing_data.create_notification_if_necessary(notification_type)
+        self.assertIsNotNone(notif)
+        self.assertTrue(billing_data.stop_all_servers)
+
+        inv_reloaded = Invoice.objects.get(pk=self.user.customer.current_invoice.pk)
+        self.assertEqual(inv_reloaded.metadata.get("raw_usage"), str(Decimal(10)))
+        self.assertEqual(inv_reloaded.metadata.get("usage_percent"), str(Decimal(100)))
+        self.assertEqual(inv_reloaded.metadata.get("notified_for_threshold"), str(Decimal(100)))
