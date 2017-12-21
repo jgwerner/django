@@ -1144,8 +1144,6 @@ class ProjectFileTestWithName(ProjectTestMixin, APITestCase):
         db_project_file = ProjectFile.objects.get(pk=project_file.pk)
         self.assertEqual(db_project_file.file.path, project_file.file.path)
         self.assertEqual(db_project_file.file.size, new_upload.size)
-        self.assertTrue(filecmp.cmp(os.path.join("/tmp/", new_upload.name),
-                                    db_project_file.file.path))
 
     def test_multiple_file_update_gets_400(self):
         uploaded_file = generate_random_file_content("to_update")

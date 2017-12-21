@@ -38,20 +38,20 @@ class MeteredBillingData:
             buckets = math.ceil(overage / settings.BILLING_BUCKET_SIZE_GB)
         return buckets
 
-    def _notify(self, notification_type: NotificationType) -> Union[Notification, None]:
-        # TODO: This will only ever send one notification, and for the lowest threshold.
-        # Need to make separate notif types for each threshold or something
-        already_been_notified = Notification.objects.filter(user=self.user,
-                                                            type=notification_type,
-                                                            timestamp__gt=self.invoice.period_start).exists()
-        if not already_been_notified:
-            log.info(f"User {self.user} has used {self.usage_percent}% of their plan. Sending a notification.")
-            notif = create_notification(user=self.user,
-                                        actor=self.invoice,
-                                        target=None,
-                                        notif_type=notification_type)
-            return notif
-        return None
+    def _notify(self, notification_type: NotificationType, threshold: int) -> Union[Notification, None]:
+        """
+        
+        :param notification_type: The of notification to be sent to the user.
+        :param threshold: The percentage level that the user has exceeded and we are notifying them about
+        :return: The notification object that has been created (but not saved in the DB!)
+        """
+        log.info(f"User {self.user} has used {self.usage_percent}% of their plan, and hasn't received a "
+                 f"notification for the threshold {threshold}%. Sending a notification.")
+        notif = create_notification(user=self.user,
+                                    actor=self.invoice,
+                                    target=None,
+                                    notif_type=notification_type)
+        return notif
 
     def create_notification_if_necessary(self, notification_type: NotificationType) -> Notification:
         notif = None
@@ -69,18 +69,33 @@ class MeteredBillingData:
             warning_thresholds = [100, 90, 75]
 
         for threshold in warning_thresholds:
-            if self.usage_percent >= threshold:
-                notif = self._notify(notification_type)
+            already_been_notified = self.invoice.metadata.get("notified_for_threshold") == threshold
+            if self.usage_percent >= threshold and (not already_been_notified):
+                notif = self._notify(notification_type, threshold)
+                # Should the plan check be for DEFAULT_STRIPE_PLAN_ID instead?
                 if threshold == 100 and self.subscription.plan.stripe_id == "threeblades-free-plan":
                     self.stop_all_servers = True
                     log.info(f"Will be stopping all servers for user {self.user.username} "
                              f"because they are on the free plan and have exceeded the 100% threshold.")
                 break
+            # Threshold is set to None at the end of the loop so that if the loop completes iteration without
+            # hitting the break statement (i.e. The user has not exceeded any of the warning levels), the
+            # update_invoice method will not set the "notified_for_threshold" meta field.
+            threshold = None
+
+        # Linters complain that threshold may be used before assignment here, but they are incorrect.
+        # The try/except block above guarantees that warning_thresholds will be a non-empty list,
+        # Meaning the loop iterates at least once and sets threshold.
+        self.update_invoice(threshold=threshold)
         return notif
 
-    def update_invoice(self):
+    def update_invoice(self, threshold: int=None):
         self.invoice.metadata['raw_usage'] = self.usage
         self.invoice.metadata['usage_percent'] = self.usage_percent
+
+        if threshold is not None:
+            self.invoice.metadata['notified_for_threshold'] = threshold
+
         self.invoice.save()
 
 
@@ -150,11 +165,10 @@ def calculate_usage_for_period(closing_from: datetime=None, closing_to: datetime
             usage_data = MeteredBillingData(user=user,
                                             invoice=inv,
                                             usage=usage_in_gb_hours)
-            # TODO: This may be a performance concern
-            usage_data.update_invoice()
-            user_runs_mapping[user.pk] = usage_data
 
+            user_runs_mapping[user.pk] = usage_data
             notif = usage_data.create_notification_if_necessary(notification_type)
+
             if notif is not None:
                 notifs_to_save.append(notif)
 
