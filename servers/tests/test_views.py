@@ -392,12 +392,36 @@ class ServerTestWithName(APITestCase):
         expected = f"{server_ip}:1234"
         self.assertEqual(expected, response.data)
 
-    def test_server_stop_perm(self):
+    def test_server_start_permisisons(self):
+        server = ServerFactory(project=self.project)
+        self.url_kwargs.update({
+            'server': server.name
+        })
+        url = reverse('server-start', kwargs=self.url_kwargs)
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        assign_perm('write_project', self.user, self.project)
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_server_stop_permissions(self):
         server = ServerFactory(project=self.project)
         self.url_kwargs.update({
             'server': server.name
         })
         url = reverse('server-stop', kwargs=self.url_kwargs)
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        assign_perm('write_project', self.user, self.project)
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_server_terminate_permissions(self):
+        server = ServerFactory(project=self.project)
+        self.url_kwargs.update({
+            'server': server.name
+        })
+        url = reverse('server-terminate', kwargs=self.url_kwargs)
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         assign_perm('write_project', self.user, self.project)
