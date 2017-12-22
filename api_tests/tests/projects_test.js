@@ -4,6 +4,7 @@ const config = require('../config')
 const tools = require('../test_utils')
 const generator = require('../generator')
 const fs = require('fs')
+const path = require('path')
 const expect = chakram.expect
 
 const namespace = config.username
@@ -250,6 +251,10 @@ describe('{namespace}/projects/{project}/project_files/', () => {
     type: 'array',
     items: object_schema,
   }
+  const file1 = path.resolve(__dirname, '../resources/', 'test.txt')
+  const file2 = path.resolve(__dirname, '../resources/', 'test2.txt')
+  console.log(file1)
+  console.log(file2)
 
   before(async () => {
     this.headers = {
@@ -264,10 +269,11 @@ describe('{namespace}/projects/{project}/project_files/', () => {
   it('POST a file should create a new file object', async () => {
     const file_options = {
       formData: {
-        file: fs.createReadStream('./api_tests/resources/test.txt'),
+        file: fs.createReadStream(file1),
       },
       headers: this.headers,
     }
+    console.log(file_options.formData.file)
     const response = await chakram.post(this.files_uri, undefined, file_options)
     expect(response).to.have.status(201)
     expect(response).to.have.schema(array_schema)
@@ -276,7 +282,7 @@ describe('{namespace}/projects/{project}/project_files/', () => {
   it('GET all files should return a list of files', async () => {
     const file_options = {
       formData: {
-        file: fs.createReadStream('./api_tests/resources/test.txt'),
+        file: fs.createReadStream(file1),
       },
       headers: this.headers,
     }
@@ -292,7 +298,7 @@ describe('{namespace}/projects/{project}/project_files/', () => {
   it('GET specific file should return the file', async () => {
     const file_options = {
       formData: {
-        file: fs.createReadStream('./api_tests/resources/test.txt'),
+        file: fs.createReadStream(file1),
       },
       headers: this.headers,
     }
@@ -309,7 +315,7 @@ describe('{namespace}/projects/{project}/project_files/', () => {
   it('PUT a file should replace the file', async () => {
     const file_options = {
       formData: {
-        file: fs.createReadStream('./api_tests/resources/test.txt'),
+        file: fs.createReadStream(file1),
       },
       headers: this.headers,
     }
@@ -319,7 +325,7 @@ describe('{namespace}/projects/{project}/project_files/', () => {
     const file_uri = util.format('%s%s/', this.files_uri, response.body[0].id)
 
     let put_options = JSON.parse(JSON.stringify(file_options))
-    put_options.formData.file = fs.createReadStream('./api_tests/resources/test2.txt')
+    put_options.formData.file = fs.createReadStream(file2)
     const put_response = await chakram.put(file_uri, undefined, put_options)
     expect(put_response).to.have.status(200)
     expect(put_response).to.have.schema(object_schema)
@@ -329,7 +335,7 @@ describe('{namespace}/projects/{project}/project_files/', () => {
   it('PATCH a file should replace the file', async () => {
     const file_options = {
       formData: {
-        file: fs.createReadStream('./api_tests/resources/test.txt'),
+        file: fs.createReadStream(file1),
       },
       headers: this.headers,
     }
@@ -339,7 +345,7 @@ describe('{namespace}/projects/{project}/project_files/', () => {
     const file_uri = util.format('%s%s/', this.files_uri, response.body[0].id)
 
     let patch_options = JSON.parse(JSON.stringify(file_options))
-    patch_options.formData.file = fs.createReadStream('./api_tests/resources/test2.txt')
+    patch_options.formData.file = fs.createReadStream(file2)
     const patch_response = await chakram.patch(file_uri, undefined, patch_options)
     expect(patch_response).to.have.status(200)
     expect(patch_response).to.have.schema(object_schema)
@@ -349,7 +355,7 @@ describe('{namespace}/projects/{project}/project_files/', () => {
   it('DELETE a file should replace the file', async () => {
     const file_options = {
       formData: {
-        file: fs.createReadStream('./api_tests/resources/test.txt'),
+        file: fs.createReadStream(file1),
       },
       headers: this.headers,
     }
