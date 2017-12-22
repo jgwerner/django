@@ -16,7 +16,7 @@ from django.test import TransactionTestCase, TestCase
 from projects.tests.factories import CollaboratorFactory
 from servers.tests.fake_docker_api_client.fake_api import FAKE_CONTAINER_ID
 from ..spawners.docker import DockerSpawner
-from ..spawners.ecs import ECSSpawner, JobScheduler
+from ..spawners.ecs import ECSSpawner, JobScheduler, SpawnerException
 from ..spawners.aws_lambda.deployer import LambdaDeployer
 from .factories import ServerSizeFactory, ServerFactory, DeploymentFactory
 from .fake_docker_api_client.fake_api_client import make_fake_client
@@ -793,6 +793,30 @@ class JobSchedulerTestCase(TestCase):
         self.events_stubber.add_response('delete_rule', {}, expected_params=delete_rule_params)
         self.events_stubber.activate()
         self.scheduler.terminate()
+
+    def test_terminate_failed_targets(self):
+        remove_targets_params = dict(
+            Rule=str(self.server.pk),
+            Ids=[str(self.server.pk)]
+        )
+        remove_targets_response = {
+            'FailedEntryCount': 1,
+            'FailedEntries': [
+                {
+                    'TargetId': str(self.server.pk),
+                    'ErrorCode': 'SomeError',
+                    'ErrorMessage': 'Some error message'
+                }
+            ]
+        }
+        self.events_stubber.add_response('remove_targets', remove_targets_response, remove_targets_params)
+        delete_rule_params = dict(
+            Name=str(self.server.pk)
+        )
+        self.events_stubber.add_response('delete_rule', {}, expected_params=delete_rule_params)
+        self.events_stubber.activate()
+        with self.assertRaises(SpawnerException):
+            self.scheduler.terminate()
 
     def test_status(self):
         self.server.config['task_definition_arn'] = '123'

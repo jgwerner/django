@@ -10,6 +10,10 @@ from .base import BaseSpawner, GPUMixin
 logger = logging.getLogger("servers")
 
 
+class SpawnerException(Exception):
+    pass
+
+
 class ECSSpawner(GPUMixin, BaseSpawner):
     def __init__(self, server, client=None) -> None:
         super().__init__(server)
@@ -207,10 +211,12 @@ class JobScheduler(ECSSpawner):
         )
 
     def terminate(self):
-        self.events_client.remove_targets(
+        targets = self.events_client.remove_targets(
             Rule=str(self.server.pk),
             Ids=[str(self.server.pk)]
         )
+        if targets['FailedEntryCount'] > 0:
+            raise SpawnerException("Failed targets removal %s", targets['FailedEntries'])
         self.events_client.delete_rule(
             Name=str(self.server.pk)
         )
