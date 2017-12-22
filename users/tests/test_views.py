@@ -247,7 +247,7 @@ class UserTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['message'], "Username cannot be changed after creation.")
 
-    def test_put_creating_user_accepts_username(self):
+    def test_put_creating_user_uuid_returns_not_found(self):
         data = {"username": "a_new_user",
                 "email": "anewuser@example.com",
                 "first_name": "Anew",
@@ -265,13 +265,9 @@ class UserTest(APITestCase):
         url = reverse("user-detail", kwargs={'user': new_uuid,
                                              'version': settings.DEFAULT_VERSION})
         response = self.admin_client.put(url, data=data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        new_user = User.objects.filter(pk=new_uuid).first()
-        self.assertIsNotNone(new_user)
-        self.to_remove.append(new_user.profile.resource_root())
-        self.assertEqual(new_user.username, data['username'])
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_put_creating_user_accepts_username_with_username(self):
+    def test_put_creating_user_username_returns_not_found(self):
         data = {"username": "another_new_user",
                 "email": "anewuser@example.com",
                 "first_name": "Anew",
@@ -288,11 +284,7 @@ class UserTest(APITestCase):
         url = reverse("user-detail", kwargs={'user': data['username'],
                                              'version': settings.DEFAULT_VERSION})
         response = self.admin_client.put(url, data=data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        new_user = User.objects.tbs_filter(data['username']).first()
-        self.assertIsNotNone(new_user)
-        self.to_remove.append(new_user.profile.resource_root())
-        self.assertEqual(new_user.username, data['username'])
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_user_delete_allows_new_user_with_same_username(self):
         user = UserFactory()

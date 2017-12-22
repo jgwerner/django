@@ -9,7 +9,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from jwt_auth.utils import create_server_jwt, create_auth_jwt
-from projects.tests.factories import CollaboratorFactory
+from projects.tests.factories import CollaboratorFactory, ProjectFactory
 from servers.models import Server, SshTunnel, ServerRunStatistics
 from users.tests.factories import UserFactory
 from servers.models import Deployment
@@ -103,6 +103,16 @@ class ServerTest(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), servers_count)
+
+    def test_list_servers_statuses(self):
+        servers_count = 4
+        ServerFactory.create_batch(4, project=self.project)
+        url = reverse('server-statuses', kwargs=self.url_kwargs)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), servers_count)
+        for st in response.data:
+            self.assertEqual(st['status'], Server.RUNNING)
 
     def test_list_servers_respects_is_active(self):
         ServerFactory.create_batch(2, project=self.project)
@@ -259,8 +269,8 @@ class ServerTestWithName(APITestCase):
         server = ServerFactory(project=self.project)
         url = reverse('server-list', kwargs=self.url_kwargs)
         data = dict(
-            name=server.name, # name should match name from duplicate ServerFactory
-            project=self.project.name, # project should also match
+            name=server.name,  # name should match name from duplicate ServerFactory
+            project=self.project.name,  # project should also match
             connected=[],
             config={'type': 'jupyter'},
         )
@@ -268,6 +278,7 @@ class ServerTestWithName(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_server(self):
+        ProjectFactory.create_batch(2, name=self.project.name)
         url = reverse('server-list', kwargs=self.url_kwargs)
         data = dict(
             name='test',
@@ -381,12 +392,36 @@ class ServerTestWithName(APITestCase):
         expected = f"{server_ip}:1234"
         self.assertEqual(expected, response.data)
 
-    def test_server_stop_perm(self):
+    def test_server_start_permisisons(self):
+        server = ServerFactory(project=self.project)
+        self.url_kwargs.update({
+            'server': server.name
+        })
+        url = reverse('server-start', kwargs=self.url_kwargs)
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        assign_perm('write_project', self.user, self.project)
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_server_stop_permissions(self):
         server = ServerFactory(project=self.project)
         self.url_kwargs.update({
             'server': server.name
         })
         url = reverse('server-stop', kwargs=self.url_kwargs)
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        assign_perm('write_project', self.user, self.project)
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_server_terminate_permissions(self):
+        server = ServerFactory(project=self.project)
+        self.url_kwargs.update({
+            'server': server.name
+        })
+        url = reverse('server-terminate', kwargs=self.url_kwargs)
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         assign_perm('write_project', self.user, self.project)
@@ -517,6 +552,23 @@ class ServerRunStatisticsTestCase(APITestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         stats = ServerRunStatistics.objects.get(server=server)
         self.assertEqual(stats.stop, stop)
+
+    def test_run_stats_is_created_with_owner(self):
+        server = ServerFactory(project=self.project)
+        url = reverse('serverrunstatistics-list', kwargs={
+            'namespace': self.project.get_owner_name(),
+            'project_project': str(self.project.pk),
+            'server_server': str(server.pk),
+            'version': settings.DEFAULT_VERSION
+        })
+        data = dict(
+            start=timezone.now(),
+        )
+        resp = self.client.post(url, data)
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        run_stats = ServerRunStatistics.objects.filter(server=server).first()
+        self.assertIsNotNone(run_stats)
+        self.assertEqual(run_stats.owner, self.project.owner)
 
 
 class ServerRunStatisticsTestCaseWithName(APITestCase):

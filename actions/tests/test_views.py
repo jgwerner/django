@@ -33,7 +33,6 @@ class ActionTest(APITestCase):
         ActionFactory(content_object=sub.plan)
         ActionFactory(content_object=CardFactory(customer=self.user.customer))
         ActionFactory(content_object=sub)
-        ActionFactory(content_object=DockerHostFactory())
         collaborator = CollaboratorFactory(user=self.user)
         ActionFactory(content_object=collaborator.project)
         ActionFactory(content_object=collaborator)

@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.postgres',
     'django.contrib.sites',
 
+    'channels',
     'rest_framework',
     'oauth2_provider',
     'social_django',
@@ -68,7 +69,7 @@ INSTALLED_APPS = [
     'triggers',
     'jwt_auth',
     'search',
-    'teams',
+    'teams'
 ]
 
 MIDDLEWARE = [
@@ -127,6 +128,19 @@ EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
 
 DATABASES = {
     'default': dj_database_url.config(conn_max_age=600, default='postgres://postgres:@localhost:5432/postgres')
+}
+
+# Channels
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "asgi_redis.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [os.environ.get('REDIS_URL')],
+            "symmetric_encryption_keys": [SECRET_KEY],
+        },
+        "ROUTING": "appdj.routing.routing",
+    }
 }
 
 AUTHENTICATION_BACKENDS = (
@@ -228,6 +242,7 @@ AWS_ACCOUNT_ID = os.environ.get('AWS_ACCOUNT_ID', '')
 AWS_DEPLOYMENT_ROLE = os.environ.get('AWS_DEPLOYMENT_ROLE', '')
 AWS_LAMBDA_AUTHORIZER = os.environ.get('AWS_LAMBDA_AUTHORIZER', '')
 AWS_AUTHORIZER_ROLE = os.environ.get('AWS_AUTHORIZER_ROLE', '')
+AWS_JOBS_ROLE = os.environ.get('AWS_JOBS_ROLE', '')
 
 SWAGGER_SETTINGS = {
     'SUPPORTED_SUBMIT_METHODS': ['head', 'get', 'post', 'put', 'delete', 'patch']
@@ -273,7 +288,6 @@ DJOSER = {
 DEFAULT_VERSION = os.environ.get('TBS_DEFAULT_VERSION', "v1")
 
 RESOURCE_DIR = os.environ.get('RESOURCE_DIR', '/workspaces')
-INACTIVE_RESOURCE_DIR = os.environ.get('INACTIVE_RESOURCE_DIR', '/inactive')
 
 CACHES = {
     'default': {
@@ -355,7 +369,7 @@ SERVER_TYPES = {"restful", "cron", "proxy"}
 SERVER_TYPE_MAPPING = {'jupyter': 'proxy', 'rstudio': 'proxy'}
 SERVER_ENDPOINT_URLS = {'restful': '/restful/', 'proxy': '/proxy/'}
 SERVER_COMMANDS = {
-    'jupyter': 'jupyter notebook --NotebookApp.base_url=' +
+    'jupyter': 'jupyter lab --NotebookApp.base_url=' +
     '"/{version}/{server.project.owner.username}/projects/{server.project.pk}/servers/{server.pk}/endpoint/proxy"',
     'rstudio': '/init',
 }
@@ -412,6 +426,7 @@ NVIDIA_DOCKER_HOST = os.environ.get('NVIDIA_DOCKER_HOST')
 
 SPAWNER = 'servers.spawners.ecs.ECSSpawner'
 DEPLOYER = 'servers.spawners.aws_lambda.deployer.LambdaDeployer'
+SCHEDULER = 'servers.spawners.ecs.JobScheduler'
 ECS_CLUSTER = os.environ.get('ECS_CLUSTER', 'default')
 REDIRECT_IS_HTTPS = True
 

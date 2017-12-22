@@ -1,5 +1,6 @@
 set -e
 
+
 function finish {
     if [ "$TEST_SUITE" = "API" ]
     then

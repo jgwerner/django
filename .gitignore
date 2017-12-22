@@ -106,3 +106,7 @@ logs/
 node_modules/
 
 celerybeat.pid
+
+# lambda func
+stats.zip
+vendored/

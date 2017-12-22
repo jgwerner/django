@@ -36,17 +36,12 @@ class UserTestCase(TestCase):
         self.user = UserFactory()
         create_ssh_key(self.user)
         self.user_dir = Path(settings.RESOURCE_DIR, self.user.username)
-        self.inactive_dir = Path(settings.INACTIVE_RESOURCE_DIR,
-                                 self.user.username +
-                                 "_{uuid}".format(uuid=self.user.pk))
 
     def tearDown(self):
         if os.path.isdir(str(self.user_dir)):
             shutil.rmtree(str(self.user_dir))
-        shutil.rmtree(str(self.inactive_dir))
 
     def test_deactivate_user(self):
         deactivate_user(self.user)
         self.assertFalse(self.user.is_active)
-        self.assertFalse(os.path.isdir(str(self.user_dir)))
-        self.assertTrue(os.path.isdir(str(self.inactive_dir)))
+        self.assertFalse(os.path.exists(str(self.user_dir)))

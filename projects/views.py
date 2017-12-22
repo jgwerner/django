@@ -18,7 +18,8 @@ from projects.models import ProjectFile
 from projects.utils import (get_files_from_request,
                             has_copy_permission,
                             perform_project_copy,
-                            sync_project_files_from_disk)
+                            sync_project_files_from_disk,
+                            check_project_name_exists)
 from teams.permissions import TeamGroupPermission
 
 User = get_user_model()
@@ -106,15 +107,24 @@ class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewS
 @api_view(['post'])
 def project_copy(request, *args, **kwargs):
     proj_identifier = request.data['project']
+    new_project_name = request.data.get('name')
+
+    if new_project_name:
+        log.info(f"Project name found in request during project copy. Validating name: {new_project_name}")
+        if check_project_name_exists(new_project_name, request, None):
+            log.exception(f"Project {new_project_name} already exists.")
+            resp_status = status.HTTP_400_BAD_REQUEST
+            resp_data = {'message': f"A project named {new_project_name} already exists."}
+            return Response(data=resp_data, status=resp_status)
 
     try:
+        # If user didn't provide a name, perform_project_copy() will handle duplicates appropriately
         new_project = perform_project_copy(user=request.user,
                                            project_id=proj_identifier,
-                                           request=request)
+                                           request=request,
+                                           new_name=new_project_name)
     except Exception as e:
-        log.error(f"There was a problem attempting to copy project {proj_identifier}. "
-                  f"Stacktrace incoming.")
-        log.exception(e)
+        log.exception(f"There was a problem attempting to copy project {proj_identifier}.", e)
         resp_status = status.HTTP_500_INTERNAL_SERVER_ERROR
         resp_data = {'message': "Internal Server Error when attempting to copy project."}
     else:
@@ -125,8 +135,7 @@ def project_copy(request, *args, **kwargs):
         else:
             resp_status = status.HTTP_404_NOT_FOUND
             resp_data = {'message': f"Project {proj_identifier} not found."}
-
-        return Response(data=resp_data, status=resp_status)
+    return Response(data=resp_data, status=resp_status)
 
 
 @api_view(['post'])
