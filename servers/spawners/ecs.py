@@ -200,9 +200,9 @@ class JobScheduler(ECSSpawner):
             }]
         )
         if targets['FailedEntryCount'] > 0:
-            self.server.config['failed'] = [None] * targets['FailedEntryCount']
-            for i, failed_target in enumerate(targets['FailedEntries']):
-                self.server.config['failed'][i] = failed_target
+            self.server.config['failed'] = []
+            for failed_target in targets['FailedEntries']:
+                self.server.config['failed'].append(failed_target)
         self.server.save()
 
     def stop(self):
