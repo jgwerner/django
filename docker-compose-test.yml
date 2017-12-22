@@ -71,5 +71,6 @@ services:
     ports:
       - "82"
       - "8080"
+    env_file: api_tests/env
     depends_on:
       - api

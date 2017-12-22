@@ -251,34 +251,36 @@ describe('{namespace}/projects/{project}/project_files/', () => {
     items: object_schema,
   }
 
-  beforeEach(async () => {
-    this.file_options = {
-      formData: {
-        file: fs.createReadStream('./api_tests/resources/test.txt'),
-      },
-      headers: {
-        Authorization: this.options.headers.Authorization,
-        'Content-Type': 'multipart/form-data',
-      },
+  before(async () => {
+    this.headers = {
+      Authorization: this.options.headers.Authorization,
+      'Content-Type': 'multipart/form-data',
     }
-    const proj_uri = tools.get_request_uri(util.format('%s/projects/', namespace))
-
-    let new_proj = generator.project()
-    const response = await chakram.post(proj_uri, new_proj, this.options)
-    expect(response).to.have.status(201)
     this.files_uri = tools.get_request_uri(
-      util.format('%s/projects/%s/project_files/', namespace, response.body.id),
+      util.format('%s/projects/%s/project_files/', namespace, this.shared_proj.id),
     )
   })
 
   it('POST a file should create a new file object', async () => {
-    const response = await chakram.post(this.files_uri, undefined, this.file_options)
+    const file_options = {
+      formData: {
+        file: fs.createReadStream('./api_tests/resources/test.txt'),
+      },
+      headers: this.headers,
+    }
+    const response = await chakram.post(this.files_uri, undefined, file_options)
     expect(response).to.have.status(201)
     expect(response).to.have.schema(array_schema)
   })
 
   it('GET all files should return a list of files', async () => {
-    const response = await chakram.post(this.files_uri, undefined, this.file_options)
+    const file_options = {
+      formData: {
+        file: fs.createReadStream('./api_tests/resources/test.txt'),
+      },
+      headers: this.headers,
+    }
+    const response = await chakram.post(this.files_uri, undefined, file_options)
     expect(response).to.have.status(201)
     expect(response).to.have.schema(array_schema)
 
@@ -288,7 +290,13 @@ describe('{namespace}/projects/{project}/project_files/', () => {
   })
 
   it('GET specific file should return the file', async () => {
-    const response = await chakram.post(this.files_uri, undefined, this.file_options)
+    const file_options = {
+      formData: {
+        file: fs.createReadStream('./api_tests/resources/test.txt'),
+      },
+      headers: this.headers,
+    }
+    const response = await chakram.post(this.files_uri, undefined, file_options)
     expect(response).to.have.status(201)
     expect(response).to.have.schema(array_schema)
     const file_uri = util.format('%s%s/', this.files_uri, response.body[0].id)
@@ -299,35 +307,53 @@ describe('{namespace}/projects/{project}/project_files/', () => {
   })
 
   it('PUT a file should replace the file', async () => {
-    const response = await chakram.post(this.files_uri, undefined, this.file_options)
+    const file_options = {
+      formData: {
+        file: fs.createReadStream('./api_tests/resources/test.txt'),
+      },
+      headers: this.headers,
+    }
+    const response = await chakram.post(this.files_uri, undefined, file_options)
     expect(response).to.have.status(201)
     expect(response).to.have.schema(array_schema)
     const file_uri = util.format('%s%s/', this.files_uri, response.body[0].id)
 
-    let put_options = JSON.parse(JSON.stringify(this.file_options))
+    let put_options = JSON.parse(JSON.stringify(file_options))
     put_options.formData.file = fs.createReadStream('./api_tests/resources/test2.txt')
     const put_response = await chakram.put(file_uri, undefined, put_options)
     expect(put_response).to.have.status(200)
     expect(put_response).to.have.schema(object_schema)
-    expect(put_response.body.name).to.equal('test2.txt')
+    expect(put_response.body.name).to.contain('test2')
   })
 
   it('PATCH a file should replace the file', async () => {
-    const response = await chakram.post(this.files_uri, undefined, this.file_options)
+    const file_options = {
+      formData: {
+        file: fs.createReadStream('./api_tests/resources/test.txt'),
+      },
+      headers: this.headers,
+    }
+    const response = await chakram.post(this.files_uri, undefined, file_options)
     expect(response).to.have.status(201)
     expect(response).to.have.schema(array_schema)
     const file_uri = util.format('%s%s/', this.files_uri, response.body[0].id)
 
-    let patch_options = JSON.parse(JSON.stringify(this.file_options))
+    let patch_options = JSON.parse(JSON.stringify(file_options))
     patch_options.formData.file = fs.createReadStream('./api_tests/resources/test2.txt')
     const patch_response = await chakram.patch(file_uri, undefined, patch_options)
     expect(patch_response).to.have.status(200)
     expect(patch_response).to.have.schema(object_schema)
-    expect(patch_response.body.name).to.equal('test2.txt')
+    expect(patch_response.body.name).to.contain('test2')
   })
 
   it('DELETE a file should replace the file', async () => {
-    const response = await chakram.post(this.files_uri, undefined, this.file_options)
+    const file_options = {
+      formData: {
+        file: fs.createReadStream('./api_tests/resources/test.txt'),
+      },
+      headers: this.headers,
+    }
+    const response = await chakram.post(this.files_uri, undefined, file_options)
     expect(response).to.have.status(201)
     expect(response).to.have.schema(array_schema)
     const file_uri = util.format('%s%s/', this.files_uri, response.body[0].id)
