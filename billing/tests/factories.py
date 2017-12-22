@@ -99,7 +99,7 @@ class SubscriptionFactory(factory.django.DjangoModelFactory):
     quantity = fuzzy.FuzzyInteger(low=1, high=5)
     status = fuzzy.FuzzyChoice([c[0] for c in Subscription.SUBSCRIPTION_STATUS_CHOICES])
     trial_start = timezone.make_aware(datetime.now())
-    trial_end = factory.LazyAttribute(lambda obj: obj.trial_start + timedelta(days=obj.plan.trial_period_days))
+    trial_end = factory.LazyAttribute(lambda obj: obj.trial_start + timedelta(days=obj.plan.trial_period_days or 0))
 
 
 class EventFactory(factory.django.DjangoModelFactory):

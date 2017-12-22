@@ -1,16 +1,13 @@
 import logging
 from typing import List
 from datetime import datetime
-from decimal import Decimal, getcontext
-from collections import defaultdict
+from decimal import getcontext
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
 from django.core.exceptions import ObjectDoesNotExist
 
 from users.models import User
-from servers.models import Server
-from servers.utils import get_server_usage
 
 from billing.models import (Customer, Invoice,
                             Plan, Subscription,
@@ -77,8 +74,9 @@ def convert_field_to_stripe(model, stripe_field, stripe_data):
 
     elif isinstance(model_field, models.DateTimeField):
         if value is not None:
-            value = datetime.fromtimestamp(value)
-            value = timezone.make_aware(value)
+            if not isinstance(value, datetime):
+                value = datetime.fromtimestamp(value)
+                value = timezone.make_aware(value)
 
     return (field_name, value)
 
@@ -236,7 +234,7 @@ def handle_stripe_invoice_payment_status_change(stripe_obj):
         invoice = find_or_create_invoice(stripe_data)
 
         if event.event_type == "invoice.payment_succeeded" or (event.event_type == "invoice.payment_failed" and
-                                                               subscription.metadata.get('has_been_active')):
+                                                               subscription.metadata and subscription.metadata.get('has_been_active')):
             log.info(f"Subscription {subscription} has been active before and payment failed (or this was a successful "
                      f"payment. Generating a notification.")
             signal_data = {'user': subscription.customer.user,
@@ -356,6 +354,8 @@ def handle_subscription_updated(stripe_event):
             if key not in ["customer", "plan", "metadata"]:
                 setattr(subscription, key, converted_data[key])
         if subscription.status == Subscription.ACTIVE:
+            if subscription.metadata is None:
+                subscription.metadata = {}
             subscription.metadata.update({'has_been_active': True})
             log.info(f"Subscription {subscription} has status active. Marking it as such in metadata "
                      f"for notification purposes.")
