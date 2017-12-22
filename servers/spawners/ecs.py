@@ -184,7 +184,7 @@ class JobScheduler(ECSSpawner):
             f'{settings.AWS_ACCOUNT_ID}:',
             f'cluster/{settings.ECS_CLUSTER}'
         ])
-        self.events_client.put_targets(
+        targets = self.events_client.put_targets(
             Rule=str(self.server.pk),
             Targets=[{
                 'Id': str(self.server.pk),
@@ -195,6 +195,11 @@ class JobScheduler(ECSSpawner):
                 }
             }]
         )
+        if targets['FailedEntryCount'] > 0:
+            self.server.config['failed'] = [None] * targets['FailedEntryCount']
+            for i, failed_target in enumerate(targets['FailedEntries']):
+                self.server.config['failed'][i] = failed_target
+        self.server.save()
 
     def stop(self):
         self.events_client.disable_rule(
