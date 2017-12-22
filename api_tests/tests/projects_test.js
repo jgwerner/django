@@ -251,8 +251,8 @@ describe('{namespace}/projects/{project}/project_files/', () => {
     type: 'array',
     items: object_schema,
   }
-  const file1 = path.resolve(__dirname, '../resources/', 'test.txt')
-  const file2 = path.resolve(__dirname, '../resources/', 'test2.txt')
+  const file1 = path.resolve(__dirname, '../test_resources/', 'test.txt')
+  const file2 = path.resolve(__dirname, '../test_resources/', 'test2.txt')
   console.log(file1)
   console.log(file2)
 
