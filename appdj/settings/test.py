@@ -4,7 +4,6 @@ from .base import *
 SECRET_KEY = 'test'
 
 RESOURCE_DIR = '/tmp/3blades'
-INACTIVE_RESOURCE_DIR = "/tmp/inactive"
 MEDIA_ROOT = "/tmp/3blades"
 
 
@@ -44,3 +43,5 @@ HAYSTACK_CONNECTIONS = {
 }
 
 ENABLE_BILLING = True
+SPAWNER = 'servers.spawners.dummy.DummySpawner'
+AWS_JOBS_ROLE="arn:aws:iam::123456789012:role/JobsRole"

@@ -8,11 +8,10 @@ from social_django.models import UserSocialAuth
 from base.serializers import SearchSerializerMixin
 from projects.models import (Project, Collaborator,
                              SyncedResource, ProjectFile)
-from .utils import create_ancillary_project_stuff
+from .utils import create_ancillary_project_stuff, check_project_name_exists
 from servers.utils import stop_all_servers_for_project
 
 User = get_user_model()
-
 
 class ProjectSerializer(SearchSerializerMixin, serializers.ModelSerializer):
     owner = serializers.CharField(source='get_owner_name', read_only=True)
@@ -26,14 +25,8 @@ class ProjectSerializer(SearchSerializerMixin, serializers.ModelSerializer):
     def validate_name(self, value):
         request = self.context['request']
         existing_pk = self.context.get("pk")
-        qs = Project.objects.filter(name=value).exclude(pk=existing_pk)
-        if request.namespace.type == 'user':
-            qs = qs.filter(
-                collaborator__user=request.user,
-                collaborator__owner=True)
-        else:
-            qs = qs.filter(team=request.namespace.object)
-        if qs.exists():
+
+        if check_project_name_exists(value, request, existing_pk):
             raise serializers.ValidationError("You can have only one project named %s" % value)
         return value
 

@@ -53,6 +53,19 @@ class ProjectTest(ProjectTestMixin, APITestCase):
         self.assertEqual(Project.objects.count(), 1)
         self.assertEqual(Project.objects.get().name, data['name'])
 
+    def test_create_project_with_the_same_name(self):
+        collaborator = CollaboratorFactory(user=self.user, owner=True)
+        project = collaborator.project
+        url = reverse('project-list', kwargs={'namespace': self.user.username,
+                                              'version': settings.DEFAULT_VERSION})
+        data = dict(
+            name=project.name,
+            description='Test description',
+        )
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(Project.objects.count(), 1)
+
     def test_copy_public_project(self):
         proj = CollaboratorFactory(project__private=False,
                                    project__copying_enabled=True).project
@@ -175,6 +188,38 @@ class ProjectTest(ProjectTestMixin, APITestCase):
         self.assertIsNotNone(copied_project)
         self.assertEqual(copied_project.name, to_copy.name + "-1")
 
+    def test_copy_user_project_with_deliberately_duplicate_name_fails(self):
+        to_copy = CollaboratorFactory(project__private=False,
+                                      project__copying_enabled=True).project
+        CollaboratorFactory(project__private=False,
+                            project__copying_enabled=True,
+                            project__name=to_copy.name,
+                            user=self.user)
+
+        url = reverse("project-copy", kwargs={'version': settings.DEFAULT_VERSION,
+                                              'namespace': self.user.username})
+        # data.name must match to_copy.name
+        data = {'project': str(to_copy.pk), 'name': to_copy.name}
+        response = self.client.post(url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_copy_project_separate_users_same_name_passes(self):
+        # project_copy() should pass if an unassociated user duplicates a project name
+        name1 = "foo"
+        name2 = "bar"
+        to_copy = CollaboratorFactory(project__name=name1,
+                                      project__private=False,
+                                      project__copying_enabled=True).project
+
+        url = reverse("project-copy", kwargs={'version': settings.DEFAULT_VERSION,
+                                              'namespace': self.user.username})
+        data = {'project': str(to_copy.pk), 'name': name2}
+        response = self.client.post(url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        copied_project = Project.objects.filter(id=str(response.data['id'])).first()
+        self.assertEqual(copied_project.name, name2)
+
     def test_copy_project_with_existing_name_multiple(self):
         name = "foo"
         to_copy = CollaboratorFactory(project__name=name,
@@ -231,19 +276,6 @@ class ProjectTest(ProjectTestMixin, APITestCase):
         copied_project = Project.objects.filter(id=str(response.data['id'])).first()
         self.assertIsNotNone(copied_project)
         self.assertEqual(copied_project.owner, self.user)
-
-    def test_create_project_with_the_same_name(self):
-        collaborator = CollaboratorFactory(user=self.user, owner=True)
-        project = collaborator.project
-        url = reverse('project-list', kwargs={'namespace': self.user.username,
-                                              'version': settings.DEFAULT_VERSION})
-        data = dict(
-            name=project.name,
-            description='Test description',
-        )
-        response = self.client.post(url, data)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(Project.objects.count(), 1)
 
     def test_list_projects(self):
         projects_count = 4

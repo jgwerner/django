@@ -8,7 +8,7 @@ Deployer = get_deployer_class()
 
 def server_action(action: str, server: str):
     server = Server.objects.tbs_get(server)
-    spawner = Spawner(server)
+    spawner = server.spawner
     getattr(spawner, action)()
 
 
