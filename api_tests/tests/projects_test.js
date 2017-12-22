@@ -275,6 +275,7 @@ describe('{namespace}/projects/{project}/project_files/', () => {
     }
     console.log(file_options.formData.file)
     const response = await chakram.post(this.files_uri, undefined, file_options)
+    console.log(response)
     expect(response).to.have.status(201)
     expect(response).to.have.schema(array_schema)
   })
