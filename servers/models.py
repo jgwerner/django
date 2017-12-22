@@ -10,8 +10,9 @@ from django.utils.text import slugify
 
 from base.models import TBSQuerySet
 from users.models import User
-from servers.spawners import get_spawner_class, get_deployer_class
+from servers.spawners import get_spawner_class, get_deployer_class, get_scheduler_class
 
+Scheduler = get_scheduler_class()
 Spawner = get_spawner_class()
 Deployer = get_deployer_class()
 
@@ -89,13 +90,18 @@ class Server(ServerModelAbstract):
     last_start = models.DateTimeField(null=True)
 
     @property
+    def spawner(self):
+        if self.config['type'] == 'cron':
+            return Scheduler(self)
+        return Spawner(self)
+
+    @property
     def container_name(self):
         return slugify(str(self.pk))
 
     @property
     def status(self):
-        spawner = Spawner(self)
-        status = spawner.status()
+        status = self.spawner.status()
         return status.decode() if isinstance(status, bytes) else status
 
     def script_name_len(self):
