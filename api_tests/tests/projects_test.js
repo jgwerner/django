@@ -244,101 +244,101 @@ describe('{namespace}/projects/{project}/collaborators/', () => {
   })
 })
 
-// describe('{namespace}/projects/{project}/project_files/', () => {
-//   const object_schema = tools.get_schema('projects', 'project_files/')
-//   const array_schema = {
-//     type: 'array',
-//     items: object_schema,
-//   }
+describe('{namespace}/projects/{project}/project_files/', () => {
+  const object_schema = tools.get_schema('projects', 'project_files/')
+  const array_schema = {
+    type: 'array',
+    items: object_schema,
+  }
 
-//   beforeEach(async () => {
-//     this.file_options = {
-//       formData: {
-//         file: fs.createReadStream('./api_tests/resources/test.txt'),
-//       },
-//       headers: {
-//         Authorization: this.options.headers.Authorization,
-//         'Content-Type': 'multipart/form-data',
-//       },
-//     }
-//     const proj_uri = tools.get_request_uri(util.format('%s/projects/', namespace))
+  beforeEach(async () => {
+    this.file_options = {
+      formData: {
+        file: fs.createReadStream('./api_tests/resources/test.txt'),
+      },
+      headers: {
+        Authorization: this.options.headers.Authorization,
+        'Content-Type': 'multipart/form-data',
+      },
+    }
+    const proj_uri = tools.get_request_uri(util.format('%s/projects/', namespace))
 
-//     let new_proj = generator.project()
-//     const response = await chakram.post(proj_uri, new_proj, this.options)
-//     expect(response).to.have.status(201)
-//     this.files_uri = tools.get_request_uri(
-//       util.format('%s/projects/%s/project_files/', namespace, response.body.id),
-//     )
-//   })
+    let new_proj = generator.project()
+    const response = await chakram.post(proj_uri, new_proj, this.options)
+    expect(response).to.have.status(201)
+    this.files_uri = tools.get_request_uri(
+      util.format('%s/projects/%s/project_files/', namespace, response.body.id),
+    )
+  })
 
-//   it('POST a file should create a new file object', async () => {
-//     const response = await chakram.post(this.files_uri, undefined, this.file_options)
-//     expect(response).to.have.status(201)
-//     expect(response).to.have.schema(array_schema)
-//   })
+  it('POST a file should create a new file object', async () => {
+    const response = await chakram.post(this.files_uri, undefined, this.file_options)
+    expect(response).to.have.status(201)
+    expect(response).to.have.schema(array_schema)
+  })
 
-//   it('GET all files should return a list of files', async () => {
-//     const response = await chakram.post(this.files_uri, undefined, this.file_options)
-//     expect(response).to.have.status(201)
-//     expect(response).to.have.schema(array_schema)
+  it('GET all files should return a list of files', async () => {
+    const response = await chakram.post(this.files_uri, undefined, this.file_options)
+    expect(response).to.have.status(201)
+    expect(response).to.have.schema(array_schema)
 
-//     const get_response = await chakram.get(this.files_uri, this.options)
-//     expect(get_response).to.have.status(200)
-//     expect(get_response).to.have.schema(array_schema)
-//   })
+    const get_response = await chakram.get(this.files_uri, this.options)
+    expect(get_response).to.have.status(200)
+    expect(get_response).to.have.schema(array_schema)
+  })
 
-//   it('GET specific file should return the file', async () => {
-//     const response = await chakram.post(this.files_uri, undefined, this.file_options)
-//     expect(response).to.have.status(201)
-//     expect(response).to.have.schema(array_schema)
-//     const file_uri = util.format('%s%s/', this.files_uri, response.body[0].id)
+  it('GET specific file should return the file', async () => {
+    const response = await chakram.post(this.files_uri, undefined, this.file_options)
+    expect(response).to.have.status(201)
+    expect(response).to.have.schema(array_schema)
+    const file_uri = util.format('%s%s/', this.files_uri, response.body[0].id)
 
-//     const get_response = await chakram.get(file_uri, this.options)
-//     expect(get_response).to.have.status(200)
-//     expect(get_response).to.have.schema(object_schema)
-//   })
+    const get_response = await chakram.get(file_uri, this.options)
+    expect(get_response).to.have.status(200)
+    expect(get_response).to.have.schema(object_schema)
+  })
 
-//   it('PUT a file should replace the file', async () => {
-//     const response = await chakram.post(this.files_uri, undefined, this.file_options)
-//     expect(response).to.have.status(201)
-//     expect(response).to.have.schema(array_schema)
-//     const file_uri = util.format('%s%s/', this.files_uri, response.body[0].id)
+  it('PUT a file should replace the file', async () => {
+    const response = await chakram.post(this.files_uri, undefined, this.file_options)
+    expect(response).to.have.status(201)
+    expect(response).to.have.schema(array_schema)
+    const file_uri = util.format('%s%s/', this.files_uri, response.body[0].id)
 
-//     let put_options = JSON.parse(JSON.stringify(this.file_options))
-//     put_options.formData.file = fs.createReadStream('./api_tests/resources/test2.txt')
-//     const put_response = await chakram.put(file_uri, undefined, put_options)
-//     expect(put_response).to.have.status(200)
-//     expect(put_response).to.have.schema(object_schema)
-//     expect(put_response.body.name).to.equal('test2.txt')
-//   })
+    let put_options = JSON.parse(JSON.stringify(this.file_options))
+    put_options.formData.file = fs.createReadStream('./api_tests/resources/test2.txt')
+    const put_response = await chakram.put(file_uri, undefined, put_options)
+    expect(put_response).to.have.status(200)
+    expect(put_response).to.have.schema(object_schema)
+    expect(put_response.body.name).to.equal('test2.txt')
+  })
 
-//   it('PATCH a file should replace the file', async () => {
-//     const response = await chakram.post(this.files_uri, undefined, this.file_options)
-//     expect(response).to.have.status(201)
-//     expect(response).to.have.schema(array_schema)
-//     const file_uri = util.format('%s%s/', this.files_uri, response.body[0].id)
+  it('PATCH a file should replace the file', async () => {
+    const response = await chakram.post(this.files_uri, undefined, this.file_options)
+    expect(response).to.have.status(201)
+    expect(response).to.have.schema(array_schema)
+    const file_uri = util.format('%s%s/', this.files_uri, response.body[0].id)
 
-//     let patch_options = JSON.parse(JSON.stringify(this.file_options))
-//     patch_options.formData.file = fs.createReadStream('./api_tests/resources/test2.txt')
-//     const patch_response = await chakram.patch(file_uri, undefined, patch_options)
-//     expect(patch_response).to.have.status(200)
-//     expect(patch_response).to.have.schema(object_schema)
-//     expect(patch_response.body.name).to.equal('test2.txt')
-//   })
+    let patch_options = JSON.parse(JSON.stringify(this.file_options))
+    patch_options.formData.file = fs.createReadStream('./api_tests/resources/test2.txt')
+    const patch_response = await chakram.patch(file_uri, undefined, patch_options)
+    expect(patch_response).to.have.status(200)
+    expect(patch_response).to.have.schema(object_schema)
+    expect(patch_response.body.name).to.equal('test2.txt')
+  })
 
-//   it('DELETE a file should replace the file', async () => {
-//     const response = await chakram.post(this.files_uri, undefined, this.file_options)
-//     expect(response).to.have.status(201)
-//     expect(response).to.have.schema(array_schema)
-//     const file_uri = util.format('%s%s/', this.files_uri, response.body[0].id)
+  it('DELETE a file should replace the file', async () => {
+    const response = await chakram.post(this.files_uri, undefined, this.file_options)
+    expect(response).to.have.status(201)
+    expect(response).to.have.schema(array_schema)
+    const file_uri = util.format('%s%s/', this.files_uri, response.body[0].id)
 
-//     const del_response = await chakram.delete(file_uri, undefined, this.options)
-//     expect(del_response).to.have.status(204)
+    const del_response = await chakram.delete(file_uri, undefined, this.options)
+    expect(del_response).to.have.status(204)
 
-//     const get_response = await chakram.get(file_uri, this.options)
-//     expect(get_response).to.have.status(404)
-//   })
-// })
+    const get_response = await chakram.get(file_uri, this.options)
+    expect(get_response).to.have.status(404)
+  })
+})
 
 describe('{namespace}/projects/{project}/servers/', () => {
   const object_schema = tools.get_schema('projects', 'servers/')

@@ -151,10 +151,10 @@
         "type": "string"
       },
       "trial_start": {
-        "type": "string"
+        "type": ["null", "string"]
       },
       "trial_end": {
-        "type": "string"
+        "type": ["null", "string"]
       },
       "customer": {
         "type": "string"
