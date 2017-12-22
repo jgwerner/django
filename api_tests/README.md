@@ -52,12 +52,6 @@ Test cases should be named in the format METHOD SCENARIO should EXPECTED_RESULT 
 Most of the restful endpoints require authentication. So we need to set the authentication header before running tests:
 
 ```javascript
-const chakram = require('chakram')
-const util = require('util')
-const config = require('../config')
-const tools = require('../test_utils')
-const expect = chakram.expect
-
 before(async () => {
   const token = await tools.login(config.username, config.password)
   this.options = {
@@ -79,6 +73,8 @@ chakram.put(uri, json, this.options)
 chakram.delete(uri, {}, this.options)
 ```
 
+However, for the most part this is unnecessary because authenication will be set by default. The only reason you need to do this if you are trying to authenticate as a different user then what is set in config.js
+
 #### async/await
 
 Javascript is asynchronous by default so in order to handle asynchronous web request we need to make use of async functions and awaiting api responses. See the example below:
@@ -88,12 +84,12 @@ it('PATCH a project should replace the project', async () => {
   // Arrange
   const new_proj = generator.project()
   const mod_proj = generator.project()
-  const post_response = await chakram.post(proj_uri, new_proj, this.options)
+  const post_response = await chakram.post(proj_uri, new_proj)
   expect(post_response).to.have.status(201)
   expect(post_response).to.comprise.of.json(new_proj)
   const project_uri = proj_uri + post_response.body.id + '/'
   // Act
-  const patch_response = await chakram.patch(project_uri, mod_proj, this.options)
+  const patch_response = await chakram.patch(project_uri, mod_proj)
   // Assert
   expect(patch_response).to.have.status(200)
   expect(patch_response).to.comprise.of.json(mod_proj)
@@ -109,7 +105,7 @@ Technically since the tests are run as apart of the build, we dont _need_ the te
 afterEach(() => {
   let uri = tools.get_request_uri('me/teams/')
   if (this.team) {
-    let response = chakram.delete(uri + this.team + '/', {}, this.options)
+    let response = chakram.delete(uri + this.team + '/', {})
     this.team = undefined
     expect(response).to.have.status(204)
     return chakram.wait()
