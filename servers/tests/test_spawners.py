@@ -16,7 +16,7 @@ from django.test import TransactionTestCase, TestCase
 from projects.tests.factories import CollaboratorFactory
 from servers.tests.fake_docker_api_client.fake_api import FAKE_CONTAINER_ID
 from ..spawners.docker import DockerSpawner
-from ..spawners.ecs import ECSSpawner
+from ..spawners.ecs import ECSSpawner, BatchSpawner
 from ..spawners.aws_lambda.deployer import LambdaDeployer
 from .factories import ServerSizeFactory, ServerFactory, DeploymentFactory
 from .fake_docker_api_client.fake_api_client import make_fake_client
@@ -657,3 +657,58 @@ class LambdaDeployerTestCase(TestCase):
             zf.write(py_path, arcname='lambda.py')
         with zip_path.open('rb') as of:
             return of.read()
+
+
+class BatchSpawnerTestCase(TestCase):
+    def setUp(self):
+        col = CollaboratorFactory()
+        self.project = col.project
+        client = botocore.session.get_session().create_client('batch')
+        self.stubber = Stubber(client)
+        self.spawner = BatchSpawner(self.server, client)
+
+    def test_start(self):
+        volumes, mount_points = self.spawner._get_volumes_and_mount_points()
+        register_params = dict(
+            jobDefinitionName=str(self.server.pk),
+            type='container',
+            containerProperties={
+                'image': self.server.image_name,
+                'vcpus': self.server.server_size.cpu,
+                'memory': self.server.server_size.memory,
+                'mountPoints': mount_points,
+                'volumes': volumes,
+            },
+        )
+        register_response = {'jobDefinitionArn': 'abc', 'jobDefinitionName': str(self.server.pk)}
+        self.stubber.add_response('register_job_definition', register_response, register_params)
+        create_job_queue_params = dict(
+            jobQueueName='dev',
+            state='ENABLED',
+            priority=1,
+            computeEnvironmentOrder=[
+                {
+                    'order': 1,
+                    'computeEnvironment': 'userspace'
+                }
+            ],
+        )
+        create_job_queue_response = {'jobQueueArn': '123', 'jobQueueName': 'name'}
+        self.stubber.add_response('create_job_queue', create_job_queue_response, create_job_queue_params)
+        submit_job_params = dict(
+            jobName=f"{self.server.pk}_{len(self.server.config['jobs'])}",
+            jobQueue=self.server.config['job_queue_arn'],
+            jobDefinition=self.server.config['job_definition_arn'],
+            containerOverrides={
+                'environment': self.spawner.get_env(),
+                'command': self.spawner._get_cmd(),
+            },
+            retryStrategy={
+                'attempts': 3
+            }
+        )
+        submit_job_response = {
+            'jobName': 'string',
+            'jobId': 'string'
+        }
+        self.stubber.add_response('submit_job', submit_job_response, submit_job_params)

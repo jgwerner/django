@@ -257,3 +257,88 @@ class JobScheduler(ECSSpawner):
 
     def _get_cmd(self):
         return self.server.config['command']
+
+
+class BatchSpawner(BaseSpawner):
+    def __init__(self, server, client=None):
+        super().__init__(server)
+        self.batch = client or boto3.client("batch")
+
+    def start(self):
+        if 'jobs' not in self.server.config:
+            self.server.config['jobs'] = []
+        if 'job_definition_arn' not in self.server.config:
+            self.server.config['job_definition_arn'] = self._register_job_definition()
+        if 'job_queue_arn' not in self.server.config:
+            self.server.config['job_queue_arn'] = self._create_job_queue()
+        resp = self.batch.submit_job(
+            jobName=f"{self.server.pk}_{len(self.server.config['jobs'])}",
+            jobQueue=self.server.config['job_queue_arn'],
+            jobDefinition=self.server.config['job_definition_arn'],
+            containerOverrides={
+                'environment': self._get_env(),
+                'command': self._get_cmd(),
+            },
+            retryStrategy={
+                'attempts': 3
+            }
+        )
+        self.server.config['jobs'].append(resp['jobId'])
+
+    def stop(self):
+        for job in self.server.config['jobs']:
+            self.batch.cancel_job(
+                jobId=job,
+                reason='User action.'
+            )
+
+    def terminate(self):
+        for job in self.server.config['jobs']:
+            self.batch.terminate_job(
+                jobId=job,
+                reason='User action.'
+            )
+        self.batch.deregister_job_definition(
+            jobDefinition=self.server.config['job_definition_arn']
+        )
+
+    def status(self) -> dict:
+        resp = self.batch.describe_jobs(
+            jobs=self.server.config['jobs']
+        )
+        out = {}
+        for job in resp['jobs']:
+            out[job['jobId']] = job['status'].title()
+        return out
+
+    def _register_job_definition(self) -> str:
+        volumes, mount_points = self._get_volumes_and_mount_points()
+        resp = self.batch.register_job_definition(
+            jobDefinitionName=str(self.server.pk),
+            type='container',
+            containerProperties={
+                'image': self.server.image_name,
+                'vcpus': self.server.server_size.cpu,
+                'memory': self.server.server_size.memory,
+                'mountPoints': mount_points,
+                'volumes': volumes,
+            },
+        )
+        return resp['jobDefinitionArn']
+
+    def _create_job_queue(self) -> str:
+        resp = self.batch.create_job_queue(
+            jobQueueName='dev',
+            state='ENABLED',
+            priority=1,
+            computeEnvironmentOrder=[
+                {
+                    'order': 1,
+                    'computeEnvironment': 'userspace'
+                }
+            ],
+        )
+        return resp['jobQueueArn']
+
+    def _get_cmd(self) -> list:
+        return self.server.config['command']
