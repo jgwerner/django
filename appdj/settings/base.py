@@ -365,7 +365,7 @@ MIGRATION_MODULES = {
 # Server settings
 SERVER_RESOURCE_DIR = os.environ.get("SERVER_RESOURCE_DIR", "/resources")
 SERVER_PORT_MAPPING = {'8080': "proxy", '6006': 'restful'}
-SERVER_TYPES = {"restful", "cron", "proxy"}
+SERVER_TYPES = {"restful", "cron", "proxy", "batch"}
 SERVER_TYPE_MAPPING = {'jupyter': 'proxy', 'rstudio': 'proxy'}
 SERVER_ENDPOINT_URLS = {'restful': '/restful/', 'proxy': '/proxy/'}
 SERVER_COMMANDS = {
@@ -428,6 +428,7 @@ SPAWNER = 'servers.spawners.ecs.ECSSpawner'
 DEPLOYER = 'servers.spawners.aws_lambda.deployer.LambdaDeployer'
 SCHEDULER = 'servers.spawners.ecs.JobScheduler'
 ECS_CLUSTER = os.environ.get('ECS_CLUSTER', 'default')
+BATCH_COMPUTE_ENV = os.environ.get('BATCH_COMPUTE_ENV')
 REDIRECT_IS_HTTPS = True
 
 # Default server memory sizes in MB, implemented in /servers/management/commands/

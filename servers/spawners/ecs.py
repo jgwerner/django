@@ -259,7 +259,7 @@ class JobScheduler(ECSSpawner):
         return self.server.config['command']
 
 
-class BatchSpawner(BaseSpawner):
+class BatchScheduler(ECSSpawner):
     def __init__(self, server, client=None):
         super().__init__(server)
         self.batch = client or boto3.client("batch")
@@ -269,11 +269,9 @@ class BatchSpawner(BaseSpawner):
             self.server.config['jobs'] = []
         if 'job_definition_arn' not in self.server.config:
             self.server.config['job_definition_arn'] = self._register_job_definition()
-        if 'job_queue_arn' not in self.server.config:
-            self.server.config['job_queue_arn'] = self._create_job_queue()
         resp = self.batch.submit_job(
             jobName=f"{self.server.pk}_{len(self.server.config['jobs'])}",
-            jobQueue=self.server.config['job_queue_arn'],
+            jobQueue='dev',
             jobDefinition=self.server.config['job_definition_arn'],
             containerOverrides={
                 'environment': self._get_env(),
@@ -284,9 +282,10 @@ class BatchSpawner(BaseSpawner):
             }
         )
         self.server.config['jobs'].append(resp['jobId'])
+        self.server.save()
 
     def stop(self):
-        for job in self.server.config['jobs']:
+        for job in self.server.config.get('jobs', []):
             self.batch.cancel_job(
                 jobId=job,
                 reason='User action.'
@@ -325,20 +324,6 @@ class BatchSpawner(BaseSpawner):
             },
         )
         return resp['jobDefinitionArn']
-
-    def _create_job_queue(self) -> str:
-        resp = self.batch.create_job_queue(
-            jobQueueName='dev',
-            state='ENABLED',
-            priority=1,
-            computeEnvironmentOrder=[
-                {
-                    'order': 1,
-                    'computeEnvironment': 'userspace'
-                }
-            ],
-        )
-        return resp['jobQueueArn']
 
     def _get_cmd(self) -> list:
         return self.server.config['command']

@@ -11,6 +11,7 @@ from django.utils.text import slugify
 from base.models import TBSQuerySet
 from users.models import User
 from servers.spawners import get_spawner_class, get_deployer_class, get_scheduler_class
+from servers.spawners.ecs import BatchScheduler
 
 Scheduler = get_scheduler_class()
 Spawner = get_spawner_class()
@@ -93,6 +94,8 @@ class Server(ServerModelAbstract):
     def spawner(self):
         if self.config['type'] == 'cron':
             return Scheduler(self)
+        if self.config['type'] == 'batch':
+            return BatchScheduler(self)
         return Spawner(self)
 
     @property
