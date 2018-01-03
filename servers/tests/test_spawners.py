@@ -16,7 +16,7 @@ from django.test import TransactionTestCase, TestCase
 from projects.tests.factories import CollaboratorFactory
 from servers.tests.fake_docker_api_client.fake_api import FAKE_CONTAINER_ID
 from ..spawners.docker import DockerSpawner
-from ..spawners.ecs import ECSSpawner, BatchSpawner
+from ..spawners.ecs import ECSSpawner, BatchScheduler
 from ..spawners.aws_lambda.deployer import LambdaDeployer
 from .factories import ServerSizeFactory, ServerFactory, DeploymentFactory
 from .fake_docker_api_client.fake_api_client import make_fake_client
@@ -663,9 +663,23 @@ class BatchSpawnerTestCase(TestCase):
     def setUp(self):
         col = CollaboratorFactory()
         self.project = col.project
+        self.server = ServerFactory(
+            image_name='test',
+            server_size=ServerSizeFactory(
+                memory=512,
+                cpu=1,
+
+            ),
+            env_vars={'test': 'test'},
+            project=col.project,
+            config={
+                'type': 'batch',
+                'command': ['echo', 'test']
+            }
+        )
         client = botocore.session.get_session().create_client('batch')
         self.stubber = Stubber(client)
-        self.spawner = BatchSpawner(self.server, client)
+        self.spawner = BatchScheduler(self.server, client)
 
     def test_start(self):
         volumes, mount_points = self.spawner._get_volumes_and_mount_points()
@@ -680,27 +694,15 @@ class BatchSpawnerTestCase(TestCase):
                 'volumes': volumes,
             },
         )
-        register_response = {'jobDefinitionArn': 'abc', 'jobDefinitionName': str(self.server.pk)}
+        register_response = {'jobDefinitionArn': 'abc', 'jobDefinitionName': str(self.server.pk), 'revision': 1}
         self.stubber.add_response('register_job_definition', register_response, register_params)
-        create_job_queue_params = dict(
-            jobQueueName='dev',
-            state='ENABLED',
-            priority=1,
-            computeEnvironmentOrder=[
-                {
-                    'order': 1,
-                    'computeEnvironment': 'userspace'
-                }
-            ],
-        )
-        create_job_queue_response = {'jobQueueArn': '123', 'jobQueueName': 'name'}
-        self.stubber.add_response('create_job_queue', create_job_queue_response, create_job_queue_params)
+        job_name = f"{self.server.pk}_0"
         submit_job_params = dict(
-            jobName=f"{self.server.pk}_{len(self.server.config['jobs'])}",
-            jobQueue=self.server.config['job_queue_arn'],
-            jobDefinition=self.server.config['job_definition_arn'],
+            jobName=job_name,
+            jobQueue='dev',
+            jobDefinition='abc',
             containerOverrides={
-                'environment': self.spawner.get_env(),
+                'environment': self.spawner._get_env(),
                 'command': self.spawner._get_cmd(),
             },
             retryStrategy={
@@ -708,7 +710,64 @@ class BatchSpawnerTestCase(TestCase):
             }
         )
         submit_job_response = {
-            'jobName': 'string',
-            'jobId': 'string'
+            'jobName': job_name,
+            'jobId': 'job12'
         }
         self.stubber.add_response('submit_job', submit_job_response, submit_job_params)
+        self.stubber.activate()
+        self.spawner.start()
+        self.server.refresh_from_db()
+        self.assertIn('jobs', self.server.config)
+        self.assertEqual(self.server.config['jobs'], ['job12'])
+        self.assertIn('job_definition_arn', self.server.config)
+        self.assertEqual(self.server.config['job_definition_arn'], 'abc')
+
+    def test_stop(self):
+        self.server.config['jobs'] = ['job12']
+        self.server.save()
+        cancel_job_params = dict(
+            jobId='job12',
+            reason='User action.'
+        )
+        self.stubber.add_response('cancel_job', {}, cancel_job_params)
+        self.stubber.activate()
+        self.spawner.stop()
+        self.assertEqual(self.server.config['jobs'], [])
+
+    def test_terminate(self):
+        self.server.config['jobs'] = ['job12']
+        self.server.config['job_definition_arn'] = 'abc'
+        self.server.save()
+        terminate_job_params = dict(
+            jobId='job12',
+            reason='User action.'
+        )
+        self.stubber.add_response('terminate_job', {}, terminate_job_params)
+        deregister_job_def_params = dict(
+            jobDefinition=self.server.config['job_definition_arn']
+        )
+        self.stubber.add_response('deregister_job_definition', {}, deregister_job_def_params)
+        self.stubber.activate()
+        self.spawner.terminate()
+
+    def test_status(self):
+        self.server.config['jobs'] = ['job12']
+        self.server.save()
+        describe_jobs_params = dict(jobs=self.server.config['jobs'])
+        describe_jobs_response = {
+            'jobs': [
+                {
+                    'jobName': str(self.server.pk),
+                    'jobId': 'job12',
+                    'jobQueue': 'dev',
+                    'status': 'RUNNABLE',
+                    'jobDefinition': 'abc',
+                    'startedAt': 123,
+                }
+            ]
+        }
+        self.stubber.add_response('describe_jobs', describe_jobs_response, describe_jobs_params)
+        self.stubber.activate()
+        statuses = self.spawner.status()
+        self.assertIn('job12', statuses)
+        self.assertEqual('Runnable', statuses['job12'])

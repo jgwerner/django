@@ -290,6 +290,8 @@ class BatchScheduler(ECSSpawner):
                 jobId=job,
                 reason='User action.'
             )
+        self.server.config['jobs'] = []
+        self.server.save()
 
     def terminate(self):
         for job in self.server.config['jobs']:
