@@ -10,6 +10,10 @@ from .base import BaseSpawner, GPUMixin
 logger = logging.getLogger("servers")
 
 
+class SpawnerException(Exception):
+    pass
+
+
 class ECSSpawner(GPUMixin, BaseSpawner):
     def __init__(self, server, client=None) -> None:
         super().__init__(server)
@@ -184,7 +188,7 @@ class JobScheduler(ECSSpawner):
             f'{settings.AWS_ACCOUNT_ID}:',
             f'cluster/{settings.ECS_CLUSTER}'
         ])
-        self.events_client.put_targets(
+        targets = self.events_client.put_targets(
             Rule=str(self.server.pk),
             Targets=[{
                 'Id': str(self.server.pk),
@@ -195,6 +199,11 @@ class JobScheduler(ECSSpawner):
                 }
             }]
         )
+        if targets['FailedEntryCount'] > 0:
+            self.server.config['failed'] = []
+            for failed_target in targets['FailedEntries']:
+                self.server.config['failed'].append(failed_target)
+        self.server.save()
 
     def stop(self):
         self.events_client.disable_rule(
@@ -202,10 +211,12 @@ class JobScheduler(ECSSpawner):
         )
 
     def terminate(self):
-        self.events_client.remove_targets(
+        targets = self.events_client.remove_targets(
             Rule=str(self.server.pk),
             Ids=[str(self.server.pk)]
         )
+        if targets['FailedEntryCount'] > 0:
+            raise SpawnerException("Failed targets removal %s", targets['FailedEntries'])
         self.events_client.delete_rule(
             Name=str(self.server.pk)
         )

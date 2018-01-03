@@ -369,7 +369,7 @@ SERVER_TYPES = {"restful", "cron", "proxy", "batch"}
 SERVER_TYPE_MAPPING = {'jupyter': 'proxy', 'rstudio': 'proxy'}
 SERVER_ENDPOINT_URLS = {'restful': '/restful/', 'proxy': '/proxy/'}
 SERVER_COMMANDS = {
-    'jupyter': 'jupyter notebook --NotebookApp.base_url=' +
+    'jupyter': 'jupyter lab --NotebookApp.base_url=' +
     '"/{version}/{server.project.owner.username}/projects/{server.project.pk}/servers/{server.pk}/endpoint/proxy"',
     'rstudio': '/init',
 }

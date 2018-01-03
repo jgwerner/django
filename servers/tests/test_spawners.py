@@ -16,7 +16,7 @@ from django.test import TransactionTestCase, TestCase
 from projects.tests.factories import CollaboratorFactory
 from servers.tests.fake_docker_api_client.fake_api import FAKE_CONTAINER_ID
 from ..spawners.docker import DockerSpawner
-from ..spawners.ecs import ECSSpawner, BatchScheduler
+from ..spawners.ecs import ECSSpawner, JobScheduler, SpawnerException, BatchScheduler
 from ..spawners.aws_lambda.deployer import LambdaDeployer
 from .factories import ServerSizeFactory, ServerFactory, DeploymentFactory
 from .fake_docker_api_client.fake_api_client import make_fake_client
@@ -657,6 +657,182 @@ class LambdaDeployerTestCase(TestCase):
             zf.write(py_path, arcname='lambda.py')
         with zip_path.open('rb') as of:
             return of.read()
+
+
+class JobSchedulerTestCase(TestCase):
+    def setUp(self):
+        col = CollaboratorFactory()
+        self.project = col.project
+        ecs_client = botocore.session.get_session().create_client('ecs')
+        self.ecs_stubber = Stubber(ecs_client)
+        events_client = botocore.session.get_session().create_client('events')
+        self.events_stubber = Stubber(events_client)
+        self.server = ServerFactory(
+            image_name='test',
+            server_size=ServerSizeFactory(
+                memory=512,
+                cpu=1,
+
+            ),
+            env_vars={'test': 'test'},
+            project=col.project,
+            config={
+                'type': 'cron',
+                'schedule': '0/5 * * * ? *',
+                'command': ['python', '-c', '"import this"', '>', 'out']
+            }
+        )
+        self.scheduler = JobScheduler(self.server, client=ecs_client, events_client=events_client)
+
+    def test_start(self):
+        register_params = self.scheduler._task_definition_args
+        register_response = {'taskDefinition': {'taskDefinitionArn': '123'}}
+        self.ecs_stubber.add_response('register_task_definition', register_response, register_params)
+        rule_params = dict(
+            Name=str(self.server.pk),
+            ScheduleExpression=f"cron({self.server.config['schedule']})",
+            RoleArn=settings.AWS_JOBS_ROLE
+        )
+        rule_response = {'RuleArn': '456'}
+        self.events_stubber.add_response('put_rule', rule_response, expected_params=rule_params)
+        cluster_arn = ''.join([
+            f'arn:aws:ecs:{settings.AWS_DEFAULT_REGION}:',
+            f'{settings.AWS_ACCOUNT_ID}:',
+            f'cluster/{settings.ECS_CLUSTER}'
+        ])
+        targets_params = dict(
+            Rule=str(self.server.pk),
+            Targets=[{
+                'Id': str(self.server.pk),
+                'Arn': cluster_arn,
+                'RoleArn': settings.AWS_JOBS_ROLE,
+                'EcsParameters': {
+                    'TaskDefinitionArn': '123'
+                }
+            }]
+        )
+        targets_response = {'FailedEntryCount': 0, 'FailedEntries': []}
+        self.events_stubber.add_response('put_targets', targets_response, expected_params=targets_params)
+        self.ecs_stubber.activate()
+        self.events_stubber.activate()
+        self.scheduler.start()
+        self.server.refresh_from_db()
+        self.assertIn('task_definition_arn', self.server.config)
+        self.assertEqual('123', self.server.config['task_definition_arn'])
+        self.assertIn('rule_arn', self.server.config)
+        self.assertEqual('456', self.server.config['rule_arn'])
+        self.assertNotIn('failed', self.server.config)
+
+    def test_start_failed_target(self):
+        register_params = self.scheduler._task_definition_args
+        register_response = {'taskDefinition': {'taskDefinitionArn': '123'}}
+        self.ecs_stubber.add_response('register_task_definition', register_response, register_params)
+        rule_params = dict(
+            Name=str(self.server.pk),
+            ScheduleExpression=f"cron({self.server.config['schedule']})",
+            RoleArn=settings.AWS_JOBS_ROLE
+        )
+        rule_response = {'RuleArn': '456'}
+        self.events_stubber.add_response('put_rule', rule_response, expected_params=rule_params)
+        cluster_arn = ''.join([
+            f'arn:aws:ecs:{settings.AWS_DEFAULT_REGION}:',
+            f'{settings.AWS_ACCOUNT_ID}:',
+            f'cluster/{settings.ECS_CLUSTER}'
+        ])
+        targets_params = dict(
+            Rule=str(self.server.pk),
+            Targets=[{
+                'Id': str(self.server.pk),
+                'Arn': cluster_arn,
+                'RoleArn': settings.AWS_JOBS_ROLE,
+                'EcsParameters': {
+                    'TaskDefinitionArn': '123'
+                }
+            }]
+        )
+        targets_response = {
+            'FailedEntryCount': 1,
+            'FailedEntries': [
+                {
+                    'TargetId': str(self.server.pk),
+                    'ErrorCode': 'SomeError',
+                    'ErrorMessage': 'Some error message'
+                }
+            ]
+        }
+        self.events_stubber.add_response('put_targets', targets_response, expected_params=targets_params)
+        self.ecs_stubber.activate()
+        self.events_stubber.activate()
+        self.scheduler.start()
+        self.server.refresh_from_db()
+        self.assertIn('task_definition_arn', self.server.config)
+        self.assertEqual('123', self.server.config['task_definition_arn'])
+        self.assertIn('rule_arn', self.server.config)
+        self.assertEqual('456', self.server.config['rule_arn'])
+        self.assertIn('failed', self.server.config)
+        self.assertEqual(str(self.server.pk), self.server.config['failed'][0]['TargetId'])
+
+    def test_stop(self):
+        disable_rule_params = dict(
+            Name=str(self.server.pk)
+        )
+        self.events_stubber.add_response('disable_rule', {}, expected_params=disable_rule_params)
+        self.events_stubber.activate()
+        self.scheduler.stop()
+
+    def test_terminate(self):
+        remove_targets_params = dict(
+            Rule=str(self.server.pk),
+            Ids=[str(self.server.pk)]
+        )
+        remove_targets_response = {'FailedEntryCount': 0, 'FailedEntries': []}
+        self.events_stubber.add_response('remove_targets', remove_targets_response, remove_targets_params)
+        delete_rule_params = dict(
+            Name=str(self.server.pk)
+        )
+        self.events_stubber.add_response('delete_rule', {}, expected_params=delete_rule_params)
+        self.events_stubber.activate()
+        self.scheduler.terminate()
+
+    def test_terminate_failed_targets(self):
+        remove_targets_params = dict(
+            Rule=str(self.server.pk),
+            Ids=[str(self.server.pk)]
+        )
+        remove_targets_response = {
+            'FailedEntryCount': 1,
+            'FailedEntries': [
+                {
+                    'TargetId': str(self.server.pk),
+                    'ErrorCode': 'SomeError',
+                    'ErrorMessage': 'Some error message'
+                }
+            ]
+        }
+        self.events_stubber.add_response('remove_targets', remove_targets_response, remove_targets_params)
+        delete_rule_params = dict(
+            Name=str(self.server.pk)
+        )
+        self.events_stubber.add_response('delete_rule', {}, expected_params=delete_rule_params)
+        self.events_stubber.activate()
+        with self.assertRaises(SpawnerException):
+            self.scheduler.terminate()
+
+    def test_status(self):
+        self.server.config['task_definition_arn'] = '123'
+        self.server.save()
+        describe_rule_params = dict(
+            Name=str(self.server.pk)
+        )
+        describe_rule_response = {'State': 'ENABLED'}
+        self.events_stubber.add_response('describe_rule', describe_rule_response, describe_rule_params)
+        self.events_stubber.activate()
+        status = self.scheduler.status()
+        self.assertEqual(status, 'Scheduled')
+
+    def test_status_before_launch(self):
+        status = self.scheduler.status()
+        self.assertEqual(status, 'Stopped')
 
 
 class BatchSpawnerTestCase(TestCase):
