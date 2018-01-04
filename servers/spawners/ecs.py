@@ -276,14 +276,16 @@ class BatchScheduler(ECSSpawner):
         self.batch = client or boto3.client("batch")
 
     def start(self):
-        if 'jobs' not in self.server.config:
-            self.server.config['jobs'] = []
         if 'job_definition_arn' not in self.server.config:
             self.server.config['job_definition_arn'] = self._register_job_definition()
+        depends_on = []
+        if 'depends_on' in self.server.config:
+            depends_on = [{'jobId': job} for job in self.server.config['depends_on']]
         resp = self.batch.submit_job(
-            jobName=f"{self.server.pk}_{len(self.server.config['jobs'])}",
-            jobQueue='dev',
+            jobName=f"{self.server.pk}",
+            jobQueue=settings.BATCH_JOB_QUEUE,
             jobDefinition=self.server.config['job_definition_arn'],
+            dependsOn=depends_on,
             containerOverrides={
                 'environment': self._get_env(),
                 'command': self._get_cmd(),
@@ -292,36 +294,31 @@ class BatchScheduler(ECSSpawner):
                 'attempts': 3
             }
         )
-        self.server.config['jobs'].append(resp['jobId'])
+        self.server.config['job_id'] = resp['jobId']
         self.server.save()
 
     def stop(self):
-        for job in self.server.config.get('jobs', []):
-            self.batch.cancel_job(
-                jobId=job,
-                reason='User action.'
-            )
-        self.server.config['jobs'] = []
+        self.batch.cancel_job(
+            jobId=self.server.config['job_id'],
+            reason='User action.'
+        )
+        del self.server.config['job_id']
         self.server.save()
 
     def terminate(self):
-        for job in self.server.config['jobs']:
-            self.batch.terminate_job(
-                jobId=job,
-                reason='User action.'
-            )
+        self.batch.terminate_job(
+            jobId=self.server.config['job_id'],
+            reason='User action.'
+        )
         self.batch.deregister_job_definition(
             jobDefinition=self.server.config['job_definition_arn']
         )
 
-    def status(self) -> dict:
+    def status(self) -> str:
         resp = self.batch.describe_jobs(
-            jobs=self.server.config['jobs']
+            jobs=[self.server.config['job_id']]
         )
-        out = {}
-        for job in resp['jobs']:
-            out[job['jobId']] = job['status'].title()
-        return out
+        return resp['jobs'][0]['status'].title()
 
     def _register_job_definition(self) -> str:
         volumes, mount_points = self._get_volumes_and_mount_points()

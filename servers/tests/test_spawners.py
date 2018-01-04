@@ -850,7 +850,8 @@ class BatchSpawnerTestCase(TestCase):
             project=col.project,
             config={
                 'type': 'batch',
-                'command': ['echo', 'test']
+                'command': ['echo', 'test'],
+                'depends_on': ['job11']
             }
         )
         client = botocore.session.get_session().create_client('batch')
@@ -872,11 +873,12 @@ class BatchSpawnerTestCase(TestCase):
         )
         register_response = {'jobDefinitionArn': 'abc', 'jobDefinitionName': str(self.server.pk), 'revision': 1}
         self.stubber.add_response('register_job_definition', register_response, register_params)
-        job_name = f"{self.server.pk}_0"
+        job_name = f"{self.server.pk}"
         submit_job_params = dict(
             jobName=job_name,
             jobQueue='dev',
             jobDefinition='abc',
+            dependsOn=[{'jobId': 'job11'}],
             containerOverrides={
                 'environment': self.spawner._get_env(),
                 'command': self.spawner._get_cmd(),
@@ -893,13 +895,13 @@ class BatchSpawnerTestCase(TestCase):
         self.stubber.activate()
         self.spawner.start()
         self.server.refresh_from_db()
-        self.assertIn('jobs', self.server.config)
-        self.assertEqual(self.server.config['jobs'], ['job12'])
+        self.assertIn('job_id', self.server.config)
+        self.assertEqual(self.server.config['job_id'], 'job12')
         self.assertIn('job_definition_arn', self.server.config)
         self.assertEqual(self.server.config['job_definition_arn'], 'abc')
 
     def test_stop(self):
-        self.server.config['jobs'] = ['job12']
+        self.server.config['job_id'] = 'job12'
         self.server.save()
         cancel_job_params = dict(
             jobId='job12',
@@ -908,10 +910,10 @@ class BatchSpawnerTestCase(TestCase):
         self.stubber.add_response('cancel_job', {}, cancel_job_params)
         self.stubber.activate()
         self.spawner.stop()
-        self.assertEqual(self.server.config['jobs'], [])
+        self.assertNotIn('job_id', self.server.config)
 
     def test_terminate(self):
-        self.server.config['jobs'] = ['job12']
+        self.server.config['job_id'] = 'job12'
         self.server.config['job_definition_arn'] = 'abc'
         self.server.save()
         terminate_job_params = dict(
@@ -927,9 +929,9 @@ class BatchSpawnerTestCase(TestCase):
         self.spawner.terminate()
 
     def test_status(self):
-        self.server.config['jobs'] = ['job12']
+        self.server.config['job_id'] = 'job12'
         self.server.save()
-        describe_jobs_params = dict(jobs=self.server.config['jobs'])
+        describe_jobs_params = dict(jobs=[self.server.config['job_id']])
         describe_jobs_response = {
             'jobs': [
                 {
@@ -944,6 +946,5 @@ class BatchSpawnerTestCase(TestCase):
         }
         self.stubber.add_response('describe_jobs', describe_jobs_response, describe_jobs_params)
         self.stubber.activate()
-        statuses = self.spawner.status()
-        self.assertIn('job12', statuses)
-        self.assertEqual('Runnable', statuses['job12'])
+        status = self.spawner.status()
+        self.assertEqual('Runnable', status)
