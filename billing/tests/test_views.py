@@ -1,3 +1,4 @@
+import stripe
 import json
 from unittest.mock import patch
 from decimal import getcontext
@@ -18,16 +19,12 @@ from billing.tests.factories import (PlanFactory,
                                      InvoiceFactory,
                                      InvoiceItemFactory)
 from billing.stripe_utils import create_stripe_customer_from_user
-from billing.tests.fake_stripe import (mock_subscription_retrieve,
-                                       signature_verification_error)
+from billing.tests.fake_stripe.helpers import (mock_stripe_retrieve,
+                                               signature_verification_error)
+from billing.tests import fake_stripe
 from jwt_auth.utils import create_auth_jwt
 import logging
 log = logging.getLogger('billing')
-
-if settings.MOCK_STRIPE:
-    from billing.tests import mock_stripe as stripe
-else:
-    import stripe
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 getcontext().prec = 6
@@ -79,8 +76,11 @@ class CardTest(APITestCase):
         self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
     def tearDown(self):
-        stripe_obj = stripe.Customer.retrieve(self.customer.stripe_id)
-        stripe_obj.delete()
+        try:
+            stripe_obj = stripe.Customer.retrieve(self.customer.stripe_id)
+            stripe_obj.delete()
+        except Exception:
+            pass
 
     def _create_card_in_stripe(self):
         url = reverse("card-list", kwargs={'namespace': self.user.username,
@@ -91,6 +91,7 @@ class CardTest(APITestCase):
         card = Card.objects.get()
         return card
 
+    @patch("billing.stripe_utils.stripe", fake_stripe)
     def test_create_card(self):
         url = reverse("card-list", kwargs={'namespace': self.user.username,
                                            'version': settings.DEFAULT_VERSION})
@@ -99,7 +100,18 @@ class CardTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Card.objects.count(), 1)
 
-    def test_stripe_errors_do_not_produce_500_error(self):
+    @patch("billing.stripe_utils.stripe", fake_stripe)
+    @patch("billing.serializers.CardSerializer.create")
+    def test_stripe_errors_do_not_produce_500_error(self, mock_create):
+        mock_create.side_effect = stripe.error.CardError(message="Your card's security code is incorrect.",
+                                                         param="cvc_code",
+                                                         code="incorrect_cvc",
+                                                         http_status=status.HTTP_402_PAYMENT_REQUIRED,
+                                                         json_body={'error': {'message': "Your card's security code "
+                                                                                         "is incorrect.",
+                                                                              'type': 'card_error',
+                                                                              'param': 'cvc',
+                                                                              'code': 'incorrect_cvc'}})
         url = reverse("card-list", kwargs={'namespace': self.user.username,
                                            'version': settings.DEFAULT_VERSION})
         data = {'token': "tok_cvcCheckFail"}
@@ -226,6 +238,7 @@ class SubscriptionTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(str(sub.pk), response.data.get('id'))
 
+    @patch("stripe.Subscription.retrieve", mock_stripe_retrieve)
     def test_subscription_cancel(self):
         subscription = Subscription.objects.get(customer=self.user.customer)
         self.assertNotEqual(subscription.status, Subscription.CANCELED)
@@ -297,15 +310,13 @@ class IncomingStripeWebHooksTest(APITestCase):
         self.user = UserFactory()
 
     @patch("stripe.Webhook.construct_event")
-    @patch("stripe.Subscription.retrieve")
-    def test_subscription_updated_webhook(self, mock_sub_retrieve, mock_construct):
+    def test_subscription_updated_webhook(self, mock_construct):
         mock_construct.return_value = True
         url = reverse("stripe-subscription-updated", kwargs={'version': settings.DEFAULT_VERSION})
         from billing.tests import mock_stripe
         plan = Plan.objects.get(stripe_id="threeblades-free-plan")
         subscription = SubscriptionFactory(customer=self.user.customer,
                                            plan=plan)
-        mock_sub_retrieve.return_value = mock_subscription_retrieve(subscription)
         webhook_data = mock_stripe.Event.get_sub_updated_evt(customer=self.user.customer.stripe_id,
                                                              subscription=subscription.stripe_id,
                                                              status=Subscription.PAST)
@@ -321,8 +332,7 @@ class IncomingStripeWebHooksTest(APITestCase):
         self.assertEqual(sub_reloaded.status, Subscription.PAST)
 
     @patch("stripe.Webhook.construct_event")
-    @patch("stripe.Subscription.retrieve")
-    def test_invoice_created_webhook(self, mock_sub_retrieve, mock_construct):
+    def test_invoice_created_webhook(self, mock_construct):
         mock_construct.return_value = True
         url = reverse("stripe-invoice-created",
                       kwargs={'version': settings.DEFAULT_VERSION})
@@ -331,7 +341,6 @@ class IncomingStripeWebHooksTest(APITestCase):
         plan = Plan.objects.get(stripe_id="threeblades-free-plan")
         subscription = SubscriptionFactory(customer=self.user.customer,
                                            plan=plan)
-        mock_sub_retrieve.return_value = mock_subscription_retrieve(subscription)
         webhook_data = mock_stripe.Event.get_webhook_event(event_type="invoice.created",
                                                            customer=self.user.customer.stripe_id,
                                                            plan=subscription.plan.stripe_id,
@@ -348,8 +357,8 @@ class IncomingStripeWebHooksTest(APITestCase):
         self.assertEqual(events.first().event_type, "invoice.created")
 
     @patch("stripe.Webhook.construct_event")
-    @patch("stripe.Subscription.retrieve")
-    def test_invoice_payment_failed_webhook(self, mock_sub_retrieve, mock_construct):
+    @patch("stripe.Subscription.retrieve", mock_stripe_retrieve)
+    def test_invoice_payment_failed_webhook(self, mock_construct):
 
         mock_construct.return_value = True
         url = reverse("stripe-invoice-payment-failed",
@@ -359,7 +368,6 @@ class IncomingStripeWebHooksTest(APITestCase):
         plan = Plan.objects.get(stripe_id="threeblades-free-plan")
         subscription = SubscriptionFactory(customer=self.user.customer,
                                            plan=plan)
-        mock_sub_retrieve.return_value = mock_subscription_retrieve(subscription)
         webhook_data = mock_stripe.Event.get_webhook_event(event_type="invoice.payment_failed",
                                                            customer=self.user.customer.stripe_id,
                                                            plan=subscription.plan.stripe_id,
@@ -379,8 +387,8 @@ class IncomingStripeWebHooksTest(APITestCase):
         self.assertEqual(sub_reloaded.status, stripe_subscription['status'])
 
     @patch("stripe.Webhook.construct_event")
-    @patch("stripe.Subscription.retrieve")
-    def test_invoice_payment_success_webhook(self, mock_sub_retrieve, mock_construct):
+    @patch("stripe.Subscription.retrieve", mock_stripe_retrieve)
+    def test_invoice_payment_success_webhook(self, mock_construct):
         mock_construct.return_value = True
         url = reverse("stripe-invoice-payment-success",
                       kwargs={'version': settings.DEFAULT_VERSION})
@@ -389,7 +397,6 @@ class IncomingStripeWebHooksTest(APITestCase):
         plan = Plan.objects.get(stripe_id="threeblades-free-plan")
         subscription = SubscriptionFactory(customer=self.user.customer,
                                            plan=plan)
-        mock_sub_retrieve.return_value = mock_subscription_retrieve(subscription)
         webhook_data = mock_stripe.Event.get_webhook_event(event_type="invoice.payment_succeeded",
                                                            customer=self.user.customer.stripe_id,
                                                            plan=subscription.plan.stripe_id,
@@ -409,8 +416,7 @@ class IncomingStripeWebHooksTest(APITestCase):
         self.assertEqual(sub_reloaded.status, stripe_subscription['status'])
 
     @patch("stripe.Webhook.construct_event")
-    @patch("stripe.Subscription.retrieve")
-    def test_sending_duplicate_event_does_nothing(self, mock_sub_retrieve, mock_construct):
+    def test_sending_duplicate_event_does_nothing(self, mock_construct):
         mock_construct.return_value = True
         existing_event = EventFactory()
         from billing.tests import mock_stripe
@@ -418,7 +424,6 @@ class IncomingStripeWebHooksTest(APITestCase):
         plan = Plan.objects.get(stripe_id="threeblades-free-plan")
         subscription = SubscriptionFactory(customer=self.user.customer,
                                            plan=plan)
-        mock_sub_retrieve.return_value = mock_subscription_retrieve(subscription)
         webhook_data = mock_stripe.Event.get_webhook_event(event_type="invoice.created",
                                                            customer=self.user.customer.stripe_id,
                                                            plan=subscription.plan.stripe_id,
