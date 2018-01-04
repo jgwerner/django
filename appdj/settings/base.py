@@ -242,6 +242,7 @@ AWS_ACCOUNT_ID = os.environ.get('AWS_ACCOUNT_ID', '')
 AWS_DEPLOYMENT_ROLE = os.environ.get('AWS_DEPLOYMENT_ROLE', '')
 AWS_LAMBDA_AUTHORIZER = os.environ.get('AWS_LAMBDA_AUTHORIZER', '')
 AWS_AUTHORIZER_ROLE = os.environ.get('AWS_AUTHORIZER_ROLE', '')
+AWS_JOBS_ROLE = os.environ.get('AWS_JOBS_ROLE', '')
 
 SWAGGER_SETTINGS = {
     'SUPPORTED_SUBMIT_METHODS': ['head', 'get', 'post', 'put', 'delete', 'patch']
@@ -425,6 +426,7 @@ NVIDIA_DOCKER_HOST = os.environ.get('NVIDIA_DOCKER_HOST')
 
 SPAWNER = 'servers.spawners.ecs.ECSSpawner'
 DEPLOYER = 'servers.spawners.aws_lambda.deployer.LambdaDeployer'
+SCHEDULER = 'servers.spawners.ecs.JobScheduler'
 ECS_CLUSTER = os.environ.get('ECS_CLUSTER', 'default')
 REDIRECT_IS_HTTPS = True
 

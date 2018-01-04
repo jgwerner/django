@@ -12,7 +12,7 @@ def server_action(action: str, server: Union[str, Server]) -> bool:
     if isinstance(server, str):
         server = Server.objects.tbs_get(server)
     if action != "start" or server.can_be_started:
-        spawner = Spawner(server)
+        spawner = server.spawner
         getattr(spawner, action)()
         return True
     return False
