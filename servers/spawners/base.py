@@ -8,8 +8,11 @@ from pathlib import Path
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.utils.functional import cached_property
+from raven import Client
 
 from jwt_auth.utils import create_auth_jwt
+
+raven_client = Client(os.environ.get("SENTRY_DSN"))
 
 logger = logging.getLogger("servers")
 
@@ -41,6 +44,7 @@ class SpawnerInterface(metaclass=abc.ABCMeta):
 
 class BaseSpawner(SpawnerInterface):
     def _get_cmd(self) -> List[str]:
+        logger.info("Getting command")
         cmd = [
             '/runner',
             f'--key={create_auth_jwt(self.server.project.owner)}',
@@ -66,6 +70,7 @@ class BaseSpawner(SpawnerInterface):
         return cmd
 
     def _get_links(self) -> Dict[str, str]:
+        logger.info("Getting links")
         links = {}
         for source in self.server.connected.all():
             if not source.is_running():
@@ -83,12 +88,6 @@ class BaseSpawner(SpawnerInterface):
         return all_env_vars
 
     def _get_devices(self) -> List[str]:
-        if self._is_gpu_instance:
-            return [
-                '/dev/nvidiactl:/dev/nvidiactl:rwm',
-                '/dev/nvidia-uvm:/dev/nvidia-uvm:rwm',
-                '/dev/nvidia0:/dev/nvidia0:rwm'
-            ]
         return []
 
     def _get_binds(self) -> List[str]:
@@ -127,13 +126,25 @@ class GPUMixin:
     gpu_info = None
 
     def _gpu_info(self) -> None:
+        logger.info("Getting gpu info")
         gpu_info_url = f"{settings.NVIDIA_DOCKER_HOST}/v1.0/gpu/info/json"
         try:
-            resp = requests.get(gpu_info_url)
-        except requests.exceptions.ConnectionError:
-            return
-        if resp.status_code == 200:
-            self.gpu_info = resp.json()
+            resp = requests.get(gpu_info_url, timeout=2)
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+            raven_client.captureException()
+        else:
+            if resp.status_code == 200:
+                self.gpu_info = resp.json()
+
+    def _get_devices(self) -> List[str]:
+        logger.info("Getting devices")
+        if self._is_gpu_instance:
+            return [
+                '/dev/nvidiactl:/dev/nvidiactl:rwm',
+                '/dev/nvidia-uvm:/dev/nvidia-uvm:rwm',
+                '/dev/nvidia0:/dev/nvidia0:rwm'
+            ]
+        return []
 
     @cached_property
     def _gpu_driver_path(self) -> str:
@@ -150,6 +161,7 @@ class GPUMixin:
 
 class TraefikMixin:
     def _get_traefik_labels(self) -> Dict[str, str]:
+        logger.info("Getting traefik labels")
         labels = {"traefik.enable": "true"}
         server_uri = f"/{settings.DEFAULT_VERSION}/{self.server.project.owner.username}/projects/{self.server.project_id}/servers/{self.server.id}/endpoint/"
         domain = Site.objects.get_current().domain

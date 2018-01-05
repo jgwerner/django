@@ -3,11 +3,21 @@ import os
 from celery import Celery
 from celery.signals import task_postrun, after_task_publish
 from celery.states import SUCCESS, FAILURE
+from raven import Client
+from raven.contrib.celery import register_signal, register_logger_signal
 
 # set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'appdj.settings.dev')
 
-app = Celery('appdj')
+
+class RavenCelery(Celery):
+    def on_configure(self):
+        client = Client(os.environ.get('SENTRY_DSN'))
+        register_logger_signal(client)
+        register_signal(client)
+
+
+app = RavenCelery('appdj')
 
 # Using a string here means the worker don't have to serialize
 # the configuration object to child processes.
