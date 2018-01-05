@@ -132,8 +132,9 @@ class GPUMixin:
             resp = requests.get(gpu_info_url, timeout=2)
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
             raven_client.captureException()
-        if resp.status_code == 200:
-            self.gpu_info = resp.json()
+        else:
+            if resp.status_code == 200:
+                self.gpu_info = resp.json()
 
     def _get_devices(self) -> List[str]:
         logger.info("Getting devices")
