@@ -2,12 +2,10 @@ import stripe
 import json
 from unittest.mock import patch
 from decimal import getcontext
-from django.db.models.signals import pre_save
-from django.test import Client, TestCase
+from django.test import Client
 from django.urls import reverse
 from django.conf import settings
 from rest_framework import status
-from rest_framework.test import APITestCase
 
 from billing.models import (Card,
                             Plan, Subscription,
@@ -19,17 +17,15 @@ from billing.tests.factories import (PlanFactory,
                                      EventFactory,
                                      InvoiceFactory,
                                      InvoiceItemFactory)
-from billing.signals import create_plan_in_stripe_from_admin
-from billing.stripe_utils import create_stripe_customer_from_user
-from billing.tests.fake_stripe.helpers import (mock_stripe_retrieve,
-                                               signature_verification_error)
-from billing.tests import fake_stripe
+from billing.tests.fake_stripe.helpers import signature_verification_error
+from billing.tests import fake_stripe, BillingTestCase
 from jwt_auth.utils import create_auth_jwt
 import logging
 log = logging.getLogger('billing')
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 getcontext().prec = 6
+# TODO: Make it so that all necessary patches are condensed to one decorator or something
 
 
 def create_plan_dict(trial_period=None):
@@ -40,17 +36,6 @@ def create_plan_dict(trial_period=None):
                  if key in [f.name for f in Plan._meta.get_fields()] and key not in ["stripe_id", "created",
                                                                                      "id", "metadata"]}
     return data_dict
-
-
-class BillingTestCase(APITestCase):
-    fixtures = ["plans.json"]
-
-    @classmethod
-    @patch("billing.stripe_utils.stripe", fake_stripe)
-    def setUpClass(cls):
-        pre_save.disconnect(create_plan_in_stripe_from_admin, Plan)
-        super(BillingTestCase, cls).setUpClass()
-        pre_save.connect(create_plan_in_stripe_from_admin, Plan)
 
 
 class PlanTest(BillingTestCase):
