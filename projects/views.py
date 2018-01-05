@@ -38,8 +38,7 @@ class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewS
         project = None
         all_projects = self.get_queryset()
         collab = Collaborator.objects.filter(project__in=all_projects,
-                                             user=self.request.namespace.object,
-                                             owner=True).first()
+                                             user=self.request.namespace.object).first()
         if collab is not None:
             project = collab.project
         if project is None:
