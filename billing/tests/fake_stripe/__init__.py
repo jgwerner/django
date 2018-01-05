@@ -3,7 +3,8 @@ from billing import models
 from .helpers import (mock_stripe_retrieve,
                       convert_db_object_to_stripe_dict)
 from ..factories import (CardFactory, CustomerFactory,
-                         SubscriptionFactory)
+                         SubscriptionFactory,
+                         InvoiceItemFactory)
 log = logging.getLogger('billing')
 
 
@@ -79,3 +80,15 @@ class Subscription(FakeStripeObject):
 
 class Plan(FakeStripeObject):
     pass
+
+
+class InvoiceItem(FakeStripeObject):
+
+    @classmethod
+    def create(cls, *args, **kwargs):
+        customer = models.Customer.objects.get(stripe_id=kwargs.get("customer"))
+        kwargs['customer'] = customer
+        invoice = models.Invoice.objects.get(customer=customer, closed=False)
+        kwargs['invoice'] = invoice
+        inv_item = InvoiceItemFactory.build(**kwargs)
+        return convert_db_object_to_stripe_dict(inv_item)

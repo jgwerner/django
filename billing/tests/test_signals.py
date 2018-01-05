@@ -1,25 +1,19 @@
-from django.test import TestCase, override_settings
-from django.conf import settings
+from unittest.mock import patch
+from django.test import override_settings
 from billing.models import Plan, Customer, Subscription
 from billing.stripe_utils import create_plan_in_stripe
+from billing.tests import BillingTestCase, fake_stripe
 from billing.tests.factories import PlanFactory
 from users.tests.factories import UserFactory
-if settings.MOCK_STRIPE:
-    from billing.tests import mock_stripe as stripe
-else:
-    import stripe
 
 
-class TestBillingSignals(TestCase):
+class TestBillingSignals(BillingTestCase):
     def setUp(self):
         self.plans_to_delete = []
 
-    def tearDown(self):
-        for plan in self.plans_to_delete:
-            stripe_obj = stripe.Plan.retrieve(plan.stripe_id)
-            stripe_obj.delete()
-            plan.delete()
-
+    @patch("billing.stripe_utils.stripe", fake_stripe)
+    @patch("billing.views.stripe", fake_stripe)
+    @patch("billing.serializers.stripe", fake_stripe)
     def test_admin_create_plan(self):
         plan_pre_save = PlanFactory.build()
         plan_pre_save.stripe_id = ""
@@ -33,12 +27,18 @@ class TestBillingSignals(TestCase):
             post_save_value = getattr(plan_post_save, attr)
             self.assertEqual(post_save_value, pre_save_value)
 
+    @patch("billing.stripe_utils.stripe", fake_stripe)
+    @patch("billing.views.stripe", fake_stripe)
+    @patch("billing.serializers.stripe", fake_stripe)
     def test_customer_created_on_first_login(self):
         user = UserFactory()
         customers = Customer.objects.filter(user=user)
         self.assertTrue(customers.exists())
         self.assertEqual(customers.count(), 1)
 
+    @patch("billing.stripe_utils.stripe", fake_stripe)
+    @patch("billing.views.stripe", fake_stripe)
+    @patch("billing.serializers.stripe", fake_stripe)
     def test_free_plan_is_created_and_user_is_subscribed(self):
         user = UserFactory()
 
@@ -50,6 +50,9 @@ class TestBillingSignals(TestCase):
                                                    plan=plan)
         self.assertEqual(subscription.count(), 1)
 
+    @patch("billing.stripe_utils.stripe", fake_stripe)
+    @patch("billing.views.stripe", fake_stripe)
+    @patch("billing.serializers.stripe", fake_stripe)
     @override_settings(DEFAULT_STRIPE_PLAN_ID="testing-plan")
     def test_configurable_default_plan(self):
         plan_data = {'name': "Testing Plan",
