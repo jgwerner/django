@@ -98,7 +98,6 @@ class ECSSpawner(GPUMixin, BaseSpawner):
         )
 
     def _get_links(self) -> List[str]:
-        logger.info()
         return [f'{name}:{alias}' for name, alias in super()._get_links().items()]
 
     def _get_constrains(self) -> List[str]:
