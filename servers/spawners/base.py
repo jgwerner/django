@@ -41,6 +41,7 @@ class SpawnerInterface(metaclass=abc.ABCMeta):
 
 class BaseSpawner(SpawnerInterface):
     def _get_cmd(self) -> List[str]:
+        logger.info("Getting command")
         cmd = [
             '/runner',
             f'--key={create_auth_jwt(self.server.project.owner)}',
@@ -66,6 +67,7 @@ class BaseSpawner(SpawnerInterface):
         return cmd
 
     def _get_links(self) -> Dict[str, str]:
+        logger.info("Getting links")
         links = {}
         for source in self.server.connected.all():
             if not source.is_running():
@@ -83,12 +85,6 @@ class BaseSpawner(SpawnerInterface):
         return all_env_vars
 
     def _get_devices(self) -> List[str]:
-        if self._is_gpu_instance:
-            return [
-                '/dev/nvidiactl:/dev/nvidiactl:rwm',
-                '/dev/nvidia-uvm:/dev/nvidia-uvm:rwm',
-                '/dev/nvidia0:/dev/nvidia0:rwm'
-            ]
         return []
 
     def _get_binds(self) -> List[str]:
@@ -135,6 +131,16 @@ class GPUMixin:
         if resp.status_code == 200:
             self.gpu_info = resp.json()
 
+    def _get_devices(self) -> List[str]:
+        logger.info("Getting devices")
+        if self._is_gpu_instance:
+            return [
+                '/dev/nvidiactl:/dev/nvidiactl:rwm',
+                '/dev/nvidia-uvm:/dev/nvidia-uvm:rwm',
+                '/dev/nvidia0:/dev/nvidia0:rwm'
+            ]
+        return []
+
     @cached_property
     def _gpu_driver_path(self) -> str:
         driver = self.gpu_info['Version']['Driver']
@@ -150,6 +156,7 @@ class GPUMixin:
 
 class TraefikMixin:
     def _get_traefik_labels(self) -> Dict[str, str]:
+        logger.info("Getting traefik labels")
         labels = {"traefik.enable": "true"}
         server_uri = f"/{settings.DEFAULT_VERSION}/{self.server.project.owner.username}/projects/{self.server.project_id}/servers/{self.server.id}/endpoint/"
         domain = Site.objects.get_current().domain
