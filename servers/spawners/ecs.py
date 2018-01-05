@@ -20,7 +20,9 @@ class ECSSpawner(GPUMixin, BaseSpawner):
         self.client = client or boto3.client('ecs')
 
     def start(self) -> None:
+        logger.info(f"Starting server {self.server.pk}")
         if 'task_definition_arn' not in self.server.config:
+            logger.info("Registering task definition")
             self.server.config['task_definition_arn'] = self._register_task_definition()
         resp = self.client.run_task(
             cluster=settings.ECS_CLUSTER,
@@ -96,6 +98,7 @@ class ECSSpawner(GPUMixin, BaseSpawner):
         )
 
     def _get_links(self) -> List[str]:
+        logger.info()
         return [f'{name}:{alias}' for name, alias in super()._get_links().items()]
 
     def _get_constrains(self) -> List[str]:
@@ -116,6 +119,7 @@ class ECSSpawner(GPUMixin, BaseSpawner):
         return [{'name': k, 'value': v} for k, v in super()._get_env().items()]
 
     def _get_volumes_and_mount_points(self) -> Tuple[List[Dict[str, Dict[str, str]]], List[Dict[str, str]]]:
+        logger.info("Getting volumes")
         volumes = [{'name': 'project', 'host': {'sourcePath': self.server.volume_path}}]
         mount_points = [{'sourceVolume': 'project', 'containerPath': settings.SERVER_RESOURCE_DIR}]
         ssh_path = self._get_ssh_path()
