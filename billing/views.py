@@ -1,6 +1,5 @@
 import logging
 import json
-
 from django.http import HttpResponse
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
@@ -76,9 +75,10 @@ class CardViewSet(mixins.CreateModelMixin,
         instance = Card.objects.get(pk=kwargs.get('pk'))
         stripe_customer = stripe.Customer.retrieve(instance.customer.stripe_id)
 
-        stripe_response = stripe_customer.sources.retrieve(instance.stripe_id).delete()
+        stripe_source = stripe_customer.sources.retrieve(instance.stripe_id)
+        stripe_response = stripe_source.delete()
         instance.delete()
-
+        log.debug(("DELETE RESPONSE", stripe_response.data))
         data = {'stripe_id': stripe_response['id'], 'deleted': True}
         return Response(data=data, status=status.HTTP_204_NO_CONTENT)
 

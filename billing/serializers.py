@@ -1,4 +1,5 @@
 import logging
+from django.db import transaction
 from django.conf import settings
 from rest_framework import serializers
 
@@ -54,21 +55,25 @@ class CardSerializer(serializers.Serializer):
                                      user=self.context['request'].user)
 
     def update(self, instance, validated_data):
-        customer = instance.customer
-        stripe_customer = stripe.Customer.retrieve(customer.stripe_id)
-        stripe_card = stripe_customer.sources.retrieve(instance.stripe_id)
+        try:
+            with transaction.atomic():
+                customer = instance.customer
+                stripe_customer = stripe.Customer.retrieve(customer.stripe_id)
+                stripe_card = stripe_customer.sources.retrieve(instance.stripe_id)
 
-        for key in validated_data:
-            setattr(stripe_card, key, validated_data[key])
+                for key in validated_data:
+                    setattr(stripe_card, key, validated_data[key])
 
-        stripe_resp = stripe_card.save()
-        converted_data = convert_stripe_object(Card, stripe_resp)
+                stripe_resp = stripe_card.save()
+                converted_data = convert_stripe_object(Card, stripe_resp)
 
-        for key in converted_data:
-            setattr(instance, key, converted_data[key])
+                for key in converted_data:
+                    setattr(instance, key, converted_data[key])
 
-        instance.save()
-        return instance
+                instance.save()
+                return instance
+        except Exception as e:
+            log.exception(e)
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):

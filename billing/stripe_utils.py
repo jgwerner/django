@@ -249,6 +249,8 @@ def handle_stripe_invoice_payment_status_change(stripe_obj):
             if key not in ["customer", "plan", "metadata"]:
                 setattr(subscription, key, converted_data[key])
         if subscription.status == Subscription.ACTIVE:
+            if subscription.metadata is None:
+                subscription.metadata = {}
             subscription.metadata.update({'has_been_active': True})
             log.info(f"Subscription {subscription} has status active. Marking it as such in metadata "
                      f"for notification purposes.")
@@ -370,5 +372,6 @@ def cancel_subscriptions(subscription_ids: List[str]) -> None:
     for sub in subscriptions:
         stripe_obj = stripe.Subscription.retrieve(sub.stripe_id)
         stripe_response = stripe_obj.delete()
+        log.debug((f"Stripe resp status", stripe_response['status']))
         sub.delete(new_status=stripe_response['status'])
         log.info(f"Canceled subscription {sub.pk}.")
