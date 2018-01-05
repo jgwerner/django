@@ -8,8 +8,11 @@ from pathlib import Path
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.utils.functional import cached_property
+from raven import Client
 
 from jwt_auth.utils import create_auth_jwt
+
+raven_client = Client(os.environ.get("SENTRY_DSN"))
 
 logger = logging.getLogger("servers")
 
@@ -127,10 +130,11 @@ class GPUMixin:
         gpu_info_url = f"{settings.NVIDIA_DOCKER_HOST}/v1.0/gpu/info/json"
         try:
             resp = requests.get(gpu_info_url, timeout=2)
-        except requests.exceptions.ConnectionError:
-            return
-        if resp.status_code == 200:
-            self.gpu_info = resp.json()
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+            raven_client.captureException()
+        else:
+            if resp.status_code == 200:
+                self.gpu_info = resp.json()
 
     def _get_devices(self) -> List[str]:
         logger.info("Getting devices")
