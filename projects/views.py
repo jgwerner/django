@@ -1,5 +1,4 @@
 import logging
-from django.db.models import Q
 from django.contrib.auth import get_user_model
 from rest_framework import viewsets, status, permissions, exceptions
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
@@ -28,7 +27,7 @@ log = logging.getLogger('projects')
 
 
 class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewSet):
-    queryset = Project.objects.all()
+    queryset = Project.objects.filter(is_active=True)
     serializer_class = ProjectSerializer
     permission_classes = (permissions.IsAuthenticated, ProjectPermission, TeamGroupPermission)
     filter_fields = ('private', 'name')
@@ -37,13 +36,15 @@ class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewS
 
     def get_object(self):
         project = None
-        all_projects = Project.objects.tbs_filter(self.kwargs.get("project"))
+        all_projects = self.get_queryset()
         collab = Collaborator.objects.filter(project__in=all_projects,
                                              user=self.request.namespace.object,
                                              owner=True).first()
         if collab is not None:
             project = collab.project
-        if project is not None and has_project_permission(self.request, project):
+        if project is None:
+            raise exceptions.NotFound()
+        if has_project_permission(self.request, project):
             return project
         raise exceptions.PermissionDenied()
 
