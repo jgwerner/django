@@ -125,10 +125,7 @@ class GPUMixin:
     def _gpu_info(self) -> None:
         logger.info("Getting gpu info")
         gpu_info_url = f"{settings.NVIDIA_DOCKER_HOST}/v1.0/gpu/info/json"
-        try:
-            resp = requests.get(gpu_info_url, timeout=2)
-        except requests.exceptions.ConnectionError:
-            return
+        resp = requests.get(gpu_info_url, timeout=2)
         if resp.status_code == 200:
             self.gpu_info = resp.json()
 
