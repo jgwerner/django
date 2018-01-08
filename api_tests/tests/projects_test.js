@@ -91,7 +91,7 @@ describe('{namespace}/projects/', () => {
     const get_response = await chakram.get(uri)
     expect(get_response).to.have.status(200)
     expect(get_response).to.have.schema(object_schema)
-    expect(get_response).to.have.json('id', this.project_id)
+    expect(get_response).to.have.json('id', post_response.body.id)
   })
 
   it.skip('DELETE a project should remove the project | ISSUE #624', async () => {
