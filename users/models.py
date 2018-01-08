@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-import django
+from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.conf import settings
 from django.db import models, IntegrityError
 from django.contrib.auth.models import AbstractUser, UserManager
@@ -17,13 +17,17 @@ class CustomUserManager(UserManager.from_queryset(TBSQuerySet)):
         return self.get(username=username, is_active=True)
 
 
+class UsernameValidator(UnicodeUsernameValidator):
+    regex = r'^[\w-]+$'
+
+
 class User(AbstractUser):
     NATURAL_KEY = 'username'
 
     username = models.CharField(error_messages={'unique': 'A user with that username already exists.'},
-                                help_text='Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.',
+                                help_text='Required. 150 characters or fewer. Letters, digits and - only.',
                                 max_length=150,
-                                validators=[django.contrib.auth.validators.UnicodeUsernameValidator()],
+                                validators=[UsernameValidator()],
                                 verbose_name='username')
     team_groups = models.ManyToManyField('teams.Group', blank=True, related_name="user_set", related_query_name="user")
 

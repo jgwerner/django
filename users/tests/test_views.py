@@ -359,6 +359,20 @@ class UserTest(APITestCase):
         self.assertEqual(len(error_list), 1)
         self.assertEqual(error_list[0], expected_error)
 
+    def test_creating_user_with_wrong_username(self):
+        url = reverse("user-list", kwargs={'version': settings.DEFAULT_VERSION})
+        data = {'username': "foobar.1",
+                'email': "foo@example.com",
+                'first_name': "Foo",
+                'last_name': "Bar",
+                'password': "password",
+                'profile': {}}
+        response = self.admin_client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        error_list = response.data.get('username')
+        self.assertEqual(len(error_list), 1)
+        self.assertIn("Enter a valid username", error_list[0])
+
     def test_uploading_avatar(self):
         url = reverse("avatar", kwargs={'version': settings.DEFAULT_VERSION,
                                         'user_pk': self.user.pk})
@@ -545,7 +559,7 @@ class UserTest(APITestCase):
 
         self.assertEqual(response.data['profile']['avatar'], full_url)
         self.to_remove.append(user_reloaded.profile.resource_root())
-        
+
 
 class EmailTest(APITestCase):
     def setUp(self):
