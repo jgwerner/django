@@ -13,13 +13,15 @@ from servers.utils import stop_all_servers_for_project
 
 User = get_user_model()
 
+
 class ProjectSerializer(SearchSerializerMixin, serializers.ModelSerializer):
     owner = serializers.CharField(source='get_owner_name', read_only=True)
     collaborators = serializers.StringRelatedField(many=True, read_only=True)
 
     class Meta:
         model = Project
-        fields = ('id', 'name', 'description', 'private', 'last_updated', 'team', 'owner', 'collaborators', 'copying_enabled')
+        fields = ('id', 'name', 'description', 'private', 'last_updated', 'team', 'owner', 'collaborators',
+                  'copying_enabled')
         read_only_fields = ('collaborators', 'team')
 
     def validate_name(self, value):
@@ -99,7 +101,8 @@ class CollaboratorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Collaborator
-        fields = ('id', 'owner', 'project', 'user', 'joined', 'username', 'email', 'first_name', 'last_name', 'member', 'permissions')
+        fields = ('id', 'owner', 'project', 'user', 'joined', 'username', 'email', 'first_name', 'last_name', 'member',
+                  'permissions')
         read_only_fields = ('project', 'user')
 
     def validate_member(self, value):
@@ -127,6 +130,16 @@ class CollaboratorSerializer(serializers.ModelSerializer):
         for permission in permissions:
             assign_perm(permission, user, project)
         return Collaborator.objects.create(user=user, project=project, **validated_data)
+
+    def update(self, instance, validated_data):
+        project_id = self.context['view'].kwargs['project_project']
+        project = Project.objects.tbs_get(project_id)
+        owner = validated_data.get('owner', False)
+        if owner is True:
+            updated = Collaborator.objects.filter(project=project).exclude(user=instance.user).update(owner=False)
+            if updated:
+                stop_all_servers_for_project(project)
+        return super().update(instance, validated_data)
 
 
 class SyncedResourceSerializer(serializers.ModelSerializer):
