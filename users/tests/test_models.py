@@ -2,11 +2,15 @@ import shutil
 import os
 from pathlib import Path
 from django.db import IntegrityError
+from django.core.exceptions import ValidationError
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.conf import settings
 from users.tests.factories import UserFactory
 from users.models import UserProfile
 from utils import create_ssh_key, deactivate_user
+
+User = get_user_model()
 
 
 class UserProfileTestCase(TestCase):
@@ -45,3 +49,8 @@ class UserTestCase(TestCase):
         deactivate_user(self.user)
         self.assertFalse(self.user.is_active)
         self.assertFalse(os.path.exists(str(self.user_dir)))
+
+    def test_username_validation(self):
+        us = User(username='admin.1', email='test@example.com')
+        with self.assertRaises(ValidationError):
+            us.full_clean()

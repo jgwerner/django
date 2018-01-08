@@ -10,13 +10,19 @@ from .base import BaseSpawner, GPUMixin
 logger = logging.getLogger("servers")
 
 
+class SpawnerException(Exception):
+    pass
+
+
 class ECSSpawner(GPUMixin, BaseSpawner):
     def __init__(self, server, client=None) -> None:
         super().__init__(server)
         self.client = client or boto3.client('ecs')
 
     def start(self) -> None:
+        logger.info(f"Starting server {self.server.pk}")
         if 'task_definition_arn' not in self.server.config:
+            logger.info("Registering task definition")
             self.server.config['task_definition_arn'] = self._register_task_definition()
         resp = self.client.run_task(
             cluster=settings.ECS_CLUSTER,
@@ -112,6 +118,7 @@ class ECSSpawner(GPUMixin, BaseSpawner):
         return [{'name': k, 'value': v} for k, v in super()._get_env().items()]
 
     def _get_volumes_and_mount_points(self) -> Tuple[List[Dict[str, Dict[str, str]]], List[Dict[str, str]]]:
+        logger.info("Getting volumes")
         volumes = [{'name': 'project', 'host': {'sourcePath': self.server.volume_path}}]
         mount_points = [{'sourceVolume': 'project', 'containerPath': settings.SERVER_RESOURCE_DIR}]
         ssh_path = self._get_ssh_path()
@@ -162,3 +169,105 @@ class ECSSpawner(GPUMixin, BaseSpawner):
                 labels["traefik.port"] = port
                 labels["traefik.frontend.rule"] = f"PathPrefix:{server_uri}{endpoint}"
         return labels
+
+
+class JobScheduler(ECSSpawner):
+    def __init__(self, server, client=None, events_client=None):
+        super().__init__(server, client)
+        self.events_client = events_client or boto3.client('events')
+
+    def start(self):
+        if 'task_definition_arn' not in self.server.config:
+            self.server.config['task_definition_arn'] = self._register_task_definition()
+        if 'rule_arn' not in self.server.config:
+            rule = self.events_client.put_rule(
+                Name=str(self.server.pk),
+                ScheduleExpression=f"cron({self.server.config['schedule']})",
+                RoleArn=settings.AWS_JOBS_ROLE
+            )
+            self.server.config['rule_arn'] = rule['RuleArn']
+        cluster_arn = ''.join([
+            f'arn:aws:ecs:{settings.AWS_DEFAULT_REGION}:',
+            f'{settings.AWS_ACCOUNT_ID}:',
+            f'cluster/{settings.ECS_CLUSTER}'
+        ])
+        targets = self.events_client.put_targets(
+            Rule=str(self.server.pk),
+            Targets=[{
+                'Id': str(self.server.pk),
+                'Arn': cluster_arn,
+                'RoleArn': settings.AWS_JOBS_ROLE,
+                'EcsParameters': {
+                    'TaskDefinitionArn': self.server.config['task_definition_arn']
+                }
+            }]
+        )
+        if targets['FailedEntryCount'] > 0:
+            self.server.config['failed'] = []
+            for failed_target in targets['FailedEntries']:
+                self.server.config['failed'].append(failed_target)
+        self.server.save()
+
+    def stop(self):
+        self.events_client.disable_rule(
+            Name=str(self.server.pk)
+        )
+
+    def terminate(self):
+        targets = self.events_client.remove_targets(
+            Rule=str(self.server.pk),
+            Ids=[str(self.server.pk)]
+        )
+        if targets['FailedEntryCount'] > 0:
+            raise SpawnerException("Failed targets removal %s", targets['FailedEntries'])
+        self.events_client.delete_rule(
+            Name=str(self.server.pk)
+        )
+        if 'task_definition_arn' in self.server.config:
+            self.client.deregister_task_definition(
+                taskDefinition=self.server.config['task_definition_arn']
+            )
+
+    def status(self):
+        if 'task_definition_arn' not in self.server.config:
+            return 'Stopped'
+        resp = self.events_client.describe_rule(
+            Name=str(self.server.pk)
+        )
+        return 'Scheduled' if resp['State'] == 'ENABLED' else 'Stopped'
+
+    @cached_property
+    def _task_definition_args(self):
+        volumes, mount_points = self._get_volumes_and_mount_points()
+        return dict(
+            family='userspace',
+            containerDefinitions=[
+                {
+                    'name': str(self.server.pk),
+                    'image': self.server.image_name,
+                    'cpu': self.server.server_size.cpu,
+                    'memory': self.server.server_size.memory,
+                    'memoryReservation': int(self.server.server_size.memory / 2),
+                    'links': self._get_links(),
+                    'essential': True,
+                    'command': self._get_cmd(),
+                    'environment': self._get_env(),
+                    'linuxParameters': {
+                        'devices': self._get_devices(),
+                    },
+                    'mountPoints': mount_points,
+                    'logConfiguration': {
+                        'logDriver': 'awslogs',
+                        'options': {
+                            'awslogs-group': 'devUserspace',
+                            'awslogs-region': settings.AWS_DEFAULT_REGION
+                        }
+                    },
+                }
+            ],
+            volumes=volumes,
+            placementConstraints=self._get_constrains()
+        )
+
+    def _get_cmd(self):
+        return self.server.config['command']

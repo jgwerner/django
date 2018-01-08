@@ -136,9 +136,9 @@ class ProjectTest(ProjectTestMixin, APITestCase):
         proj = CollaboratorFactory(project__private=True,
                                    project__copying_enabled=True).project
         uploaded_file = generate_random_file_content("foo")
-        old_file = ProjectFileFactory(author=proj.owner,
-                                      project=proj,
-                                      file=uploaded_file)
+        ProjectFileFactory(author=proj.owner,
+                           project=proj,
+                           file=uploaded_file)
         CollaboratorFactory(user=self.user,
                             project=proj,
                             owner=False)
@@ -321,6 +321,16 @@ class ProjectTest(ProjectTestMixin, APITestCase):
         self.assertEqual(project.name, response.data['name'])
         self.assertEqual(str(project.pk), response.data['id'])
         self.assertEqual(self.user.username, response.data['owner'])
+
+    def test_project_inactive(self):
+        collaborator = CollaboratorFactory(user=self.user, project__is_active=False)
+        project = collaborator.project
+        assign_perm('read_project', self.user, project)
+        url = reverse('project-detail', kwargs={'namespace': self.user.username,
+                                                'project': project.pk,
+                                                'version': settings.DEFAULT_VERSION})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_project_update(self):
         collaborator = CollaboratorFactory(user=self.user)
@@ -623,8 +633,6 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
         self.assertIsNotNone(created_file)
         full_path = Path(settings.MEDIA_ROOT, created_file.file.name)
         self.assertEqual(full_path, Path(self.project_root, "file_upload_test_1.txt"))
-
-
 
     def test_create_file_in_nested_location(self):
         url = reverse('projectfile-list', kwargs=self.url_kwargs)
