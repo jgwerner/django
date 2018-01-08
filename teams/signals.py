@@ -1,7 +1,8 @@
 from django.dispatch import receiver
 from django.db.models.signals import post_save, pre_save
 
-from billing.models import Customer
+from billing.stripe_utils import (create_stripe_customer_from_user,
+                                  assign_customer_to_default_plan)
 from teams.models import Team, Group
 from teams.utils import get_owners_permissions, get_members_permissions
 
@@ -19,6 +20,8 @@ def create_default_groups(sender, instance, created, **kwargs):
 @receiver(pre_save, sender=Team)
 def assign_customer(sender, instance, **kwargs):
     try:
-        instance.customer
+        instance.customer = instance.created_by.customer
     except sender.customer.RelatedObjectDoesNotExist:
-        instance.customer = Customer.objects.get(user=instance.created_by)
+        customer = create_stripe_customer_from_user(instance.created_by)
+        assign_customer_to_default_plan(customer)
+        instance.customer = customer

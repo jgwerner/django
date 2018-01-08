@@ -18,7 +18,7 @@ services:
     command: /srv/env/bin/gunicorn --bind 0.0.0.0:80 --reload --workers 1 --log-level=DEBUG --error-logfile=- --access-logfile=- appdj.wsgi
     volumes:
       - .:/srv/app
-      - /workspaces:/workspaces    
+      - /workspaces:/workspaces
     env_file: api_tests/env
     ports:
       - "80:80"
@@ -71,27 +71,6 @@ services:
     ports:
       - "82"
       - "8080"
+    env_file: api_tests/env
     depends_on:
       - api
-      - events
-      - nginx
-  events:
-    image: 3blades/docker-events:latest
-    restart: always
-    env_file: api_tests/env
-    labels:
-      - "traefik.enable=true"
-      - "traefik.backend=events"
-      - "traefik.status.frontend.rule=Path:/{version}/{namespace}/projects/{project}/servers/{server}/status/"
-      - "traefik.logs.frontend.rule=Path:/{version}/{namespace}/projects/{project}/servers/{server}/logs/"
-    ports:
-      - "8000"
-  nginx:
-    image: 3blades/nginx
-    command: /nginx/sbin/nginx -p '' -g 'daemon off;'
-    labels:
-      - "traefik.enable=true"
-      - "traefik.backend=nginx"
-      - "traefik.nginx.frontend.rule=PathPrefix:/media"
-    volumes:
-      - /workspaces:/workspaces
