@@ -1,11 +1,11 @@
 import logging
+import stripe
 from typing import List
 from datetime import datetime
 from decimal import getcontext
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
-from django.core.exceptions import ObjectDoesNotExist
 
 from users.models import User
 
@@ -13,14 +13,6 @@ from billing.models import (Customer, Invoice,
                             Plan, Subscription,
                             Card, Event, InvoiceItem)
 log = logging.getLogger('billing')
-
-if settings.MOCK_STRIPE:
-    from billing.tests import mock_stripe as stripe
-    log.info("Importing mock stripe in stripe utils.")
-else:
-    import stripe
-
-
 stripe.api_key = settings.STRIPE_SECRET_KEY
 getcontext().prec = 6
 
@@ -113,21 +105,18 @@ def update_plan_in_stripe(data: dict):
 
 
 def create_plan_in_stripe(validated_data):
-    try:
-        stripe_response = stripe.Plan.create(id=validated_data.get('name').lower().replace(" ", "-"),
-                                             amount=validated_data.get('amount'),
-                                             currency=validated_data.get('currency'),
-                                             interval=validated_data.get('interval'),
-                                             interval_count=validated_data.get('interval_count'),
-                                             name=validated_data.get('name'),
-                                             statement_descriptor=validated_data.get('statement_descriptor'),
-                                             trial_period_days=validated_data.get('trial_period_days'))
+    stripe_response = stripe.Plan.create(id=validated_data.get('name').lower().replace(" ", "-"),
+                                         amount=validated_data.get('amount'),
+                                         currency=validated_data.get('currency'),
+                                         interval=validated_data.get('interval'),
+                                         interval_count=validated_data.get('interval_count'),
+                                         name=validated_data.get('name'),
+                                         statement_descriptor=validated_data.get('statement_descriptor'),
+                                         trial_period_days=validated_data.get('trial_period_days'))
 
-        converted_data = convert_stripe_object(Plan, stripe_response)
-        plan = Plan(**converted_data)
-        return plan
-    except stripe.error.InvalidRequestError:
-        pass
+    converted_data = convert_stripe_object(Plan, stripe_response)
+    plan = Plan(**converted_data)
+    return plan
 
 
 def create_subscription_in_stripe(validated_data, user=None):
@@ -285,33 +274,7 @@ def assign_customer_to_default_plan(customer: Customer):
     existing_sub = Subscription.objects.filter(customer=customer)
     if not existing_sub.exists():
         log.info(f"Creating subscription to default plan for {customer.user.username}.")
-        default_plan = Plan.objects.filter(stripe_id=settings.DEFAULT_STRIPE_PLAN_ID).first()
-        if not default_plan:
-            log.error(f"Selected default plan {settings.DEFAULT_STRIPE_PLAN_ID} does not exist in DB. "
-                      f"Make sure this setting is correct, and that everything is synchronized with Stripe!")
-            free_plan_data = {'name': settings.DEFAULT_STRIPE_PLAN_ID.replace("-", " ").title(),
-                              'amount': 0,
-                              'currency': "usd",
-                              'interval': "month",
-                              'interval_count': 1,
-                              'trial_period_days': 14,
-                              'metadata': {"gb_hours": 10}}
-            try:
-                log.warning("Since the default plan did not exist in the DB, the system will now add the "
-                            "user to a free plan to avoid failure.")
-                log.info("First make sure it doesn't exist in Stripe already...")
-                stripe_resp = stripe.Plan.retrieve(settings.DEFAULT_STRIPE_PLAN_ID)
-                free_plan_data['created'] = timezone.now()
-                default_plan, created = Plan.objects.get_or_create(stripe_id=stripe_resp['id'],
-                                                                   defaults=free_plan_data)
-
-                if created:
-                    log.info("Free plan existed in Stripe, but not the local database, so it "
-                             " was created.")
-            except stripe.error.InvalidRequestError:
-                log.info("Free plan did NOT exist in Stripe...creating it there and in local database.")
-                default_plan = create_plan_in_stripe(free_plan_data)
-                default_plan.save()
+        default_plan = Plan.objects.get(stripe_id=settings.DEFAULT_STRIPE_PLAN_ID)
         sub_data = {'customer': customer,
                     'plan': default_plan}
         create_subscription_in_stripe(sub_data)

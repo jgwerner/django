@@ -82,6 +82,8 @@ class Subscription(FakeStripeObject):
 class Plan(FakeStripeObject):
     @classmethod
     def create(cls, *args, **kwargs):
+        if "id" in kwargs:
+            kwargs['stripe_id'] = kwargs.pop("id")
         plan = PlanFactory.build(**kwargs)
         return convert_db_object_to_stripe_dict(plan)
 
