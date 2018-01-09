@@ -15,6 +15,6 @@ for x in range(0, 256):
 INSTALLED_APPS.append('raven.contrib.django.raven_compat')
 
 RAVEN_CONFIG = {
-    'dsn': f'https://{os.getenv("SENTRY_DSN")}@sentry.io/85124',
+    'dsn': os.getenv("SENTRY_DSN"),
     'release': raven.fetch_git_sha(os.path.dirname(os.pardir)),
 }

@@ -10,3 +10,5 @@ omit = ../*migrations*
        logs/*
        sitecustomize.py
        manage.py
+       api_tests/*
+       dev_docs/

@@ -1,5 +1,6 @@
 import logging
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 from rest_framework import viewsets, status, permissions, exceptions
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
@@ -52,14 +53,11 @@ class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewS
         filter_dict = {}
         if filter_name:
             filter_dict = {'name': filter_name}
-        this_namespace_projects = super(ProjectViewSet, self).get_queryset().filter(**filter_dict)
-        this_request_user_collabs = Collaborator.objects.filter(user=self.request.user,
-                                                                project__in=this_namespace_projects,
-                                                                project__private=True).values_list('project__pk',
-                                                                                                   flat=True)
-        collab_projects = Project.objects.filter(pk__in=this_request_user_collabs)
-        all_projects = this_namespace_projects.filter(private=False).union(collab_projects)
-        return all_projects
+        projects = Project.objects.namespace(self.request.namespace).tbs_filter(self.kwargs.get('project'),
+                                                                                **filter_dict)
+        if self.request.user != self.request.namespace.object:
+            projects = projects.filter(Q(private=False) | Q(collaborator__user=self.request.user))
+        return projects
 
     def _update(self, request, partial,  *args, **kwargs):
         instance = self.get_object()
@@ -178,13 +176,13 @@ class SyncedResourceViewSet(ProjectMixin, viewsets.ModelViewSet):
 
 class ProjectFileViewSet(ProjectMixin,
                          viewsets.ModelViewSet):
-    queryset = ProjectFile.objects.all()
+    queryset = ProjectFile.objects.filter(project__is_active=True)
     serializer_class = ProjectFileSerializer
     parser_classes = (MultiPartParser, FormParser, JSONParser)
 
     def get_queryset(self, *args, **kwargs):
         queryset = super().get_queryset()
-        project = Project.objects.tbs_get(self.kwargs.get('project_project'))
+        project = Project.objects.namespace(self.request.namespace).tbs_get(self.kwargs.get('project_project'))
         sync_project_files_from_disk(project)
         filename = self.request.query_params.get("filename", None)
         if filename is not None:
@@ -231,9 +229,9 @@ class ProjectFileViewSet(ProjectMixin,
 
         proj_files_to_serialize = []
         project_pk = kwargs.get("project_project")
+        project = Project.objects.namespace(self.request.namespace).tbs_get(project_pk)
 
         for f in files:
-            project = Project.objects.tbs_get(project_pk)
             create_data = {'author': self.request.user,
                            'project': project,
                            'file': f}

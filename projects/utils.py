@@ -258,14 +258,7 @@ def create_templates(projects: List[str]=[settings.GETTING_STARTED_PROJECT]):
         sync_project_files_from_disk(project)
 
 
-def check_project_name_exists(name: str, request: Request, existing_pk:str=None):
-    qs = Project.objects.filter(name=name).exclude(pk=existing_pk)
-    if request.namespace.type == 'user':
-        qs = qs.filter(
-            collaborator__user=request.user,
-            collaborator__owner=True)
-    else:
-        qs = qs.filter(team=request.namespace.object)
-
+def check_project_name_exists(name: str, request: Request, existing_pk: str=None):
+    qs = Project.objects.namespace(request.namespace).filter(name=name, is_active=True).exclude(pk=existing_pk)
     return qs.exists()
 

@@ -10,6 +10,7 @@ from billing.stripe_utils import create_stripe_customer_from_user, create_plan_i
 from billing.tests.factories import SubscriptionFactory, InvoiceFactory, InvoiceItemFactory
 from billing.tests.test_views import create_plan_dict
 from users.tests.factories import UserFactory, EmailFactory
+from projects.utils import assign_to_team
 from projects.tests.factories import ProjectFactory
 from servers.tests.factories import ServerFactory, ServerSizeFactory
 from jwt_auth.utils import create_auth_jwt
@@ -105,6 +106,7 @@ class TeamTest(APITransactionTestCase):
     def test_team_group_permission_for_project_file(self):
         team, cli = self._create_base_permission_test()
         project = ProjectFactory()
+        assign_to_team(team=team, project=project)
         projectfile_url = reverse('projectfile-list', kwargs={
             'version': settings.DEFAULT_VERSION, 'namespace': team.name, 'project_project': str(project.pk)})
         resp = cli.post(projectfile_url, data=dict(name='Test'))
