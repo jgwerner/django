@@ -727,7 +727,6 @@ class DeploymentTest(APITestCase):
                 'framework': framework.name,
                 'config': {}}
         response = self.client.post(url, data=data)
-        print(response.data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         deployment = Deployment.objects.get(pk=response.data['id'])
         self.assertEqual(deployment.project, self.project)
