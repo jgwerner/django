@@ -86,7 +86,7 @@ describe('{namespace}/projects/', () => {
     expect(post_response).to.have.status(201)
     expect(post_response).to.comprise.of.json(new_proj)
     this.project_id = post_response.body.id
-    const uri = proj_uri + this.project_id + '/'
+    const uri = proj_uri + post_response.body.id + '/'
 
     const get_response = await chakram.get(uri)
     expect(get_response).to.have.status(200)
@@ -141,7 +141,7 @@ describe('{namespace}/projects/', () => {
     expect(proj_response).to.comprise.of.json(new_proj)
     this.project_id = proj_response.body.id
     const copy_uri = proj_uri + 'project-copy/'
-    const project = { project: this.project_id }
+    const project = { project: proj_response.body.id }
 
     const copy_response = await chakram.post(copy_uri, project)
     new_proj.name += '-1'
@@ -156,7 +156,7 @@ describe('{namespace}/projects/', () => {
     expect(proj_response).to.comprise.of.json(new_proj)
     this.project_id = proj_response.body.id
     const copy_uri = proj_uri + 'project-copy-check/'
-    const project = { project: this.project_id }
+    const project = { project: proj_response.body.id }
 
     const copy_response = await chakram.post(copy_uri, project)
     expect(copy_response).to.have.status(200)
@@ -170,7 +170,7 @@ describe('{namespace}/projects/', () => {
     expect(proj_response).to.comprise.of.json(new_proj)
     this.project_id = proj_response.body.id
     const copy_uri = proj_uri + 'project-copy-check/'
-    const project = { project: this.project_id }
+    const project = { project: proj_response.body.id }
 
     const copy_response = await chakram.post(copy_uri, project)
     expect(copy_response).to.have.status(404)
