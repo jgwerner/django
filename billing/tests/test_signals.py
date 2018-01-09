@@ -3,6 +3,7 @@ from django.test import override_settings
 from billing.models import Plan, Customer, Subscription
 from billing.stripe_utils import create_plan_in_stripe
 from billing.tests import BillingTestCase, fake_stripe
+from billing.tests.fake_stripe import error
 from billing.tests.factories import PlanFactory
 from users.tests.factories import UserFactory
 
@@ -53,6 +54,7 @@ class TestBillingSignals(BillingTestCase):
     @patch("billing.stripe_utils.stripe", fake_stripe)
     @patch("billing.views.stripe", fake_stripe)
     @patch("billing.serializers.stripe", fake_stripe)
+    @patch("billing.stripe_utils.stripe.error.InvalidRequestError", error.InvalidRequestError)
     @override_settings(DEFAULT_STRIPE_PLAN_ID="testing-plan")
     def test_configurable_default_plan(self):
         plan_data = {'name': "Testing Plan",
