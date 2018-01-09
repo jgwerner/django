@@ -271,3 +271,72 @@ class JobScheduler(ECSSpawner):
 
     def _get_cmd(self):
         return self.server.config['command']
+
+
+class BatchScheduler(ECSSpawner):
+    def __init__(self, server, client=None):
+        super().__init__(server)
+        self.batch = client or boto3.client("batch")
+
+    def start(self):
+        if 'job_definition_arn' not in self.server.config:
+            self.server.config['job_definition_arn'] = self._register_job_definition()
+        depends_on = []
+        if 'depends_on' in self.server.config:
+            depends_on = [{'jobId': job} for job in self.server.config['depends_on']]
+        resp = self.batch.submit_job(
+            jobName=f"{self.server.pk}",
+            jobQueue=settings.BATCH_JOB_QUEUE,
+            jobDefinition=self.server.config['job_definition_arn'],
+            dependsOn=depends_on,
+            containerOverrides={
+                'environment': self._get_env(),
+                'command': self._get_cmd(),
+            },
+            retryStrategy={
+                'attempts': 3
+            }
+        )
+        self.server.config['job_id'] = resp['jobId']
+        self.server.save()
+
+    def stop(self):
+        self.batch.cancel_job(
+            jobId=self.server.config['job_id'],
+            reason='User action.'
+        )
+        del self.server.config['job_id']
+        self.server.save()
+
+    def terminate(self):
+        self.batch.terminate_job(
+            jobId=self.server.config['job_id'],
+            reason='User action.'
+        )
+        self.batch.deregister_job_definition(
+            jobDefinition=self.server.config['job_definition_arn']
+        )
+
+    def status(self) -> str:
+        resp = self.batch.describe_jobs(
+            jobs=[self.server.config['job_id']]
+        )
+        return resp['jobs'][0]['status'].title()
+
+    def _register_job_definition(self) -> str:
+        volumes, mount_points = self._get_volumes_and_mount_points()
+        resp = self.batch.register_job_definition(
+            jobDefinitionName=str(self.server.pk),
+            type='container',
+            containerProperties={
+                'image': self.server.image_name,
+                'vcpus': self.server.server_size.cpu,
+                'memory': self.server.server_size.memory,
+                'mountPoints': mount_points,
+                'volumes': volumes,
+            },
+        )
+        return resp['jobDefinitionArn']
+
+    def _get_cmd(self) -> list:
+        return self.server.config['command']
