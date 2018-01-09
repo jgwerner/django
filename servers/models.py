@@ -126,16 +126,22 @@ class Server(ServerModelAbstract):
 
 
 class Runtime(models.Model):
-    name = models.CharField(max_length=50)
+    NATURAL_KEY = "name"
+    name = models.CharField(max_length=50, unique=True)
+
+    objects = TBSQuerySet.as_manager()
 
     def __str__(self):
         return self.name
 
 
 class Framework(models.Model):
-    name = models.CharField(max_length=50)
+    NATURAL_KEY = "name"
+    name = models.CharField(max_length=50, unique=True)
     version = models.CharField(max_length=10)
     url = models.URLField()
+
+    objects = TBSQuerySet.as_manager()
 
     def __str__(self):
         return f"{self.name} {self.version}"

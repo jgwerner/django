@@ -713,6 +713,24 @@ class DeploymentTest(APITestCase):
         collaborator = CollaboratorFactory()
         self.user = collaborator.user
         self.project = collaborator.project
+        token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
+
+    def test_create_deployment_using_runtime_and_fw_names(self):
+        runtime = RuntimeFactory()
+        framework = FrameworkFactory()
+        url = reverse("deployment-list", kwargs={'version': settings.DEFAULT_VERSION,
+                                                 'namespace': self.user.username,
+                                                 'project_project': self.project.name})
+        data = {'name': "Deployment",
+                'runtime': runtime.name,
+                'framework': framework.name,
+                'config': {}}
+        response = self.client.post(url, data=data)
+        print(response.data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        deployment = Deployment.objects.get(pk=response.data['id'])
+        self.assertEqual(deployment.project, self.project)
 
     def test_create_deployment_for_project_duplicate(self):
         proj = CollaboratorFactory(project__name=self.project.name).project

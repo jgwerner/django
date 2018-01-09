@@ -11,7 +11,9 @@ from servers.models import (ServerSize, Server,
                             ServerRunStatistics,
                             ServerStatistics,
                             SshTunnel,
-                            Deployment)
+                            Deployment,
+                            Runtime,
+                            Framework)
 from projects.models import Project, Collaborator
 from projects.serializers import ProjectSerializer
 log = logging.getLogger('servers')
@@ -187,6 +189,8 @@ class SshTunnelSerializer(serializers.ModelSerializer):
 
 class DeploymentSerializer(serializers.ModelSerializer):
     created_by = serializers.PrimaryKeyRelatedField(read_only=True, default=serializers.CurrentUserDefault())
+    runtime = serializers.CharField()
+    framework = serializers.CharField()
 
     class Meta:
         model = Deployment
@@ -196,7 +200,14 @@ class DeploymentSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         pk = uuid.uuid4()
         user = self.context['request'].user
-        instance = Deployment(pk=pk, **validated_data)
+
+        runtime = Runtime.objects.tbs_get(validated_data.pop("runtime"))
+        framework = Framework.objects.tbs_get(validated_data.pop("framework"))
+
+        instance = Deployment(pk=pk,
+                              runtime=runtime,
+                              framework=framework,
+                              **validated_data)
         project_pk = self.context['view'].kwargs.get('project_project')
         if validate_uuid(project_pk):
             instance.project = Project.objects.tbs_get(project_pk)
