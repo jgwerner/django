@@ -53,6 +53,18 @@ class ProjectTest(ProjectTestMixin, APITestCase):
         self.assertEqual(Project.objects.count(), 1)
         self.assertEqual(Project.objects.get().name, data['name'])
 
+    def test_create_project_with_same_name_as_deleted_proj(self):
+        proj = CollaboratorFactory(user=self.user).project
+        proj.is_active = False
+        proj.save()
+        url = reverse('project-list', kwargs={'namespace': self.user.username,
+                                              'version': settings.DEFAULT_VERSION})
+        data = {'name': proj.name}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data.get('name'), proj.name)
+        self.assertNotEqual(response.data['id'], str(proj.pk))
+
     def test_create_project_with_the_same_name(self):
         collaborator = CollaboratorFactory(user=self.user, owner=True)
         project = collaborator.project
