@@ -1,7 +1,8 @@
 {
   "name": "app-backend-restful-tests",
   "version": "1.0.0",
-  "description": "Used for running restful tests against the app-backend rest api",
+  "description":
+    "Used for running restful tests against the app-backend rest api",
   "main": "index.js",
   "directories": {
     "doc": "docs"
@@ -15,7 +16,7 @@
     "request-promise": "^4.2.2"
   },
   "scripts": {
-    "test": "node_modules/.bin/mocha api_tests/tests --timeout 6000"
+    "test": "node_modules/.bin/mocha api_tests/tests --timeout 8000"
   },
   "repository": {
     "type": "git",
