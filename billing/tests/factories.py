@@ -8,7 +8,6 @@ from users.tests.factories import UserFactory
 from billing.models import (Customer, Plan, Card,
                             Subscription, Event,
                             Invoice, InvoiceItem)
-from billing.signals import create_plan_in_stripe_from_admin
 
 
 class CustomerFactory(factory.django.DjangoModelFactory):
@@ -46,10 +45,11 @@ class PlanFactory(factory.django.DjangoModelFactory):
 
     @classmethod
     def _generate(cls, create, attrs):
-        pre_save.disconnect(create_plan_in_stripe_from_admin, Plan)
+        # print(attrs)
+        # attrs['stripe_id'] = attrs['id']
+        attrs['id'] = None
         plan = super()._generate(create, attrs)
         plan.save()
-        pre_save.connect(create_plan_in_stripe_from_admin, Plan)
         return plan
 
 

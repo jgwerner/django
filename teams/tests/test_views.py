@@ -1,7 +1,7 @@
 import json
 from django.conf import settings
 from django.urls import reverse
-from django.test import TestCase, Client
+from django.test import TestCase, Client, override_settings
 from rest_framework import status
 from rest_framework.test import APITransactionTestCase, APITestCase
 
@@ -25,11 +25,13 @@ else:
 
 
 class TeamTest(APITransactionTestCase):
+    @override_settings(ENABLE_BILLING=True)
     def setUp(self):
         self.user = UserFactory()
         token = create_auth_jwt(self.user)
         self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
+    @override_settings(ENABLE_BILLING=True)
     def test_create_team(self):
         url = reverse('team-list', kwargs={'version': settings.DEFAULT_VERSION})
         data = {'name': 'TestTeam'}
@@ -209,6 +211,7 @@ class TeamTest(APITransactionTestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
 
 
+@override_settings(ENABLE_BILLING=True)
 class SubscriptionTest(APITestCase):
     fixtures = ['notification_types.json']
 
@@ -308,6 +311,7 @@ class SubscriptionTest(APITestCase):
         self.assertIsNotNone(sub_reloaded.ended_at)
 
 
+@override_settings(ENABLE_BILLING=True)
 class InvoiceTest(TestCase):
 
     fixtures = ['notification_types.json']

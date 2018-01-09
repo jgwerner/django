@@ -23,27 +23,3 @@ def check_if_customer_exists_for_user(sender, instance, created, **kwargs):
                      "Creating one.".format(uname=user.username))
             customer = create_stripe_customer_from_user(user)
             assign_customer_to_default_plan(customer)
-
-
-@receiver(pre_save, sender=Plan)
-def create_plan_in_stripe_from_admin(sender, instance, **kwargs):
-    if sender == Plan:
-        updateable_attrs = ["name",
-                            "statement_descriptor",
-                            "metadata"]
-        create_only_attrs = ["amount", "currency", "interval",
-                             "interval_count", "trial_period_days"]
-        data = {'id': instance.name.lower().replace(" ", "-")}
-        if not instance.stripe_id:
-            data.update({attr: getattr(instance, attr) for attr in create_only_attrs + updateable_attrs})
-            log.info(f"Plan object {instance} does not have a Stripe ID. Creating new plan in stripe.")
-            # Note that duplicate plan has not been saved in the database yet (and never will be).
-            # I'm not sure this is the best implementation, but this is still a WIP.
-            duplicate_plan = create_plan_in_stripe(data)
-            for attr in ["stripe_id", "created", "livemode"]:
-                value = getattr(duplicate_plan, attr)
-                setattr(instance, attr, value)
-        elif instance.pk is not None:
-            data.update({attr: getattr(instance, attr) for attr in updateable_attrs})
-            update_plan_in_stripe(data)
-

@@ -4,7 +4,8 @@ from .helpers import (mock_stripe_retrieve,
                       convert_db_object_to_stripe_dict)
 from ..factories import (CardFactory, CustomerFactory,
                          SubscriptionFactory,
-                         InvoiceItemFactory)
+                         InvoiceItemFactory,
+                         PlanFactory)
 log = logging.getLogger('billing')
 
 
@@ -79,7 +80,10 @@ class Subscription(FakeStripeObject):
 
 
 class Plan(FakeStripeObject):
-    pass
+    @classmethod
+    def create(cls, *args, **kwargs):
+        plan = PlanFactory.build(**kwargs)
+        return convert_db_object_to_stripe_dict(plan)
 
 
 class InvoiceItem(FakeStripeObject):

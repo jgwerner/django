@@ -49,25 +49,24 @@ server_router.register(r'run-stats', servers_views.ServerRunStatisticsViewSet)
 server_router.register(r'stats', servers_views.ServerStatisticsViewSet)
 server_router.register(r'triggers', trigger_views.ServerActionViewSet)
 
-if settings.ENABLE_BILLING:
-    router.register(r'billing/cards', billing_views.CardViewSet)
-    router.register(r'billing/plans', billing_views.PlanViewSet)
-    router.register(r'billing/subscriptions', billing_views.SubscriptionViewSet)
-    router.register(r'billing/invoices', billing_views.InvoiceViewSet)
-    router.register(r'billing/(?P<invoice_id>[\w-]+)/invoice-items', billing_views.InvoiceItemViewSet)
+
+router.register(r'billing/cards', billing_views.CardViewSet)
+router.register(r'billing/plans', billing_views.PlanViewSet)
+router.register(r'billing/subscriptions', billing_views.SubscriptionViewSet)
+router.register(r'billing/invoices', billing_views.InvoiceViewSet)
+router.register(r'billing/(?P<invoice_id>[\w-]+)/invoice-items', billing_views.InvoiceItemViewSet)
 
 router.register(r'service/(?P<server>[^/.]+)/trigger', trigger_views.ServerActionViewSet)
 
 teams_router = routers.SimpleRouter()
 teams_router.register(r'teams', team_views.TeamViewSet)
 
-if settings.ENABLE_BILLING:
-    teams_billing_router = routers.NestedSimpleRouter(teams_router, r'teams', lookup='team')
-    teams_billing_router.register(r'billing/subscriptions', team_views.TeamSubscriptionViewSet,
-                                  base_name='team-subscription')
-    teams_billing_router.register(r'billing/invoices', team_views.TeamInvoiceViewSet, base_name='team-invoices')
-    teams_billing_router.register(r'billing/(?P<invoice_id>[\w-]+)/invoice-items', team_views.TeamInvoiceItemViewSet,
-                                  base_name='team-invoice-items')
+teams_billing_router = routers.NestedSimpleRouter(teams_router, r'teams', lookup='team')
+teams_billing_router.register(r'billing/subscriptions', team_views.TeamSubscriptionViewSet,
+                              base_name='team-subscription')
+teams_billing_router.register(r'billing/invoices', team_views.TeamInvoiceViewSet, base_name='team-invoices')
+teams_billing_router.register(r'billing/(?P<invoice_id>[\w-]+)/invoice-items', team_views.TeamInvoiceItemViewSet,
+                              base_name='team-invoice-items')
 
 teams_sub_router = routers.NestedSimpleRouter(teams_router, r'teams', lookup='team')
 teams_sub_router.register(r'groups', team_views.GroupViewSet)
@@ -157,7 +156,7 @@ def handler500(request):
     raise APIException(detail="Internal Server Error", code=500)
 
 
-if settings.ENABLE_BILLING:
+if True:  # settings.ENABLE_BILLING:
     urlpatterns += [
         url(r'^', include(teams_billing_router.urls)),
     ]

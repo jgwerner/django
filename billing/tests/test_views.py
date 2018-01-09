@@ -2,7 +2,7 @@ import stripe
 import json
 from unittest.mock import patch
 from decimal import getcontext
-from django.test import Client
+from django.test import Client, override_settings
 from django.urls import reverse
 from django.conf import settings
 from rest_framework import status
@@ -38,6 +38,7 @@ def create_plan_dict(trial_period=None):
     return data_dict
 
 
+# @override_settings(ENABLE_BILLING=True)
 class PlanTest(BillingTestCase):
 
     @patch("billing.stripe_utils.stripe", fake_stripe)
@@ -72,6 +73,7 @@ class PlanTest(BillingTestCase):
         self.assertEqual(str(plan.pk), response.data.get('id'))
 
 
+# @override_settings(ENABLE_BILLING=True)
 class CardTest(BillingTestCase):
 
     @patch("billing.stripe_utils.stripe", fake_stripe)
@@ -190,6 +192,7 @@ class CardTest(BillingTestCase):
         self.assertEqual(Card.objects.count(), 0)
 
 
+# @override_settings(ENABLE_BILLING=True)
 class SubscriptionTest(BillingTestCase):
     @patch("billing.stripe_utils.stripe", fake_stripe)
     def setUp(self):
@@ -283,6 +286,7 @@ class SubscriptionTest(BillingTestCase):
         self.assertIsNotNone(sub_reloaded.ended_at)
 
 
+# @override_settings(ENABLE_BILLING=True)
 class InvoiceTest(BillingTestCase):
 
     fixtures = ['notification_types.json', "plans.json"]
@@ -339,6 +343,7 @@ class InvoiceTest(BillingTestCase):
         self.assertEqual(response.data['id'], str(item.id))
 
 
+# @override_settings(ENABLE_BILLING=True)
 class IncomingStripeWebHooksTest(BillingTestCase):
 
     @patch("billing.stripe_utils.stripe", fake_stripe)

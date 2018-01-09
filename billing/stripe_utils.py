@@ -113,13 +113,7 @@ def update_plan_in_stripe(data: dict):
 
 
 def create_plan_in_stripe(validated_data):
-    plan_stripe_id = validated_data.get('name').lower().replace(" ", "-")
     try:
-        stripe_plan = stripe.Plan.retrieve(plan_stripe_id)
-        plan = Plan.objects.get(stripe_id=plan_stripe_id)
-    except stripe.error.InvalidRequestError:
-        # Plan doesn't exist in Stripe. This is the expected flow.
-        log.info(f"Plan f{validated_data.get('name')} did not exist in Stripe. Creating it.")
         stripe_response = stripe.Plan.create(id=validated_data.get('name').lower().replace(" ", "-"),
                                              amount=validated_data.get('amount'),
                                              currency=validated_data.get('currency'),
@@ -131,14 +125,9 @@ def create_plan_in_stripe(validated_data):
 
         converted_data = convert_stripe_object(Plan, stripe_response)
         plan = Plan(**converted_data)
-    except ObjectDoesNotExist:
-        log.warning(f"Plan {plan_stripe_id} exists in stripe, but not in the local database. Creating it there.")
-        converted_data = convert_stripe_object(Plan, stripe_plan)
-        plan = Plan(**converted_data)
-    else:
-        log.info(f"Plan {plan_stripe_id} already existed in both Stripe and the local database. Hmm.")
-
-    return plan
+        return plan
+    except stripe.error.InvalidRequestError:
+        pass
 
 
 def create_subscription_in_stripe(validated_data, user=None):

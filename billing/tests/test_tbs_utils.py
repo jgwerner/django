@@ -2,6 +2,7 @@ import random
 from unittest.mock import patch
 from decimal import Decimal, getcontext
 from datetime import timedelta
+from django.test import override_settings
 from django.conf import settings
 from django.utils import timezone
 from users.models import User
@@ -22,6 +23,7 @@ from servers.tests.factories import ServerRunStatisticsFactory
 getcontext().prec = 6
 
 
+# @override_settings(ENABLE_BILLING=True)
 class TestTbsUtils(BillingTestCase):
     fixtures = ['notification_types.json', "plans.json"]
 
@@ -258,6 +260,7 @@ class TestTbsUtils(BillingTestCase):
         self.assertEqual(servers, [run_stats.server.pk])
 
 
+# @override_settings(ENABLE_BILLING=True)
 class TestMeteredBillingData(BillingTestCase):
     fixtures = ['notification_types.json', "plans.json"]
 

@@ -28,7 +28,7 @@ class Team(TimeStampedModel):
     location = models.CharField(max_length=100, blank=True)
     default_billing_address = models.OneToOneField('billing.BillingAddress', blank=True, null=True)
     billing_plan = models.OneToOneField('billing.Plan', blank=True, null=True)
-    customer = models.ForeignKey('billing.Customer', related_name='teams')
+    customer = models.ForeignKey('billing.Customer', related_name='teams', null=True)
     avatar_url = models.CharField(max_length=100, blank=True, null=True)
     avatar = models.ImageField(upload_to=team_directory_path, null=True, blank=True)
 

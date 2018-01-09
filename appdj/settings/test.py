@@ -42,7 +42,7 @@ HAYSTACK_CONNECTIONS = {
     }
 }
 
-ENABLE_BILLING = True
+ENABLE_BILLING = False
 SPAWNER = 'servers.spawners.dummy.DummySpawner'
 AWS_JOBS_ROLE="arn:aws:iam::123456789012:role/JobsRole"
 BATCH_JOB_QUEUE='dev'
