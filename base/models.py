@@ -2,8 +2,6 @@ from collections import Iterable
 from django.db.models import QuerySet, Q
 
 from .utils import validate_uuid
-import logging
-log = logging.getLogger('projects')
 
 
 class TBSQuerySetMixin:
