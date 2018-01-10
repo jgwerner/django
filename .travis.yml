@@ -35,7 +35,6 @@ before_install:
   - export NVIDIA_DOCKER_HOST=http://localhost:3476
   - export AWS_DEFAULT_REGION="us-west-2"
   - export COVERAGE_PROCESS_START=".coveragerc"
-  - 'if [ "$TEST_SUITE" = "API" ]; then python manage.py loaddata plans.json; fi'
 
 install:
   - echo "Install $TEST_SUITE"
