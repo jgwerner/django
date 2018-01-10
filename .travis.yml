@@ -29,6 +29,7 @@ before_install:
   - bash travis/before_install.sh
   - export PATH=$PATH:$HOME/.local/bin # put aws in the path
   - export PYTHONPATH=`pwd`:$PYTHONPATH
+  - export SECRET_KEY=test
   - export REDIS_URL="redis://localhost:6379/0"
   - export DATABASE_URL="postgres://postgres:@localhost:5432/travis_ci_test"
   - export NVIDIA_DOCKER_HOST=http://localhost:3476
