@@ -357,11 +357,10 @@ class IncomingStripeWebHooksTest(BillingTestCase):
     def test_subscription_updated_webhook(self, mock_construct):
         mock_construct.return_value = True
         url = reverse("stripe-subscription-updated", kwargs={'version': settings.DEFAULT_VERSION})
-        from billing.tests import mock_stripe
         plan = Plan.objects.get(stripe_id="threeblades-free-plan")
         subscription = SubscriptionFactory(customer=self.user.customer,
                                            plan=plan)
-        webhook_data = mock_stripe.Event.get_sub_updated_evt(customer=self.user.customer.stripe_id,
+        webhook_data = fake_stripe.Event.get_sub_updated_evt(customer=self.user.customer.stripe_id,
                                                              subscription=subscription.stripe_id,
                                                              status=Subscription.PAST)
         response = self.client.post(url, json.dumps(webhook_data),
@@ -383,12 +382,10 @@ class IncomingStripeWebHooksTest(BillingTestCase):
         mock_construct.return_value = True
         url = reverse("stripe-invoice-created",
                       kwargs={'version': settings.DEFAULT_VERSION})
-        # Always use Mock stripe for these tests, configuring webhooks for testing is near impossible.
-        from billing.tests import mock_stripe
         plan = Plan.objects.get(stripe_id="threeblades-free-plan")
         subscription = SubscriptionFactory(customer=self.user.customer,
                                            plan=plan)
-        webhook_data = mock_stripe.Event.get_webhook_event(event_type="invoice.created",
+        webhook_data = fake_stripe.Event.get_webhook_event(event_type="invoice.created",
                                                            customer=self.user.customer.stripe_id,
                                                            plan=subscription.plan.stripe_id,
                                                            subscription=subscription.stripe_id,
@@ -412,10 +409,8 @@ class IncomingStripeWebHooksTest(BillingTestCase):
         mock_construct.return_value = True
         url = reverse("stripe-invoice-payment-failed",
                       kwargs={'version': settings.DEFAULT_VERSION})
-        # Always use Mock stripe for these tests, configuring webhooks for testing is near impossible.
-        from billing.tests import mock_stripe
         subscription = Subscription.objects.get(customer=self.user.customer)
-        webhook_data = mock_stripe.Event.get_webhook_event(event_type="invoice.payment_failed",
+        webhook_data = fake_stripe.Event.get_webhook_event(event_type="invoice.payment_failed",
                                                            customer=self.user.customer.stripe_id,
                                                            plan=subscription.plan.stripe_id,
                                                            subscription=subscription.stripe_id,
@@ -438,9 +433,8 @@ class IncomingStripeWebHooksTest(BillingTestCase):
         mock_construct.return_value = True
         url = reverse("stripe-invoice-payment-success",
                       kwargs={'version': settings.DEFAULT_VERSION})
-        from billing.tests import mock_stripe
         subscription = Subscription.objects.get(customer=self.user.customer)
-        webhook_data = mock_stripe.Event.get_webhook_event(event_type="invoice.payment_succeeded",
+        webhook_data = fake_stripe.Event.get_webhook_event(event_type="invoice.payment_succeeded",
                                                            customer=self.user.customer.stripe_id,
                                                            plan=subscription.plan.stripe_id,
                                                            subscription=subscription.stripe_id,
@@ -462,12 +456,11 @@ class IncomingStripeWebHooksTest(BillingTestCase):
     def test_sending_duplicate_event_does_nothing(self, mock_construct):
         mock_construct.return_value = True
         existing_event = EventFactory()
-        from billing.tests import mock_stripe
         url = reverse("stripe-invoice-created", kwargs={'version': settings.DEFAULT_VERSION})
         plan = Plan.objects.get(stripe_id="threeblades-free-plan")
         subscription = SubscriptionFactory(customer=self.user.customer,
                                            plan=plan)
-        webhook_data = mock_stripe.Event.get_webhook_event(event_type="invoice.created",
+        webhook_data = fake_stripe.Event.get_webhook_event(event_type="invoice.created",
                                                            customer=self.user.customer.stripe_id,
                                                            plan=subscription.plan.stripe_id,
                                                            subscription=subscription.stripe_id,
@@ -491,11 +484,10 @@ class IncomingStripeWebHooksTest(BillingTestCase):
     def test_construct_event_value_error(self, mock_log, mock_construct):
         mock_construct.side_effect = ValueError("foo")
         url = reverse("stripe-subscription-updated", kwargs={'version': settings.DEFAULT_VERSION})
-        from billing.tests import mock_stripe
         plan = Plan.objects.get(stripe_id="threeblades-free-plan")
         subscription = SubscriptionFactory(customer=self.user.customer,
                                            plan=plan)
-        webhook_data = mock_stripe.Event.get_sub_updated_evt(customer=self.user.customer.stripe_id,
+        webhook_data = fake_stripe.Event.get_sub_updated_evt(customer=self.user.customer.stripe_id,
                                                              subscription=subscription.stripe_id,
                                                              status=Subscription.PAST)
         response = self.client.post(url, json.dumps(webhook_data),
@@ -512,11 +504,10 @@ class IncomingStripeWebHooksTest(BillingTestCase):
     def test_construct_event_verification_error(self, mock_log, mock_construct):
         mock_construct.side_effect = signature_verification_error()
         url = reverse("stripe-subscription-updated", kwargs={'version': settings.DEFAULT_VERSION})
-        from billing.tests import mock_stripe
         plan = Plan.objects.get(stripe_id="threeblades-free-plan")
         subscription = SubscriptionFactory(customer=self.user.customer,
                                            plan=plan)
-        webhook_data = mock_stripe.Event.get_sub_updated_evt(customer=self.user.customer.stripe_id,
+        webhook_data = fake_stripe.Event.get_sub_updated_evt(customer=self.user.customer.stripe_id,
                                                              subscription=subscription.stripe_id,
                                                              status=Subscription.PAST)
         response = self.client.post(url, json.dumps(webhook_data),
@@ -532,11 +523,10 @@ class IncomingStripeWebHooksTest(BillingTestCase):
     def test_subscription_updated_to_active_status(self, mock_construct):
         mock_construct.return_value = True
         url = reverse("stripe-subscription-updated", kwargs={'version': settings.DEFAULT_VERSION})
-        from billing.tests import mock_stripe
         plan = Plan.objects.get(stripe_id="threeblades-free-plan")
         subscription = SubscriptionFactory(customer=self.user.customer,
                                            plan=plan)
-        webhook_data = mock_stripe.Event.get_sub_updated_evt(customer=self.user.customer.stripe_id,
+        webhook_data = fake_stripe.Event.get_sub_updated_evt(customer=self.user.customer.stripe_id,
                                                              subscription=subscription.stripe_id,
                                                              status=Subscription.ACTIVE)
         response = self.client.post(url, json.dumps(webhook_data), content_type="application/json")

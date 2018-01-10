@@ -1,5 +1,6 @@
 import logging
 import json
+import stripe
 from django.http import HttpResponse
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
@@ -22,12 +23,6 @@ from billing.stripe_utils import (handle_stripe_invoice_created,
 from billing.decorators import verify_signature
 
 log = logging.getLogger('billing')
-
-if settings.MOCK_STRIPE:
-    from billing.tests import mock_stripe as stripe
-    log.info("Using mock_stripe module.")
-else:
-    import stripe
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 

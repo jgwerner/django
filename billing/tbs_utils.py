@@ -186,16 +186,16 @@ def calculate_usage_for_period(closing_from: datetime=None, closing_to: datetime
 
 def shutdown_servers_for_free_users(usage_map: dict) -> list:
     servers_stopped = []
-
-    servers_to_stop = set(list(itertools.chain.from_iterable([bill_data.servers
-                                                              for user_pk, bill_data
-                                                              in usage_map.items()
-                                                              if bill_data.stop_all_servers])))
-    for server in servers_to_stop:
-        log.info(f"Stopping Server w/PK {str(server)} because user is on free tier and exceeded limits.")
-        # TODO: Should this have apply_async appended? If so, what should the task ID be?
-        stop_server(str(server))
-        servers_stopped.append(server)
+    if usage_map:
+        servers_to_stop = set(list(itertools.chain.from_iterable([bill_data.servers
+                                                                  for user_pk, bill_data
+                                                                  in usage_map.items()
+                                                                  if bill_data.stop_all_servers])))
+        for server in servers_to_stop:
+            log.info(f"Stopping Server w/PK {str(server)} because user is on free tier and exceeded limits.")
+            # TODO: Should this have apply_async appended? If so, what should the task ID be?
+            stop_server(str(server))
+            servers_stopped.append(server)
     return servers_stopped
 
 

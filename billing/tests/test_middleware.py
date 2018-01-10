@@ -14,7 +14,6 @@ from jwt_auth.utils import create_auth_jwt
 from teams.tests.factories import TeamFactory
 
 
-# @override_settings(ENABLE_BILLING=True)
 class TestMiddleware(BillingTestCase):
 
     @patch("billing.stripe_utils.stripe", fake_stripe)
@@ -32,7 +31,6 @@ class TestMiddleware(BillingTestCase):
     @patch("billing.stripe_utils.stripe", fake_stripe)
     @patch("billing.views.stripe", fake_stripe)
     @patch("billing.serializers.stripe", fake_stripe)
-    # @override_settings(ENABLE_BILLING=True)
     def test_no_subscription_GET_is_accepted(self):
         url = reverse("project-list", kwargs={'version': settings.DEFAULT_VERSION,
                                               'namespace': self.user.username})
@@ -42,7 +40,6 @@ class TestMiddleware(BillingTestCase):
     @patch("billing.stripe_utils.stripe", fake_stripe)
     @patch("billing.views.stripe", fake_stripe)
     @patch("billing.serializers.stripe", fake_stripe)
-    # @override_settings(ENABLE_BILLING=True)
     def test_no_subscription_non_GET_accepted(self):
         url = reverse("project-list", kwargs={'version': settings.DEFAULT_VERSION,
                                               'namespace': self.user.username})
@@ -54,7 +51,6 @@ class TestMiddleware(BillingTestCase):
     @patch("billing.stripe_utils.stripe", fake_stripe)
     @patch("billing.views.stripe", fake_stripe)
     @patch("billing.serializers.stripe", fake_stripe)
-    # @override_settings(ENABLE_BILLING=True)
     def test_no_subscription_cannot_start_server(self):
         project = CollaboratorFactory(user=self.user).project
         server = ServerFactory(project=project)
@@ -68,7 +64,6 @@ class TestMiddleware(BillingTestCase):
     @patch("billing.stripe_utils.stripe", fake_stripe)
     @patch("billing.views.stripe", fake_stripe)
     @patch("billing.serializers.stripe", fake_stripe)
-    # @override_settings(ENABLE_BILLING=True)
     def test_valid_subscription_accepted(self):
         SubscriptionFactory(customer=self.user.customer,
                             status="active")
@@ -80,7 +75,6 @@ class TestMiddleware(BillingTestCase):
     @patch("billing.stripe_utils.stripe", fake_stripe)
     @patch("billing.views.stripe", fake_stripe)
     @patch("billing.serializers.stripe", fake_stripe)
-    # @override_settings(ENABLE_BILLING=True)
     def test_no_team_subscription_cannot_start_server(self):
         project = CollaboratorFactory(user=self.user).project
         server = ServerFactory(project=project)
@@ -94,7 +88,6 @@ class TestMiddleware(BillingTestCase):
     @patch("billing.stripe_utils.stripe", fake_stripe)
     @patch("billing.views.stripe", fake_stripe)
     @patch("billing.serializers.stripe", fake_stripe)
-    # @override_settings(ENABLE_BILLING=True)
     def test_no_team_subscription_GET_is_accepted(self):
         url = reverse("project-list", kwargs={'version': settings.DEFAULT_VERSION,
                                               'namespace': self.team.name})
@@ -104,7 +97,6 @@ class TestMiddleware(BillingTestCase):
     @patch("billing.stripe_utils.stripe", fake_stripe)
     @patch("billing.views.stripe", fake_stripe)
     @patch("billing.serializers.stripe", fake_stripe)
-    # @override_settings(ENABLE_BILLING=True)
     def test_valid_team_subscription_accepted(self):
         SubscriptionFactory(customer=self.user.customer,
                             status="active")

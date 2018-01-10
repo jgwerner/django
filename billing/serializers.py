@@ -1,4 +1,5 @@
 import logging
+import stripe
 from django.db import transaction
 from django.conf import settings
 from rest_framework import serializers
@@ -9,11 +10,6 @@ from billing.stripe_utils import (convert_stripe_object,
                                   create_subscription_in_stripe,
                                   create_card_in_stripe)
 log = logging.getLogger('billing')
-if settings.MOCK_STRIPE:
-    from billing.tests import mock_stripe as stripe
-    log.info("Using mock_stripe module.")
-else:
-    import stripe
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 

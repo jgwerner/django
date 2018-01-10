@@ -96,12 +96,13 @@ def create_stripe_customer_from_user(auth_user: User) -> Customer:
     return customer
 
 
-def update_plan_in_stripe(data: dict):
+def update_plan_in_stripe(data: dict) -> dict:
     stripe_id = data.pop("id")
     stripe_obj = stripe.Plan.retrieve(stripe_id)
     for attr, val in data.items():
         setattr(stripe_obj, attr, val)
     stripe_obj.save()
+    return stripe_obj
 
 
 def create_plan_in_stripe(validated_data):
@@ -247,16 +248,6 @@ def handle_stripe_invoice_created(stripe_obj):
     if event is not None:
         stripe_invoice = stripe_obj['data']['object']
         find_or_create_invoice(stripe_invoice)
-
-
-def create_invoice_item_for_compute_usage(customer_stripe_id, usage_data):
-    stripe_invoice_item = stripe.InvoiceItem.create(customer=customer_stripe_id,
-                                                    amount=int(usage_data['total']),
-                                                    currency="usd",
-                                                    description="3Blades Compute Usage")
-    converted_data = convert_stripe_object(InvoiceItem, stripe_invoice_item)
-    converted_data['quantity'] = 1
-    return InvoiceItem.objects.create(**converted_data)
 
 
 def add_buckets_to_stripe_invoice(customer_stripe_id: str, buckets: int) -> InvoiceItem:
