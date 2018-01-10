@@ -27,9 +27,9 @@ before_script:
 before_install:
   - echo "Before Install $TEST_SUITE"
   - bash travis/before_install.sh
+  - if [ "$TEST_SUITE" = "UNIT" ] then export DJANGO_SETTINGS_MODULE="appdj.settings.test" elif [ "$TEST_SUITE" = "API" ] then export DJANGO_SETTINGS_MODULE="appdj.settings.api_test" fi
   - export PATH=$PATH:$HOME/.local/bin # put aws in the path
   - export PYTHONPATH=`pwd`:$PYTHONPATH
-  - export SECRET_KEY=test
   - export REDIS_URL="redis://localhost:6379/0"
   - export DATABASE_URL="postgres://postgres:@localhost:5432/travis_ci_test"
   - export NVIDIA_DOCKER_HOST=http://localhost:3476
