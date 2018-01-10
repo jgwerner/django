@@ -73,7 +73,6 @@ class CardViewSet(mixins.CreateModelMixin,
         stripe_source = stripe_customer.sources.retrieve(instance.stripe_id)
         stripe_response = stripe_source.delete()
         instance.delete()
-        log.debug(("DELETE RESPONSE", stripe_response.data))
         data = {'stripe_id': stripe_response['id'], 'deleted': True}
         return Response(data=data, status=status.HTTP_204_NO_CONTENT)
 
