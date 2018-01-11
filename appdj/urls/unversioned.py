@@ -156,10 +156,10 @@ def handler500(request):
     raise APIException(detail="Internal Server Error", code=500)
 
 
-if True:  # settings.ENABLE_BILLING:
-    urlpatterns += [
-        url(r'^', include(teams_billing_router.urls)),
-    ]
+
+urlpatterns += [
+    url(r'^', include(teams_billing_router.urls)),
+]
 
 
 if settings.DEBUG:

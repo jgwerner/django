@@ -45,8 +45,6 @@ class PlanFactory(factory.django.DjangoModelFactory):
 
     @classmethod
     def _generate(cls, create, attrs):
-        # print(attrs)
-        # attrs['stripe_id'] = attrs['id']
         attrs['id'] = None
         plan = super()._generate(create, attrs)
         plan.save()

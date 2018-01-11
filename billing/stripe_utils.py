@@ -310,6 +310,6 @@ def cancel_subscriptions(subscription_ids: List[str]) -> None:
     for sub in subscriptions:
         stripe_obj = stripe.Subscription.retrieve(sub.stripe_id)
         stripe_response = stripe_obj.delete()
-        log.debug((f"Stripe resp status", stripe_response['status']))
+        log.debug(f"Stripe resp status {stripe_response['status']}")
         sub.delete(new_status=stripe_response['status'])
         log.info(f"Canceled subscription {sub.pk}.")
