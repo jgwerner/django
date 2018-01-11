@@ -269,7 +269,7 @@ class TestTbsUtils(BillingTestCase):
         created = load_plans("billing/fixtures/plans.json")
         self.assertListEqual(created, [])
 
-    def test_load_plans_creates_plans_when_it_should(self):
+    def test_load_plans_creates_plans_when_plan_does_not_exist(self):
         Plan.objects.all().delete()
         created = load_plans("billing/fixtures/plans.json")
         self.assertEqual(len(created), 4)
@@ -281,7 +281,7 @@ class TestTbsUtils(BillingTestCase):
     @patch("billing.tbs_utils.log")
     @patch("billing.tbs_utils.print_and_log")
     @patch("billing.tbs_utils.Plan.objects.create")
-    def test_integrity_error_is_handled_correctly(self, mock_create, mock_pandl, mock_log, mock_stderr):
+    def test_load_plans_throws_integrity_error_logs_correctly(self, mock_create, mock_pandl, mock_log, mock_stderr):
         Plan.objects.get(stripe_id="threeblades-free-plan").delete()
         mock_create.side_effect = IntegrityError("foo")
         load_plans("billing/fixtures/plans.json")
