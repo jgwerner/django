@@ -328,7 +328,7 @@ and build a nice open source community with us.
 
 ## Copyright and license
 
-Copyright © 2016-2017 3Blades, LLC. All rights reserved, except as follows. Code
+Copyright © 2016-2018 3Blades, LLC. All rights reserved, except as follows. Code
 is released under the BSD 3.0 license. The README.md file, and files in the
 "docs" folder are licensed under the Creative Commons Attribution 4.0
 International License under the terms and conditions set forth in the file
