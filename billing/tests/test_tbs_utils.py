@@ -1,38 +1,48 @@
 import random
+from unittest.mock import patch
 from decimal import Decimal, getcontext
 from datetime import timedelta
+from django.test import override_settings
 from django.conf import settings
 from django.utils import timezone
-from django.test import TestCase
 from users.models import User
 from users.tests.factories import UserFactory
-from billing.models import Invoice, InvoiceItem
-from billing.stripe_utils import create_stripe_customer_from_user
+from billing.models import Invoice, InvoiceItem, Subscription
 from billing.tbs_utils import (calculate_usage_for_period,
-                               update_invoices_with_usage)
+                               update_invoices_with_usage,
+                               MeteredBillingData,
+                               shutdown_servers_for_free_users)
+from billing.tests import BillingTestCase, fake_stripe
 from billing.tests.factories import (PlanFactory,
                                      SubscriptionFactory,
                                      InvoiceFactory)
-from notifications.models import Notification
+from notifications.models import Notification, NotificationType
 from projects.tests.factories import CollaboratorFactory
 from servers.models import ServerRunStatistics
 from servers.tests.factories import ServerRunStatisticsFactory
 getcontext().prec = 6
 
 
-class TestTbsUtils(TestCase):
-    fixtures = ['notification_types.json']
+# @override_settings(ENABLE_BILLING=True)
+class TestTbsUtils(BillingTestCase):
+    fixtures = ['notification_types.json', "plans.json"]
 
+    @patch("billing.stripe_utils.stripe", fake_stripe)
     def setUp(self):
         self.user = UserFactory()
-        self.customer = create_stripe_customer_from_user(self.user)
         self.plan = PlanFactory(interval="month",
                                 interval_count=1,
                                 metadata={'gb_hours': 5})
 
-    def _setup_basics_for_user(self, user: User, duration: int=1, server_memory: int=512) -> ServerRunStatistics:
-        subscription = SubscriptionFactory(customer=user.customer,
-                                           plan=self.plan)
+    @patch("billing.stripe_utils.stripe", fake_stripe)
+    @patch("billing.views.stripe", fake_stripe)
+    @patch("billing.serializers.stripe", fake_stripe)
+    def _setup_basics_for_user(self, user: User, duration: int=1,
+                               server_memory: int=512,
+                               subscription: Subscription=None) -> ServerRunStatistics:
+        if subscription is None:
+            subscription = SubscriptionFactory(customer=user.customer,
+                                               plan=self.plan)
         # Just so period_start and period_end are relative to the exact same time...
         now = timezone.now()
         InvoiceFactory(customer=user.customer,
@@ -48,12 +58,18 @@ class TestTbsUtils(TestCase):
                                           start=start_time,
                                           stop=now)
 
+    @patch("billing.stripe_utils.stripe", fake_stripe)
+    @patch("billing.views.stripe", fake_stripe)
+    @patch("billing.serializers.stripe", fake_stripe)
     def test_calc_usage_for_billing_period_simplest_case(self):
         # Only one user, with one invoice, one server, one run.
         self._setup_basics_for_user(self.user)
         usage_dict = calculate_usage_for_period()
         self.assertEqual(usage_dict[self.user.pk].usage_percent, 10.0)
 
+    @patch("billing.stripe_utils.stripe", fake_stripe)
+    @patch("billing.views.stripe", fake_stripe)
+    @patch("billing.serializers.stripe", fake_stripe)
     def test_calc_usage_sends_notification_after_threshold(self):
         self._setup_basics_for_user(self.user, duration=4, server_memory=1024)
         usage_dict = calculate_usage_for_period()
@@ -63,6 +79,9 @@ class TestTbsUtils(TestCase):
                                                    type__name="usage_warning")
         self.assertEqual(notification.count(), 1)
 
+    @patch("billing.stripe_utils.stripe", fake_stripe)
+    @patch("billing.views.stripe", fake_stripe)
+    @patch("billing.serializers.stripe", fake_stripe)
     def test_calc_usage_one_user_and_server_multiple_runs(self):
         run = self._setup_basics_for_user(self.user)
         ServerRunStatisticsFactory.create_batch(4,
@@ -71,6 +90,9 @@ class TestTbsUtils(TestCase):
         usage_dict = calculate_usage_for_period()
         self.assertEqual(usage_dict[self.user.pk].usage_percent, 50.0)
 
+    @patch("billing.stripe_utils.stripe", fake_stripe)
+    @patch("billing.views.stripe", fake_stripe)
+    @patch("billing.serializers.stripe", fake_stripe)
     def test_calc_usage_one_user_multiple_servers_single_run_each(self):
         self._setup_basics_for_user(self.user)
         for x in range(4):
@@ -89,6 +111,9 @@ class TestTbsUtils(TestCase):
                                                    type__name="usage_warning")
         self.assertEqual(notification.count(), 1)
 
+    @patch("billing.stripe_utils.stripe", fake_stripe)
+    @patch("billing.views.stripe", fake_stripe)
+    @patch("billing.serializers.stripe", fake_stripe)
     def test_one_user_multiple_servers_multiple_runs(self):
         self._setup_basics_for_user(self.user)
         for x in range(4):
@@ -101,6 +126,9 @@ class TestTbsUtils(TestCase):
         # 512MB * 1HR + (4 * (1GB server * 3 runs of 1 hour)) = 12.5 GB/hrs = 250.0% usage
         self.assertEqual(usage_dict[self.user.pk].usage_percent, 250.0)
 
+    @patch("billing.stripe_utils.stripe", fake_stripe)
+    @patch("billing.views.stripe", fake_stripe)
+    @patch("billing.serializers.stripe", fake_stripe)
     def test_multiple_users_single_server_and_run(self):
         users = UserFactory.create_batch(4) + [self.user]
         for user in users:
@@ -115,6 +143,9 @@ class TestTbsUtils(TestCase):
             expected_usage = ((run.duration.seconds / 3600) / 5) * 100
             self.assertEqual(usage_dict[user.pk].usage_percent, expected_usage)
 
+    @patch("billing.stripe_utils.stripe", fake_stripe)
+    @patch("billing.views.stripe", fake_stripe)
+    @patch("billing.serializers.stripe", fake_stripe)
     def test_multiple_users_multiple_servers_and_runs(self):
         users = UserFactory.create_batch(4) + [self.user]
         for user in users:
@@ -141,6 +172,9 @@ class TestTbsUtils(TestCase):
             expected_usage_pct = Decimal((total_usage / self.plan.metadata.get('gb_hours')) * 100)
             self.assertAlmostEqual(usage_dict[user.pk].usage_percent, expected_usage_pct, places=2)
 
+    @patch("billing.stripe_utils.stripe", fake_stripe)
+    @patch("billing.views.stripe", fake_stripe)
+    @patch("billing.serializers.stripe", fake_stripe)
     def test_run_that_has_not_stopped_yet(self):
         run = self._setup_basics_for_user(self.user)
         run.stop = None
@@ -150,6 +184,9 @@ class TestTbsUtils(TestCase):
         # This will never be exactly equal because the application has to use now() to determine the duration
         self.assertAlmostEqual(usage_dict[self.user.pk].usage_percent, Decimal(10.00), places=2)
 
+    @patch("billing.stripe_utils.stripe", fake_stripe)
+    @patch("billing.views.stripe", fake_stripe)
+    @patch("billing.serializers.stripe", fake_stripe)
     def test_run_that_started_before_this_billing_period(self):
         run = self._setup_basics_for_user(self.user)
         invoice = Invoice.objects.filter(customer__user=self.user).first()
@@ -161,29 +198,38 @@ class TestTbsUtils(TestCase):
         expected_usage = (((timedelta(days=2).total_seconds() / 3600) * (run.server_size_memory / 1024)) / 5) * 100
         self.assertEqual(usage_dict[self.user.pk].usage_percent, expected_usage)
 
+    @patch("billing.stripe_utils.stripe", fake_stripe)
+    @patch("billing.views.stripe", fake_stripe)
+    @patch("billing.serializers.stripe", fake_stripe)
     def test_update_invoices_does_not_add_buckets_when_it_should_not(self):
         self._setup_basics_for_user(user=self.user,
                                     duration=6)
-        inv = Invoice.objects.get(customer=self.customer)
+        inv = Invoice.objects.get(customer=self.user.customer)
         inv.period_end = timezone.now() + timedelta(seconds=900)
         inv.save()
         update_invoices_with_usage()
-        invoice_item = InvoiceItem.objects.filter(customer=self.customer)
+        invoice_item = InvoiceItem.objects.filter(customer=self.user.customer)
         self.assertFalse(invoice_item.exists())
 
+    @patch("billing.stripe_utils.stripe", fake_stripe)
+    @patch("billing.views.stripe", fake_stripe)
+    @patch("billing.serializers.stripe", fake_stripe)
     def test_update_invoices_adds_buckets_correctly(self):
         self._setup_basics_for_user(user=self.user,
                                     server_memory=1024,
                                     duration=6)
-        inv = Invoice.objects.get(customer=self.customer)
+        inv = Invoice.objects.get(customer=self.user.customer)
         inv.period_end = timezone.now() + timedelta(seconds=900)
         inv.save()
         update_invoices_with_usage()
-        invoice_item = InvoiceItem.objects.filter(customer=self.customer)
+        invoice_item = InvoiceItem.objects.filter(customer=self.user.customer)
         self.assertEqual(invoice_item.count(), 1)
         item = invoice_item.first()
         self.assertEqual(item.amount, settings.BUCKET_COST_USD * 100)
 
+    @patch("billing.stripe_utils.stripe", fake_stripe)
+    @patch("billing.views.stripe", fake_stripe)
+    @patch("billing.serializers.stripe", fake_stripe)
     def test_only_one_notification_is_sent_if_multiple_thresholds_are_crossed(self):
         notification = Notification.objects.filter(user=self.user,
                                                    type__name="usage_warning").first()
@@ -197,3 +243,47 @@ class TestTbsUtils(TestCase):
         notifs = Notification.objects.filter(user=self.user,
                                              type__name="usage_warning")
         self.assertEqual(notifs.count(), 1)
+
+    @patch("billing.stripe_utils.stripe", fake_stripe)
+    @patch("billing.views.stripe", fake_stripe)
+    @patch("billing.serializers.stripe", fake_stripe)
+    @patch("billing.tbs_utils.stop_server")
+    def test_shutdown_free_servers(self, mock_stop_server):
+        subscription = Subscription.objects.get(customer=self.user.customer)
+        run_stats = self._setup_basics_for_user(user=self.user,
+                                                duration=10,
+                                                server_memory=1024,
+                                                subscription=subscription)
+        usage_dict = calculate_usage_for_period()
+        servers = shutdown_servers_for_free_users(usage_dict)
+        mock_stop_server.assert_called_with(str(run_stats.server.pk))
+        self.assertEqual(servers, [run_stats.server.pk])
+
+
+# @override_settings(ENABLE_BILLING=True)
+class TestMeteredBillingData(BillingTestCase):
+    fixtures = ['notification_types.json', "plans.json"]
+
+    @patch("billing.stripe_utils.stripe", fake_stripe)
+    def setUp(self):
+        self.user = UserFactory()
+        InvoiceFactory(customer=self.user.customer,
+                       subscription=Subscription.objects.get(customer=self.user.customer),
+                       closed=False)
+
+    @patch("billing.stripe_utils.stripe", fake_stripe)
+    @patch("billing.views.stripe", fake_stripe)
+    @patch("billing.serializers.stripe", fake_stripe)
+    def test_metered_billing_data_updates_invoice_when_100_threshold_met(self):
+        billing_data = MeteredBillingData(user=self.user,
+                                          invoice=self.user.customer.current_invoice,
+                                          usage=Decimal(10), servers=[])
+        notification_type = NotificationType.objects.get(name="usage_warning")
+        notif = billing_data.create_notification_if_necessary(notification_type)
+        self.assertIsNotNone(notif)
+        self.assertTrue(billing_data.stop_all_servers)
+
+        inv_reloaded = Invoice.objects.get(pk=self.user.customer.current_invoice.pk)
+        self.assertEqual(inv_reloaded.metadata.get("raw_usage"), str(Decimal(10)))
+        self.assertEqual(inv_reloaded.metadata.get("usage_percent"), str(Decimal(100)))
+        self.assertEqual(inv_reloaded.metadata.get("notified_for_threshold"), str(Decimal(100)))

@@ -1,29 +1,18 @@
 import logging
+import stripe
 from typing import List
 from datetime import datetime
-from decimal import Decimal, getcontext
-from collections import defaultdict
+from decimal import getcontext
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
-from django.core.exceptions import ObjectDoesNotExist
 
 from users.models import User
-from servers.models import Server
-from servers.utils import get_server_usage
 
 from billing.models import (Customer, Invoice,
                             Plan, Subscription,
                             Card, Event, InvoiceItem)
 log = logging.getLogger('billing')
-
-if settings.MOCK_STRIPE:
-    from billing.tests import mock_stripe as stripe
-    log.info("Importing mock stripe in stripe utils.")
-else:
-    import stripe
-
-
 stripe.api_key = settings.STRIPE_SECRET_KEY
 getcontext().prec = 6
 
@@ -77,8 +66,9 @@ def convert_field_to_stripe(model, stripe_field, stripe_data):
 
     elif isinstance(model_field, models.DateTimeField):
         if value is not None:
-            value = datetime.fromtimestamp(value)
-            value = timezone.make_aware(value)
+            if not isinstance(value, datetime):
+                value = datetime.fromtimestamp(value)
+                value = timezone.make_aware(value)
 
     return (field_name, value)
 
@@ -92,7 +82,7 @@ def convert_stripe_object(model, stripe_obj):
     return converted
 
 
-def create_stripe_customer_from_user(auth_user):
+def create_stripe_customer_from_user(auth_user: User) -> Customer:
     stripe_response = stripe.Customer.create(description=auth_user.first_name + " " + auth_user.last_name,
                                              email=auth_user.email)
 
@@ -106,32 +96,22 @@ def create_stripe_customer_from_user(auth_user):
     return customer
 
 
+def update_plan_in_stripe(data: dict) -> dict:
+    stripe_id = data.pop("id")
+    stripe_obj = stripe.Plan.retrieve(stripe_id)
+    for attr, val in data.items():
+        setattr(stripe_obj, attr, val)
+    stripe_obj.save()
+    return stripe_obj
+
+
 def create_plan_in_stripe(validated_data):
-    plan_stripe_id = validated_data.get('name').lower().replace(" ", "-")
-    try:
-        stripe_plan = stripe.Plan.retrieve(plan_stripe_id)
-        plan = Plan.objects.get(stripe_id=plan_stripe_id)
-    except stripe.error.InvalidRequestError:
-        # Plan doesn't exist in Stripe. This is the expected flow.
-        log.info(f"Plan f{validated_data.get('name')} did not exist in Stripe. Creating it.")
-        stripe_response = stripe.Plan.create(id=validated_data.get('name').lower().replace(" ", "-"),
-                                             amount=validated_data.get('amount'),
-                                             currency=validated_data.get('currency'),
-                                             interval=validated_data.get('interval'),
-                                             interval_count=validated_data.get('interval_count'),
-                                             name=validated_data.get('name'),
-                                             statement_descriptor=validated_data.get('statement_descriptor'),
-                                             trial_period_days=validated_data.get('trial_period_days'))
+    stripe_id = validated_data.pop('name').lower().replace(" ", "-")
+    stripe_response = stripe.Plan.create(id=stripe_id,
+                                         **validated_data)
 
-        converted_data = convert_stripe_object(Plan, stripe_response)
-        plan = Plan(**converted_data)
-    except ObjectDoesNotExist:
-        log.warning(f"Plan {plan_stripe_id} exists in stripe, but not in the local database. Creating it there.")
-        converted_data = convert_stripe_object(Plan, stripe_plan)
-        plan = Plan(**converted_data)
-    else:
-        log.info(f"Plan {plan_stripe_id} already existed in both Stripe and the local database. Hmm.")
-
+    converted_data = convert_stripe_object(Plan, stripe_response)
+    plan = Plan(**converted_data)
     return plan
 
 
@@ -228,7 +208,7 @@ def handle_stripe_invoice_payment_status_change(stripe_obj):
         invoice = find_or_create_invoice(stripe_data)
 
         if event.event_type == "invoice.payment_succeeded" or (event.event_type == "invoice.payment_failed" and
-                                                               subscription.metadata.get('has_been_active')):
+                                                               subscription.metadata and subscription.metadata.get('has_been_active')):
             log.info(f"Subscription {subscription} has been active before and payment failed (or this was a successful "
                      f"payment. Generating a notification.")
             signal_data = {'user': subscription.customer.user,
@@ -243,6 +223,8 @@ def handle_stripe_invoice_payment_status_change(stripe_obj):
             if key not in ["customer", "plan", "metadata"]:
                 setattr(subscription, key, converted_data[key])
         if subscription.status == Subscription.ACTIVE:
+            if subscription.metadata is None:
+                subscription.metadata = {}
             subscription.metadata.update({'has_been_active': True})
             log.info(f"Subscription {subscription} has status active. Marking it as such in metadata "
                      f"for notification purposes.")
@@ -263,16 +245,6 @@ def handle_stripe_invoice_created(stripe_obj):
         find_or_create_invoice(stripe_invoice)
 
 
-def create_invoice_item_for_compute_usage(customer_stripe_id, usage_data):
-    stripe_invoice_item = stripe.InvoiceItem.create(customer=customer_stripe_id,
-                                                    amount=int(usage_data['total']),
-                                                    currency="usd",
-                                                    description="3Blades Compute Usage")
-    converted_data = convert_stripe_object(InvoiceItem, stripe_invoice_item)
-    converted_data['quantity'] = 1
-    return InvoiceItem.objects.create(**converted_data)
-
-
 def add_buckets_to_stripe_invoice(customer_stripe_id: str, buckets: int) -> InvoiceItem:
     amount = buckets * (settings.BUCKET_COST_USD * 100)
     stripe_invoice_item = stripe.InvoiceItem.create(customer=customer_stripe_id,
@@ -284,36 +256,11 @@ def add_buckets_to_stripe_invoice(customer_stripe_id: str, buckets: int) -> Invo
     return InvoiceItem.objects.create(**converted_data)
 
 
-def assign_customer_to_default_plan(customer):
+def assign_customer_to_default_plan(customer: Customer):
     existing_sub = Subscription.objects.filter(customer=customer)
     if not existing_sub.exists():
         log.info(f"Creating subscription to default plan for {customer.user.username}.")
-        default_plan = Plan.objects.filter(stripe_id=settings.DEFAULT_STRIPE_PLAN_ID).first()
-        if not default_plan:
-            log.error(f"Selected default plan {settings.DEFAULT_STRIPE_PLAN_ID} does not exist in DB. "
-                      f"Make sure this setting is correct, and that everything is synchronized with Stripe!")
-            free_plan_data = {'name': settings.DEFAULT_STRIPE_PLAN_ID.replace("-", " ").title(),
-                              'amount': 0,
-                              'currency': "usd",
-                              'interval': "month",
-                              'interval_count': 1,
-                              'trial_period_days': 14}
-            try:
-                log.warning("Since the default plan did not exist in the DB, the system will now add the "
-                            "user to a free plan to avoid failure.")
-                log.info("First make sure it doesn't exist in Stripe already...")
-                stripe_resp = stripe.Plan.retrieve(settings.DEFAULT_STRIPE_PLAN_ID)
-                free_plan_data['created'] = timezone.now()
-                default_plan, created = Plan.objects.get_or_create(stripe_id=stripe_resp['id'],
-                                                                   defaults=free_plan_data)
-
-                if created:
-                    log.info("Free plan existed in Stripe, but not the local database, so it "
-                             " was created.")
-            except stripe.error.InvalidRequestError:
-                log.info("Free plan did NOT exist in Stripe...creating it there and in local database.")
-                default_plan = create_plan_in_stripe(free_plan_data)
-                default_plan.save()
+        default_plan = Plan.objects.get(stripe_id=settings.DEFAULT_STRIPE_PLAN_ID)
         sub_data = {'customer': customer,
                     'plan': default_plan}
         create_subscription_in_stripe(sub_data)
@@ -347,6 +294,8 @@ def handle_subscription_updated(stripe_event):
             if key not in ["customer", "plan", "metadata"]:
                 setattr(subscription, key, converted_data[key])
         if subscription.status == Subscription.ACTIVE:
+            if subscription.metadata is None:
+                subscription.metadata = {}
             subscription.metadata.update({'has_been_active': True})
             log.info(f"Subscription {subscription} has status active. Marking it as such in metadata "
                      f"for notification purposes.")
@@ -361,5 +310,6 @@ def cancel_subscriptions(subscription_ids: List[str]) -> None:
     for sub in subscriptions:
         stripe_obj = stripe.Subscription.retrieve(sub.stripe_id)
         stripe_response = stripe_obj.delete()
+        log.debug(f"Stripe resp status {stripe_response['status']}")
         sub.delete(new_status=stripe_response['status'])
         log.info(f"Canceled subscription {sub.pk}.")

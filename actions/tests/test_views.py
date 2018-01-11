@@ -29,10 +29,6 @@ class ActionTest(APITestCase):
         self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
     def test_list_actions(self):
-        sub = SubscriptionFactory(customer=self.user.customer)
-        ActionFactory(content_object=sub.plan)
-        ActionFactory(content_object=CardFactory(customer=self.user.customer))
-        ActionFactory(content_object=sub)
         collaborator = CollaboratorFactory(user=self.user)
         ActionFactory(content_object=collaborator.project)
         ActionFactory(content_object=collaborator)

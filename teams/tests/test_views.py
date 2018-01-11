@@ -1,14 +1,15 @@
-import json
+from unittest.mock import patch
 from django.conf import settings
 from django.urls import reverse
-from django.test import TestCase, Client
+from django.test import TestCase, Client, override_settings
 from rest_framework import status
 from rest_framework.test import APITransactionTestCase, APITestCase
 
-from billing.models import Subscription
-from billing.stripe_utils import create_stripe_customer_from_user, create_plan_in_stripe
-from billing.tests.factories import SubscriptionFactory, InvoiceFactory, InvoiceItemFactory
-from billing.tests.test_views import create_plan_dict
+from billing.models import Subscription, Plan
+from billing.tests.factories import (SubscriptionFactory,
+                                     InvoiceFactory,
+                                     InvoiceItemFactory)
+from billing.tests import fake_stripe
 from users.tests.factories import UserFactory, EmailFactory
 from projects.utils import assign_to_team
 from projects.tests.factories import ProjectFactory
@@ -18,18 +19,22 @@ from jwt_auth.utils import create_auth_jwt
 from .factories import TeamFactory
 from ..models import Team, Group
 
-if settings.MOCK_STRIPE:
-    from billing.tests import mock_stripe as stripe
-else:
-    import stripe
-
 
 class TeamTest(APITransactionTestCase):
+
+    fixtures = ['plans.json']
+
+    @override_settings(ENABLE_BILLING=True)
+    @patch("billing.stripe_utils.stripe", fake_stripe)
     def setUp(self):
         self.user = UserFactory()
         token = create_auth_jwt(self.user)
         self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
+    @override_settings(ENABLE_BILLING=True)
+    @patch("billing.stripe_utils.stripe", fake_stripe)
+    @patch("billing.views.stripe", fake_stripe)
+    @patch("billing.serializers.stripe", fake_stripe)
     def test_create_team(self):
         url = reverse('team-list', kwargs={'version': settings.DEFAULT_VERSION})
         data = {'name': 'TestTeam'}
@@ -209,17 +214,18 @@ class TeamTest(APITransactionTestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
 
 
+@override_settings(ENABLE_BILLING=True)
 class SubscriptionTest(APITestCase):
-    fixtures = ['notification_types.json']
+    fixtures = ['notification_types.json', 'plans.json']
 
+    @patch("billing.stripe_utils.stripe", fake_stripe)
     def setUp(self):
         self.user = UserFactory(first_name="Foo",
                                 last_name="Bar",
                                 is_staff=True)
         EmailFactory(user=self.user,
                      address=self.user.email)
-        self.customer = create_stripe_customer_from_user(self.user)
-        self.team = TeamFactory(created_by=self.user, customer=self.customer)
+        self.team = TeamFactory(created_by=self.user, customer=self.user.customer)
         token = create_auth_jwt(self.user)
         self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
         self.plans_to_delete = []
@@ -228,46 +234,31 @@ class SubscriptionTest(APITestCase):
             'team_team': str(self.team.pk),
         }
 
-    def tearDown(self):
-        stripe_obj = stripe.Customer.retrieve(self.customer.stripe_id)
-        stripe_obj.delete()
-
-        for plan in self.plans_to_delete:
-            stripe_obj = stripe.Plan.retrieve(plan.stripe_id)
-            stripe_obj.delete()
-
-    def _create_plan_in_stripe(self, trial_period=None):
-        plan_data = create_plan_dict(trial_period)
-        plan = create_plan_in_stripe(plan_data)
-        plan.save()
-        self.plans_to_delete.append(plan)
-        return plan
-
-    def _create_subscription_in_stripe(self, trial_period=7):
-        plan = self._create_plan_in_stripe(trial_period)
-        url = reverse("team-subscription-list", kwargs=self.url_kwargs)
-        data = {'plan': plan.pk}
-        self.client.post(url, data)
-
-        subscription = Subscription.objects.get(plan=plan)
-        return subscription
-
+    @patch("billing.stripe_utils.stripe", fake_stripe)
+    @patch("billing.views.stripe", fake_stripe)
+    @patch("billing.serializers.stripe", fake_stripe)
     def test_subscription_create(self):
         pre_test_sub_count = Subscription.objects.count()
-        plan = self._create_plan_in_stripe(trial_period=7)
+        plan = Plan.objects.get(stripe_id="standard")
         data = {'plan': plan.pk}
         url = reverse("team-subscription-list", kwargs=self.url_kwargs)
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Subscription.objects.count(), pre_test_sub_count + 1)
 
+    @patch("billing.stripe_utils.stripe", fake_stripe)
+    @patch("billing.views.stripe", fake_stripe)
+    @patch("billing.serializers.stripe", fake_stripe)
     def test_update_subscription_fails(self):
-        subscription = SubscriptionFactory(customer=self.customer,
+        subscription = SubscriptionFactory(customer=self.user.customer,
                                            status="trialing")
         url = reverse("team-subscription-detail", kwargs={'pk': subscription.pk, **self.url_kwargs})
         response = self.client.patch(url, data={'status': "active"})
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    @patch("billing.stripe_utils.stripe", fake_stripe)
+    @patch("billing.views.stripe", fake_stripe)
+    @patch("billing.serializers.stripe", fake_stripe)
     def test_list_subscriptions(self):
         not_me_sub_count = 3
         for _ in range(not_me_sub_count):
@@ -275,29 +266,36 @@ class SubscriptionTest(APITestCase):
             # Dont need to create a Subscription, one is created to the free plan automatically
         my_subs_count = 2
         SubscriptionFactory.create_batch(my_subs_count,
-                                         customer=self.customer,
+                                         customer=self.user.customer,
                                          plan__amount=500,
                                          status=Subscription.ACTIVE)
         url = reverse("team-subscription-list", kwargs=self.url_kwargs)
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(Subscription.objects.filter(customer=self.customer,
+        self.assertEqual(Subscription.objects.filter(customer=self.user.customer,
                                                      plan__amount__gt=0).count(), my_subs_count)
         # The + 1 here corresponds to the automatically created default subscription when the user is entered in
         # The database
         self.assertEqual(len(response.data), my_subs_count + 1)
 
+    @patch("billing.stripe_utils.stripe", fake_stripe)
+    @patch("billing.views.stripe", fake_stripe)
+    @patch("billing.serializers.stripe", fake_stripe)
     def test_subscription_details(self):
-        sub = SubscriptionFactory(customer=self.customer,
+        sub = SubscriptionFactory(customer=self.user.customer,
                                   status=Subscription.ACTIVE)
         url = reverse("team-subscription-detail", kwargs={'pk': sub.pk, **self.url_kwargs})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(str(sub.pk), response.data.get('id'))
 
+    @patch("billing.stripe_utils.stripe", fake_stripe)
+    @patch("billing.views.stripe", fake_stripe)
+    @patch("billing.serializers.stripe", fake_stripe)
     def test_subscription_cancel(self):
         pre_test_sub_count = Subscription.objects.count()
-        subscription = self._create_subscription_in_stripe()
+        subscription = SubscriptionFactory(customer=self.user.customer,
+                                           status="trialing")
         url = reverse("team-subscription-detail", kwargs={'pk': subscription.pk, **self.url_kwargs})
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
@@ -308,59 +306,39 @@ class SubscriptionTest(APITestCase):
         self.assertIsNotNone(sub_reloaded.ended_at)
 
 
+@override_settings(ENABLE_BILLING=True)
 class InvoiceTest(TestCase):
 
-    fixtures = ['notification_types.json']
+    fixtures = ['notification_types.json', 'plans.json']
 
+    @patch("billing.stripe_utils.stripe", fake_stripe)
     def setUp(self):
         self.user = UserFactory(first_name="Foo",
                                 last_name="Bar",
                                 is_staff=True)
         EmailFactory(user=self.user,
                      address=self.user.email)
-        self.customer = create_stripe_customer_from_user(self.user)
         token = create_auth_jwt(self.user)
         self.api_client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
         self.client = Client()
-        self.plans_to_delete = []
-        self.team = TeamFactory(created_by=self.user, customer=self.customer)
+        self.team = TeamFactory(created_by=self.user, customer=self.user.customer)
         self.url_kwargs = {
             'version': settings.DEFAULT_VERSION,
             'team_team': str(self.team.pk),
         }
 
-    def tearDown(self):
-        stripe_obj = stripe.Customer.retrieve(self.customer.stripe_id)
-        stripe_obj.delete()
-
-        for plan in self.plans_to_delete:
-            stripe_obj = stripe.Plan.retrieve(plan.stripe_id)
-            stripe_obj.delete()
-
-    def _create_plan_in_stripe(self, trial_period=None):
-        plan_data = create_plan_dict(trial_period)
-        plan = create_plan_in_stripe(plan_data)
-        plan.save()
-        self.plans_to_delete.append(plan)
-        return plan
-
-    def _create_subscription_in_stripe(self, trial_period=7):
-        plan = self._create_plan_in_stripe(trial_period)
-        url = reverse('team-subscription-list', kwargs=self.url_kwargs)
-        data = {'plan': str(plan.pk)}
-        self.api_client.post(url, json.dumps(data), content_type="application/json")
-
-        subscription = Subscription.objects.get(plan=plan)
-        return subscription
-
+    @patch("billing.stripe_utils.stripe", fake_stripe)
+    @patch("billing.views.stripe", fake_stripe)
+    @patch("billing.serializers.stripe", fake_stripe)
     def test_invoice_items_list_is_scoped_by_invoice(self):
-        first_invoice = InvoiceFactory(customer=self.customer)
+        first_invoice = InvoiceFactory(customer=self.user.customer)
         InvoiceItemFactory.create_batch(3, invoice=first_invoice)
 
-        second_invoice = InvoiceFactory(customer=self.customer)
+        second_invoice = InvoiceFactory(customer=self.user.customer)
         InvoiceItemFactory.create_batch(2, invoice=second_invoice)
 
-        url = reverse('team-invoice-items-list', kwargs={'invoice_id': str(second_invoice.id), **self.url_kwargs})
+        url = reverse('team-invoice-items-list', kwargs={'invoice_id': str(second_invoice.id),
+                                                         **self.url_kwargs})
         response = self.api_client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -369,11 +347,14 @@ class InvoiceTest(TestCase):
         for item in response.data:
             self.assertEqual(item['invoice'], second_invoice.id)
 
+    @patch("billing.stripe_utils.stripe", fake_stripe)
+    @patch("billing.views.stripe", fake_stripe)
+    @patch("billing.serializers.stripe", fake_stripe)
     def test_invoice_item_retrieve(self):
-        first_invoice = InvoiceFactory(customer=self.customer)
+        first_invoice = InvoiceFactory(customer=self.user.customer)
         InvoiceItemFactory.create_batch(3, invoice=first_invoice)
 
-        second_invoice = InvoiceFactory(customer=self.customer)
+        second_invoice = InvoiceFactory(customer=self.user.customer)
         item = InvoiceItemFactory(invoice=second_invoice)
 
         url = reverse('team-invoice-items-detail', kwargs={'invoice_id': str(second_invoice.id),

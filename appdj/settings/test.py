@@ -42,7 +42,13 @@ HAYSTACK_CONNECTIONS = {
     }
 }
 
-ENABLE_BILLING = True
+ENABLE_BILLING = False
 SPAWNER = 'servers.spawners.dummy.DummySpawner'
 AWS_JOBS_ROLE="arn:aws:iam::123456789012:role/JobsRole"
 BATCH_JOB_QUEUE='dev'
+
+
+STRIPE_WEBHOOK_SECRETS = {'stripe_subscription_updated': "foo",
+                          'stripe_invoice_payment_failed': "foo",
+                          'stripe_invoice_payment_success': "foo",
+                          'stripe_invoice_created': "foo"}

@@ -107,6 +107,17 @@ class Server(ServerModelAbstract):
         status = self.spawner.status()
         return status.decode() if isinstance(status, bytes) else status
 
+    @property
+    def can_be_started(self):
+        customer = self.project.owner.customer
+        invoice = customer.current_invoice
+        # TODO: What is the correct behavior if a user does not have a current invoice?
+        # Probably should not allow them
+        if (invoice and invoice.subscription.plan.stripe_id == "threeblades-free-plan"
+            and invoice.metadata.get("notified_for_threshold") == "100"):
+            return False
+        return True
+
     def script_name_len(self):
         return len(self.config.get('script', '').split('.')[0])
 

@@ -1,6 +1,6 @@
 import logging
 import json
-
+import stripe
 from django.http import HttpResponse
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
@@ -20,14 +20,9 @@ from billing.stripe_utils import (handle_stripe_invoice_created,
                                   handle_stripe_invoice_payment_status_change,
                                   handle_subscription_updated,
                                   cancel_subscriptions)
+from billing.decorators import verify_signature
 
 log = logging.getLogger('billing')
-
-if settings.MOCK_STRIPE:
-    from billing.tests import mock_stripe as stripe
-    log.info("Using mock_stripe module.")
-else:
-    import stripe
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
@@ -54,7 +49,7 @@ class CardViewSet(mixins.CreateModelMixin,
             instance = serializer.create(validated_data=request.data)
             data = self.serializer_class(instance).data
             ret_status = status.HTTP_201_CREATED
-        except stripe.error.StripeError as e:
+        except Exception as e:
             body = e.json_body
             error = body.get('error', {})
             log.exception(error)
@@ -75,9 +70,9 @@ class CardViewSet(mixins.CreateModelMixin,
         instance = Card.objects.get(pk=kwargs.get('pk'))
         stripe_customer = stripe.Customer.retrieve(instance.customer.stripe_id)
 
-        stripe_response = stripe_customer.sources.retrieve(instance.stripe_id).delete()
+        stripe_source = stripe_customer.sources.retrieve(instance.stripe_id)
+        stripe_response = stripe_source.delete()
         instance.delete()
-
         data = {'stripe_id': stripe_response['id'], 'deleted': True}
         return Response(data=data, status=status.HTTP_204_NO_CONTENT)
 
@@ -128,6 +123,7 @@ class InvoiceItemViewSet(NamespaceMixin,
 
 @require_POST
 @csrf_exempt
+@verify_signature
 def stripe_invoice_created(request, *args, **kwargs):
     body = request.body
     event_json = json.loads(body.decode("utf-8"))
@@ -137,6 +133,7 @@ def stripe_invoice_created(request, *args, **kwargs):
 
 @require_POST
 @csrf_exempt
+@verify_signature
 def stripe_invoice_payment_success(request, *args, **kwargs):
     body = request.body
     event_json = json.loads(body.decode("utf-8"))
@@ -146,6 +143,7 @@ def stripe_invoice_payment_success(request, *args, **kwargs):
 
 @require_POST
 @csrf_exempt
+@verify_signature
 def stripe_invoice_payment_failed(request, *args, **kwargs):
     body = request.body
     event_json = json.loads(body.decode('utf-8'))
@@ -155,6 +153,7 @@ def stripe_invoice_payment_failed(request, *args, **kwargs):
 
 @require_POST
 @csrf_exempt
+@verify_signature
 def stripe_subscription_updated(request, *args, **kwargs):
     body = request.body
     event_json = json.loads(body.decode("utf-8"))

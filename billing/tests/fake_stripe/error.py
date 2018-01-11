@@ -1,5 +1,3 @@
-import logging
-log = logging.getLogger('billing')
 
 
 class StripeError(BaseException):
@@ -20,13 +18,11 @@ class StripeError(BaseException):
         self.json_body = json_body
         self.headers = headers or {}
         self.request_id = self.headers.get('request-id', None)
-        log.debug(("self.json body", self.json_body))
 
 
 class CardError(StripeError):
     def __init__(self, message, param, code, http_body=None,
                  http_status=None, json_body=None, headers=None):
-        log.debug(("json body", json_body))
         super(CardError, self).__init__(
             message, http_body, http_status, json_body,
             headers)

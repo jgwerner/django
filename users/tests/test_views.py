@@ -52,9 +52,6 @@ class UserTest(APITestCase):
         self.user = UserFactory(username='user')
         self.user.is_staff = False
         self.user.save()
-        SubscriptionFactory(customer=self.user.customer,
-                            plan__trial_period_days=7,
-                            status=Subscription.ACTIVE)
         admin_token = create_auth_jwt(self.admin)
         user_token = create_auth_jwt(self.user)
         self.admin_client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {admin_token}')
@@ -154,19 +151,14 @@ class UserTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_user_delete_own_account(self):
-        Subscription.objects.filter(customer=self.user.customer).delete()
-        self._create_subscription_in_stripe()
         url = reverse('user-detail', kwargs={'user': str(self.user.pk),
                                              'version': settings.DEFAULT_VERSION})
         response = self.user_client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         user_reloaded = User.objects.get(pk=self.user.pk)
         self.assertFalse(user_reloaded.is_active)
-        self.assertFalse(user_reloaded.customer.has_active_subscription())
 
     def test_user_delete_own_account_with_username(self):
-        Subscription.objects.filter(customer=self.user.customer).delete()
-        self._create_subscription_in_stripe()
         url = reverse('user-detail', kwargs={'user': self.user.username,
                                              'version': settings.DEFAULT_VERSION})
         response = self.user_client.delete(url)

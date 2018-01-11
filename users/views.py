@@ -1,4 +1,5 @@
 import logging
+from django.conf import settings
 from django.http import JsonResponse
 from django.db.models import Q
 from django.contrib.auth import get_user_model
@@ -12,11 +13,11 @@ from rest_framework.mixins import ListModelMixin
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from base.permissions import DeleteAdminOnly, PostAdminOnly
+from base.permissions import PostAdminOnly
 from base.views import LookupByMultipleFields
 from utils import create_ssh_key, deactivate_user
 
-from base.utils import get_object_or_404, validate_uuid
+from base.utils import get_object_or_404
 from users.filters import UserSearchFilter
 from users.models import Email
 from users.serializers import (UserSerializer,
@@ -84,8 +85,9 @@ class UserViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
         if self._check_for_permission_to_destroy():
             instance = self.get_object()
             deactivate_user(instance)
-            sub_ids = Subscription.objects.filter(customer=instance.customer).values_list('id')
-            cancel_subscriptions(sub_ids)
+            if settings.ENABLE_BILLING:
+                sub_ids = Subscription.objects.filter(customer=instance.customer).values_list('id')
+                cancel_subscriptions(sub_ids)
             instance.save()
             resp_status = status.HTTP_204_NO_CONTENT
         else:

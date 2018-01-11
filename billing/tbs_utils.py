@@ -1,7 +1,10 @@
 import logging
 import math
+import itertools
+from typing import Union
 from datetime import datetime, timedelta
 from decimal import Decimal, getcontext
+from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.db.models import (Q, Sum, F, DurationField,
                               Case, When, ExpressionWrapper)
@@ -10,20 +13,26 @@ from django.utils import timezone
 from billing.models import Invoice
 from billing.stripe_utils import add_buckets_to_stripe_invoice
 from servers.models import ServerRunStatistics
+from servers.tasks import stop_server
 from notifications.models import Notification, NotificationType
 from notifications.utils import create_notification
-log = logging.getLogger('servers')
+log = logging.getLogger('billing')
 getcontext().prec = 6
+User = get_user_model()
 
 
 class MeteredBillingData:
-    def __init__(self, user, invoice, usage):
+    def __init__(self, user: User, invoice: Invoice, usage: Decimal, servers: list):
         self.user = user
         self.invoice = invoice
+        if self.invoice.metadata is None:
+            self.invoice.metadata = {}
         self.subscription = invoice.subscription
         self.plan_limit = self.subscription.plan.metadata.get('gb_hours')
         self.usage = usage
         self.usage_percent = Decimal((self.usage / self.plan_limit) * 100)
+        self.stop_all_servers = False
+        self.servers = servers
 
     def __str__(self):
         return f"{self.user}: {self.usage} GB of {self.plan_limit} GB - {self.usage_percent}%."
@@ -35,6 +44,21 @@ class MeteredBillingData:
             buckets = math.ceil(overage / settings.BILLING_BUCKET_SIZE_GB)
         return buckets
 
+    def _notify(self, notification_type: NotificationType, threshold: int) -> Union[Notification, None]:
+        """
+        
+        :param notification_type: The of notification to be sent to the user.
+        :param threshold: The percentage level that the user has exceeded and we are notifying them about
+        :return: The notification object that has been created (but not saved in the DB!)
+        """
+        log.info(f"User {self.user} has used {self.usage_percent}% of their plan, and hasn't received a "
+                 f"notification for the threshold {threshold}%. Sending a notification.")
+        notif = create_notification(user=self.user,
+                                    actor=self.invoice,
+                                    target=None,
+                                    notif_type=notification_type)
+        return notif
+
     def create_notification_if_necessary(self, notification_type: NotificationType) -> Notification:
         notif = None
 
@@ -42,27 +66,44 @@ class MeteredBillingData:
             warning_thresholds = sorted(map(int, settings.USAGE_WARNING_THRESHOLDS.split(",")),
                                         # We sort in reverse order because it's easier to notify in order of
                                         # precedence later in this method.
-                                        key=lambda val: -val)
+                                        reverse=True)
         except ValueError as e:
             log.warning(f"Unable to cast USAGE_WARNING_THRESHOLDS to a list of ints. "
                         f"This was the value: {settings.USAGE_WARNING_THRESHOLDS}. "
                         f"Falling back to defaults of 75, 90, 100.")
             log.exception(e)
-            warning_thresholds = [75, 90, 100]
+            warning_thresholds = [100, 90, 75]
 
         for threshold in warning_thresholds:
-            if self.usage_percent >= threshold:
-                already_been_notified = Notification.objects.filter(user=self.user,
-                                                                    type=notification_type,
-                                                                    timestamp__gt=self.invoice.period_start).exists()
-                if not already_been_notified:
-                    log.info(f"User {self.user} has used {self.usage_percent}% of their plan. Sending a notification.")
-                    notif = create_notification(user=self.user,
-                                                actor=self.invoice,
-                                                target=None,
-                                                notif_type=notification_type)
-                    break
+            already_been_notified = self.invoice.metadata.get("notified_for_threshold") == str(threshold)
+            if self.usage_percent >= threshold and (not already_been_notified):
+                # TODO: This method call takes up to *5* seconds in some cases, but almost no time in others.
+                # What the hell
+                notif = self._notify(notification_type, threshold)
+                # Should the plan check be for DEFAULT_STRIPE_PLAN_ID instead?
+                if threshold == 100 and self.subscription.plan.stripe_id == "threeblades-free-plan":
+                    self.stop_all_servers = True
+                    log.info(f"Will be stopping all servers for user {self.user.username} "
+                             f"because they are on the free plan and have exceeded the 100% threshold.")
+                break
+            # Threshold is set to None at the end of the loop so that if the loop completes iteration without
+            # hitting the break statement (i.e. The user has not exceeded any of the warning levels), the
+            # update_invoice method will not set the "notified_for_threshold" meta field.
+            threshold = None
+
+        # Linters complain that threshold may be used before assignment here, but they are incorrect.
+        # The try/except block above guarantees that warning_thresholds will be a non-empty list,
+        # Meaning the loop iterates at least once and sets threshold.
+        self.update_invoice(threshold=threshold)
         return notif
+
+    def update_invoice(self, threshold: int=None):
+        self.invoice.metadata['raw_usage'] = str(self.usage)
+        self.invoice.metadata['usage_percent'] = str(self.usage_percent)
+
+        if threshold is not None:
+            self.invoice.metadata['notified_for_threshold'] = str(threshold)
+        self.invoice.save()
 
 
 def calculate_usage_for_period(closing_from: datetime=None, closing_to: datetime=None) -> dict:
@@ -109,7 +150,7 @@ def calculate_usage_for_period(closing_from: datetime=None, closing_to: datetime
         """
 
         user_runs = ServerRunStatistics.objects.filter(Q(stop=None) | Q(stop__gte=inv.period_start),
-                                                       owner=inv.customer.user)
+                                                       owner=inv.customer.user).select_related('server')
         cust_start = inv.customer.last_invoice_sync or inv.period_start
         usage_in_mb_seconds = user_runs.aggregate(usage=Sum(Case(When(stop__isnull=False,
                                                                       then=ExpressionWrapper((F('stop') - Greatest(
@@ -128,12 +169,15 @@ def calculate_usage_for_period(closing_from: datetime=None, closing_to: datetime
             usage_in_mb_seconds = Decimal(usage_in_mb_seconds.total_seconds())
             # Divide by 1024 to get gigabytes, then 3600 to get hours. MB Seconds -> GB Hours
             usage_in_gb_hours = Decimal(usage_in_mb_seconds / 1024 / 3600)
+            servers = list(user_runs.values_list('server__pk', flat=True))
             usage_data = MeteredBillingData(user=user,
                                             invoice=inv,
-                                            usage=usage_in_gb_hours)
-            user_runs_mapping[user.pk] = usage_data
+                                            usage=usage_in_gb_hours,
+                                            servers=servers)
 
+            user_runs_mapping[user.pk] = usage_data
             notif = usage_data.create_notification_if_necessary(notification_type)
+
             if notif is not None:
                 notifs_to_save.append(notif)
 
@@ -141,10 +185,26 @@ def calculate_usage_for_period(closing_from: datetime=None, closing_to: datetime
     return user_runs_mapping
 
 
+def shutdown_servers_for_free_users(usage_map: dict) -> list:
+    servers_stopped = []
+    if usage_map:
+        servers_to_stop = set(list(itertools.chain.from_iterable([bill_data.servers
+                                                                  for user_pk, bill_data
+                                                                  in usage_map.items()
+                                                                  if bill_data.stop_all_servers])))
+        for server in servers_to_stop:
+            log.info(f"Stopping Server w/PK {str(server)} because user is on free tier and exceeded limits.")
+            # TODO: Should this have apply_async appended? If so, what should the task ID be?
+            stop_server(str(server))
+            servers_stopped.append(server)
+    return servers_stopped
+
+
 def update_invoices_with_usage(ending_in: int=30):
     end_time = timezone.now() + timedelta(seconds=ending_in * 60)
     current_usage_map = calculate_usage_for_period(closing_from=timezone.now(),
                                                    closing_to=end_time)
+    shutdown_servers_for_free_users(current_usage_map)
     # Something in the following loop is using a LOT of time. is it the Stripe call?
     # No, I'm mocking stripe at the moment.
     for user in current_usage_map:

@@ -77,7 +77,7 @@
         "type": "string"
       },
       "metadata": {
-        "type": ["null", "string"]
+        "type": ["null", "object"]
       },
       "livemode": {
         "type": "boolean"
@@ -101,7 +101,7 @@
         "type": ["null", "string"]
       },
       "trial_period_days": {
-        "type": "integer"
+        "type": ["null", "integer"]
       }
     }
   },
