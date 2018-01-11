@@ -1,17 +1,23 @@
 import random
+import logging
+import sys
 from unittest.mock import patch
 from decimal import Decimal, getcontext
 from datetime import timedelta
-from django.test import override_settings
 from django.conf import settings
 from django.utils import timezone
+from django.db.utils import IntegrityError
 from users.models import User
 from users.tests.factories import UserFactory
-from billing.models import Invoice, InvoiceItem, Subscription
+from billing.models import (Invoice,
+                            InvoiceItem,
+                            Subscription,
+                            Plan)
 from billing.tbs_utils import (calculate_usage_for_period,
                                update_invoices_with_usage,
                                MeteredBillingData,
-                               shutdown_servers_for_free_users)
+                               shutdown_servers_for_free_users,
+                               load_plans)
 from billing.tests import BillingTestCase, fake_stripe
 from billing.tests.factories import (PlanFactory,
                                      SubscriptionFactory,
@@ -21,9 +27,9 @@ from projects.tests.factories import CollaboratorFactory
 from servers.models import ServerRunStatistics
 from servers.tests.factories import ServerRunStatisticsFactory
 getcontext().prec = 6
+log = logging.getLogger('billing')
 
 
-# @override_settings(ENABLE_BILLING=True)
 class TestTbsUtils(BillingTestCase):
     fixtures = ['notification_types.json', "plans.json"]
 
@@ -259,8 +265,32 @@ class TestTbsUtils(BillingTestCase):
         mock_stop_server.assert_called_with(str(run_stats.server.pk))
         self.assertEqual(servers, [run_stats.server.pk])
 
+    def test_load_plans_does_nothing_when_plans_exist(self):
+        created = load_plans("billing/fixtures/plans.json")
+        self.assertListEqual(created, [])
 
-# @override_settings(ENABLE_BILLING=True)
+    def test_load_plans_creates_plans_when_it_should(self):
+        Plan.objects.all().delete()
+        created = load_plans("billing/fixtures/plans.json")
+        self.assertEqual(len(created), 4)
+
+        for stripe_id in ["threeblades-free-plan", "standard", "professional", "starter"]:
+            self.assertTrue(Plan.objects.filter(stripe_id=stripe_id).exists())
+
+    @patch("billing.tbs_utils.sys.stderr")
+    @patch("billing.tbs_utils.log")
+    @patch("billing.tbs_utils.print_and_log")
+    @patch("billing.tbs_utils.Plan.objects.create")
+    def test_integrity_error_is_handled_correctly(self, mock_create, mock_pandl, mock_log, mock_stderr):
+        Plan.objects.get(stripe_id="threeblades-free-plan").delete()
+        mock_create.side_effect = IntegrityError("foo")
+        load_plans("billing/fixtures/plans.json")
+        mock_pandl.assert_called_with(message=f"Something went wrong while "
+                                              f"trying to create plan threeblades-free-plan.\nTraceback: foo",
+                                      logger=mock_log, log_level="exception",
+                                      output_stream=sys.stderr)
+
+
 class TestMeteredBillingData(BillingTestCase):
     fixtures = ['notification_types.json', "plans.json"]
 
