@@ -1,16 +1,21 @@
 import logging
 import math
 import itertools
-from typing import Union
+import json
+import sys
+from typing import Union, List
 from datetime import datetime, timedelta
 from decimal import Decimal, getcontext
+from pathlib import Path
 from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.db.models import (Q, Sum, F, DurationField,
                               Case, When, ExpressionWrapper)
 from django.db.models.functions import Greatest
+from django.db.utils import IntegrityError
 from django.utils import timezone
-from billing.models import Invoice
+from base.utils import print_and_log
+from billing.models import Invoice, Plan
 from billing.stripe_utils import add_buckets_to_stripe_invoice
 from servers.models import ServerRunStatistics
 from servers.tasks import stop_server
@@ -220,3 +225,35 @@ def update_invoices_with_usage(ending_in: int=30):
 
         data_entry.user.customer.last_invoice_sync = timezone.now()
         data_entry.user.customer.save()
+
+
+def load_plans(fixture_path: str) -> List[Plan]:
+    plans_created = []
+    contents = Path(fixture_path).read_text()
+    plans_json = json.loads(contents)
+
+    for plan_data in plans_json:
+        stripe_id = plan_data['fields'].get("stripe_id")
+        if not Plan.objects.filter(stripe_id=stripe_id).exists():
+            print_and_log(f"Plan with stripe_id {stripe_id} does not exist. Creating it.", log)
+            plan_data.pop("model")
+
+            fields = plan_data.pop("fields")
+            plan_data.update(fields)
+
+            try:
+                plan = Plan.objects.create(**plan_data)
+            except IntegrityError as e:
+                message = (f"Something went wrong while trying to create plan {stripe_id}.\n"
+                           f"Traceback: {e}")
+                print_and_log(message=message, logger=log,
+                              log_level="exception",
+                              output_stream=sys.stderr)
+            else:
+                print_and_log(f"Plan {plan} successfully created.", log)
+                plans_created.append(plan)
+        else:
+            print_and_log(f"Plan {stripe_id} already exists in DB. Doing nothing.", log)
+
+    return plans_created
+
