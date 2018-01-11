@@ -1,12 +1,13 @@
 import logging
+from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from users.models import User
 from billing.models import Customer
 from billing.stripe_utils import (create_stripe_customer_from_user,
                                   assign_customer_to_default_plan)
 log = logging.getLogger("billing")
+User = get_user_model()
 
 
 @receiver(post_save, sender=User)

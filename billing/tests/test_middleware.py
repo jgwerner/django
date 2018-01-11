@@ -1,12 +1,10 @@
 from unittest.mock import patch
 from django.conf import settings
 from django.urls import reverse
-from django.test import override_settings
 from users.tests.factories import UserFactory
 from rest_framework import status
 from billing.models import Subscription
-from billing.tests import BillingTestCase
-from billing.tests import fake_stripe
+from billing.tests import BillingTestCase, fake_stripe
 from billing.tests.factories import SubscriptionFactory
 from projects.tests.factories import CollaboratorFactory
 from servers.tests.factories import ServerFactory

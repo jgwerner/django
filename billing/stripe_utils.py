@@ -106,14 +106,9 @@ def update_plan_in_stripe(data: dict) -> dict:
 
 
 def create_plan_in_stripe(validated_data):
-    stripe_response = stripe.Plan.create(id=validated_data.get('name').lower().replace(" ", "-"),
-                                         amount=validated_data.get('amount'),
-                                         currency=validated_data.get('currency'),
-                                         interval=validated_data.get('interval'),
-                                         interval_count=validated_data.get('interval_count'),
-                                         name=validated_data.get('name'),
-                                         statement_descriptor=validated_data.get('statement_descriptor'),
-                                         trial_period_days=validated_data.get('trial_period_days'))
+    stripe_id = validated_data.pop('name').lower().replace(" ", "-")
+    stripe_response = stripe.Plan.create(id=stripe_id,
+                                         **validated_data)
 
     converted_data = convert_stripe_object(Plan, stripe_response)
     plan = Plan(**converted_data)

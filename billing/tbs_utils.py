@@ -4,6 +4,7 @@ import itertools
 from typing import Union
 from datetime import datetime, timedelta
 from decimal import Decimal, getcontext
+from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.db.models import (Q, Sum, F, DurationField,
                               Case, When, ExpressionWrapper)
@@ -11,13 +12,13 @@ from django.db.models.functions import Greatest
 from django.utils import timezone
 from billing.models import Invoice
 from billing.stripe_utils import add_buckets_to_stripe_invoice
-from servers.models import ServerRunStatistics, Server
+from servers.models import ServerRunStatistics
 from servers.tasks import stop_server
 from notifications.models import Notification, NotificationType
 from notifications.utils import create_notification
-from users.models import User
 log = logging.getLogger('billing')
 getcontext().prec = 6
+User = get_user_model()
 
 
 class MeteredBillingData:

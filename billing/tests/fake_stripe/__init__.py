@@ -288,7 +288,7 @@ class Event:
         json['data']['object']['customer'] = kwargs.get("customer")
         json['data']['object']['subscription'] = kwargs.get("subscription")
         json['data']['object']['lines']['data'][0]['id'] = kwargs.get("subscription")
-        json['data']['object']['lines']['data'][0]['plan']['id'] =kwargs.get("plan")
+        json['data']['object']['lines']['data'][0]['plan']['id'] = kwargs.get("plan")
         json['data']['object']['lines']['data'][0]['plan']['amount'] = kwargs.get("amount")
         json['data']['object']['lines']['data'][0]['plan']['interval'] = kwargs.get("interval")
         json['data']['object']['lines']['data'][0]['plan']['trial_period_days'] = kwargs.get("trial_period")
