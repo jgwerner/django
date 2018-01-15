@@ -171,7 +171,6 @@ class ProjectFile(models.Model):
     @property
     def path(self):
         relative_path = self.file.name.replace(str(self.project.pk), "")
-        relative_path = relative_path.replace(self.author.username, "")
         relative_path = relative_path.replace(self.file.name.split("/")[-1], "")
         relative_path = relative_path.lstrip("/")
         return relative_path

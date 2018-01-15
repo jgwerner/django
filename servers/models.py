@@ -59,7 +59,7 @@ class ServerModelAbstract(models.Model):
 
     @property
     def volume_path(self):
-        return os.path.join(settings.RESOURCE_DIR, self.project.get_owner_name(), str(self.project.pk))
+        return os.path.join(settings.RESOURCE_DIR, str(self.project.pk))
 
 
 class Server(ServerModelAbstract):

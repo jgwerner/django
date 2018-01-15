@@ -5,7 +5,7 @@ from pathlib import Path
 from faker import Faker
 from uuid import uuid4
 from django.conf import settings
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from users.models import User
 from projects.models import ProjectFile, Project
 from projects.utils import (sync_project_files_from_disk,
@@ -157,10 +157,12 @@ class ProjectUtilsTest(TestCase):
         self.assertEqual(proj_files.count(), 2)
         self.dirs_to_destroy.append(Path(settings.RESOURCE_DIR))
 
+    @override_settings(RESOURCE_DIR='/tmp/move_roots')
     def test_move_roots(self):
         users_count = 100
         projects_per_user = 10
         root = Path(settings.RESOURCE_DIR)
+        root.mkdir()
         self.dirs_to_destroy.append(root)
 
         projects = []
@@ -170,7 +172,7 @@ class ProjectUtilsTest(TestCase):
             username = fake.simple_profile()['username']
             users.append(username)
             user_path = root / username
-            user_path.mkdir(parents=True)
+            user_path.mkdir()
 
             ssh_path = user_path / '.ssh'
             ssh_path.mkdir()
