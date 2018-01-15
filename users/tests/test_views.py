@@ -11,7 +11,7 @@ from django.core import mail
 from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
 
-from billing.tests.factories import SubscriptionFactory, PlanFactory
+from billing.tests.factories import PlanFactory
 from billing.models import Subscription, Plan
 from billing.stripe_utils import create_plan_in_stripe
 from users.tests.factories import UserFactory, EmailFactory
@@ -251,8 +251,7 @@ class UserTest(APITestCase):
                     "location": "Mars",
                     "company": "Anew Corp",
                     "timezone": "MARS"
-                    }
-                }
+                }}
         new_uuid = uuid4()
         url = reverse("user-detail", kwargs={'user': new_uuid,
                                              'version': settings.DEFAULT_VERSION})
@@ -271,8 +270,7 @@ class UserTest(APITestCase):
                     "location": "Mars",
                     "company": "Anew Corp",
                     "timezone": "MARS"
-                    }
-                }
+                }}
         url = reverse("user-detail", kwargs={'user': data['username'],
                                              'version': settings.DEFAULT_VERSION})
         response = self.admin_client.put(url, data=data)

@@ -1,4 +1,3 @@
-import filecmp
 import shutil
 import os
 import base64
@@ -600,14 +599,13 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
         self.url_kwargs = {'namespace': self.user.username,
                            'project_project': self.project.pk,
                            'version': settings.DEFAULT_VERSION}
-        self.user_dir = Path(settings.RESOURCE_DIR, self.user.username)
-        self.project_root = self.user_dir.joinpath(str(self.project.pk))
+        self.project_root = Path(settings.RESOURCE_DIR, str(self.project.pk))
         self.project_root.mkdir(parents=True)
         token = create_auth_jwt(self.user)
         self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
     def tearDown(self):
-        shutil.rmtree(str(self.user_dir))
+        shutil.rmtree(str(self.project_root))
 
     def test_create_file(self):
         url = reverse('projectfile-list', kwargs=self.url_kwargs)
@@ -755,8 +753,8 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
         new_project_files = ProjectFile.objects.filter(project=self.project)
         self.assertEqual(new_project_files.count(), old_pf + 1)
         all_names = new_project_files.values_list('file', flat=True)
-        expected_name = (str(self.project.resource_root()).replace(settings.RESOURCE_DIR + "/", "")
-                         + "/" + "test_file_fizzbuzz.txt")
+        expected_name = (str(self.project.resource_root()).replace(settings.RESOURCE_DIR + "/", "") +
+                         "/" + "test_file_fizzbuzz.txt")
         self.assertTrue(expected_name in all_names)
 
     def test_list_files_respects_project(self):
@@ -947,14 +945,13 @@ class ProjectFileTestWithName(ProjectTestMixin, APITestCase):
         self.url_kwargs = {'namespace': self.user.username,
                            'project_project': self.project.name,
                            'version': settings.DEFAULT_VERSION}
-        self.user_dir = Path(settings.RESOURCE_DIR, self.user.username)
-        self.project_root = self.user_dir.joinpath(str(self.project.pk))
+        self.project_root = Path(settings.RESOURCE_DIR, str(self.project.pk))
         self.project_root.mkdir(parents=True)
         token = create_auth_jwt(self.user)
         self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
     def tearDown(self):
-        shutil.rmtree(str(self.user_dir))
+        shutil.rmtree(str(self.project_root))
 
     def test_create_file(self):
         url = reverse('projectfile-list', kwargs=self.url_kwargs)

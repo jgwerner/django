@@ -114,7 +114,7 @@ class DockerSpawner(TraefikMixin, GPUMixin, BaseSpawner):
             settings.DOCKER_NET: self.client.api.create_endpoint_config()
         })
 
-    def _get_container(self):
+    def _get_container(self): # noqa
         logger.info("Getting container '%s'", self.server.container_name)
         self.container_id = ''
         container = None

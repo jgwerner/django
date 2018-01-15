@@ -3,16 +3,13 @@ Copyright 2015-2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License"). You may not use this file except in compliance with the License. A copy of the License is located at
 
-     http://aws.amazon.com/apache2.0/
+http://aws.amazon.com/apache2.0/
 
 or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 """
 from __future__ import print_function
 
 import re
-import time
-import pprint
-import json
 
 
 def lambda_handler(event, context):
@@ -56,7 +53,7 @@ def lambda_handler(event, context):
 
     # Finally, build the policy
     authResponse = policy.build()
- 
+
     # new! -- add additional key-value pairs associated with the authenticated principal
     # these are made available by APIGW like so: $context.authorizer.<key>
     # additional context is cached
@@ -67,9 +64,9 @@ def lambda_handler(event, context):
     }
     # context['arr'] = ['foo'] <- this is invalid, APIGW will not accept it
     # context['obj'] = {'foo':'bar'} <- also invalid
- 
+
     authResponse['context'] = context
-    
+
     return authResponse
 
 class HttpVerb:
@@ -127,12 +124,12 @@ class AuthPolicy(object):
             resource = resource[1:]
 
         resourceArn = ("arn:aws:execute-api:" +
-            self.region + ":" +
-            self.awsAccountId + ":" +
-            self.restApiId + "/" +
-            self.stage + "/" +
-            verb + "/" +
-            resource)
+                       self.region + ":" +
+                       self.awsAccountId + ":" +
+                       self.restApiId + "/" +
+                       self.stage + "/" +
+                       verb + "/" +
+                       resource)
 
         if effect.lower() == "allow":
             self.allowMethods.append({
@@ -213,7 +210,7 @@ class AuthPolicy(object):
         one statement for Allow and one statement for Deny.
         Methods that includes conditions will have their own statement in the policy."""
         if ((self.allowMethods is None or len(self.allowMethods) == 0) and
-            (self.denyMethods is None or len(self.denyMethods) == 0)):
+                (self.denyMethods is None or len(self.denyMethods) == 0)):
             raise NameError("No statements defined for the policy")
 
         policy = {

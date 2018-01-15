@@ -64,4 +64,3 @@ class NotificationSettingsSerializer(serializers.ModelSerializer):
         model = NotificationSettings
         fields = ('id', 'entity', 'user', 'enabled', 'emails_enabled', 'email_address')
         read_only_fields = ('id', 'entity', 'user', 'email_address')
-

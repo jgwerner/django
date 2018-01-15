@@ -5,7 +5,7 @@ UserModel = get_user_model()
 
 class ActiveUserBackend(ModelBackend):
     """
-       Custom authentication backend that is identical to Django's 
+       Custom authentication backend that is identical to Django's
        default authentication backend, except that it only searches
        among active users when authenticating.
     """

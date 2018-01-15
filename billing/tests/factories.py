@@ -2,7 +2,6 @@ import factory
 from uuid import uuid4
 from datetime import datetime, timedelta
 from django.utils import timezone
-from django.db.models.signals import pre_save
 from factory import fuzzy
 from users.tests.factories import UserFactory
 from billing.models import (Customer, Plan, Card,

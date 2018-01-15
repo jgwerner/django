@@ -44,7 +44,7 @@ class TeamSerializer(serializers.ModelSerializer):
         read_only_fields = ('customer',)
 
     def validate_name(self, value):
-        if User.objects.filter(username=value).exists():
+        if User.objects.filter(username=value, is_active=True).exists():
             raise serializers.ValidationError(f"User with name {value} exists.")
         return value
 

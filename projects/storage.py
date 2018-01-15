@@ -2,7 +2,7 @@ import errno
 import os
 import logging
 from django.conf import settings
-from django.core.files import File, locks
+from django.core.files import locks
 from django.core.files.move import file_move_safe
 from django.core.files.storage import FileSystemStorage
 from django.utils.encoding import force_text
@@ -20,7 +20,7 @@ class TbsStorage(FileSystemStorage):
     as possible, but the handling of certain exceptions does require some
     copy/pasting.
     """
-    def _save(self, name, content):
+    def _save(self, name, content): # noqa
         if not self.project_root_included:
             full_path = self.path(name)
 

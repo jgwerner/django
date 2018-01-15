@@ -20,7 +20,8 @@ class ProjectSerializer(SearchSerializerMixin, serializers.ModelSerializer):
 
     class Meta:
         model = Project
-        fields = ('id', 'name', 'description', 'private', 'last_updated', 'team', 'owner', 'collaborators', 'copying_enabled')
+        fields = ('id', 'name', 'description', 'private', 'last_updated', 'team', 'owner',
+                  'collaborators', 'copying_enabled')
         read_only_fields = ('collaborators', 'team')
 
     def validate_name(self, value):
@@ -100,7 +101,8 @@ class CollaboratorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Collaborator
-        fields = ('id', 'owner', 'project', 'user', 'joined', 'username', 'email', 'first_name', 'last_name', 'member', 'permissions')
+        fields = ('id', 'owner', 'project', 'user', 'joined', 'username', 'email', 'first_name', 'last_name',
+                  'member', 'permissions')
         read_only_fields = ('project', 'user')
 
     def validate_member(self, value):

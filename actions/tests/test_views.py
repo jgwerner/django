@@ -6,8 +6,6 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from actions.models import Action
-from billing.tests.factories import CardFactory, SubscriptionFactory
-from infrastructure.tests.factories import DockerHostFactory
 from projects.tests.factories import CollaboratorFactory, ProjectFileFactory
 from servers.tests.factories import ServerFactory, ServerSizeFactory
 from triggers.tests.factories import TriggerFactory

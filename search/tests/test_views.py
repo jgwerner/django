@@ -173,4 +173,3 @@ class SearchTestCase(APITestCase):
         extra_user.delete()
         response = self.client.get(self.url, {'q': "foobar"})
         self.assertFalse("users" in response.data)
-

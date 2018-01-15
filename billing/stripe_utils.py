@@ -208,7 +208,8 @@ def handle_stripe_invoice_payment_status_change(stripe_obj):
         invoice = find_or_create_invoice(stripe_data)
 
         if event.event_type == "invoice.payment_succeeded" or (event.event_type == "invoice.payment_failed" and
-                                                               subscription.metadata and subscription.metadata.get('has_been_active')):
+                                                               subscription.metadata and
+                                                               subscription.metadata.get('has_been_active')):
             log.info(f"Subscription {subscription} has been active before and payment failed (or this was a successful "
                      f"payment. Generating a notification.")
             signal_data = {'user': subscription.customer.user,
@@ -283,8 +284,8 @@ def handle_subscription_updated(stripe_event):
 
     else:
         create_event_from_webhook(stripe_event)
-        if (subscription.status in [Subscription.TRIAL, Subscription.ACTIVE]
-            and stripe_sub['status'] in [Subscription.PAST, Subscription.UNPAID, Subscription.CANCELED]):
+        if (subscription.status in [Subscription.TRIAL, Subscription.ACTIVE] and
+                stripe_sub['status'] in [Subscription.PAST, Subscription.UNPAID, Subscription.CANCELED]):
             signal_data = {'user': subscription.customer.user,
                            'actor': subscription.customer.user,
                            'target': subscription,

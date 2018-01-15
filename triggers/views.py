@@ -15,6 +15,7 @@ from .tasks import dispatch_trigger
 from .utils import get_beat_entry, create_beat_entry
 log = logging.getLogger('triggers')
 
+
 class TriggerViewSet(NamespaceMixin, viewsets.ModelViewSet):
     queryset = Trigger.objects.all()
     serializer_class = TriggerSerializer

@@ -141,7 +141,9 @@ class TeamTest(APITransactionTestCase):
         team, cli = self._create_base_permission_test()
         project = ProjectFactory()
         server = ServerFactory(project=project)
-        tunnel_url = reverse('sshtunnel-list', kwargs={
+        tunnel_url = reverse(
+            'sshtunnel-list',
+            kwargs={
                 'version': settings.DEFAULT_VERSION,
                 'namespace': team.name,
                 'project_project': str(project.pk),

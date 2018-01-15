@@ -2,7 +2,7 @@ import stripe
 import json
 from unittest.mock import patch
 from decimal import getcontext
-from django.test import Client, override_settings
+from django.test import Client
 from django.urls import reverse
 from django.conf import settings
 from rest_framework import status

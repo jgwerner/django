@@ -1,5 +1,4 @@
 import factory
-from factory import fuzzy
 from users.tests.factories import UserFactory
 from projects.models import Project, Collaborator, ProjectFile
 
