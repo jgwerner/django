@@ -605,7 +605,7 @@ class ProjectFileTest(ProjectTestMixin, APITestCase):
         self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
     def tearDown(self):
-        shutil.rmtree(str(self.project_root))
+        shutil.rmtree(str(self.project_root), ignore_errors=True)
 
     def test_create_file(self):
         url = reverse('projectfile-list', kwargs=self.url_kwargs)
@@ -951,7 +951,7 @@ class ProjectFileTestWithName(ProjectTestMixin, APITestCase):
         self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
 
     def tearDown(self):
-        shutil.rmtree(str(self.project_root))
+        shutil.rmtree(str(self.project_root), ignore_errors=True)
 
     def test_create_file(self):
         url = reverse('projectfile-list', kwargs=self.url_kwargs)

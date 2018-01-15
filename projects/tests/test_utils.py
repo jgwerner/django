@@ -2,13 +2,21 @@ import os
 import shutil
 from unittest.mock import patch, mock_open
 from pathlib import Path
+from faker import Faker
+from uuid import uuid4
 from django.conf import settings
 from django.test import TestCase
 from users.models import User
 from projects.models import ProjectFile, Project
-from projects.utils import sync_project_files_from_disk, create_templates, read_project_files, create_project_files
+from projects.utils import (sync_project_files_from_disk,
+                            create_templates,
+                            read_project_files,
+                            create_project_files,
+                            move_roots)
 from .utils import generate_random_file_content
 from .factories import CollaboratorFactory, ProjectFileFactory
+
+fake = Faker()
 
 
 class ProjectUtilsTest(TestCase):
@@ -148,3 +156,41 @@ class ProjectUtilsTest(TestCase):
         proj_files = ProjectFile.objects.filter(project=project)
         self.assertEqual(proj_files.count(), 2)
         self.dirs_to_destroy.append(Path(settings.RESOURCE_DIR))
+
+    def test_move_roots(self):
+        users_count = 100
+        projects_per_user = 10
+        root = Path(settings.RESOURCE_DIR)
+        self.dirs_to_destroy.append(root)
+
+        projects = []
+        users = []
+        # creating user dirs
+        for _ in range(users_count):
+            username = fake.simple_profile()['username']
+            users.append(username)
+            user_path = root / username
+            user_path.mkdir(parents=True)
+
+            ssh_path = user_path / '.ssh'
+            ssh_path.mkdir()
+
+            # creating project dirs
+            for _ in range(projects_per_user):
+                project_id = str(uuid4())
+                projects.append({'id': project_id, 'owner': username})
+                project_path = user_path / project_id
+                project_path.mkdir()
+
+        move_roots()
+
+        for project in projects:
+            project_path = root / project['id']
+            self.assertTrue(project_path.exists())
+            self.assertTrue(project_path.is_dir())
+            old_project_path = root / project['owner'] / project['id']
+            self.assertFalse(old_project_path.exists())
+
+        for user in users:
+            ssh_path = root / username / '.ssh'
+            self.assertTrue(ssh_path.exists())
