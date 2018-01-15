@@ -119,7 +119,7 @@ def copy_servers(old_project: Project, new_project: Project) -> None:
         log.info(f"Copied {server.pk}")
 
 
-def perform_project_copy(user: User, project_id: str, request: Request, new_name:str=None) -> Project:
+def perform_project_copy(user: User, project_id: str, request: Request, new_name: str=None) -> Project:
     log.info(f"Attempting to copy project {project_id} for user {user}")
     new_proj = None
     proj_to_copy = Project.objects.get(pk=project_id)
@@ -188,7 +188,7 @@ def create_project_files(project: Project, paths_to_create: list) -> None:
         new_project_file_objs.append(proj_file)
 
         log.info("ProjectFile created successfully. Not yet stored in DB.")
-        
+
     num_created = ProjectFile.objects.bulk_create(new_project_file_objs)
     log.info(f"Created {len(num_created)} ProjectFile objects in the database.")
 
@@ -248,7 +248,7 @@ def create_templates(projects: List[str]=[settings.GETTING_STARTED_PROJECT]):
         assign_perm("read_project", user, project)
         assign_perm("write_project", user, project)
 
-        Path(settings.RESOURCE_DIR, project.get_owner_name(), str(project.pk)).mkdir(parents=True, exist_ok=True)
+        Path(settings.RESOURCE_DIR, str(project.pk)).mkdir(parents=True, exist_ok=True)
         base_path = f"projects/example_templates/{proj_name}/"
 
         for filename in os.listdir(base_path):
@@ -261,4 +261,3 @@ def create_templates(projects: List[str]=[settings.GETTING_STARTED_PROJECT]):
 def check_project_name_exists(name: str, request: Request, existing_pk: str=None):
     qs = Project.objects.namespace(request.namespace).filter(name=name, is_active=True).exclude(pk=existing_pk)
     return qs.exists()
-

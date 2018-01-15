@@ -20,18 +20,16 @@ class FileWatcherTest(TestCase):
         self.project = ProjectFactory()
         collaborator = CollaboratorFactory(project=self.project)
         self.user = collaborator.user
-        self.user_dir = Path(settings.MEDIA_ROOT, self.user.username)
-        self.project_root = self.user_dir.joinpath(str(self.project.pk))
+        self.project_root = Path(settings.RESOURCE_DIR, str(self.project.pk))
         self.project_root.mkdir(parents=True)
 
     def tearDown(self):
-        shutil.rmtree(str(self.user_dir))
+        shutil.rmtree(str(self.project_root))
 
     def test_file_creation(self):
         # projects/tests/file_upload_test_1.txt
         copy2("projects/tests/file_upload_test_1.txt", str(self.project_root))
-        file_name = "{user}/{proj}/file_upload_test_1.txt".format(user=self.user.username,
-                                                                  proj=self.project.pk)
+        file_name = f"{self.project.pk}/file_upload_test_1.txt"
         files_sent_to_watchman = [{'name': file_name, 'exists': True}]
         run(files_list=files_sent_to_watchman)
         proj_file = ProjectFile.objects.filter(author=self.user,
@@ -55,9 +53,7 @@ class FileWatcherTest(TestCase):
 
     def test_file_create_and_delete_together(self):
         copy2("projects/tests/file_upload_test_1.txt", str(self.project_root))
-        file_name = "{user}/{proj}/file_upload_test_1.txt".format(user=self.user.username,
-                                                                  proj=self.project.pk)
-
+        file_name = f"{self.project.pk}/file_upload_test_1.txt"
         uploaded_file = generate_random_file_content(suffix="foo")
         project_file = ProjectFileFactory(author=self.user,
                                           project=self.project,
@@ -95,8 +91,7 @@ class FileWatcherTest(TestCase):
         UserFactory(username=self.user.username,
                     is_active=False)
         copy2("projects/tests/file_upload_test_1.txt", str(self.project_root))
-        file_name = "{user}/{proj}/file_upload_test_1.txt".format(user=self.user.username,
-                                                                  proj=self.project.pk)
+        file_name = f"{self.project.pk}/file_upload_test_1.txt"
         files_sent_to_watchman = [{'name': file_name, 'exists': True}]
         run(files_list=files_sent_to_watchman)
         proj_file = ProjectFile.objects.filter(author=self.user,

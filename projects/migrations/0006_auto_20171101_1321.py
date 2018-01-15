@@ -17,6 +17,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='projectfile',
             name='file',
-            field=projects.models.TbsFileField(storage=projects.storage.TbsStorage(), upload_to=projects.models.user_project_directory_path),
+            field=projects.models.TbsFileField(storage=projects.storage.TbsStorage(), upload_to=projects.models.project_directory_path),
         ),
     ]

@@ -64,7 +64,7 @@ class Project(models.Model):
         return getattr(self.owner, self.owner.NATURAL_KEY)
 
     def resource_root(self):
-        return Path(settings.RESOURCE_DIR, self.get_owner_name(), str(self.pk))
+        return Path(settings.RESOURCE_DIR, str(self.pk))
 
 
 class Collaborator(models.Model):
@@ -93,7 +93,6 @@ class Collaborator(models.Model):
 
 def compare_project_root_to_file_path(project: Project, filepath: str) -> bool:
     """
-    
     :param project: A project object
     :param filepath: A string representing a file path on disk
     :return: A boolean representing whether or not the file name contains
@@ -114,9 +113,8 @@ def compare_project_root_to_file_path(project: Project, filepath: str) -> bool:
     return all(matches)
 
 
-def user_project_directory_path(instance, filename):
+def project_directory_path(instance, filename):
     """
-    
     :param instance: An instance of the ProjectFile model.
     :param filename: The file name as sent to Django.
     :return: A tuple containing the (proposed) file name, and a boolean
@@ -124,8 +122,7 @@ def user_project_directory_path(instance, filename):
              originally included in the filename.
     """
     project_root_included = False
-    base_path = "{usr}/{proj}/".format(usr=instance.project.owner.username,
-                                       proj=instance.project.pk)
+    base_path = "{proj}/".format(proj=instance.project.pk)
     if compare_project_root_to_file_path(instance.project, filename):
         log.info(f"The file name {filename} include the project's base path,"
                  f" {instance.project.resource_root()}. We're going to assume "
@@ -161,7 +158,7 @@ class ProjectFile(models.Model):
 
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
     project = models.ForeignKey(Project, related_name="project_files")
-    file = TbsFileField(upload_to=user_project_directory_path, storage=TbsStorage(), max_length=255)
+    file = TbsFileField(upload_to=project_directory_path, storage=TbsStorage(), max_length=255)
 
     objects = FileQuerySet.as_manager()
 

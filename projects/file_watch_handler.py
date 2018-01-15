@@ -1,6 +1,7 @@
 import logging
 from django.contrib.auth import get_user_model
 from projects.models import Project, ProjectFile
+from teams.models import Team
 log = logging.getLogger('projects')
 User = get_user_model()
 
@@ -12,8 +13,7 @@ def run(files_list):
         to_delete = not file_line['exists']
         path_parts = line.split("/")
 
-        username = path_parts[0]
-        project_pk = path_parts[1]
+        project_pk = path_parts[0]
 
         if project_pk == ".ssh":
             log.info("File watcher picked up the .ssh directory. Skipping it.")
@@ -22,16 +22,11 @@ def run(files_list):
         if line[:4].lower() == ".nfs":
             log.info("File watcher picked up nfs info as a project file. Skipping it.")
             continue
-        try:
-            user = User.objects.get(username=username,
-                                    is_active=True)
-        except User.DoesNotExist:
-            log.warning(f"User {username} does not exist as an active user. Perhaps they just registered.")
-            continue
         project = Project.objects.get(pk=project_pk)
+        author = project.owner.owner if isinstance(project.owner, Team) else project.owner
 
         if to_delete:
-            proj_file = ProjectFile.objects.filter(author=user,
+            proj_file = ProjectFile.objects.filter(author=author,
                                                    project=project,
                                                    file=line).first()
             if proj_file is None:
@@ -41,7 +36,7 @@ def run(files_list):
                 log.info("Deleting file via Watchman: {pf}".format(pf=proj_file))
                 proj_file.delete()
         else:
-            proj_file, created = ProjectFile.objects.get_or_create(author=user,
+            proj_file, created = ProjectFile.objects.get_or_create(author=author,
                                                                    project=project,
                                                                    file=line)
             if created:
