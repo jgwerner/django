@@ -131,6 +131,16 @@ class CollaboratorSerializer(serializers.ModelSerializer):
             assign_perm(permission, user, project)
         return Collaborator.objects.create(user=user, project=project, **validated_data)
 
+    def update(self, instance, validated_data):
+        project_id = self.context['view'].kwargs['project_project']
+        project = Project.objects.tbs_get(project_id)
+        owner = validated_data.get('owner', False)
+        if owner is True:
+            updated = Collaborator.objects.filter(project=project).exclude(user=instance.user).update(owner=False)
+            if updated:
+                stop_all_servers_for_project(project)
+        return super().update(instance, validated_data)
+
 
 class SyncedResourceSerializer(serializers.ModelSerializer):
     provider = serializers.CharField(source='integration.provider')

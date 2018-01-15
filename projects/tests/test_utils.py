@@ -162,7 +162,7 @@ class ProjectUtilsTest(TestCase):
         users_count = 100
         projects_per_user = 10
         root = Path(settings.RESOURCE_DIR)
-        root.mkdir()
+        root.mkdir(exist_ok=False)
         self.dirs_to_destroy.append(root)
 
         projects = []
