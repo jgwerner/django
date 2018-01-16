@@ -72,29 +72,6 @@
       }
     }
   },
-  "project_files/": {
-    "type": "object",
-    "properties": {
-      "id": {
-        "type": "string"
-      },
-      "author": {
-        "type": "string"
-      },
-      "project": {
-        "type": "string"
-      },
-      "name": {
-        "type": "string"
-      },
-      "path": {
-        "type": "string"
-      },
-      "content": {
-        "type": ["null", "string"]
-      }
-    }
-  },
   "servers/": {
     "type": "object",
     "properties": {
