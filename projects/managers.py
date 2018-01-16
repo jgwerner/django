@@ -32,13 +32,3 @@ class CollaboratorQuerySet(TBSQuerySet):
             else:
                 natural_keys.append(val)
         return self.filter(*args, user_id__in=uuids, user__username__in=natural_keys, **kwargs)
-
-
-class FileQuerySet(TBSQuerySet):
-    def namespace(self, namespace):
-        return self.filter(author__username=namespace.name)
-
-
-class SyncedResourceQuerySet(TBSQuerySet):
-    def namespace(self, namespace):
-        return self.filter(project__collaborator__user=namespace.object)

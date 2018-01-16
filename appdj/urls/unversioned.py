@@ -42,7 +42,6 @@ project_router = routers.NestedSimpleRouter(router, r'projects', lookup='project
 project_router.register(r'collaborators', project_views.CollaboratorViewSet)
 project_router.register(r'servers', servers_views.ServerViewSet)
 project_router.register(r'deployments', servers_views.DeploymentViewSet)
-project_router.register(r'project_files', project_views.ProjectFileViewSet)
 server_router = routers.NestedSimpleRouter(project_router, r'servers', lookup='server')
 server_router.register(r'ssh-tunnels', servers_views.SshTunnelViewSet)
 server_router.register(r'run-stats', servers_views.ServerRunStatisticsViewSet)
@@ -98,8 +97,6 @@ urlpatterns = [
     url(r'^(?P<namespace>[\w-]+)/', include(router.urls)),
     url(r'^(?P<namespace>[\w-]+)/', include(project_router.urls)),
     url(r'^(?P<namespace>[\w-]+)/', include(server_router.urls)),
-    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project>[\w-]+)/synced-resources/$',
-        project_views.SyncedResourceViewSet.as_view({'get': 'list', 'post': 'create'})),
     url(r'^users/', include(user_router.urls)),
     url(r'^users/(?P<user_pk>[\w-]+)/ssh-key/$', user_views.ssh_key, name='ssh_key'),
     url(r'^users/(?P<user_pk>[\w-]+)/ssh-key/reset/$', user_views.reset_ssh_key,

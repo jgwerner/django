@@ -6,9 +6,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from actions.models import Action
-from billing.tests.factories import CardFactory, SubscriptionFactory
-from infrastructure.tests.factories import DockerHostFactory
-from projects.tests.factories import CollaboratorFactory, ProjectFileFactory
+from projects.tests.factories import CollaboratorFactory
 from servers.tests.factories import ServerFactory, ServerSizeFactory
 from triggers.tests.factories import TriggerFactory
 from teams.tests.factories import TeamFactory
@@ -32,7 +30,6 @@ class ActionTest(APITestCase):
         collaborator = CollaboratorFactory(user=self.user)
         ActionFactory(content_object=collaborator.project)
         ActionFactory(content_object=collaborator)
-        ActionFactory(content_object=ProjectFileFactory(project=collaborator.project))
         ActionFactory(content_object=ServerFactory(project=collaborator.project))
         ActionFactory(content_object=ServerSizeFactory())
         ActionFactory(content_object=TriggerFactory(user=self.user))
