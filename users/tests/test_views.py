@@ -11,7 +11,7 @@ from django.core import mail
 from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
 
-from billing.tests.factories import SubscriptionFactory, PlanFactory
+from billing.tests.factories import PlanFactory
 from billing.models import Subscription, Plan
 from billing.stripe_utils import create_plan_in_stripe
 from users.tests.factories import UserFactory, EmailFactory

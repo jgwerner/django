@@ -46,7 +46,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ProjectFile',
             fields=[
-                ('file', models.FileField(upload_to=projects.models.user_project_directory_path)),
+                ('file', models.FileField(upload_to=lambda x: x)),
                 ('public', models.BooleanField(default=False)),
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('author', models.ForeignKey(on_delete=django.db.models.deletion.DO_NOTHING, to=settings.AUTH_USER_MODEL)),
