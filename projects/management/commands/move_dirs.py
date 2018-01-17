@@ -1,6 +1,6 @@
 import logging
 from django.core.management import BaseCommand
-from project.utils import move_roots
+from projects.utils import move_roots
 log = logging.getLogger('projects')
 
 
