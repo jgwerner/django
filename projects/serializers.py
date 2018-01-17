@@ -1,13 +1,10 @@
-import base64
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 from guardian.shortcuts import assign_perm
 from rest_framework import serializers
-from social_django.models import UserSocialAuth
 
 from base.serializers import SearchSerializerMixin
-from projects.models import (Project, Collaborator,
-                             SyncedResource, ProjectFile)
+from projects.models import Project, Collaborator
 from .utils import create_ancillary_project_stuff, check_project_name_exists
 from servers.utils import stop_all_servers_for_project
 
@@ -44,51 +41,6 @@ class FileAuthorSerializer(serializers.ModelSerializer):
         model = User
         fields = ('id', 'email', 'username')
         read_only_fields = ('email', 'username')
-
-
-class Base64CharField(serializers.CharField):
-    def to_representation(self, value):
-        return base64.b64encode(value)
-
-    def to_internal_value(self, data):
-        return base64.b64decode(data)
-
-
-class ProjectFileSerializer(serializers.ModelSerializer):
-    base64_data = Base64CharField(required=False, write_only=True)
-    name = serializers.CharField(required=False)
-    file = serializers.FileField(required=False, write_only=True)
-    path = serializers.CharField(required=False)
-    content = serializers.SerializerMethodField()
-
-    class Meta:
-        model = ProjectFile
-        fields = ('id', 'author', 'project', 'file', 'base64_data', 'name', 'path', 'content')
-        read_only_fields = ('author', 'project', 'content')
-
-    def get_content(self, obj):
-        encoded = None
-        if self.context.get("get_content", False):
-            encoded = base64.b64encode(obj.file.read())
-        return encoded
-
-    def create(self, validated_data):
-        project = Project.objects.get(pk=validated_data.pop('project'))
-        proj_file = ProjectFile(project=project,
-                                **validated_data)
-        proj_file.save()
-        return proj_file
-
-    def update(self, instance, validated_data):
-
-        for key in validated_data:
-            if key == "file":
-                # Sort of sketches me out.
-                instance.file.delete()
-            setattr(instance, key, validated_data[key])
-
-        instance.save()
-        return instance
 
 
 class CollaboratorSerializer(serializers.ModelSerializer):
@@ -140,21 +92,3 @@ class CollaboratorSerializer(serializers.ModelSerializer):
             if updated:
                 stop_all_servers_for_project(project)
         return super().update(instance, validated_data)
-
-
-class SyncedResourceSerializer(serializers.ModelSerializer):
-    provider = serializers.CharField(source='integration.provider')
-
-    class Meta:
-        model = SyncedResource
-        fields = ('project', 'folder', 'settings', 'provider', 'integration')
-        read_only_fields = ('project', 'integration')
-
-    def create(self, validated_data):
-        provider = validated_data.pop('integration').get('provider')
-        instance = SyncedResource(**validated_data)
-        integration = UserSocialAuth.objects.filter(user=self.context['request'].user, provider=provider).first()
-        instance.integration = integration
-        instance.project_id = self.context['view'].kwargs['project_pk']
-        instance.save()
-        return instance

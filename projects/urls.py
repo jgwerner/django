@@ -23,7 +23,6 @@ from . import views as project_views
 
 project_router = routers.NestedSimpleRouter(router, r'projects', lookup='project')
 project_router.register(r'collaborators', project_views.CollaboratorViewSet)
-project_router.register(r'project_files', project_views.ProjectFileViewSet)
 project_router.register(r'servers', servers_views.ServerViewSet)
 project_router.register(r'deployments', servers_views.DeploymentViewSet)
 
@@ -31,7 +30,5 @@ urlpatterns = [
     url(r'^project-copy-check$',
         project_views.project_copy_check, name='project-copy-check'),
     url(r'^project-copy$', project_views.project_copy, name='project-copy'),
-    url(r'^(?P<project>[\w-]+)/synced-resources/$',
-        project_views.SyncedResourceViewSet.as_view({'get': 'list', 'post': 'create'})),
     url(r'^', include(project_router.urls))
 ]

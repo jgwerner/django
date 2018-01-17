@@ -2,23 +2,16 @@ import logging
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 from rest_framework import viewsets, status, permissions, exceptions
-from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 
 from base.views import NamespaceMixin, LookupByMultipleFields
 from projects.serializers import (ProjectSerializer,
-                                  CollaboratorSerializer,
-                                  SyncedResourceSerializer,
-                                  ProjectFileSerializer)
-from projects.models import Project, Collaborator, SyncedResource
+                                  CollaboratorSerializer)
+from projects.models import Project, Collaborator
 from projects.permissions import ProjectPermission, ProjectChildPermission, has_project_permission
-from projects.tasks import sync_github
-from projects.models import ProjectFile
-from projects.utils import (get_files_from_request,
-                            has_copy_permission,
+from projects.utils import (has_copy_permission,
                             perform_project_copy,
-                            sync_project_files_from_disk,
                             check_project_name_exists)
 from teams.permissions import TeamGroupPermission
 
@@ -154,123 +147,3 @@ class ProjectMixin(LookupByMultipleFields):
 class CollaboratorViewSet(ProjectMixin, viewsets.ModelViewSet):
     queryset = Collaborator.objects.all()
     serializer_class = CollaboratorSerializer
-
-
-class SyncedResourceViewSet(ProjectMixin, viewsets.ModelViewSet):
-    queryset = SyncedResource.objects.all()
-    serializer_class = SyncedResourceSerializer
-
-    def post(self, request, *args, **kwargs):
-        response = super().post(request, *args, **kwargs)
-        response.status_code = status.HTTP_202_ACCEPTED
-        return response
-
-    def perform_create(self, serializer):
-        super().perform_create(serializer)
-        instance = serializer.instance
-        sync_github.delay(
-            str(instance.project.resource_root().joinpath(instance.folder)), self.request.user.pk, instance.project.pk,
-            repo_url=instance.settings['repo_url'], branch=instance.settings.get('branch', 'master')
-        )
-
-
-class ProjectFileViewSet(ProjectMixin,
-                         viewsets.ModelViewSet):
-    queryset = ProjectFile.objects.filter(project__is_active=True)
-    serializer_class = ProjectFileSerializer
-    parser_classes = (MultiPartParser, FormParser, JSONParser)
-
-    def get_queryset(self, *args, **kwargs):
-        queryset = super().get_queryset()
-        project = Project.objects.namespace(self.request.namespace).tbs_get(self.kwargs.get('project_project'))
-        sync_project_files_from_disk(project)
-        filename = self.request.query_params.get("filename", None)
-        if filename is not None:
-            complete_filename = "{usr}/{proj}/{file}".format(usr=self.request.user.username,
-                                                             proj=str(project.pk),
-                                                             file=filename)
-            queryset = queryset.filter(file=complete_filename)
-        return queryset
-
-    def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
-        get_content = self.request.query_params.get('content', "false").lower() == "true"
-        context = self.get_serializer_context()
-        context.update({'get_content': get_content})
-        serializer = self.serializer_class(instance, context=context)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        data = {'id': instance.pk}
-        instance.delete()
-        data['deleted'] = True
-        return Response(data=data, status=status.HTTP_204_NO_CONTENT)
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset(*args, **kwargs)
-        get_content = self.request.query_params.get('content', "false").lower() == "true"
-        context = self.get_serializer_context()
-        context.update({'get_content': get_content})
-        serializer = self.serializer_class(queryset, many=True, context=context)
-        data = serializer.data
-        # for proj_file in data:
-        #     proj_file['file'] = request.build_absolute_uri(proj_file['file'])
-
-        return Response(data, status=status.HTTP_200_OK)
-
-    def create(self, request, *args, **kwargs):
-        try:
-            files = get_files_from_request(request)
-        except ValueError as e:
-            log.exception(e)
-            data = {'message': str(e)}
-            return Response(data=data, status=status.HTTP_400_BAD_REQUEST)
-
-        proj_files_to_serialize = []
-        project_pk = kwargs.get("project_project")
-        project = Project.objects.namespace(self.request.namespace).tbs_get(project_pk)
-
-        for f in files:
-            create_data = {'author': self.request.user,
-                           'project': project,
-                           'file': f}
-            project_file = ProjectFile(**create_data)
-
-            project_file.save()
-
-            proj_files_to_serialize.append(project_file.pk)
-
-        proj_files = ProjectFile.objects.filter(pk__in=proj_files_to_serialize)
-
-        context = self.get_serializer_context()
-        serializer = self.serializer_class(proj_files, context=context, many=True)
-        return Response(data=serializer.data,
-                        status=status.HTTP_201_CREATED)
-
-    def update(self, request, *args, **kwargs):
-        try:
-            files = get_files_from_request(request)
-        except ValueError as e:
-            log.exception(e)
-            data = {'message': str(e)}
-            return Response(data=data, status=status.HTTP_400_BAD_REQUEST)
-        if len(files) > 1:
-            log.warning("There was an attempt to update more than one file.")
-            return Response(data={'message': "Only one file can be updated at a time."},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-        instance = ProjectFile.objects.get(pk=kwargs.get("pk"))
-        project_pk = request.data.get("project")
-        new_file = files[0]
-
-        data = {'project': project_pk,
-                'file': new_file}
-
-        context = self.get_serializer_context()
-        serializer = self.serializer_class(instance, data=data, context=context)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-
-        return Response(data=serializer.data,
-                        status=status.HTTP_200_OK)

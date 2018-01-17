@@ -11,7 +11,6 @@ from billing.tests.factories import (SubscriptionFactory,
                                      InvoiceItemFactory)
 from billing.tests import fake_stripe
 from users.tests.factories import UserFactory, EmailFactory
-from projects.utils import assign_to_team
 from projects.tests.factories import ProjectFactory
 from servers.tests.factories import ServerFactory, ServerSizeFactory
 from jwt_auth.utils import create_auth_jwt
@@ -106,17 +105,6 @@ class TeamTest(APITransactionTestCase):
         resp = cli.post(project_url, data=dict(name='Test'))
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         resp = self.client.post(project_url, data=dict(name='Test2'))
-        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
-
-    def test_team_group_permission_for_project_file(self):
-        team, cli = self._create_base_permission_test()
-        project = ProjectFactory()
-        assign_to_team(team=team, project=project)
-        projectfile_url = reverse('projectfile-list', kwargs={
-            'version': settings.DEFAULT_VERSION, 'namespace': team.name, 'project_project': str(project.pk)})
-        resp = cli.post(projectfile_url, data=dict(name='Test'))
-        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
-        resp = self.client.post(projectfile_url, data=dict(name='Test2'))
         self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_team_group_permission_for_server(self):
