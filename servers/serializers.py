@@ -66,6 +66,15 @@ class ServerSerializer(SearchSerializerMixin, BaseServerSerializer):
                 raise serializers.ValidationError("A server with that name already exists in this project.")
         return value
 
+    def validate(self, data):
+        request = self.context['request']
+        project_kwarg = self.context['view'].kwargs['project_project']
+        project = Project.objects.namespace(request.namespace).tbs_get(project_kwarg)
+        if project.servers.filter(created_by=request.user, config__type='jupyter').exists():
+            raise serializers.ValidationError("You already have a notebook for this project")
+        return data
+
+
     def create(self, validated_data):
         config = validated_data.pop("config", {})
         server_size = (validated_data.pop('server_size', None) or

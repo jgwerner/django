@@ -61,6 +61,18 @@ class ServerTest(APITestCase):
         self.assertEqual(db_server.server_size, self.server_size)
         self.assertEqual(db_server.server_size.name, 'Nano')
 
+    def test_create_second_notebook_server(self):
+        ServerFactory(project=self.project, config={'type': 'jupyter'}, created_by=self.user)
+        url = reverse('server-list', kwargs=self.url_kwargs)
+        data = dict(
+            name='test',
+            project=str(self.project.pk),
+            connected=[],
+            config={'type': 'jupyter'},
+        )
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_create_server_with_same_name_as_deleted_server(self):
         url = reverse("server-list", kwargs=self.url_kwargs)
         old_server = ServerFactory(project=self.project,
