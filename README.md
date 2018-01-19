@@ -1,9 +1,9 @@
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/6ba00ac8f94e4105b9b160287d1b62ec)](https://www.codacy.com/app/3Blades/app-backend?utm_source=github.com&utm_medium=referral&utm_content=3Blades/app-backend&utm_campaign=badger)
-[![Build Status](https://travis-ci.com/3Blades/app-backend.svg?token=y3jvxynhJQZHELnDYJdy&branch=master)](https://travis-ci.com/3Blades/app-backend)
-[![codecov](https://codecov.io/gh/3Blades/app-backend/branch/master/graph/badge.svg?token=Gp4eGe0AaM)](https://codecov.io/gh/3Blades/app-backend)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/6ba00ac8f94e4105b9b160287d1b62ec)](https://www.codacy.com/app/IllumiDesk/app-backend?utm_source=github.com&utm_medium=referral&utm_content=IllumiDesk/app-backend&utm_campaign=badger)
+[![Build Status](https://travis-ci.com/IllumiDesk/app-backend.svg?token=y3jvxynhJQZHELnDYJdy&branch=master)](https://travis-ci.com/IllumiDesk/app-backend)
+[![codecov](https://codecov.io/gh/IllumiDesk/app-backend/branch/master/graph/badge.svg?token=Gp4eGe0AaM)](https://codecov.io/gh/IllumiDesk/app-backend)
 [![slack in](https://slack.3blades.io/badge.svg)](https://slack.3blades.io)
 
-# 3Blades Backend Server
+# IllumiDesk Backend Server
 
 Application server backend based on [Django](https://www.djangoproject.com/).
 
@@ -109,7 +109,7 @@ Restart docker service and confirm that setting is in place for CGroup:
 
 ### Environment Variables
 
-On-premise installation of the 3Blades application is not currently supported. For development purposes, an explanation of environment variables is located in the /docs directory.
+On-premise installation of the IllumiDesk application is not currently supported. For development purposes, an explanation of environment variables is located in the /docs directory.
 
 ### Launch Stack
 
@@ -260,7 +260,7 @@ Requirements:
 
 - [Vagrant](https://www.vagrantup.com/downloads.html) may be used with several VM solutions. We recommend [VirtualBox](https://www.virtualbox.org/wiki/Downloads).
 
-> If using Windows 10, we recommend setting up [Ubuntu based bash shell](https://msdn.microsoft.com/en-us/commandline/wsl/install_guide) and run setup natively as described [in next section](https://github.com/3Blades/app-backend#native-dev-setup-on-linux-and-mac-systems). If using previous versions of Windows, consider using VirtualBox with Ubuntu Xenial (16.04).
+> If using Windows 10, we recommend setting up [Ubuntu based bash shell](https://msdn.microsoft.com/en-us/commandline/wsl/install_guide) and run setup natively as described [in next section](https://github.com/IllumiDesk/app-backend#native-dev-setup-on-linux-and-mac-systems). If using previous versions of Windows, consider using VirtualBox with Ubuntu Xenial (16.04).
 
 Setup virtualenv on your host with Python 2.7:
 

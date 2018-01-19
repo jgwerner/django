@@ -250,7 +250,7 @@ def add_buckets_to_stripe_invoice(customer_stripe_id: str, buckets: int) -> Invo
     stripe_invoice_item = stripe.InvoiceItem.create(customer=customer_stripe_id,
                                                     amount=amount,
                                                     currency="usd",
-                                                    description="3Blades Compute Usage")
+                                                    description="IllumiDesk Compute Usage")
     converted_data = convert_stripe_object(InvoiceItem, stripe_invoice_item)
     converted_data['quantity'] = 1
     return InvoiceItem.objects.create(**converted_data)

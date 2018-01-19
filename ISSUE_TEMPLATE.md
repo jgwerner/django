@@ -8,7 +8,7 @@ Use the following check list to make sure your issue is opened properly.
 
 - [ ] I have documented what installation method was used, such as Docker, as well as other relevant configuration settings.
 - [ ] I have checked 3blades logs for python stacktraces and included it here as text if any.
-- [ ] I have reproduced the issue with the latest released version of 3Blades.
+- [ ] I have reproduced the issue with the latest released version of IllumiDesk.
 - [ ] I searched for open and closed issues for a similar one, but did not see any.
 - [ ] I have documented expected result, actual result and steps to reproduce error.
 
@@ -20,4 +20,4 @@ It's possible that if we add your new issue to our backlog that we merge the iss
 
 ## Contributing
 
-If you would rather submit your own PR, please follow our [contributing guide](https://github.com/3Blades/app-backend/blob/master/CONTRIBUTING.md).
+If you would rather submit your own PR, please follow our [contributing guide](https://github.com/IllumiDesk/app-backend/blob/master/CONTRIBUTING.md).
