@@ -3,6 +3,7 @@ import logging
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
 from rest_framework import serializers
+from guardian.shortcuts import assign_perm, remove_perm
 
 from base.serializers import SearchSerializerMixin
 from base.utils import validate_uuid
@@ -42,10 +43,11 @@ class ServerSerializer(SearchSerializerMixin, BaseServerSerializer):
     endpoint = serializers.SerializerMethodField()
     logs_url = serializers.SerializerMethodField()
     status_url = serializers.SerializerMethodField()
+    permissions = serializers.MultipleChoiceField(choices=Server._meta.permissions, required=False)
 
     class Meta(BaseServerSerializer.Meta):
         fields = BaseServerSerializer.Meta.fields
-        for fld in ["endpoint", "logs_url", "status_url"]:
+        for fld in ["endpoint", "logs_url", "status_url", "permissions"]:
             fields += (fld,)
 
     def validate_config(self, value):
@@ -70,28 +72,40 @@ class ServerSerializer(SearchSerializerMixin, BaseServerSerializer):
         request = self.context['request']
         project_kwarg = self.context['view'].kwargs['project_project']
         project = Project.objects.namespace(request.namespace).tbs_get(project_kwarg)
-        if project.servers.filter(created_by=request.user, config__type='jupyter').exists():
+        if project.servers.filter(created_by=request.user, config__type='jupyter', is_active=True).exists():
             raise serializers.ValidationError("You already have a notebook for this project")
         return data
 
-
     def create(self, validated_data):
-        config = validated_data.pop("config", {})
+        default_permissions = [perm[0] for perm in Server._meta.permissions]
+        permissions = validated_data.pop('permissions', default_permissions)
         server_size = (validated_data.pop('server_size', None) or
                        ServerSize.objects.order_by('created_at').first())
         project_pk = self.context['view'].kwargs['project_project']
         project = Project.objects.tbs_get(project_pk)
         user = self.context['request'].user
         pk = uuid.uuid4()
-        return Server.objects.create(pk=pk,
-                                     project=project,
-                                     created_by=user,
-                                     config=config,
-                                     server_size=server_size,
-                                     access_token=create_server_jwt(user, str(pk)),
-                                     **validated_data)
+        if user == project.owner:
+            permissions = default_permissions
+        instance = Server.objects.create(pk=pk,
+                                         project=project,
+                                         created_by=user,
+                                         server_size=server_size,
+                                         access_token=create_server_jwt(user, str(pk)),
+                                         **validated_data)
+        for permission in permissions:
+            assign_perm(permission, user, instance)
+        return instance
 
     def update(self, instance, validated_data):
+        permissions = validated_data.pop('permissions', None)
+        if permissions and permissions != instance.permissions:
+            for permission in instance.permissions:
+                if permission not in permissions:
+                    remove_perm(permission, instance.created_by, instance)
+            for permission in permissions:
+                if permission not in instance.permissions:
+                    assign_perm(permission, instance.created_by, instance)
         if self.partial:
             config = validated_data.pop('config', {})
             instance.config = {**instance.config, **config}

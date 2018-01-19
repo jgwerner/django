@@ -56,6 +56,8 @@ class ServerTest(APITestCase):
                 server_id=db_server.id,
             )
         )
+        self.assertTrue(self.user.has_perm('start_server', db_server))
+        self.assertTrue(self.user.has_perm('stop_server', db_server))
         self.assertEqual(Server.objects.count(), 1)
         self.assertEqual(db_server.name, data['name'])
         self.assertEqual(db_server.server_size, self.server_size)
@@ -174,6 +176,22 @@ class ServerTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         db_server = Server.objects.get(pk=server.pk)
         self.assertEqual(db_server.name, data['name'])
+
+    def test_server_update_permissions(self):
+        server = ServerFactory(project=self.project, created_by=self.user)
+        assign_perm('write_project', self.user, self.project)
+        self.url_kwargs.update({
+            'server': str(server.pk)
+        })
+        url = reverse('server-detail', kwargs=self.url_kwargs)
+        data = dict(permissions=['read_server', 'start_server'])
+        response = self.client.patch(url, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        db_server = Server.objects.get(pk=server.pk)
+        self.assertTrue(self.user.has_perm('read_server', db_server))
+        self.assertTrue(self.user.has_perm('start_server', db_server))
+        self.assertFalse(self.user.has_perm('write_server', db_server))
+        self.assertFalse(self.user.has_perm('stop_server', db_server))
 
     def test_server_delete(self):
         server = ServerFactory(project=self.project)
