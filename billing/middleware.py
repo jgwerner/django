@@ -23,9 +23,9 @@ class SubscriptionMiddleware(object):
                             f"record being created. Going to create one now for {user}")
                 customer, _ = create_stripe_customer_from_user(user)
 
-            if(customer is not None
-                    and (not customer.has_active_subscription())
-                    and (url_name in settings.SUBSCRIPTION_REQUIRED_URLS)):
+            if(customer is not None and
+                    (not customer.has_active_subscription()) and
+                    (url_name in settings.SUBSCRIPTION_REQUIRED_URLS)):
                 log.info(f"User {user} does not have an active subscription, "
                          f"and is trying to perform a {request.method} action "
                          f"to {url_name}. Returning 402.")

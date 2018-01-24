@@ -8,9 +8,6 @@ from rest_framework_jwt.views import JSONWebTokenAPIView
 from servers.utils import is_server_token
 from .serializers import JWTSerializer, VerifyJSONWebTokenSerializer
 
-from users.signals import user_authenticated
-from users.models import User
-
 jwt_response_payload_handler = api_settings.JWT_RESPONSE_PAYLOAD_HANDLER
 
 

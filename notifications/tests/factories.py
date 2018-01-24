@@ -47,6 +47,5 @@ class NotificationSettingsFactory(factory.django.DjangoModelFactory):
     entity = fuzzy.FuzzyText(length=50)
     object = None
     enabled = fuzzy.FuzzyChoice([True, True, True, False])
-    emails_enabled = factory.LazyAttribute(lambda obj: False if not obj.enabled
-                                                       else random.choice([True, False]))
+    emails_enabled = factory.LazyAttribute(lambda obj: False if not obj.enabled else random.choice([True, False]))
     email_address = factory.LazyAttribute(lambda obj: obj.user.emails.first())

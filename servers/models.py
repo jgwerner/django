@@ -7,6 +7,7 @@ from django.contrib.postgres.fields import HStoreField, JSONField
 from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
+from guardian.shortcuts import get_perms
 
 from base.models import TBSQuerySet
 from users.models import User
@@ -34,6 +35,8 @@ class ServerModelAbstract(models.Model):
     class Meta:
         abstract = True
         permissions = (
+            ('start_server', "Start server"),
+            ('stop_server', "Stop server"),
             ('write_server', "Write server"),
             ('read_server', "Read server"),
         )
@@ -59,7 +62,12 @@ class ServerModelAbstract(models.Model):
 
     @property
     def volume_path(self):
-        return os.path.join(settings.RESOURCE_DIR, self.project.get_owner_name(), str(self.project.pk))
+        return os.path.join(settings.RESOURCE_DIR, str(self.project.pk))
+
+    @property
+    def permissions(self):
+        server_perms = dict(Server._meta.permissions)
+        return [perm for perm in get_perms(self.created_by, self) if perm in server_perms]
 
 
 class Server(ServerModelAbstract):
@@ -113,8 +121,8 @@ class Server(ServerModelAbstract):
         invoice = customer.current_invoice
         # TODO: What is the correct behavior if a user does not have a current invoice?
         # Probably should not allow them
-        if (invoice and invoice.subscription.plan.stripe_id == "threeblades-free-plan"
-            and invoice.metadata.get("notified_for_threshold") == "100"):
+        if (invoice and invoice.subscription.plan.stripe_id == "threeblades-free-plan" and
+                invoice.metadata.get("notified_for_threshold") == "100"):
             return False
         return True
 

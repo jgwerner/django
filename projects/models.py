@@ -58,7 +58,7 @@ class Project(models.Model):
         return getattr(self.owner, self.owner.NATURAL_KEY)
 
     def resource_root(self):
-        return Path(settings.RESOURCE_DIR, self.get_owner_name(), str(self.pk))
+        return Path(settings.RESOURCE_DIR, str(self.pk))
 
 
 class Collaborator(models.Model):

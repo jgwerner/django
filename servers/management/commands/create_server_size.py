@@ -14,8 +14,8 @@ class Command(BaseCommand):
         try:
             for i in SERVER_SIZE:
                 ServerSize.objects.update_or_create(
-                    name__iexact = i,
-                    defaults = {
+                    name__iexact=i,
+                    defaults={
                         'name': i,
                         'memory': SERVER_SIZE[i],
                         'cpu': 1,

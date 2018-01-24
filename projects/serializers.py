@@ -7,6 +7,7 @@ from base.serializers import SearchSerializerMixin
 from projects.models import Project, Collaborator
 from .utils import create_ancillary_project_stuff, check_project_name_exists
 from servers.utils import stop_all_servers_for_project
+from servers.models import Server
 
 User = get_user_model()
 
@@ -17,9 +18,9 @@ class ProjectSerializer(SearchSerializerMixin, serializers.ModelSerializer):
 
     class Meta:
         model = Project
-        fields = ('id', 'name', 'description', 'private', 'last_updated', 'team', 'owner', 'collaborators',
-                  'copying_enabled')
-        read_only_fields = ('collaborators', 'team')
+        fields = ('id', 'name', 'description', 'private', 'last_updated', 'team', 'owner',
+                  'collaborators', 'copying_enabled')
+        read_only_fields = ('team',)
 
     def validate_name(self, value):
         request = self.context['request']
@@ -43,6 +44,14 @@ class FileAuthorSerializer(serializers.ModelSerializer):
         read_only_fields = ('email', 'username')
 
 
+class CollaboratorServerSerializer(serializers.ModelSerializer):
+    type = serializers.CharField(source='config.type')
+
+    class Meta:
+        model = Server
+        fields = ('name', 'type')
+
+
 class CollaboratorSerializer(serializers.ModelSerializer):
     email = serializers.CharField(source='user.email', read_only=True)
     username = serializers.CharField(source='user.username', read_only=True)
@@ -50,11 +59,12 @@ class CollaboratorSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(source='user.last_name', read_only=True)
     member = serializers.CharField(write_only=True)
     permissions = serializers.MultipleChoiceField(choices=Project._meta.permissions)
+    servers = CollaboratorServerSerializer(many=True, read_only=True, source='project.servers')
 
     class Meta:
         model = Collaborator
-        fields = ('id', 'owner', 'project', 'user', 'joined', 'username', 'email', 'first_name', 'last_name', 'member',
-                  'permissions')
+        fields = ('id', 'owner', 'project', 'user', 'joined', 'username', 'email', 'first_name', 'last_name',
+                  'member', 'permissions', 'servers')
         read_only_fields = ('project', 'user')
 
     def validate_member(self, value):

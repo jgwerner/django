@@ -5,4 +5,4 @@ class BillingConfig(AppConfig):
     name = 'billing'
 
     def ready(self):
-        import billing.signals
+        import billing.signals # noqa

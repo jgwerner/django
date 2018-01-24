@@ -18,4 +18,5 @@ def divide(value, arg):
         log.exception(f"Exception while attempting to use divide filter tag: {e}")
     return quotient
 
+
 register.filter("divide", divide)

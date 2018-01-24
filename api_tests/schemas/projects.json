@@ -69,6 +69,16 @@
         "items": {
           "type": "string"
         }
+      },
+      "servers": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": "string",
+            "type": "string"
+          }
+        }
       }
     }
   },
@@ -124,6 +134,12 @@
       },
       "status_url": {
         "type": "string"
+      },
+      "permissions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
       }
     }
   },

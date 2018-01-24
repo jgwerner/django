@@ -28,7 +28,7 @@ class TestServer(TestCase):
     def test_volume_path(self):
         collaborator = CollaboratorFactory(user__username='test', project__id=self.pk)
         server = Server(project=collaborator.project)
-        expected = '/tmp/3blades/test/00000000-0000-0000-0000-000000000000'
+        expected = '/tmp/3blades/00000000-0000-0000-0000-000000000000'
         self.assertEqual(server.volume_path, expected)
 
     def test_server_container_name_has_no_spaces(self):
