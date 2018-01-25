@@ -9,13 +9,13 @@ def migrate_sync(apps, schema_editor):
     Project = apps.get_model('projects', 'Project')
     for project in Project.objects.all():
         integrations = list(project.integrations.all())
-        project.synced_integrations.add(*integrations)
+        project.social_integrations.add(*integrations)
 
 
 def reverse(apps, schema_editor):
     Project = apps.get_model('projects', 'Project')
     for project in Project.objects.all():
-        integrations = list(project.synced_integrations.all())
+        integrations = list(project.social_integrations.all())
         project.integrations.add(*integrations)
 
 
