@@ -49,11 +49,12 @@ class ServerTest(APITestCase):
         self.assertEqual(
             response.data['endpoint'],
             ('http://example.com/{version}/{namespace}/projects/{project_id}'
-             '/servers/{server_id}/endpoint/proxy/').format(
+             '/servers/{server_id}/endpoint/proxy/?access_token={server_token}').format(
                 version=settings.DEFAULT_VERSION,
                 namespace=self.user.username,
                 project_id=self.project.pk,
                 server_id=db_server.id,
+                server_token=db_server.access_token
             )
         )
         self.assertTrue(self.user.has_perm('start_server', db_server))
@@ -213,7 +214,7 @@ class ServerTest(APITestCase):
         url = reverse('server_internal', kwargs={'server_server': server.pk, 'service': 'jupyter', **self.url_kwargs})
         server.access_token = create_server_jwt(self.user, str(server.pk))
         server.save()
-        response = self.client.get(url)
+        response = self.client.get(url, {'access_token': server.access_token})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         server_ip = server.get_private_ip()
         expected = f"{server_ip}:1234"
@@ -321,7 +322,7 @@ class ServerTestWithName(APITestCase):
         self.assertEqual(
             response.data['endpoint'],
             ('http://example.com/{version}/{namespace}/projects/{project_id}'
-             '/servers/{server_id}/endpoint/proxy/').format(
+             '/servers/{server_id}/endpoint/proxy/?access_token={server_token}').format(
                 version=settings.DEFAULT_VERSION,
                 namespace=self.user.username,
                 project_id=self.project.pk,
