@@ -50,15 +50,12 @@ class CanvasRenderer(BaseRenderer):
     def _to_xml(self, xml, data):
         if isinstance(data, (list, tuple)):
             for item in data:
-                xml.startElement(self.item_tag_name, {})
                 self._to_xml(xml, item)
-                xml.endElement(self.item_tag_name)
 
         elif isinstance(data, dict):
-            for key, value in data.items():
-                xml.startElement(key, {})
-                self._to_xml(xml, value)
-                xml.endElement(key)
+            xml.startElement(data['name'], data.get('kwargs', {}))
+            self._to_xml(xml, data['value'])
+            xml.endElement(data['name'])
 
         elif data is None:
             # Don't output any value

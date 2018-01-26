@@ -27,7 +27,7 @@ from triggers import views as trigger_views
 from teams import views as team_views
 from billing import views as billing_views
 from search.views import SearchView
-from canvas.views import CanvasXML
+from canvas.views import CanvasXML, Auth
 
 router = routers.SimpleRouter()
 
@@ -81,7 +81,8 @@ servers_router.register("options/server-size", servers_views.ServerSizeViewSet)
 
 
 urlpatterns = [
-    url(r'^lti/$', CanvasXML.as_view()),
+    url(r'^lti.xml$', CanvasXML.as_view()),
+    url(r'^lti/$', Auth.as_view()),
     url(r'^me/$', user_views.me, name="me"),
     url(r'^(?P<namespace>[\w-]+)/search/$', SearchView.as_view(), name='search'),
     url(r'^actions/', include('actions.urls')),
