@@ -1,4 +1,6 @@
 import re
+import time
+from django.core.cache import cache
 from rest_framework import authentication
 from oauth2_provider.models import Application
 from oauthlib.oauth1 import RequestValidator, SignatureOnlyEndpoint
@@ -13,7 +15,13 @@ class CanvasValidator(RequestValidator):
     def get_client_secret(self, client_key, request):
         return Application.objects.get(client_id=client_key).client_secret
 
-    def validate_timestamp_and_nonce(self, *args, **kwargs):
+    def validate_timestamp_and_nonce(self, client_key, timestamp, nonce, request, **kwargs):
+        if time.time() - int(timestamp) > 15 * 60:
+            return False
+        cache_key = f'lti::{client_key}::{timestamp}::{nonce}'
+        if cache.get(cache_key):
+            return False
+        cache.set(cache_key, True, 300)
         return True
 
     @property
