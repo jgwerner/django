@@ -1,1 +1,1 @@
-[{"model": "notifications.notificationtype", "pk": "9f06060c-e7a9-4287-82cb-1ac71833b8b7", "fields": {"entity": "billing", "name": "usage_warning", "description": "User is approaching their plan limits", "subject": "3Blades Usage Warning", "template_name": "usage_warning"}}]
+[{"model": "notifications.notificationtype", "pk": "9f06060c-e7a9-4287-82cb-1ac71833b8b7", "fields": {"entity": "billing", "name": "usage_warning", "description": "User is approaching their plan limits", "subject": "IllumiDesk Usage Warning", "template_name": "usage_warning"}}]

@@ -1,4 +1,4 @@
-import django; django.setup()
+import django; django.setup() # noqa
 import logging
 from datetime import datetime
 from django.core.management import BaseCommand

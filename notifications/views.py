@@ -102,4 +102,3 @@ class NotificationSettingsViewset(viewsets.ModelViewSet):
             resp_status = status.HTTP_400_BAD_REQUEST
 
         return Response(data=resp_data, status=resp_status)
-

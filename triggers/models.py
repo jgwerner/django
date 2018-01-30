@@ -41,7 +41,8 @@ class Trigger(models.Model):
         return self.user.username
 
     def get_absolute_url(self, version):
-        return reverse('trigger-detail', kwargs={'namespace': self.namespace_name, 'version': version, 'pk': str(self.pk)})
+        return reverse('trigger-detail',
+                       kwargs={'namespace': self.namespace_name, 'version': version, 'pk': str(self.pk)})
 
     def dispatch(self, url='http://localhost'):
         logger.debug(f'Dispatching trigger {self}')

@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from base.views import NamespaceMixin
 from base.permissions import IsAdminUser
 from billing.models import (Plan, Card, Subscription,
-                            Invoice, InvoiceItem, Event)
+                            Invoice, InvoiceItem)
 from billing.serializers import (PlanSerializer, CardSerializer,
                                  SubscriptionSerializer,
                                  InvoiceSerializer,

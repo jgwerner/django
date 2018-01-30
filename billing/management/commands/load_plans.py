@@ -1,4 +1,4 @@
-import django; django.setup()
+import django; django.setup() # noqa
 from django.core.management import BaseCommand
 from billing.tbs_utils import load_plans
 

@@ -9,6 +9,7 @@ from rest_framework.request import Request
 from guardian.shortcuts import assign_perm
 from users.models import User
 from teams.models import Team
+from base.utils import validate_uuid
 from .models import Project, Collaborator
 from servers.models import Server
 from jwt_auth.utils import create_server_jwt
@@ -147,7 +148,7 @@ def create_templates(projects: List[str]=[settings.GETTING_STARTED_PROJECT]):
         assign_perm("read_project", user, project)
         assign_perm("write_project", user, project)
 
-        Path(settings.RESOURCE_DIR, project.get_owner_name(), str(project.pk)).mkdir(parents=True, exist_ok=True)
+        Path(settings.RESOURCE_DIR, str(project.pk)).mkdir(parents=True, exist_ok=True)
         base_path = f"projects/example_templates/{proj_name}/"
 
         for filename in os.listdir(base_path):
@@ -158,3 +159,13 @@ def create_templates(projects: List[str]=[settings.GETTING_STARTED_PROJECT]):
 def check_project_name_exists(name: str, request: Request, existing_pk: str=None):
     qs = Project.objects.namespace(request.namespace).filter(name=name, is_active=True).exclude(pk=existing_pk)
     return qs.exists()
+
+
+def move_roots():
+    root = Path(settings.RESOURCE_DIR)
+    for user_dir in root.iterdir():
+        for project_dir in user_dir.iterdir():
+            project_id = project_dir.parts[-1]
+            if validate_uuid(project_id):
+                new_project_path = root / project_id
+                project_dir.rename(new_project_path)

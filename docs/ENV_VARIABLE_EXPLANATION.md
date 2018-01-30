@@ -1,6 +1,6 @@
 ### Environment Variables Explanation
 
-The 3Blades/app-backend application interacts with various internal applications and external, third-party services. The following descriptions should help to understand the most important of these variables:
+The IllumiDesk/app-backend application interacts with various internal applications and external, third-party services. The following descriptions should help to understand the most important of these variables:
 
 | Variable  |  Type | Note  |
 |---|---|---|
@@ -32,7 +32,7 @@ The 3Blades/app-backend application interacts with various internal applications
 | EMAIL_HOST_PASSWORD | <string> | Password associated with EMAIL_HOST_USER |
 | EMAIL_USE_TLS | <boolean> | Enables Transport Layer Security (TLS) when talking to SMTP server |
 | EMAIL_USE_SSL | <boolean> | Enables implicit TLS (commonly known as "SSL") when talking to SMTP server |
-| ENABLE_BILLING | <boolean> | Enables 3Blades application billing-related features for development purposes |
+| ENABLE_BILLING | <boolean> | Enables IllumiDesk application billing-related features for development purposes |
 | GITHUB_CLIENT_ID | <string> | Client ID for Github account |
 | GITHUB_CLIENT_SECRET | <string> | Secret access key associated with GITHUB_CLIENT_ID |
 | GOOGLE_CLIENT_ID | <string> | Client ID for Google account |
@@ -51,8 +51,8 @@ The 3Blades/app-backend application interacts with various internal applications
 | SLACK_SECRET | <string> | Secret access key associated with SLACK_KEY |
 | STATIC_ROOT | <string> | Absolute path to the directory static files should be collected to. |
 | STRIPE_SECRET_KEY | <string> | Secret key associated with Stripe payment information |
-| TBS_DOMAIN | <string> | Domain of 3Blades main development environment |
+| TBS_DOMAIN | <string> | Domain of IllumiDesk main development environment |
 | TBS_HOST | <string> | An additional host name or IP address from which the application will allow connections, added to Django's ALLOWED_HOSTS |
 | TBS_HTTPS | <boolean> | Enables application's use of secure HTTP |
 | TRAVIS_PULL_REQUEST | <boolean> | Enables Travis CI's automated Docker image building upon pull request submission |
-| UI_API_URL | <string> | URL for 3Blades UI accessing the API |
+| UI_API_URL | <string> | URL for IllumiDesk UI accessing the API |

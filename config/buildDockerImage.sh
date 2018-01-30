@@ -11,7 +11,7 @@ if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
    docker push $DOCKER_IMAGE_NAME:latest;
    # Auto Deploy To Rundeck dev-api.3blades.ai
    echo "-- Starting Autodeploy dev-api deploy"
-    curl https://maestro-staging.3blades.io/api/1/job/3b97a4d4-fdd2-40cb-bf3f-a24de0e23ccc/run?authtoken=$RUNDECK_KEY
+    curl -d '{"buildType":{"id": "IllumiDesk_Deploy"}}' -H "Content-Type: application/json" -u "$TEAMCITY_USER":"$TEAMCITY_PASSWORD" -X POST "$TEAMCITY_URL/httpAuth/app/rest/buildQueue"
    echo "-- Done."a
   fi
   if [ "$TRAVIS_BRANCH" == "prod" ]; then

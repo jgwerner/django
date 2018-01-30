@@ -51,7 +51,6 @@ class MeteredBillingData:
 
     def _notify(self, notification_type: NotificationType, threshold: int) -> Union[Notification, None]:
         """
-        
         :param notification_type: The of notification to be sent to the user.
         :param threshold: The percentage level that the user has exceeded and we are notifying them about
         :return: The notification object that has been created (but not saved in the DB!)
@@ -113,8 +112,8 @@ class MeteredBillingData:
 
 def calculate_usage_for_period(closing_from: datetime=None, closing_to: datetime=None) -> dict:
     """
-    :return: user_runs_mapping is a dict that maps user.pk -> 
-             Percentage of plan used for this billing period. 
+    :return: user_runs_mapping is a dict that maps user.pk ->
+             Percentage of plan used for this billing period.
     """
     notification_type = NotificationType.objects.get(name="usage_warning")
     # TODO: In theory there is only one open invoice per user, but this needs to be verified, especially for teams
@@ -147,12 +146,12 @@ def calculate_usage_for_period(closing_from: datetime=None, closing_to: datetime
                 # If a run started before the current billing period, use inv.period_start as the beginning,
                 # as we only want to bill for usage that has occurred in this period.
                 run_duration = ((run.stop or timezone.now()) - max(inv.period_start, run.start)).total_seconds()
-    
+
                 # server_size_memory is in megabytes, so divide to get GB
                 # run_duration is in seconds, so divide to get hours
                 this_run_gb_hours = (run.server_size_memory / 1024) * (run_duration / 3600)
                 this_user_total += this_run_gb_hours
-        """
+        """ # noqa
 
         user_runs = ServerRunStatistics.objects.filter(Q(stop=None) | Q(stop__gte=inv.period_start),
                                                        owner=inv.customer.user).select_related('server')
@@ -161,12 +160,12 @@ def calculate_usage_for_period(closing_from: datetime=None, closing_to: datetime
                                                                       then=ExpressionWrapper((F('stop') - Greatest(
                                                                           F('start'), cust_start)) * F(
                                                                           'server_size_memory'),
-                                                                                             output_field=DurationField())),
+                                                                          output_field=DurationField())),
                                                                  When(stop__isnull=True,
                                                                       then=ExpressionWrapper((timezone.now() - Greatest(
                                                                           F('start'), cust_start)) * F(
                                                                           'server_size_memory'),
-                                                                                             output_field=DurationField())
+                                                                          output_field=DurationField())
                                                                       )
                                                                  ),
                                                             output_field=DurationField()))['usage']
@@ -256,4 +255,3 @@ def load_plans(fixture_path: str) -> List[Plan]:
             print_and_log(f"Plan {stripe_id} already exists in DB. Doing nothing.", log)
 
     return plans_created
-

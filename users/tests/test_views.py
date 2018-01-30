@@ -251,8 +251,7 @@ class UserTest(APITestCase):
                     "location": "Mars",
                     "company": "Anew Corp",
                     "timezone": "MARS"
-                    }
-                }
+                }}
         new_uuid = uuid4()
         url = reverse("user-detail", kwargs={'user': new_uuid,
                                              'version': settings.DEFAULT_VERSION})
@@ -271,8 +270,7 @@ class UserTest(APITestCase):
                     "location": "Mars",
                     "company": "Anew Corp",
                     "timezone": "MARS"
-                    }
-                }
+                }}
         url = reverse("user-detail", kwargs={'user': data['username'],
                                              'version': settings.DEFAULT_VERSION})
         response = self.admin_client.put(url, data=data)
@@ -479,7 +477,7 @@ class UserTest(APITestCase):
         out_mail = mail.outbox[0]
         self.assertEqual(len(out_mail.to), 1)
         self.assertEqual(out_mail.to[0], "test_user@example.com")
-        self.assertEqual(out_mail.subject, "Account activation on 3Blades")
+        self.assertEqual(out_mail.subject, "Account activation on IllumiDesk")
 
     def test_unconfirmed_user_cannot_login(self):
         send_register_request()

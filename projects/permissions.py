@@ -5,8 +5,8 @@ def has_project_permission(request, project):
     if project.private is False and request.method in permissions.SAFE_METHODS:
         return True
     if request.method in permissions.SAFE_METHODS:
-        return (request.user.has_perm('read_project', project)
-                or request.user.has_perm('write_project', project))
+        return (request.user.has_perm('read_project', project) or
+                request.user.has_perm('write_project', project))
     else:
         return request.user.has_perm('write_project', project)
 
