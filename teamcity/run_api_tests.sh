@@ -1,6 +1,5 @@
 set -e
 
-
 finish(){
     docker logs appbackend_test_1
 }
