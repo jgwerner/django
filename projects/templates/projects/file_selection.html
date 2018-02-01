@@ -1,0 +1,6 @@
+<form action="{{ action_url}}">
+  <ul>{% for project in projects %}
+    <li><a href="#">{{ project }}</a></li>
+    {% endfor %}</ul>
+  <button type="submit">Accept</button>
+</form>

@@ -3,11 +3,16 @@ from django.contrib.auth import get_user_model
 from django.db.models import Q
 from rest_framework import viewsets, status, permissions, exceptions
 from rest_framework.response import Response
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, authentication_classes, permission_classes, renderer_classes
+from rest_framework.generics import CreateAPIView
+from rest_framework.renderers import TemplateHTMLRenderer
 
 from base.views import NamespaceMixin, LookupByMultipleFields
+from base.utils import get_object_or_404
+from canvas.authorization import CanvasAuth
 from projects.serializers import (ProjectSerializer,
-                                  CollaboratorSerializer)
+                                  CollaboratorSerializer,
+                                  CloneGitProjectSerializer)
 from projects.models import Project, Collaborator
 from projects.permissions import ProjectPermission, ProjectChildPermission, has_project_permission
 from projects.utils import (has_copy_permission,
@@ -147,3 +152,28 @@ class ProjectMixin(LookupByMultipleFields):
 class CollaboratorViewSet(ProjectMixin, viewsets.ModelViewSet):
     queryset = Collaborator.objects.all()
     serializer_class = CollaboratorSerializer
+
+
+class CloneGitProject(CreateAPIView):
+    queryset = Project.objects.filter(is_active=True)
+    serializer_class = CloneGitProjectSerializer
+
+
+@api_view(['post'])
+@authentication_classes([CanvasAuth])
+@permission_classes([])
+def project_lti(request, *args, **kwargs):
+    project = get_object_or_404(Project, kwargs.get('project_project'), is_active=True)
+    return Response({'project': project.name, 'data': request.data})
+
+
+@api_view(['post'])
+@authentication_classes([CanvasAuth])
+@permission_classes([])
+@renderer_classes([TemplateHTMLRenderer])
+def file_selection(request, *args, **kwargs):
+    context = {
+        'prjects': Project.objects.filter(collaborator__user=request.user),
+        'action_url': request.data['content_item_return_url'],
+    }
+    return Response(context, template_name='projects/file_selection.html')

@@ -86,6 +86,7 @@ urlpatterns = [
     url(r'^lti.xml$', CanvasXML.as_view(), name='canvas-xml'),
     url(r'^lti/$', Auth.as_view(), name='lti-auth'),
     url(r'^me/$', user_views.me, name="me"),
+    url(r'^projects/lti/select/$', project_views.file_selection, name='project-file-select'),
     url(r'^(?P<namespace>[\w-]+)/search/$', SearchView.as_view(), name='search'),
     url(r'^actions/', include('actions.urls')),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server_server>[^/.]+)/internal/(?P<service>[^/.]+)/$',
@@ -96,9 +97,11 @@ urlpatterns = [
         name='trigger-start'),
     url(r'^(?P<namespace>[\w-]+)/triggers/(?P<trigger>[\w-]+)/stop/$', trigger_views.stop,
         name='trigger-stop'),
+    url(r'^(?P<namespace>[\w-]+)/projects/git-clone/$', project_views.CloneGitProject.as_view(), name='git-clone'),
     url(r'^(?P<namespace>[\w-]+)/projects/project-copy-check/$',
         project_views.project_copy_check, name='project-copy-check'),
     url(r'^(?P<namespace>[\w-]+)/projects/project-copy/$', project_views.project_copy, name='project-copy'),
+    url(r'^(?P<namespace>[\w-]+)/projects/git-clone/$', project_views.CloneGitProject.as_view(), name='git-clone'),
     url(r'^(?P<namespace>[\w-]+)/', include(router.urls)),
     url(r'^(?P<namespace>[\w-]+)/', include(project_router.urls)),
     url(r'^(?P<namespace>[\w-]+)/', include(server_router.urls)),
@@ -114,6 +117,7 @@ urlpatterns = [
     url(r'^', include(teams_sub_router.urls)),
     url(r'^(?P<namespace>[\w-]+)/service/(?P<server>[^/.]+)/trigger/(?P<pk>[^/.]+)/call/$',
         trigger_views.call_trigger, name='server-trigger-call'),
+    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/lti/$', project_views.project_lti, name='project-lti'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/start/$',
         servers_views.start, name='server-start'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/stop/$',
@@ -156,7 +160,6 @@ def handler404(request):
 @api_view()
 def handler500(request):
     raise APIException(detail="Internal Server Error", code=500)
-
 
 
 urlpatterns += [
