@@ -172,8 +172,22 @@ def project_lti(request, *args, **kwargs):
 @permission_classes([])
 @renderer_classes([TemplateHTMLRenderer])
 def file_selection(request, *args, **kwargs):
+    projects = Project.objects.filter(collaborator__user=request.user, is_active=True)
+
+    def iterate_dir(directory):
+        for item in directory.iterdir():
+            if item.is_dir() and not str(item).startswith('.'):
+                iterate_dir(item)
+            yield item
+
+    projects = [{
+        'name': project.name,
+        'files': [
+            {'path': f, 'url': ''}
+            for f in iterate_dir(project.resource_root())]
+    }for project in projects]
     context = {
-        'prjects': Project.objects.filter(collaborator__user=request.user),
+        'projects': projects,
         'action_url': request.data['content_item_return_url'],
     }
     return Response(context, template_name='projects/file_selection.html')

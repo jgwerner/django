@@ -1,3 +1,4 @@
+from unittest.mock import patch
 from django.urls import reverse
 from django.conf import settings
 from django.contrib.auth.models import Permission
@@ -429,6 +430,14 @@ class ProjectTest(ProjectTestMixin, APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['id'], str(public_project.pk))
+
+    @patch('canvas.authorization.CanvasAuth.authenticate')
+    def test_file_selection(self, authenticate):
+        CollaboratorFactory(user=self.user)
+        authenticate.return_value = (self.user, None)
+        url = reverse('project-file-select', kwargs={'version': settings.DEFAULT_VERSION})
+        resp = self.client.post(url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
 
 
 class ProjectTestWithName(ProjectTestMixin, APITestCase):

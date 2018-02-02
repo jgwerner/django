@@ -1,6 +1,76 @@
-<form action="{{ action_url}}">
-  <ul>{% for project in projects %}
-    <li><a href="#">{{ project }}</a></li>
-    {% endfor %}</ul>
-  <button type="submit">Accept</button>
-</form>
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <style type="text/css" media="all">
+      * {
+        margin: 0;
+        padding: 0;
+        -webkit-box-sizing: border-box;
+        -moz-box-sizing: border-box;
+        box-sizing: border-box;
+      }
+
+      html {
+        text-size-adjust: 100%;
+      }
+
+      form {
+        margin:25px;
+        width:350px;
+        padding:1em;
+      }
+      li {
+        margin-left:5px;
+         list-style:none; 
+      }
+
+      a {
+        display:block;
+        text-decoration: none;
+        color: #5c7f00;
+      }
+
+      form ul li {
+        line-height:2em;
+      }
+      form ul ul a {
+        margin-left:15px;
+      }
+
+      form ul ul ul a {
+        margin-left:30px;
+      }
+
+      button {
+        background-color: #5c7f00;
+        padding: 0.7rem 2rem;
+        border: 1px solid #d0d3d8;
+        border-radius: 3px;
+        color: #fff;
+        transition: all 0.15s;
+        font-weight: 500;
+        font-size: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <form action="{{ action_url}}">
+      <h2>Projects:</h2>
+      <ul>{% for project in projects %}
+        <li><a href="#">{{ project.name }}</a>
+          <ul style="visibility: hidden;">{% for file in project.files %}
+            <li><input type="checkbox" value="{{ file.url }}"> {{ file.path }}</li>
+          {% endfor %}</ul>
+        </li>
+        {% endfor %}</ul>
+      <button type="submit">Accept</button>
+    </form>
+  <script type="text/javascript">
+    (function() {
+
+    }());
+  </script>
+  </body>
+</html>
+
