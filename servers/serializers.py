@@ -1,7 +1,6 @@
 import uuid
 import logging
 from django.conf import settings
-from django.contrib.sites.shortcuts import get_current_site
 from rest_framework import serializers
 from guardian.shortcuts import assign_perm, remove_perm
 
@@ -17,6 +16,7 @@ from servers.models import (ServerSize, Server,
                             Framework)
 from projects.models import Project, Collaborator
 from projects.serializers import ProjectSerializer
+from .utils import get_server_url
 log = logging.getLogger('servers')
 
 
@@ -112,7 +112,7 @@ class ServerSerializer(SearchSerializerMixin, BaseServerSerializer):
         return super().update(instance, validated_data)
 
     def get_endpoint(self, obj):
-        base_url = self._get_url(obj, scheme='https' if self._is_secure else 'http', url='/endpoint{}'.format(
+        base_url = self._get_url(obj, 'https' if self._is_secure else 'http', '/endpoint{}'.format(
             settings.SERVER_ENDPOINT_URLS.get(obj.get_type(), '/')))
 
         if obj.access_token == "":
@@ -122,22 +122,15 @@ class ServerSerializer(SearchSerializerMixin, BaseServerSerializer):
         return base_url
 
     def get_logs_url(self, obj):
-        return self._get_url(obj, scheme='wss' if self._is_secure else 'ws', url='/logs/')
+        return self._get_url(obj, 'wss' if self._is_secure else 'ws', '/logs/')
 
     def get_status_url(self, obj):
-        return self._get_url(obj, scheme='wss' if self._is_secure else 'ws', url='/status/')
+        return self._get_url(obj, 'wss' if self._is_secure else 'ws', '/status/')
 
-    def _get_url(self, obj, **kwargs):
+    def _get_url(self, obj, scheme, url):
         version = self.context['view'].kwargs.get('version', settings.DEFAULT_VERSION)
         request = self.context['request']
-        return '{scheme}://{host}/{version}/{namespace}/projects/{project_id}/servers/{id}{url}'.format(
-            host=get_current_site(request).domain,
-            version=version,
-            namespace=request.namespace.name,
-            project_id=obj.project_id,
-            id=obj.id,
-            **kwargs
-        )
+        return get_server_url(obj, scheme, url, request=request, version=version)
 
     @property
     def _is_secure(self):

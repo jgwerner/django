@@ -1,4 +1,7 @@
 import logging
+import json
+from urllib.parse import quote
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 from rest_framework import viewsets, status, permissions, exceptions
@@ -10,6 +13,7 @@ from rest_framework.renderers import TemplateHTMLRenderer
 from base.views import NamespaceMixin, LookupByMultipleFields
 from base.utils import get_object_or_404
 from canvas.authorization import CanvasAuth
+from servers.utils import get_server_url
 from projects.serializers import (ProjectSerializer,
                                   CollaboratorSerializer,
                                   CloneGitProjectSerializer)
@@ -167,27 +171,57 @@ def project_lti(request, *args, **kwargs):
     return Response({'project': project.name, 'data': request.data})
 
 
-@api_view(['post'])
+@api_view(['post', 'get'])
 @authentication_classes([CanvasAuth])
 @permission_classes([])
 @renderer_classes([TemplateHTMLRenderer])
 def file_selection(request, *args, **kwargs):
+    print(request.data)
     projects = Project.objects.filter(collaborator__user=request.user, is_active=True)
 
     def iterate_dir(directory):
         for item in directory.iterdir():
-            if item.is_dir() and not str(item).startswith('.'):
-                iterate_dir(item)
-            yield item
+            if item.name.startswith('.'):
+                continue
+            if item.is_dir():
+                yield from iterate_dir(item)
+            else:
+                yield item
 
-    projects = [{
-        'name': project.name,
-        'files': [
-            {'path': f, 'url': ''}
-            for f in iterate_dir(project.resource_root())]
-    }for project in projects]
+    projects_context = []
+    for project in projects:
+        workspace = project.servers.filter(config__type='jupyter').first()
+        scheme = 'https' if settings.HTTPS else 'http'
+        endpoint = get_server_url(workspace, scheme, '/endpoint/proxy/lab/tree/', namespace=project.owner.username)
+        project_root = project.resource_root()
+        files = []
+        for f in iterate_dir(project_root):
+            path = str(f.relative_to(project_root))
+            quoted = quote(path, safe='')
+            url = f'{endpoint}{quoted}?access_token={workspace.access_token}'
+            files.append({
+                'path': path,
+                'content_items': json.dumps({
+                    "@context": "http://purl.imsglobal.org/ctx/lti/v1/ContentItem",
+                    "@graph": [{
+                        "@type": "LtiLinkItem",
+                        "@id": url,
+                        "url": url,
+                        "title": f.name,
+                        "text": f.name,
+                        "mediaType": "application/vnd.ims.lti.v1.ltilink",
+                        "placementAdvice": {"presentationDocumentTarget": "frame"}
+                    }]
+                })
+            })
+        projects_context.append({
+            'name': project.name,
+            'files': files
+        })
+
     context = {
-        'projects': projects,
+        'lti_version': request.data['lti_version'],
+        'projects': projects_context,
         'action_url': request.data['content_item_return_url'],
     }
     return Response(context, template_name='projects/file_selection.html')

@@ -17,7 +17,6 @@
 
       form {
         margin:25px;
-        width:350px;
         padding:1em;
       }
       li {
@@ -52,15 +51,26 @@
         font-weight: 500;
         font-size: 1rem;
       }
+
+      label {
+        color: #5c7f00;
+      }
     </style>
   </head>
   <body>
-    <form action="{{ action_url}}">
+    <form action="{{ action_url}}" name="fileForm" method="post">
+      <input type="hidden" value="ContentItemSelection" name="lti_message_type" />
+      <input type="hidden" value="{{ lti_version }}" name="lti_version" />
       <h2>Projects:</h2>
       <ul>{% for project in projects %}
-        <li><a href="#">{{ project.name }}</a>
-          <ul style="visibility: hidden;">{% for file in project.files %}
-            <li><input type="checkbox" value="{{ file.url }}"> {{ file.path }}</li>
+        <li><a href="#" class="directory">{{ project.name }}</a>
+          <ul style="display: none;">{% for file in project.files %}
+            <li>
+              <label>
+                <input type="radio" id="url" value="{{ file.content_items|escape }}" name="content_items" />
+                {{ file.path }}
+              </label>
+            </li>
           {% endfor %}</ul>
         </li>
         {% endfor %}</ul>
@@ -68,7 +78,16 @@
     </form>
   <script type="text/javascript">
     (function() {
-
+      document.querySelectorAll('.directory').forEach(function(item) {
+        item.onclick = function (e) {
+          var fileList = e.target.parentElement.lastElementChild;
+          if (fileList.style.display === "none") {
+            fileList.style.display = "block";
+          } else {
+            fileList.style.display = "none";
+          }
+        }
+      });
     }());
   </script>
   </body>
