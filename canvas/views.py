@@ -23,7 +23,7 @@ class CanvasXML(views.APIView):
         domain = get_current_site(request).domain
         url = f"{scheme}://{domain}"
         return Response([
-            {'name': 'blti:title',  'value': 'IllumiDesk'},
+            {'name': 'blti:title', 'value': 'IllumiDesk'},
             {'name': 'blti:description', 'value': ""},
             {'name': 'blti:launch_url', 'value': f"{url}/v1/lti.xml"},
             {
@@ -93,6 +93,10 @@ class Auth(views.APIView):
     parser_classes = (FormParser,)
 
     def post(self, request, **kwargs):
+        user = request.user
+        if 'canvas_user_id' not in user.profile.config:
+            user.profile.config['canvas_user_id'] = request.data['user_id']
+            user.profile.save()
         return HttpResponseRedirect(settings.LOGIN_REDIRECT_URL)
 
 

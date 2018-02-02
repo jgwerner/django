@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 from django.contrib.auth.validators import UnicodeUsernameValidator
+from django.contrib.postgres.fields import JSONField
 from django.conf import settings
 from django.db import models, IntegrityError
 from django.contrib.auth.models import AbstractUser, UserManager
@@ -68,6 +69,7 @@ class UserProfile(models.Model):
     last_login_ip = models.CharField(max_length=20, blank=True, null=True)
     login_count = models.IntegerField(blank=True, null=True)
     timezone = models.CharField(db_column='Timezone', max_length=20, blank=True, null=True)
+    config = JSONField(default={})
 
     def resource_root(self):
         return Path(settings.RESOURCE_DIR, self.user.username)

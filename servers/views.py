@@ -2,6 +2,7 @@ import logging
 import json
 import requests
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.db.models import Sum, Max, F
 from django.db.models.functions import Coalesce, Now
 from django.shortcuts import redirect
@@ -30,6 +31,7 @@ from .utils import get_server_usage, get_server_url
 
 log = logging.getLogger('servers')
 jwt_response_payload_handler = api_settings.JWT_RESPONSE_PAYLOAD_HANDLER
+User = get_user_model()
 
 
 class ServerViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
@@ -260,6 +262,11 @@ class SNSView(views.APIView):
 @authentication_classes([CanvasAuth])
 @permission_classes([])
 def lti_file_handler(request, *args, **kwargs):
+    canvas_user_id = request.data['user_id']
+    if canvas_user_id != request.user.profile.config.get('canvas_user_id', ''):
+        user = User.objects.filter(profile__config__canvas_user_id=canvas_user_id).first()
+        # TODO: create user if don't exist and copy project
+        # if user exists then find proper workspace and redirect there
     scheme = 'https' if settings.HTTPS else 'http'
     workspace = get_object_or_404(models.Server, kwargs.get('server'))
     endpoint = get_server_url(workspace, scheme, '/endpoint/proxy/lab/tree/', request=request)
