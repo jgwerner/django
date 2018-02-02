@@ -38,7 +38,7 @@ class CanvasXML(views.APIView):
                     {
                         'name': 'lticm:property',
                         'kwargs': {'name': 'domain'},
-                        'value': f"{domain}"
+                        'value': f"{domain.split(':')[0]}"
                     },
                     {
                         'name': 'lticm:options',

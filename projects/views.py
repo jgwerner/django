@@ -13,7 +13,6 @@ from rest_framework.renderers import TemplateHTMLRenderer
 from base.views import NamespaceMixin, LookupByMultipleFields
 from base.utils import get_object_or_404
 from canvas.authorization import CanvasAuth
-from servers.utils import get_server_url
 from projects.serializers import (ProjectSerializer,
                                   CollaboratorSerializer,
                                   CloneGitProjectSerializer)
@@ -22,6 +21,7 @@ from projects.permissions import ProjectPermission, ProjectChildPermission, has_
 from projects.utils import (has_copy_permission,
                             perform_project_copy,
                             check_project_name_exists)
+from servers.utils import get_server_url
 from teams.permissions import TeamGroupPermission
 
 User = get_user_model()
@@ -171,12 +171,11 @@ def project_lti(request, *args, **kwargs):
     return Response({'project': project.name, 'data': request.data})
 
 
-@api_view(['post', 'get'])
+@api_view(['post'])
 @authentication_classes([CanvasAuth])
 @permission_classes([])
 @renderer_classes([TemplateHTMLRenderer])
 def file_selection(request, *args, **kwargs):
-    print(request.data)
     projects = Project.objects.filter(collaborator__user=request.user, is_active=True)
 
     def iterate_dir(directory):
@@ -191,14 +190,13 @@ def file_selection(request, *args, **kwargs):
     projects_context = []
     for project in projects:
         workspace = project.servers.filter(config__type='jupyter').first()
-        scheme = 'https' if settings.HTTPS else 'http'
-        endpoint = get_server_url(workspace, scheme, '/endpoint/proxy/lab/tree/', namespace=project.owner.username)
         project_root = project.resource_root()
         files = []
         for f in iterate_dir(project_root):
             path = str(f.relative_to(project_root))
             quoted = quote(path, safe='')
-            url = f'{endpoint}{quoted}?access_token={workspace.access_token}'
+            scheme = 'https' if settings.HTTPS else 'http'
+            url = get_server_url(workspace, scheme, f"/{quoted}", namespace=project.owner.username)
             files.append({
                 'path': path,
                 'content_items': json.dumps({
