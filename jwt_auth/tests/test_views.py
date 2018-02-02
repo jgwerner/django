@@ -3,6 +3,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from users.tests.factories import UserFactory
 
+
 class TestJWTViews(APITestCase):
     def setUp(self):
         self.user = UserFactory(username='test', password='foo')

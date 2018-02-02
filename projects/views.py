@@ -57,7 +57,7 @@ class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewS
             projects = projects.filter(Q(private=False) | Q(collaborator__user=self.request.user))
         return projects
 
-    def _update(self, request, partial,  *args, **kwargs):
+    def _update(self, request, partial, *args, **kwargs):
         instance = self.get_object()
         user = request.user
 

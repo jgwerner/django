@@ -640,6 +640,7 @@ class CollaboratorTest(ProjectTestMixin, APITestCase):
 
     def test_get_collaborator(self):
         collab = CollaboratorFactory(user=self.user)
+        servers = ServerFactory.create_batch(5, project=collab.project)
         assign_perm('write_project', self.user, collab.project)
         assign_perm('read_project', self.user, collab.project)
 
@@ -652,6 +653,8 @@ class CollaboratorTest(ProjectTestMixin, APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['username'], self.user.username)
         self.assertEqual(response.data['id'], str(collab.id))
+        self.assertIn('servers', response.data)
+        self.assertEqual(5, len(response.data['servers']))
 
     def test_delete_collaborator(self):
         my_collab = CollaboratorFactory(user=self.user)

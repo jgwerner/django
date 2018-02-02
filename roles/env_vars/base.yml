@@ -1,7 +1,7 @@
 ---
 
-project_name: 3Blades
-application_name: threeblades
+project_name: IllumiDesk
+application_name: illumidesk
 virtualenv_dir: /vagrant/venv3
 app_dir: /vagrant
 home_dir: /home/ubuntu

@@ -49,17 +49,32 @@ class ServerTest(APITestCase):
         self.assertEqual(
             response.data['endpoint'],
             ('http://example.com/{version}/{namespace}/projects/{project_id}'
-             '/servers/{server_id}/endpoint/proxy/').format(
+             '/servers/{server_id}/endpoint/proxy/?access_token={server_token}').format(
                 version=settings.DEFAULT_VERSION,
                 namespace=self.user.username,
                 project_id=self.project.pk,
                 server_id=db_server.id,
+                server_token=db_server.access_token
             )
         )
+        self.assertTrue(self.user.has_perm('start_server', db_server))
+        self.assertTrue(self.user.has_perm('stop_server', db_server))
         self.assertEqual(Server.objects.count(), 1)
         self.assertEqual(db_server.name, data['name'])
         self.assertEqual(db_server.server_size, self.server_size)
         self.assertEqual(db_server.server_size.name, 'Nano')
+
+    def test_create_second_notebook_server(self):
+        ServerFactory(project=self.project, config={'type': 'jupyter'}, created_by=self.user)
+        url = reverse('server-list', kwargs=self.url_kwargs)
+        data = dict(
+            name='test',
+            project=str(self.project.pk),
+            connected=[],
+            config={'type': 'jupyter'},
+        )
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_server_with_same_name_as_deleted_server(self):
         url = reverse("server-list", kwargs=self.url_kwargs)
@@ -163,6 +178,22 @@ class ServerTest(APITestCase):
         db_server = Server.objects.get(pk=server.pk)
         self.assertEqual(db_server.name, data['name'])
 
+    def test_server_update_permissions(self):
+        server = ServerFactory(project=self.project, created_by=self.user)
+        assign_perm('write_project', self.user, self.project)
+        self.url_kwargs.update({
+            'server': str(server.pk)
+        })
+        url = reverse('server-detail', kwargs=self.url_kwargs)
+        data = dict(permissions=['read_server', 'start_server'])
+        response = self.client.patch(url, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        db_server = Server.objects.get(pk=server.pk)
+        self.assertTrue(self.user.has_perm('read_server', db_server))
+        self.assertTrue(self.user.has_perm('start_server', db_server))
+        self.assertFalse(self.user.has_perm('write_server', db_server))
+        self.assertFalse(self.user.has_perm('stop_server', db_server))
+
     def test_server_delete(self):
         server = ServerFactory(project=self.project)
         assign_perm('write_project', self.user, self.project)
@@ -183,7 +214,7 @@ class ServerTest(APITestCase):
         url = reverse('server_internal', kwargs={'server_server': server.pk, 'service': 'jupyter', **self.url_kwargs})
         server.access_token = create_server_jwt(self.user, str(server.pk))
         server.save()
-        response = self.client.get(url)
+        response = self.client.get(url, {'access_token': server.access_token})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         server_ip = server.get_private_ip()
         expected = f"{server_ip}:1234"
@@ -291,7 +322,7 @@ class ServerTestWithName(APITestCase):
         self.assertEqual(
             response.data['endpoint'],
             ('http://example.com/{version}/{namespace}/projects/{project_id}'
-             '/servers/{server_id}/endpoint/proxy/').format(
+             '/servers/{server_id}/endpoint/proxy/?access_token={server_token}').format(
                 version=settings.DEFAULT_VERSION,
                 namespace=self.user.username,
                 project_id=self.project.pk,

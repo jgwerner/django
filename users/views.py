@@ -78,8 +78,8 @@ class UserViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
         request_user = self.request.user
         kwargs_user = self.kwargs.get("user")
         return (request_user.is_staff or
-                str(request_user.pk) == kwargs_user
-                or request_user.username == kwargs_user)
+                str(request_user.pk) == kwargs_user or
+                request_user.username == kwargs_user)
 
     def destroy(self, request, *args, **kwargs):
         if self._check_for_permission_to_destroy():

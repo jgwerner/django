@@ -151,6 +151,9 @@ class Plan(StripeModel):
     statement_descriptor = models.TextField(null=True)
     trial_period_days = models.PositiveIntegerField(null=True)
 
+    def __str__(self):
+        return self.name
+
     @property
     def namespace_name(self):
         return self.subscription_set.first().namespace_name

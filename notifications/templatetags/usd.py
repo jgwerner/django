@@ -15,4 +15,5 @@ def usd(value):
 
     return value_str
 
+
 register.filter("usd", usd)

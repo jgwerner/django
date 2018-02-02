@@ -63,7 +63,7 @@ jobs:
 
 env:
   global:
-    - DOCKER_IMAGE_NAME="3blades/app-backend"
+    - DOCKER_IMAGE_NAME="illumidesk/app-backend"
     - DOCKER_COMPOSE_VERSION=1.16.1
 # tells travis to run two builds, one for api tests and one for unit tests
   matrix:

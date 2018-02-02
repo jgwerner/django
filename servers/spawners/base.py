@@ -163,7 +163,12 @@ class TraefikMixin:
     def _get_traefik_labels(self) -> Dict[str, str]:
         logger.info("Getting traefik labels")
         labels = {"traefik.enable": "true"}
-        server_uri = f"/{settings.DEFAULT_VERSION}/{self.server.project.owner.username}/projects/{self.server.project_id}/servers/{self.server.id}/endpoint/"
+        server_uri = ''.join([
+            f"/{settings.DEFAULT_VERSION}",
+            f"/{self.server.project.owner.username}",
+            f"/projects/{self.server.project_id}",
+            f"/servers/{self.server.id}/endpoint/"
+        ])
         domain = Site.objects.get_current().domain
         scheme = 'https' if settings.HTTPS else 'http'
         for port in self._get_exposed_ports():

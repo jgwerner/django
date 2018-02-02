@@ -220,7 +220,7 @@ USE_L10N = True
 
 USE_TZ = True
 
-SITE_ID = 'c66d1616-09a7-4594-8c6d-2e1c1ba5fe3b'
+SITE_ID = os.environ.get('SITE_ID', 'c66d1616-09a7-4594-8c6d-2e1c1ba5fe3b')
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.10/howto/static-files/
@@ -276,7 +276,7 @@ REST_FRAMEWORK = {
 
 DJOSER = {
     'DOMAIN': os.getenv("TBS_DOMAIN"),
-    'SITE_NAME': "3Blades",
+    'SITE_NAME': "IllumiDesk",
     'PASSWORD_RESET_CONFIRM_URL': "auth/password-reset?uid={uid}&token={token}",
     'SERIALIZERS': {'user': "users.serializers.UserSerializer",
                     'user_registration': "users.serializers.UserSerializer",

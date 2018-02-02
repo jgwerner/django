@@ -47,7 +47,7 @@ services:
       - broker
     entrypoint: ''
   db:
-    image: postgres:alpine
+    image: postgres:9.6-alpine
     ports:
       - "5432"
   broker:

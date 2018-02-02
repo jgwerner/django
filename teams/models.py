@@ -49,6 +49,10 @@ class Team(TimeStampedModel):
     def is_member(self, user):
         return self.members.filter(pk=user.pk).exists()
 
+    @property
+    def owner(self):
+        return User.objects.filter(team_groups__team=self, team_groups__name="owners").first()
+
 
 class Group(MP_Node):
     NATURAL_KEY = 'name'
