@@ -27,6 +27,7 @@ from triggers import views as trigger_views
 from teams import views as team_views
 from billing import views as billing_views
 from search.views import SearchView
+from canvas.views import CanvasXML, Auth, ApplicationViewSet
 
 router = routers.SimpleRouter()
 
@@ -78,9 +79,14 @@ my_teams_sub_router.register(r'groups', team_views.GroupViewSet, base_name='my-g
 servers_router = routers.SimpleRouter()
 servers_router.register("options/server-size", servers_views.ServerSizeViewSet)
 
+router.register('oauth/applications', ApplicationViewSet)
+
 
 urlpatterns = [
+    url(r'^lti.xml$', CanvasXML.as_view(), name='canvas-xml'),
+    url(r'^lti/$', Auth.as_view(), name='lti-auth'),
     url(r'^me/$', user_views.me, name="me"),
+    url(r'^projects/lti/select/$', project_views.file_selection, name='project-file-select'),
     url(r'^(?P<namespace>[\w-]+)/search/$', SearchView.as_view(), name='search'),
     url(r'^actions/', include('actions.urls')),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server_server>[^/.]+)/internal/(?P<service>[^/.]+)/$', # noqa
@@ -91,9 +97,11 @@ urlpatterns = [
         name='trigger-start'),
     url(r'^(?P<namespace>[\w-]+)/triggers/(?P<trigger>[\w-]+)/stop/$', trigger_views.stop,
         name='trigger-stop'),
+    url(r'^(?P<namespace>[\w-]+)/projects/git-clone/$', project_views.CloneGitProject.as_view(), name='git-clone'),
     url(r'^(?P<namespace>[\w-]+)/projects/project-copy-check/$',
         project_views.project_copy_check, name='project-copy-check'),
     url(r'^(?P<namespace>[\w-]+)/projects/project-copy/$', project_views.project_copy, name='project-copy'),
+    url(r'^(?P<namespace>[\w-]+)/projects/git-clone/$', project_views.CloneGitProject.as_view(), name='git-clone'),
     url(r'^(?P<namespace>[\w-]+)/', include(router.urls)),
     url(r'^(?P<namespace>[\w-]+)/', include(project_router.urls)),
     url(r'^(?P<namespace>[\w-]+)/', include(server_router.urls)),
@@ -109,6 +117,7 @@ urlpatterns = [
     url(r'^', include(teams_sub_router.urls)),
     url(r'^(?P<namespace>[\w-]+)/service/(?P<server>[^/.]+)/trigger/(?P<pk>[^/.]+)/call/$',
         trigger_views.call_trigger, name='server-trigger-call'),
+    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/lti/$', project_views.project_lti, name='project-lti'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/start/$',
         servers_views.start, name='server-start'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/stop/$',
@@ -125,6 +134,8 @@ urlpatterns = [
         servers_views.check_token, name='server-auth'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/deployments/(?P<deployment>[^/.]+)/deploy/$',
         servers_views.deploy_deployment, name='deploy'),
+    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/(?P<path>[^/.]+)',
+        servers_views.lti_file_handler, name='lti-file'),
     url(r'^servers/', include(servers_router.urls)),
     url(r'^webhooks/incoming/billing/invoice_created/$', billing_views.stripe_invoice_created,
         name='stripe-invoice-created'),

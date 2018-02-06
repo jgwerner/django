@@ -6,6 +6,7 @@ from rest_framework import serializers
 from base.serializers import SearchSerializerMixin
 from projects.models import Project, Collaborator
 from .utils import create_ancillary_project_stuff, check_project_name_exists
+from .tasks import clone_git_repo
 from servers.utils import stop_all_servers_for_project
 from servers.models import Server
 
@@ -102,3 +103,16 @@ class CollaboratorSerializer(serializers.ModelSerializer):
             if updated:
                 stop_all_servers_for_project(project)
         return super().update(instance, validated_data)
+
+
+class CloneGitProjectSerializer(ProjectSerializer):
+    url = serializers.URLField(write_only=True)
+
+    class Meta(ProjectSerializer.Meta):
+        fields = ProjectSerializer.Meta.fields + ('url',)
+
+    def create(self, validated_data):
+        url = validated_data.pop('url')
+        project = super().create(validated_data)
+        clone_git_repo.delay(url, str(project.resource_root()))
+        return project

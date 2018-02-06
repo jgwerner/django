@@ -1,6 +1,9 @@
 from datetime import datetime
 from django.db.models import Sum, Max, F, Count
 from django.db.models.functions import Coalesce, Now, Greatest
+from django.contrib.sites.shortcuts import get_current_site
+from django.contrib.sites.models import Site
+from django.conf import settings
 from projects.models import Project
 from servers.models import ServerRunStatistics, Server
 from servers.tasks import stop_server
@@ -33,3 +36,11 @@ def stop_all_servers_for_project(project: Project):
     servers = Server.objects.filter(project=project)
     for server in servers:
         stop_server(str(server.pk))
+
+
+def get_server_url(server, scheme, url, request=None, namespace=None, version=settings.DEFAULT_VERSION):
+    site = get_current_site(request) if request else Site.objects.get_current()
+    namespace = request.namespace.name if request else namespace
+    if namespace is None:
+        raise ValueError("Namespace can't be None")
+    return f'{scheme}://{site.domain}/{version}/{namespace}/projects/{server.project_id}/servers/{server.id}{url}'

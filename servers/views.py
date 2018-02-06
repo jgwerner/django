@@ -1,10 +1,13 @@
 import logging
 import json
 import requests
+from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.db.models import Sum, Max, F
 from django.db.models.functions import Coalesce, Now
+from django.shortcuts import redirect
 from rest_framework import status, viewsets, views
-from rest_framework.decorators import api_view, permission_classes, renderer_classes, list_route
+from rest_framework.decorators import api_view, permission_classes, renderer_classes, list_route, authentication_classes
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -14,6 +17,7 @@ from base.views import LookupByMultipleFields
 from base.permissions import IsAdminUser
 from base.utils import get_object_or_404
 from base.renderers import PlainTextRenderer
+from canvas.authorization import CanvasAuth
 from projects.permissions import ProjectChildPermission
 from jwt_auth.views import JWTApiView
 from jwt_auth.serializers import VerifyJSONWebTokenServerSerializer
@@ -23,10 +27,11 @@ from .consumers import ServerStatusConsumer
 from .tasks import start_server, stop_server, terminate_server, deploy, delete_deployment
 from .permissions import ServerChildPermission, ServerActionPermission
 from . import serializers, models
-from .utils import get_server_usage
+from .utils import get_server_usage, get_server_url
 
 log = logging.getLogger('servers')
 jwt_response_payload_handler = api_settings.JWT_RESPONSE_PAYLOAD_HANDLER
+User = get_user_model()
 
 
 class ServerViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
@@ -251,3 +256,20 @@ class SNSView(views.APIView):
             if models.Server.objects.filter(is_active=True, pk=server_id).exists():
                 ServerStatusConsumer.update_status(server_id, message['detail']['desiredStatus'])
         return Response({"message": "OK"})
+
+
+@api_view(['post'])
+@authentication_classes([CanvasAuth])
+@permission_classes([])
+def lti_file_handler(request, *args, **kwargs):
+    canvas_user_id = request.data['user_id']
+    if canvas_user_id != request.user.profile.config.get('canvas_user_id', ''):
+        user = User.objects.filter(profile__config__canvas_user_id=canvas_user_id).first()
+        # TODO: create user if don't exist and copy project
+        # if user exists then find proper workspace and redirect there
+    scheme = 'https' if settings.HTTPS else 'http'
+    workspace = get_object_or_404(models.Server, kwargs.get('server'))
+    endpoint = get_server_url(workspace, scheme, '/endpoint/proxy/lab/tree/', request=request)
+    path = kwargs.get('path')
+    url = f'{endpoint}{path}?access_token={workspace.access_token}'
+    return redirect(url)

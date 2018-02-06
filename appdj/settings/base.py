@@ -69,7 +69,8 @@ INSTALLED_APPS = [
     'triggers',
     'jwt_auth',
     'search',
-    'teams'
+    'teams',
+    'canvas',
 ]
 
 MIDDLEWARE = [

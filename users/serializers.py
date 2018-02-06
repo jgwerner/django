@@ -16,7 +16,7 @@ log = logging.getLogger('users')
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
-        fields = ('bio', 'url', 'location', 'company', 'timezone', 'avatar')
+        fields = ('bio', 'url', 'location', 'company', 'timezone', 'avatar', 'config')
         read_only_fields = ('avatar',)
 
     def to_representation(self, instance):

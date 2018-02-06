@@ -1,18 +1,27 @@
 import logging
+import json
+from urllib.parse import quote
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 from rest_framework import viewsets, status, permissions, exceptions
 from rest_framework.response import Response
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, authentication_classes, permission_classes, renderer_classes
+from rest_framework.generics import CreateAPIView
+from rest_framework.renderers import TemplateHTMLRenderer
 
 from base.views import NamespaceMixin, LookupByMultipleFields
+from base.utils import get_object_or_404
+from canvas.authorization import CanvasAuth
 from projects.serializers import (ProjectSerializer,
-                                  CollaboratorSerializer)
+                                  CollaboratorSerializer,
+                                  CloneGitProjectSerializer)
 from projects.models import Project, Collaborator
 from projects.permissions import ProjectPermission, ProjectChildPermission, has_project_permission
 from projects.utils import (has_copy_permission,
                             perform_project_copy,
                             check_project_name_exists)
+from servers.utils import get_server_url
 from teams.permissions import TeamGroupPermission
 
 User = get_user_model()
@@ -147,3 +156,70 @@ class ProjectMixin(LookupByMultipleFields):
 class CollaboratorViewSet(ProjectMixin, viewsets.ModelViewSet):
     queryset = Collaborator.objects.all()
     serializer_class = CollaboratorSerializer
+
+
+class CloneGitProject(CreateAPIView):
+    queryset = Project.objects.filter(is_active=True)
+    serializer_class = CloneGitProjectSerializer
+
+
+@api_view(['post'])
+@authentication_classes([CanvasAuth])
+@permission_classes([])
+def project_lti(request, *args, **kwargs):
+    project = get_object_or_404(Project, kwargs.get('project_project'), is_active=True)
+    return Response({'project': project.name, 'data': request.data})
+
+
+@api_view(['post'])
+@authentication_classes([CanvasAuth])
+@permission_classes([])
+@renderer_classes([TemplateHTMLRenderer])
+def file_selection(request, *args, **kwargs):
+    projects = Project.objects.filter(collaborator__user=request.user, is_active=True)
+
+    def iterate_dir(directory):
+        for item in directory.iterdir():
+            if item.name.startswith('.'):
+                continue
+            if item.is_dir():
+                yield from iterate_dir(item)
+            else:
+                yield item
+
+    projects_context = []
+    for project in projects:
+        workspace = project.servers.filter(config__type='jupyter').first()
+        project_root = project.resource_root()
+        files = []
+        for f in iterate_dir(project_root):
+            path = str(f.relative_to(project_root))
+            quoted = quote(path, safe='')
+            scheme = 'https' if settings.HTTPS else 'http'
+            url = get_server_url(workspace, scheme, f"/{quoted}", namespace=project.owner.username)
+            files.append({
+                'path': path,
+                'content_items': json.dumps({
+                    "@context": "http://purl.imsglobal.org/ctx/lti/v1/ContentItem",
+                    "@graph": [{
+                        "@type": "LtiLinkItem",
+                        "@id": url,
+                        "url": url,
+                        "title": f.name,
+                        "text": f.name,
+                        "mediaType": "application/vnd.ims.lti.v1.ltilink",
+                        "placementAdvice": {"presentationDocumentTarget": "frame"}
+                    }]
+                })
+            })
+        projects_context.append({
+            'name': project.name,
+            'files': files
+        })
+
+    context = {
+        'lti_version': request.data['lti_version'],
+        'projects': projects_context,
+        'action_url': request.data['content_item_return_url'],
+    }
+    return Response(context, template_name='projects/file_selection.html')
