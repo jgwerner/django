@@ -1,11 +1,7 @@
 import os
 import socket
-import requests
-import json
 import uuid
 import zipfile
-from http.server import BaseHTTPRequestHandler, HTTPServer
-from threading import Thread
 from unittest.mock import patch
 
 import botocore.session
@@ -165,105 +161,12 @@ class TestDockerSpawnerForModel(TransactionTestCase):
         self.assertEqual(self.spawner._get_user_timezone(), 'EDT')
 
 
-class MockNvidiaDocker(BaseHTTPRequestHandler):
-    data = {
-        "Version": {"Driver": "384.90", "CUDA": "9.0"},
-        "Devices": [
-            {
-                "UUID": "GPU-6c43e5e5-6279-20ba-50g8-d64fc5af1b05",
-                "Path": "/dev/nvidia0",
-                "Model": "GRID K520",
-                "Power": 125,
-                "CPUAffinity": 0,
-                "PCI": {
-                    "BusID": "0000:00:03.0",
-                    "BAR1": 128,
-                    "Bandwidth": 15760
-                },
-                "Clocks": {"Cores": 797, "Memory": 2500},
-                "Topology": None,
-                "Family": "Kepler",
-                "Arch": "3.0",
-                "Cores": 1536,
-                "Memory": {
-                    "ECC": False,
-                    "Global": 4036,
-                    "Shared": 48,
-                    "Constant": 64,
-                    "L2Cache": 512,
-                    "Bandwidth": 160000
-                }
-            }
-        ]
-    }
-
-    def do_GET(self):
-        self.send_response(requests.codes.ok)
-        self.send_header("Content-type", "application/json")
-        self.end_headers()
-        d = json.dumps(self.data)
-        self.wfile.write(d.encode('utf-8'))
-
-
 def get_free_port():
     s = socket.socket(socket.AF_INET, type=socket.SOCK_STREAM)
     s.bind(('localhost', 0))
     address, port = s.getsockname()
     s.close()
     return port
-
-
-class TestGPU(TestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.nvidia_server_port = get_free_port()
-        cls.nvidia_server = HTTPServer(('localhost', cls.nvidia_server_port), MockNvidiaDocker)
-        cls.nvidia_server_thread = Thread(target=cls.nvidia_server.serve_forever)
-        cls.nvidia_server_thread.daemon = True
-        cls.nvidia_server_thread.start()
-
-    def setUp(self):
-        collaborator = CollaboratorFactory()
-        self.user = collaborator.user
-        self.server = ServerFactory(
-            image_name='test',
-            server_size=ServerSizeFactory(
-                memory=512
-            ),
-            env_vars={'test': 'test'},
-            project=collaborator.project,
-            config={
-                'type': 'rstudio',
-            }
-        )
-        docker_client = make_fake_client()
-        self.spawner = DockerSpawner(self.server, docker_client)
-
-    @classmethod
-    def tearDownClass(cls):
-        super().tearDownClass()
-        cls.nvidia_server.shutdown()
-        cls.nvidia_server.server_close()
-        cls.nvidia_server_thread.join()
-
-    def test_gpu_info(self):
-        with self.settings(NVIDIA_DOCKER_HOST=f'http://localhost:{self.nvidia_server_port}'):
-            self.spawner._gpu_info()
-        self.assertIsNotNone(self.spawner.gpu_info)
-        self.assertEqual(self.spawner.gpu_info['Version']['Driver'], '384.90')
-
-    @patch('servers.spawners.docker.DockerSpawner._is_swarm')
-    def test_get_host_config(self, _is_swarm):
-        _is_swarm.return_value = False
-        expected = {
-            'mem_limit': '512m',
-            'binds': [
-                '{}:/resources'.format(self.server.volume_path)
-            ],
-            'restart_policy': None
-        }
-        self.assertDictEqual(expected, self.spawner._get_host_config())
 
 
 class ECSSpawnerTestCase(TestCase):

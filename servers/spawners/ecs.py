@@ -5,7 +5,7 @@ from typing import List, Dict, Tuple
 from django.conf import settings
 from django.utils.functional import cached_property
 
-from .base import BaseSpawner, GPUMixin
+from .base import BaseSpawner
 
 logger = logging.getLogger("servers")
 
@@ -14,7 +14,7 @@ class SpawnerException(Exception):
     pass
 
 
-class ECSSpawner(GPUMixin, BaseSpawner):
+class ECSSpawner(BaseSpawner):
     def __init__(self, server, client=None) -> None:
         super().__init__(server)
         self.client = client or boto3.client('ecs')
@@ -133,16 +133,6 @@ class ECSSpawner(GPUMixin, BaseSpawner):
             mount_points.append({
                 'sourceVolume': 'script',
                 'containerPath': f'{settings.SERVER_RESOURCE_DIR}/start.sh'
-            })
-        if self._is_gpu_instance:
-            volumes.append({
-                'name': 'gpu',
-                'host': {'sourcePath': self._gpu_driver_path}
-            })
-            mount_points.append({
-                'sourceVolume': 'gpu',
-                'containerPath': '/usr/local/nvidia',
-                'readOnly': True
             })
         return volumes, mount_points
 

@@ -8,13 +8,13 @@ from django.utils.functional import cached_property
 import docker
 from docker.errors import APIError
 
-from .base import BaseSpawner, GPUMixin, TraefikMixin
+from .base import BaseSpawner, TraefikMixin
 
 
 logger = logging.getLogger("servers")
 
 
-class DockerSpawner(TraefikMixin, GPUMixin, BaseSpawner):
+class DockerSpawner(TraefikMixin, BaseSpawner):
     def __init__(self, server, client=None):
         super().__init__(server)
         self.client = client or (server.host.client if server.host else docker.from_env())
@@ -23,7 +23,6 @@ class DockerSpawner(TraefikMixin, GPUMixin, BaseSpawner):
         self.entry_point = None
         self.restart = None
         self.network_name = 'project_{}_network'.format(self.server.project.pk)
-        self.gpu_info = None
 
     def start(self) -> None:
         self.cmd = self._get_cmd()
@@ -82,14 +81,6 @@ class DockerSpawner(TraefikMixin, GPUMixin, BaseSpawner):
     def _create_container_config(self):
 
         volume_config = {}
-
-        if self._is_gpu_instance:
-            logger.info("Creating a GPU enabled container.")
-            volume_config['volume_driver'] = "nvidia-docker"
-            volume_config['volumes'] = ["/usr/local/nvidia"]
-        else:
-            logger.info(f"This is not nvidia enabled host, OR the container is a non-GPU enabled image.\n"
-                        f"Creating a non-GPU enabled container.")
 
         config = dict(
             image=self.server.image_name,
