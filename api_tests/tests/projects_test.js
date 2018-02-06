@@ -17,6 +17,7 @@ before(async () => {
       Authorization: util.format('%s %s', 'Bearer', token),
     },
   })
+  chakram.startDebug()
 
   // seed a project for tests
   const proj_uri = tools.get_request_uri(util.format('%s/projects/', namespace))
