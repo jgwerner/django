@@ -18,7 +18,7 @@ module.exports = class Generator {
       local_port: faker.random.number(65535),
       remote_port: faker.random.number(65535),
       endpoint: faker.internet.url(),
-      username: faker.name.firstName() + faker.name.lastName(),
+      username: 'api_test_' + faker.random.number(9999999),
     }
   }
 
@@ -44,7 +44,7 @@ module.exports = class Generator {
 
   static user() {
     return {
-      username: faker.name.firstName() + '_' + faker.random.number(9999999),
+      username: 'api_test_' + faker.random.number(9999999),
       email: faker.internet.exampleEmail(),
       first_name: faker.name.firstName(),
       last_name: faker.name.lastName(),
