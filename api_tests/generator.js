@@ -44,7 +44,7 @@ module.exports = class Generator {
 
   static user() {
     return {
-      username: faker.name.firstName() + faker.name.lastName(),
+      username: faker.name.firstName() + '_' + faker.random.number(9999999),
       email: faker.internet.exampleEmail(),
       first_name: faker.name.firstName(),
       last_name: faker.name.lastName(),
