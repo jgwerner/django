@@ -94,9 +94,6 @@ class Auth(views.APIView):
 
     def post(self, request, **kwargs):
         user = request.user
-        if 'canvas_user_id' not in user.profile.config:
-            user.profile.config['canvas_user_id'] = request.data['user_id']
-            user.profile.save()
         return HttpResponseRedirect(settings.LOGIN_REDIRECT_URL)
 
 
