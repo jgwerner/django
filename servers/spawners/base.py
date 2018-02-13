@@ -98,8 +98,6 @@ class BaseSpawner(SpawnerInterface):
         if self.server.startup_script:
             binds.append('{}:/start.sh'.format(
                 str(Path(self.server.volume_path).joinpath(self.server.startup_script))))
-        if self._is_gpu_instance:
-            binds.append(f"{self._gpu_driver_path}:/usr/local/nvidia:ro")
         return binds
 
     def _get_ssh_path(self) -> str:
@@ -120,43 +118,6 @@ class BaseSpawner(SpawnerInterface):
 
     def _get_exposed_ports(self) -> List[Dict[str, str]]:
         return [{v: k for k, v in settings.SERVER_PORT_MAPPING.items()}[self.server.get_type()]]
-
-
-class GPUMixin:
-    gpu_info = None
-
-    def _gpu_info(self) -> None:
-        logger.info("Getting gpu info")
-        gpu_info_url = f"{settings.NVIDIA_DOCKER_HOST}/v1.0/gpu/info/json"
-        try:
-            resp = requests.get(gpu_info_url, timeout=2)
-        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
-            raven_client.captureException()
-        else:
-            if resp.status_code == 200:
-                self.gpu_info = resp.json()
-
-    def _get_devices(self) -> List[str]:
-        logger.info("Getting devices")
-        if self._is_gpu_instance:
-            return [
-                '/dev/nvidiactl:/dev/nvidiactl:rwm',
-                '/dev/nvidia-uvm:/dev/nvidia-uvm:rwm',
-                '/dev/nvidia0:/dev/nvidia0:rwm'
-            ]
-        return []
-
-    @cached_property
-    def _gpu_driver_path(self) -> str:
-        driver = self.gpu_info['Version']['Driver']
-        return f'/var/lib/nvidia-docker/volumes/nvidia_driver/{driver}'
-
-    @cached_property
-    def _is_gpu_instance(self) -> bool:
-        if self.server.config['type'].lower() == 'rstudio':
-            return False
-        self._gpu_info()
-        return bool(self.gpu_info)
 
 
 class TraefikMixin:
