@@ -20,8 +20,8 @@ class ProjectSerializer(SearchSerializerMixin, serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = ('id', 'name', 'description', 'private', 'last_updated', 'team', 'owner',
-                  'collaborators', 'copying_enabled')
-        read_only_fields = ('team',)
+                  'collaborators', 'copying_enabled', 'config')
+        read_only_fields = ('team', 'config')
 
     def validate_name(self, value):
         request = self.context['request']
@@ -114,5 +114,6 @@ class CloneGitProjectSerializer(ProjectSerializer):
     def create(self, validated_data):
         url = validated_data.pop('url')
         project = super().create(validated_data)
+        project.resource_root().mkdir(parents=True, exist_ok=True)
         clone_git_repo.delay(url, str(project.resource_root()))
         return project

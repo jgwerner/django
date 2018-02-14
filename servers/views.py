@@ -19,6 +19,8 @@ from base.utils import get_object_or_404
 from base.renderers import PlainTextRenderer
 from canvas.authorization import CanvasAuth
 from projects.permissions import ProjectChildPermission
+from projects.models import Project
+from projects.utils import perform_project_copy
 from jwt_auth.views import JWTApiView
 from jwt_auth.serializers import VerifyJSONWebTokenServerSerializer
 from jwt_auth.utils import create_server_jwt
@@ -262,14 +264,32 @@ class SNSView(views.APIView):
 @authentication_classes([CanvasAuth])
 @permission_classes([])
 def lti_file_handler(request, *args, **kwargs):
+    project = get_object_or_404(Project, kwargs.get('project_project'))
     canvas_user_id = request.data['user_id']
     if canvas_user_id != request.user.profile.config.get('canvas_user_id', ''):
-        user = User.objects.filter(profile__config__canvas_user_id=canvas_user_id).first()
-        # TODO: create user if don't exist and copy project
-        # if user exists then find proper workspace and redirect there
+        learner = User.objects.filter(profile__config__canvas_user_id=canvas_user_id).first()
+        if learner is None:
+            email = request.data['lis_person_contact_email_primary']
+            learner = User.objects.create_user(
+                username=email.split("@")[0].replace('.', '_'),
+                email=email,
+            )
+            learner.profile.config['canvas_user_id'] = canvas_user_id
+            learner.profile.save()
+        print(learner)
+        learner_project = learner.projects.filter(config__copied_from=str(project.pk)).first()
+        if learner_project is None:
+            learner_project = perform_project_copy(learner, str(project.pk))
+        print(learner_project)
+        workspace = learner_project.servers.filter(config__type='jupyter').first()
+        namespace = learner.username
+    else:
+        namespace = request.namespace.name
+        workspace = get_object_or_404(models.Server, kwargs.get('server'))
+    if workspace.status != workspace.RUNNING:
+        workspace.spawner.start()
     scheme = 'https' if settings.HTTPS else 'http'
-    workspace = get_object_or_404(models.Server, kwargs.get('server'))
-    endpoint = get_server_url(workspace, scheme, '/endpoint/proxy/lab/tree/', request=request)
+    endpoint = get_server_url(workspace, scheme, '/endpoint/proxy/lab/tree/', namespace=namespace)
     path = kwargs.get('path')
     url = f'{endpoint}{path}?access_token={workspace.access_token}'
     return redirect(url)

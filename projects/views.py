@@ -189,12 +189,14 @@ def file_selection(request, *args, **kwargs):
 
     projects_context = []
     for project in projects:
-        workspace = project.servers.filter(config__type='jupyter').first()
         project_root = project.resource_root()
+        if not project_root.exists():
+            continue
         files = []
+        workspace = project.servers.filter(config__type='jupyter').first()
         for f in iterate_dir(project_root):
             path = str(f.relative_to(project_root))
-            quoted = quote(path, safe='')
+            quoted = quote(path, safe='/')
             scheme = 'https' if settings.HTTPS else 'http'
             url = get_server_url(workspace, scheme, f"/{quoted}", namespace=project.owner.username)
             files.append({
