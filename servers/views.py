@@ -1,9 +1,10 @@
 import logging
+import uuid
 import json
 import requests
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.db.models import Sum, Max, F
+from django.db.models import Sum, Max, F, Q
 from django.db.models.functions import Coalesce, Now
 from django.shortcuts import redirect
 from rest_framework import status, viewsets, views
@@ -267,7 +268,10 @@ def lti_file_handler(request, *args, **kwargs):
     project = get_object_or_404(Project, kwargs.get('project_project'))
     canvas_user_id = request.data['user_id']
     if canvas_user_id != request.user.profile.config.get('canvas_user_id', ''):
-        learner = User.objects.filter(profile__config__canvas_user_id=canvas_user_id).first()
+        learner = User.objects.filter(
+            Q(profile__config__canvas_user_id=canvas_user_id) |
+            Q(email=request.data['lis_person_contact_email_primary']),
+        ).first()
         if learner is None:
             email = request.data['lis_person_contact_email_primary']
             learner = User.objects.create_user(
@@ -276,16 +280,28 @@ def lti_file_handler(request, *args, **kwargs):
             )
             learner.profile.config['canvas_user_id'] = canvas_user_id
             learner.profile.save()
-        print(learner)
-        learner_project = learner.projects.filter(config__copied_from=str(project.pk)).first()
+        learner_project = learner.projects.filter(config__copied_from=str(project.pk), is_active=True).first()
         if learner_project is None:
             learner_project = perform_project_copy(learner, str(project.pk))
-        print(learner_project)
-        workspace = learner_project.servers.filter(config__type='jupyter').first()
+        workspace = learner_project.servers.filter(config__type='jupyter', is_active=True).first()
         namespace = learner.username
     else:
         namespace = request.namespace.name
         workspace = get_object_or_404(models.Server, kwargs.get('server'))
+    if workspace is None:
+        pk = uuid.uuid4()
+        workspace = models.Server.objects.create(
+            pk=pk,
+            name='workspace',
+            access_token=create_server_jwt(learner, str(pk)),
+            created_by=learner,
+            project=learner_project,
+            config={'type': 'jupyter'},
+            image_name=settings.JUPYTER_IMAGE,
+            server_size=models.ServerSize.objects.filter(
+                name=list(settings.SERVER_SIZE)[0],
+            ).first(),
+        )
     if workspace.status != workspace.RUNNING:
         workspace.spawner.start()
     scheme = 'https' if settings.HTTPS else 'http'
