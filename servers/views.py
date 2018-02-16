@@ -1,16 +1,15 @@
 import logging
-import uuid
 import json
 import requests
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.db.models import Sum, Max, F, Q
+from django.db.models import Sum, Max, F
 from django.db.models.functions import Coalesce, Now
-from django.shortcuts import redirect
+from django.urls import reverse
 from rest_framework import status, viewsets, views
 from rest_framework.decorators import api_view, permission_classes, renderer_classes, list_route, authentication_classes
 from rest_framework.response import Response
-from rest_framework.renderers import JSONRenderer
+from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_jwt.settings import api_settings
 
@@ -21,13 +20,12 @@ from base.renderers import PlainTextRenderer
 from canvas.authorization import CanvasAuth
 from projects.permissions import ProjectChildPermission
 from projects.models import Project
-from projects.utils import perform_project_copy
 from jwt_auth.views import JWTApiView
 from jwt_auth.serializers import VerifyJSONWebTokenServerSerializer
-from jwt_auth.utils import create_server_jwt
+from jwt_auth.utils import create_server_jwt, create_auth_jwt
 from teams.permissions import TeamGroupPermission
 from .consumers import ServerStatusConsumer
-from .tasks import start_server, stop_server, terminate_server, deploy, delete_deployment
+from .tasks import start_server, stop_server, terminate_server, deploy, delete_deployment, lti
 from .permissions import ServerChildPermission, ServerActionPermission
 from . import serializers, models
 from .utils import get_server_usage, get_server_url
@@ -264,48 +262,37 @@ class SNSView(views.APIView):
 @api_view(['post'])
 @authentication_classes([CanvasAuth])
 @permission_classes([])
+@renderer_classes([TemplateHTMLRenderer])
 def lti_file_handler(request, *args, **kwargs):
     project = get_object_or_404(Project, kwargs.get('project_project'))
-    canvas_user_id = request.data['user_id']
-    if canvas_user_id != request.user.profile.config.get('canvas_user_id', ''):
-        learner = User.objects.filter(
-            Q(profile__config__canvas_user_id=canvas_user_id) |
-            Q(email=request.data['lis_person_contact_email_primary']),
-        ).first()
-        if learner is None:
-            email = request.data['lis_person_contact_email_primary']
-            learner = User.objects.create_user(
-                username=email.split("@")[0].replace('.', '_'),
-                email=email,
-            )
-            learner.profile.config['canvas_user_id'] = canvas_user_id
-            learner.profile.save()
-        learner_project = learner.projects.filter(config__copied_from=str(project.pk), is_active=True).first()
-        if learner_project is None:
-            learner_project = perform_project_copy(learner, str(project.pk))
-        workspace = learner_project.servers.filter(config__type='jupyter', is_active=True).first()
-        namespace = learner.username
-    else:
-        namespace = request.namespace.name
-        workspace = get_object_or_404(models.Server, kwargs.get('server'))
+    workspace = get_object_or_404(models.Server, kwargs.get('server'))
+    task = lti.delay(
+        project.pk,
+        workspace.pk,
+        request.user.pk,
+        request.namespace.name,
+        request.data
+    )
+    task_url = reverse('lti-task', kwargs={
+        'version': request.version,
+        'namespace': request.namespace.name,
+        'task_id': task.id,
+        'path': kwargs.get('path', '')
+    })
+    access_token = create_auth_jwt(request.user)
+    return Response({'task_url': task_url, 'access_token': access_token},
+                    template_name='servers/lti_file_handler.html')
+
+
+@api_view(['get'])
+def lti_ready(request, *args, **kwargs):
+    task = lti.AsyncResult(kwargs.get('task_id'))
+    namespace, workspace_id = task.get()
+    workspace = models.Server.objects.filter(pk=workspace_id).first()
     if workspace is None:
-        pk = uuid.uuid4()
-        workspace = models.Server.objects.create(
-            pk=pk,
-            name='workspace',
-            access_token=create_server_jwt(learner, str(pk)),
-            created_by=learner,
-            project=learner_project,
-            config={'type': 'jupyter'},
-            image_name=settings.JUPYTER_IMAGE,
-            server_size=models.ServerSize.objects.filter(
-                name=list(settings.SERVER_SIZE)[0],
-            ).first(),
-        )
-    if workspace.status != workspace.RUNNING:
-        workspace.spawner.start()
+        return Response({'error': 'No workspace created'})
     scheme = 'https' if settings.HTTPS else 'http'
     endpoint = get_server_url(workspace, scheme, '/endpoint/proxy/lab/tree/', namespace=namespace)
     path = kwargs.get('path')
     url = f'{endpoint}{path}?access_token={workspace.access_token}'
-    return redirect(url)
+    return Response({'url': url})
