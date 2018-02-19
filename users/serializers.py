@@ -74,7 +74,7 @@ class UserSerializer(SearchSerializerMixin, serializers.ModelSerializer):
                                                             owner=True,
                                                             project__name=settings.GETTING_STARTED_PROJECT).project
             perform_project_copy(user=user,
-                                 project_id=getting_started_proj.pk,
+                                 project_id=str(getting_started_proj.pk),
                                  request=None)
 
         except Collaborator.DoesNotExist as e:
