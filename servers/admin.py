@@ -1,6 +1,12 @@
 from django.contrib import admin
 
-from .models import ServerSize, Framework, Runtime
+from .models import Server, ServerSize, Framework, Runtime
+
+
+@admin.register(Server)
+class ServerAdmin(admin.ModelAdmin):
+    list_display = ('name', 'created_by', 'is_active', 'created_at')
+    list_filter = ('created_by', 'is_active')
 
 
 @admin.register(ServerSize)

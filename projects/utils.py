@@ -4,6 +4,7 @@ import shutil
 from typing import List
 from copy import deepcopy
 from pathlib import Path
+from distutils.dir_util import copy_tree
 from django.conf import settings
 from rest_framework.request import Request
 from guardian.shortcuts import assign_perm
@@ -38,7 +39,7 @@ def create_ancillary_project_stuff(request: Request, project: Project, user: Use
         assign_to_user(user, project)
     else:
         assign_to_team(request.namespace.object, project)
-    Path(settings.RESOURCE_DIR, project.get_owner_name(), str(project.pk)).mkdir(parents=True, exist_ok=True)
+    project.resource_root().mkdir(parents=True, exist_ok=True)
 
 
 def has_copy_permission(request=None, user=None, project=None):
@@ -75,7 +76,7 @@ def has_copy_permission(request=None, user=None, project=None):
 
 def copy_servers(old_project: Project, new_project: Project) -> None:
     log.info(f"Copying servers from {old_project.pk} to {new_project.pk}")
-    servers = Server.objects.filter(project=old_project)
+    servers = Server.objects.filter(project=old_project, is_active=True)
 
     for server in servers:
         server_copy = server
@@ -83,14 +84,18 @@ def copy_servers(old_project: Project, new_project: Project) -> None:
         server_copy.project = new_project
         server_copy.created_by = new_project.owner
         server_copy.access_token = create_server_jwt(new_project.owner, server_copy.id)
+        server_copy.config = {'type': server_copy.config['type']}
         server_copy.save()
+        for permission in [perm[0] for perm in Server._meta.permissions]:
+            assign_perm(permission, new_project.owner, server)
         log.info(f"Copied {server.pk}")
 
 
-def perform_project_copy(user: User, project_id: str, request: Request, new_name: str=None) -> Project:
+def perform_project_copy(user: User, project_id: str, request: Request=None, new_name: str=None) -> Project:
     log.info(f"Attempting to copy project {project_id} for user {user}")
     new_proj = None
     proj_to_copy = Project.objects.get(pk=project_id)
+    old_resource_root = proj_to_copy.resource_root()
 
     if has_copy_permission(user=user, project=proj_to_copy):
 
@@ -99,6 +104,7 @@ def perform_project_copy(user: User, project_id: str, request: Request, new_name
         if new_name is not None:
             new_proj.name = new_name
         new_proj.pk = None
+        new_proj.config['copied_from'] = project_id
 
         project_with_same_name = Collaborator.objects.filter(owner=True,
                                                              user=user,
@@ -116,6 +122,11 @@ def perform_project_copy(user: User, project_id: str, request: Request, new_name
             user_to_pass = request.user
 
         create_ancillary_project_stuff(request, new_proj, user=user_to_pass)
+        if old_resource_root.is_dir():
+            log.info(f"Copying files from the {old_resource_root} to {new_proj.resource_root()}")
+            copy_tree(str(old_resource_root), str(new_proj.resource_root()))
+        else:
+            log.info(f"It seems {old_resource_root} does not exist, so there is nothing to copy.")
 
         copy_servers(proj_to_copy, new_proj)
 

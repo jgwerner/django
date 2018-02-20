@@ -5,7 +5,7 @@ https://github.com/3Blades/django/archive/1.11-uuid-pk.zip
 channels==1.1.8
 django-filter==1.0.4
 django-rest-swagger==2.1.2
-djangorestframework==3.6.2
+djangorestframework==3.6.4
 docker==2.5.1
 drf-nested-routers==0.90.0
 GitPython==2.1.1

@@ -11,7 +11,6 @@ from rest_framework.generics import CreateAPIView
 from rest_framework.renderers import TemplateHTMLRenderer
 
 from base.views import NamespaceMixin, LookupByMultipleFields
-from base.utils import get_object_or_404
 from canvas.authorization import CanvasAuth
 from projects.serializers import (ProjectSerializer,
                                   CollaboratorSerializer,
@@ -21,7 +20,7 @@ from projects.permissions import ProjectPermission, ProjectChildPermission, has_
 from projects.utils import (has_copy_permission,
                             perform_project_copy,
                             check_project_name_exists)
-from servers.utils import get_server_url
+from servers.utils import get_server_url, create_server
 from teams.permissions import TeamGroupPermission
 
 User = get_user_model()
@@ -166,14 +165,6 @@ class CloneGitProject(CreateAPIView):
 @api_view(['post'])
 @authentication_classes([CanvasAuth])
 @permission_classes([])
-def project_lti(request, *args, **kwargs):
-    project = get_object_or_404(Project, kwargs.get('project_project'), is_active=True)
-    return Response({'project': project.name, 'data': request.data})
-
-
-@api_view(['post'])
-@authentication_classes([CanvasAuth])
-@permission_classes([])
 @renderer_classes([TemplateHTMLRenderer])
 def file_selection(request, *args, **kwargs):
     projects = Project.objects.filter(collaborator__user=request.user, is_active=True)
@@ -189,14 +180,19 @@ def file_selection(request, *args, **kwargs):
 
     projects_context = []
     for project in projects:
-        workspace = project.servers.filter(config__type='jupyter').first()
         project_root = project.resource_root()
+        if not project_root.exists():
+            continue
+        workspace = project.servers.filter(config__type='jupyter', is_active=True).first()
+        if workspace is None:
+            workspace = create_server(request.user, project, 'workspace')
         files = []
         for f in iterate_dir(project_root):
             path = str(f.relative_to(project_root))
-            quoted = quote(path, safe='')
+            quoted = quote(path, safe='/')
             scheme = 'https' if settings.HTTPS else 'http'
-            url = get_server_url(workspace, scheme, f"/{quoted}", namespace=project.owner.username)
+            url = get_server_url(str(project.pk), str(workspace.pk), scheme,
+                                 f"/{quoted}", namespace=project.owner.username)
             files.append({
                 'path': path,
                 'content_items': json.dumps({

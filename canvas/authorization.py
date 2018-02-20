@@ -1,6 +1,7 @@
 import re
 import time
 from django.core.cache import cache
+from django.conf import settings
 from rest_framework import authentication
 from oauth2_provider.models import Application
 from oauthlib.oauth1 import RequestValidator, SignatureOnlyEndpoint
@@ -36,8 +37,9 @@ class CanvasValidator(RequestValidator):
 class CanvasAuth(authentication.BaseAuthentication):
     def authenticate(self, request):
         endpoint = SignatureOnlyEndpoint(CanvasValidator())
+        uri = request.build_absolute_uri()
         valid, r = endpoint.validate_request(
-            request.build_absolute_uri(),
+            uri.replace('http', 'https') if settings.HTTPS else uri,
             http_method=request.method,
             body=request.body.decode(),
             headers=self.normalize_headers(request),
@@ -45,6 +47,9 @@ class CanvasAuth(authentication.BaseAuthentication):
         if valid:
             user = Application.objects.get(
                 client_id=request.data['oauth_consumer_key']).user
+            if 'canvas_user_id' not in user.profile.config:
+                user.profile.config['canvas_user_id'] = request.data['user_id']
+                user.profile.save()
             return (user, None)
         return None
 

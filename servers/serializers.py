@@ -130,7 +130,7 @@ class ServerSerializer(SearchSerializerMixin, BaseServerSerializer):
     def _get_url(self, obj, scheme, url):
         version = self.context['view'].kwargs.get('version', settings.DEFAULT_VERSION)
         request = self.context['request']
-        return get_server_url(obj, scheme, url, request=request, version=version)
+        return get_server_url(str(obj.project.pk), str(obj.pk), scheme, url, request=request, version=version)
 
     @property
     def _is_secure(self):

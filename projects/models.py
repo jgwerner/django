@@ -2,6 +2,7 @@ import logging
 from pathlib import Path
 from django.core.validators import validate_unicode_slug
 from django.conf import settings
+from django.contrib.postgres.fields import JSONField
 from django.db import models
 from django.urls import reverse
 from guardian.shortcuts import get_perms
@@ -23,6 +24,7 @@ class Project(models.Model):
     team = models.ForeignKey('teams.Team', blank=True, null=True, related_name='projects')
     copying_enabled = models.BooleanField(default=True)
     is_active = models.BooleanField(default=True)
+    config = JSONField(default={})
 
     objects = ProjectQuerySet.as_manager()
 

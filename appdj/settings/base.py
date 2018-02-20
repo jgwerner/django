@@ -428,6 +428,7 @@ NVIDIA_DOCKER_HOST = os.environ.get('NVIDIA_DOCKER_HOST')
 SPAWNER = 'servers.spawners.ecs.ECSSpawner'
 DEPLOYER = 'servers.spawners.aws_lambda.deployer.LambdaDeployer'
 SCHEDULER = 'servers.spawners.ecs.JobScheduler'
+JUPYTER_IMAGE = os.environ.get('JUPYTER_IMAGE', 'illumidesk/datascience-notebook')
 ECS_CLUSTER = os.environ.get('ECS_CLUSTER', 'default')
 BATCH_COMPUTE_ENV = os.environ.get('BATCH_COMPUTE_ENV')
 BATCH_JOB_QUEUE = os.environ.get('BATCH_JOB_QUEUE')
