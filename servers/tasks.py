@@ -1,32 +1,18 @@
-import uuid
 import time
-from typing import Union
 from celery import shared_task
-from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db.models import Q
-from guardian.shortcuts import assign_perm
 
 from projects.models import Project
 from projects.utils import perform_project_copy
-from jwt_auth.utils import create_server_jwt
-from .models import Server, Deployment, ServerSize
+from .models import Server, Deployment
 from .spawners import get_spawner_class, get_deployer_class
+from .utils import create_server, server_action
 import logging
 log = logging.getLogger('servers')
 Spawner = get_spawner_class()
 Deployer = get_deployer_class()
 User = get_user_model()
-
-
-def server_action(action: str, server: Union[str, Server]) -> bool:
-    if isinstance(server, str):
-        server = Server.objects.tbs_get(server)
-    if action != "start" or server.can_be_started:
-        spawner = server.spawner
-        getattr(spawner, action)()
-        return True
-    return False
 
 
 @shared_task()
@@ -86,21 +72,7 @@ def lti(project_pk, workspace_pk, user_pk, namespace, data):
     else:
         workspace = Server.objects.filter(is_active=True, pk=workspace_pk).first()
     if workspace is None:
-        pk = uuid.uuid4()
-        workspace = Server.objects.create(
-            pk=pk,
-            name='workspace',
-            access_token=create_server_jwt(learner, str(pk)),
-            created_by=learner,
-            project=learner_project,
-            config={'type': 'jupyter'},
-            image_name=settings.JUPYTER_IMAGE,
-            server_size=ServerSize.objects.filter(
-                name=list(settings.SERVER_SIZE)[0],
-            ).first(),
-        )
-        for permission in [perm[0] for perm in workspace._meta.permissions]:
-            assign_perm(permission, project.owner, workspace)
+        workspace = create_server(learner, learner_project, 'workspace')
     if workspace.status != workspace.RUNNING:
         workspace.spawner.start()
         # wait 30 sec for workspace to start

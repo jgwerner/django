@@ -3,6 +3,7 @@ import json
 import requests
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.http import Http404
 from django.db.models import Sum, Max, F
 from django.db.models.functions import Coalesce, Now
 from django.urls import reverse
@@ -15,7 +16,7 @@ from rest_framework_jwt.settings import api_settings
 
 from base.views import LookupByMultipleFields
 from base.permissions import IsAdminUser
-from base.utils import get_object_or_404
+from base.utils import get_object_or_404, validate_uuid
 from base.renderers import PlainTextRenderer
 from canvas.authorization import CanvasAuth
 from projects.permissions import ProjectChildPermission
@@ -55,6 +56,25 @@ class ServerViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
         )
         instance.is_active = False
         instance.save()
+
+    def get_object(self):
+        qs = self.filter_queryset(self.get_queryset())
+        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+        assert lookup_url_kwarg in self.kwargs, (
+            'Expected view %s to be called with a URL keyword argument '
+            'named "%s". Fix your URL conf, or set the `.lookup_field` '
+            'attribute on the view correctly.' %
+            (self.__class__.__name__, lookup_url_kwarg)
+        )
+        filter_kwargs = {}
+        lookup_val = self.kwargs[self.lookup_url_kwarg]
+        if not validate_uuid(lookup_val) and lookup_val in settings.SERVER_TYPE_MAPPING:
+            filter_kwargs['config__type'] = lookup_val
+        obj = qs.filter(**filter_kwargs).first()
+        if obj is None:
+            raise Http404
+        self.check_object_permissions(self.request, obj)
+        return obj
 
 
 @api_view(['post'])
@@ -292,7 +312,8 @@ def lti_ready(request, *args, **kwargs):
     if workspace is None:
         return Response({'error': 'No workspace created'})
     scheme = 'https' if settings.HTTPS else 'http'
-    endpoint = get_server_url(workspace, scheme, '/endpoint/proxy/lab/tree/', namespace=namespace)
+    endpoint = get_server_url(str(workspace.project.pk), str(workspace.pk),
+                              scheme, '/endpoint/proxy/lab/tree/', namespace=namespace)
     path = kwargs.get('path')
     url = f'{endpoint}{path}?access_token={workspace.access_token}'
     return Response({'url': url})

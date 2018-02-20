@@ -9,6 +9,7 @@ class ProjectFactory(factory.django.DjangoModelFactory):
         django_get_or_create = ('name',)
 
     name = factory.Sequence(lambda o: 'project{}'.format(o))
+    is_active = True
     # copying_enabled = fuzzy.FuzzyChoice([True, False])
 
 

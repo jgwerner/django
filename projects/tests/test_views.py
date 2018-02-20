@@ -1,3 +1,5 @@
+import json
+from unittest.mock import patch
 from django.urls import reverse
 from django.conf import settings
 from django.contrib.auth.models import Permission
@@ -631,7 +633,7 @@ class CollaboratorTest(ProjectTestMixin, APITestCase):
 
     def test_get_collaborator(self):
         collab = CollaboratorFactory(user=self.user)
-        servers = ServerFactory.create_batch(5, project=collab.project)
+        ServerFactory.create_batch(5, project=collab.project)
         assign_perm('write_project', self.user, collab.project)
         assign_perm('read_project', self.user, collab.project)
 
@@ -663,3 +665,51 @@ class CollaboratorTest(ProjectTestMixin, APITestCase):
                                                      'pk': str(other_collab.pk)})
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+
+class LTITest(APITestCase):
+    def setUp(self):
+        col = CollaboratorFactory()
+        self.user = col.user
+        self.project = col.project
+        self.server = ServerFactory(project=self.project, config={'type': 'jupyter'})
+
+    @patch('canvas.authorization.CanvasAuth.authenticate')
+    def test_file_selection(self, authenticate):
+        authenticate.return_value = (self.user, None)
+        root = self.project.resource_root()
+        root.mkdir(parents=True, exist_ok=True)
+        test_file = root / 'test.py'
+        test_file.touch()
+        url = reverse('project-file-select', kwargs={'version': settings.DEFAULT_VERSION})
+        data = {
+            'lti_version': '1',
+            'content_item_return_url': 'http://example.com'
+        }
+        resp = self.client.post(url, data)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertIn('lti_version', resp.data)
+        self.assertEqual(resp.data['lti_version'], data['lti_version'])
+        self.assertIn('projects', resp.data)
+        self.assertGreater(len(resp.data['projects']), 0)
+        self.assertEqual(resp.data['projects'][0]['name'], self.project.name)
+        self.assertIn('action_url', resp.data)
+        self.assertEqual(data['content_item_return_url'], resp.data['action_url'])
+        project = resp.data['projects'][0]
+        self.assertIn('files', project)
+        self.assertEqual(len(project['files']), 1)
+        f = project['files'][0]
+        self.assertEqual(f['path'], test_file.name)
+        self.assertIn('content_items', f)
+        content_items = json.loads(f['content_items'])
+        self.assertIn('@context', content_items)
+        self.assertEqual(content_items['@context'],
+                         "http://purl.imsglobal.org/ctx/lti/v1/ContentItem")
+        self.assertIn('@graph', content_items)
+        self.assertEqual(len(content_items['@graph']), 1)
+        graph = content_items['@graph'][0]
+        self.assertIn('@type', graph)
+        self.assertEqual(graph['@type'], "LtiLinkItem")
+        self.assertIn('@id', graph)
+        test_file.unlink()
+        root.rmdir()

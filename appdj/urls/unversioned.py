@@ -85,6 +85,8 @@ router.register('oauth/applications', ApplicationViewSet)
 urlpatterns = [
     url(r'^lti.xml$', CanvasXML.as_view(), name='canvas-xml'),
     url(r'^lti/$', Auth.as_view(), name='lti-auth'),
+    url(r'^(?P<namespace>[\w-]+)/lti/(?P<task_id>[\w-]+)/(?P<path>.*?/?\w+(?:\.\w+)+)',
+        servers_views.lti_ready, name='lti-task'),
     url(r'^me/$', user_views.me, name="me"),
     url(r'^projects/lti/select/$', project_views.file_selection, name='project-file-select'),
     url(r'^(?P<namespace>[\w-]+)/search/$', SearchView.as_view(), name='search'),
@@ -117,7 +119,6 @@ urlpatterns = [
     url(r'^', include(teams_sub_router.urls)),
     url(r'^(?P<namespace>[\w-]+)/service/(?P<server>[^/.]+)/trigger/(?P<pk>[^/.]+)/call/$',
         trigger_views.call_trigger, name='server-trigger-call'),
-    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/lti/$', project_views.project_lti, name='project-lti'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/start/$',
         servers_views.start, name='server-start'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/stop/$',

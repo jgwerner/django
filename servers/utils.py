@@ -1,12 +1,26 @@
+import uuid
+from typing import Union
 from datetime import datetime
 from django.db.models import Sum, Max, F, Count
 from django.db.models.functions import Coalesce, Now, Greatest
 from django.contrib.sites.shortcuts import get_current_site
 from django.contrib.sites.models import Site
 from django.conf import settings
+from guardian.shortcuts import assign_perm
+
 from projects.models import Project
-from servers.models import ServerRunStatistics, Server
-from servers.tasks import stop_server
+from servers.models import ServerRunStatistics, Server, ServerSize
+from jwt_auth.utils import create_server_jwt
+
+
+def server_action(action: str, server: Union[str, Server]) -> bool:
+    if isinstance(server, str):
+        server = Server.objects.tbs_get(server)
+    if action != "start" or server.can_be_started:
+        spawner = server.spawner
+        getattr(spawner, action)()
+        return True
+    return False
 
 
 def get_server_usage(server_ids, begin_measure_time=None):
@@ -35,12 +49,31 @@ def is_server_token(token):
 def stop_all_servers_for_project(project: Project):
     servers = Server.objects.filter(project=project)
     for server in servers:
-        stop_server(str(server.pk))
+        server_action('stop', str(server.pk))
 
 
-def get_server_url(server, scheme, url, request=None, namespace=None, version=settings.DEFAULT_VERSION):
+def get_server_url(project_id, server_id, scheme, url, request=None, namespace=None, version=settings.DEFAULT_VERSION):
     site = get_current_site(request) if request else Site.objects.get_current()
     namespace = request.namespace.name if request else namespace
     if namespace is None:
         raise ValueError("Namespace can't be None")
-    return f'{scheme}://{site.domain}/{version}/{namespace}/projects/{server.project_id}/servers/{server.id}{url}'
+    return f'{scheme}://{site.domain}/{version}/{namespace}/projects/{project_id}/servers/{server_id}{url}'
+
+
+def create_server(user, project, name, image=settings.JUPYTER_IMAGE, typ='jupyter'):
+    pk = uuid.uuid4()
+    workspace = Server.objects.create(
+        pk=pk,
+        name='workspace',
+        access_token=create_server_jwt(user, str(pk)),
+        created_by=user,
+        project=project,
+        config={'type': typ},
+        image_name=image,
+        server_size=ServerSize.objects.filter(
+            name=list(settings.SERVER_SIZE)[0],
+        ).first(),
+    )
+    for permission in [perm[0] for perm in workspace._meta.permissions]:
+        assign_perm(permission, project.owner, workspace)
+    return workspace
