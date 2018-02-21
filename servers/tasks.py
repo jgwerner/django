@@ -52,12 +52,12 @@ def lti(project_pk, workspace_pk, user_pk, namespace, data):
     user = User.objects.get(pk=user_pk)
     canvas_user_id = data['user_id']
     if canvas_user_id != user.profile.config.get('canvas_user_id', ''):
+        email = data['lis_person_contact_email_primary']
         learner = User.objects.filter(
-            Q(profile__config__canvas_user_id=canvas_user_id) |
-            Q(email=data['lis_person_contact_email_primary']),
+            Q(email=email) |
+            Q(profile__config__canvas_user_id=canvas_user_id)
         ).first()
         if learner is None:
-            email = data['lis_person_contact_email_primary']
             learner = User.objects.create_user(
                 username=email.split("@")[0].replace('.', '_'),
                 email=email,
@@ -78,6 +78,7 @@ def lti(project_pk, workspace_pk, user_pk, namespace, data):
         # wait 30 sec for workspace to start
         for i in range(30):
             if workspace.status == workspace.RUNNING:
+                # wait for servers to pick up workspace
                 time.sleep(2)
                 break
             time.sleep(1)

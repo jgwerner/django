@@ -67,10 +67,10 @@ class ServerViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
             (self.__class__.__name__, lookup_url_kwarg)
         )
         filter_kwargs = {}
-        lookup_val = self.kwargs[self.lookup_url_kwarg]
+        lookup_val = self.kwargs[lookup_url_kwarg]
         if not validate_uuid(lookup_val) and lookup_val in settings.SERVER_TYPE_MAPPING:
             filter_kwargs['config__type'] = lookup_val
-        obj = qs.filter(**filter_kwargs).first()
+        obj = qs.tbs_filter(lookup_val, **filter_kwargs).first()
         if obj is None:
             raise Http404
         self.check_object_permissions(self.request, obj)
