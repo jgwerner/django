@@ -1,6 +1,7 @@
 import logging
 import json
 import requests
+from celery.result import AsyncResult
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.http import Http404
@@ -306,11 +307,10 @@ def lti_file_handler(request, *args, **kwargs):
 
 @api_view(['get'])
 def lti_ready(request, *args, **kwargs):
-    task = lti.AsyncResult(kwargs.get('task_id'))
-    namespace, workspace_id = task.get()
+    namespace, workspace_id = AsyncResult(kwargs.get('task_id')).get()
     workspace = models.Server.objects.filter(pk=workspace_id).first()
     if workspace is None:
-        return Response({'error': 'No workspace created'})
+        return Response({'error': 'No workspace created'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     scheme = 'https' if settings.HTTPS else 'http'
     endpoint = get_server_url(str(workspace.project.pk), str(workspace.pk),
                               scheme, '/endpoint/proxy/lab/tree/', namespace=namespace)

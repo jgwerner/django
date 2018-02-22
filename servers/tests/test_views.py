@@ -780,3 +780,40 @@ class DeploymentTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         deployment = Deployment.objects.get(pk=response.data['id'])
         self.assertEqual(deployment.project, proj)
+
+
+class LTITest(APITestCase):
+    def setUp(self):
+        col = CollaboratorFactory()
+        self.user = col.user
+        self.project = col.project
+        self.server = ServerFactory(project=self.project, config={'type': 'jupyter'})
+        token = create_auth_jwt(self.user)
+        self.api_client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
+
+    def test_lti_file_handler(self):
+        path = 'test.py'
+        url = reverse('lti-file', kwargs={
+            'version': settings.DEFAULT_VERSION,
+            'namespace': self.user.username,
+            'project_project': str(self.project.pk),
+            'server': str(self.server.pk),
+            'path': path,
+        })
+        with patch('canvas.authorization.CanvasAuth.authenticate') as authenticate:
+            authenticate.return_value = (self.user, None)
+            resp = self.client.post(url, {})
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertIn('task_url', resp.data)
+        self.assertIn('access_token', resp.data)
+
+        with patch('celery.result.AsyncResult.get') as get_result:
+            get_result.return_value = (self.user.username, str(self.server.pk))
+            task_resp = self.api_client.get(resp.data['task_url'])
+        self.assertEqual(task_resp.status_code, status.HTTP_200_OK)
+        self.assertIn('url', task_resp.data)
+        self.assertIn(path, task_resp.data['url'])
+        self.assertIn(str(self.server.pk), task_resp.data['url'])
+        self.assertIn(str(self.project.pk), task_resp.data['url'])
+        self.assertIn(self.user.username, task_resp.data['url'])
+        self.assertIn('access_token', task_resp.data['url'])

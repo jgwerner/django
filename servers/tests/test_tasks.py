@@ -1,8 +1,11 @@
 import uuid
 from unittest import TestCase
 from django.contrib.auth import get_user_model
+
+from projects.utils import perform_project_copy
 from projects.tests.factories import CollaboratorFactory
 from users.tests.factories import UserFactory
+from servers.tests.factories import ServerFactory
 from .factories import ServerSizeFactory
 from ..models import Server, ServerSize
 from ..tasks import lti
@@ -41,3 +44,35 @@ class LTITest(TestCase):
         self.assertTrue(Server.objects.filter(pk=workspace_id).exists())
         workspace = Server.objects.get(pk=workspace_id)
         self.assertEqual(learner.pk, workspace.project.owner.pk)
+
+    def test_lti_user_project_exists(self):
+        canvas_user_id = str(uuid.uuid4())
+        learner = UserFactory()
+        learner.profile.config = {'canvas_user_id': canvas_user_id}
+        learner.save()
+        data = {
+            'user_id': canvas_user_id,
+            'lis_person_contact_email_primary': learner.email
+        }
+        learner_project = perform_project_copy(learner, str(self.project.pk))
+        namespace, workspace_id = lti(self.project.pk, '', learner.pk, self.user.username, data)
+        self.assertEqual(namespace, learner.username)
+        self.assertTrue(Server.objects.filter(pk=workspace_id).exists())
+        workspace = Server.objects.get(pk=workspace_id)
+        self.assertEqual(learner.pk, workspace.project.owner.pk)
+        self.assertEqual(learner_project.pk, workspace.project.pk)
+
+    def test_lti_user_project_server_exists(self):
+        canvas_user_id = str(uuid.uuid4())
+        learner = UserFactory()
+        learner.profile.config = {'canvas_user_id': canvas_user_id}
+        learner.save()
+        data = {
+            'user_id': canvas_user_id,
+            'lis_person_contact_email_primary': learner.email
+        }
+        learner_project = perform_project_copy(learner, str(self.project.pk))
+        workspace = ServerFactory(project=learner_project, config={'type': 'jupyter'}, is_active=True)
+        namespace, workspace_id = lti(self.project.pk, '', learner.pk, self.user.username, data)
+        self.assertEqual(namespace, learner.username)
+        self.assertEqual(workspace_id, str(workspace.pk))
