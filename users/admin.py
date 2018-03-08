@@ -1,6 +1,9 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from users.models import User, UserProfile
+from django.contrib.auth import get_user_model
+from .models import UserProfile, Email
+
+User = get_user_model()
 
 
 class ProfileInline(admin.StackedInline):
@@ -12,6 +15,12 @@ class ProfileInline(admin.StackedInline):
 
 class CustomUserAdmin(UserAdmin):
     inlines = (ProfileInline,)
+
+
+@admin.register(Email)
+class EmailAdmin(admin.ModelAdmin):
+    list_display = ('address', 'user', 'public', 'unsubscribed')
+    list_filter = ('user', 'public', 'unsubscribed')
 
 
 admin.site.register(User, CustomUserAdmin)
