@@ -57,6 +57,38 @@ class CanvasXML(views.APIView):
                         ]
                     },
                     {
+                        'name': 'lticm:options',
+                        'kwargs': {'name': 'assignment_selection'},
+                        'value': [
+                            {
+                                'name': 'lticm:property',
+                                'kwargs': {'name': 'url'},
+                                'value': f'{scheme}://{domain}{project_file_selection_url}'
+                            },
+                            {
+                                'name': 'lticm:property',
+                                'kwargs': {'name': 'message_type'},
+                                'value': 'ContentItemSelectionRequest'
+                            },
+                        ]
+                    },
+                    {
+                        'name': 'lticm:options',
+                        'kwargs': {'name': 'homework_submission'},
+                        'value': [
+                            {
+                                'name': 'lticm:property',
+                                'kwargs': {'name': 'url'},
+                                'value': f'{scheme}://{domain}{project_file_selection_url}'
+                            },
+                            {
+                                'name': 'lticm:property',
+                                'kwargs': {'name': 'message_type'},
+                                'value': 'ContentItemSelectionRequest'
+                            },
+                        ]
+                    },
+                    {
                         'name': 'lticm:property',
                         'kwargs': {'name': 'selection_width'},
                         'value': '1000'
@@ -93,7 +125,6 @@ class Auth(views.APIView):
     parser_classes = (FormParser,)
 
     def post(self, request, **kwargs):
-        user = request.user
         return HttpResponseRedirect(settings.LOGIN_REDIRECT_URL)
 
 

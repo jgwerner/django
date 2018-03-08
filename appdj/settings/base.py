@@ -148,6 +148,7 @@ AUTHENTICATION_BACKENDS = (
     'social_core.backends.google.GoogleOAuth2',
     'social_core.backends.github.GithubOAuth2',
     'social_core.backends.slack.SlackOAuth2',
+    'canvas.oauth2.CanvasOAuth2',
     'users.backends.ActiveUserBackend',
     'guardian.backends.ObjectPermissionBackend',
 )
@@ -162,6 +163,20 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = [
 SOCIAL_AUTH_GITHUB_KEY = os.environ.get('GITHUB_CLIENT_ID', '')
 SOCIAL_AUTH_GITHUB_SECRET = os.environ.get('GITHUB_CLIENT_SECRET', '')
 SOCIAL_AUTH_GITHUB_SCOPE = ['user:email', 'repo']
+SOCIAL_AUTH_CANVAS_KEY = os.environ.get('CANVAS_CLIENT_ID', '')
+SOCIAL_AUTH_CANVAS_SECRET = os.environ.get('CANVAS_CLIENT_SECRET', '')
+SOCIAL_AUTH_PIPELINE = (
+    'social_core.pipeline.social_auth.social_details',
+    'social_core.pipeline.social_auth.social_uid',
+    'social_core.pipeline.social_auth.auth_allowed',
+    'social_core.pipeline.social_auth.social_user',
+    'social_core.pipeline.user.get_username',
+    'social_core.pipeline.social_auth.associate_by_email',
+    'social_core.pipeline.user.create_user',
+    'social_core.pipeline.social_auth.associate_user',
+    'social_core.pipeline.social_auth.load_extra_data',
+    'social_core.pipeline.user.user_details',
+)
 
 OAUTH2_PROVIDER_APPLICATION_MODEL = 'oauth2_provider.Application'
 
@@ -265,6 +280,7 @@ REST_FRAMEWORK = {
         'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
         'rest_framework_social_oauth2.authentication.SocialAuthentication',
         'rest_framework.authentication.SessionAuthentication',
+        'canvas.authorization.CanvasAuth',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'teams.permissions.TeamGroupPermission',
@@ -395,7 +411,7 @@ MEDIA_ROOT = "/workspaces/"
 MEDIA_URL = "/media/"
 
 
-es_url = os.environ.get("ELASTICSEARCH_URL",  "http://search:9200/")
+es_url = os.environ.get("ELASTICSEARCH_URL", "http://search:9200/")
 es_use_ssl = "https://" in es_url
 
 HAYSTACK_CONNECTIONS = {
@@ -425,7 +441,7 @@ DEFAULT_STRIPE_PLAN_ID = os.getenv("DEFAULT_STRIPE_PLAN_ID", "threeblades-free-p
 
 NVIDIA_DOCKER_HOST = os.environ.get('NVIDIA_DOCKER_HOST')
 
-SPAWNER = 'servers.spawners.ecs.ECSSpawner'
+SPAWNER = 'servers.spawners.docker.DockerSpawner'
 DEPLOYER = 'servers.spawners.aws_lambda.deployer.LambdaDeployer'
 SCHEDULER = 'servers.spawners.ecs.JobScheduler'
 JUPYTER_IMAGE = os.environ.get('JUPYTER_IMAGE', 'illumidesk/datascience-notebook')
@@ -449,3 +465,5 @@ USAGE_WARNING_THRESHOLDS = os.environ.get("USAGE_WARNING_THRESHOLDS", "75,90,100
 BILLING_BUCKET_SIZE_GB = os.environ.get("BILLING_BUCKET_SIZE_GB", 5)
 
 BUCKET_COST_USD = os.environ.get("BUCKET_COST_USD", 5)
+
+CANVAS_URL = os.environ.get('CANVAS_URL')

@@ -217,5 +217,6 @@ def file_selection(request, *args, **kwargs):
         'lti_version': request.data['lti_version'],
         'projects': projects_context,
         'action_url': request.data['content_item_return_url'],
+        'assignment_id': request.data['ext_lti_assignment_id'],
     }
     return Response(context, template_name='projects/file_selection.html')
