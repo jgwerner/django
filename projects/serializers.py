@@ -76,8 +76,7 @@ class CollaboratorSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         permissions = validated_data.pop('permissions', ['read_project'])
         member = validated_data.pop('member')
-        project_id = self.context['view'].kwargs['project_project']
-        project = Project.objects.tbs_get(project_id)
+        project = self._get_project() 
         owner = validated_data.get("owner", False)
         user = User.objects.filter(Q(username=member) | Q(email=member), is_active=True).first()
 
@@ -95,14 +94,17 @@ class CollaboratorSerializer(serializers.ModelSerializer):
         return Collaborator.objects.create(user=user, project=project, **validated_data)
 
     def update(self, instance, validated_data):
-        project_id = self.context['view'].kwargs['project_project']
-        project = Project.objects.tbs_get(project_id)
+        project = self._get_project() 
         owner = validated_data.get('owner', False)
         if owner is True:
             updated = Collaborator.objects.filter(project=project).exclude(user=instance.user).update(owner=False)
             if updated:
                 stop_all_servers_for_project(project)
         return super().update(instance, validated_data)
+
+    def _get_project(self):
+        project_id = self.context['view'].kwargs['project_project']
+        return Project.objects.tbs_get(project_id)
 
 
 class CloneGitProjectSerializer(ProjectSerializer):

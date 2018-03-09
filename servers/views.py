@@ -11,14 +11,13 @@ from django.urls import reverse
 from rest_framework import status, viewsets, views
 from rest_framework.decorators import api_view, permission_classes, renderer_classes, list_route, authentication_classes
 from rest_framework.response import Response
-from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer
+from rest_framework.renderers import TemplateHTMLRenderer
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_jwt.settings import api_settings
 
 from base.views import LookupByMultipleFields
 from base.permissions import IsAdminUser
 from base.utils import get_object_or_404, validate_uuid
-from base.renderers import PlainTextRenderer
 from canvas.authorization import CanvasAuth
 from projects.permissions import ProjectChildPermission
 from projects.models import Project
@@ -27,7 +26,7 @@ from jwt_auth.serializers import VerifyJSONWebTokenServerSerializer
 from jwt_auth.utils import create_server_jwt, create_auth_jwt
 from teams.permissions import TeamGroupPermission
 from .consumers import ServerStatusConsumer
-from .tasks import start_server, stop_server, terminate_server, deploy, delete_deployment, lti
+from .tasks import start_server, stop_server, terminate_server, deploy, delete_deployment, lti, send_assignment
 from .permissions import ServerChildPermission, ServerActionPermission
 from . import serializers, models
 from .utils import get_server_usage, get_server_url
@@ -200,16 +199,6 @@ def check_token(request, version, project_project, server):
     return Response(status=status.HTTP_401_UNAUTHORIZED)
 
 
-@api_view(['GET'], exclude_from_schema=True)
-@permission_classes((AllowAny,))
-@renderer_classes((PlainTextRenderer, JSONRenderer))
-def server_internal_details(request, version, project_project, server_server, service):
-    server = get_object_or_404(models.Server, server_server)
-    server_ip = server.get_private_ip()
-    port = server.config.get('ports', {}).get(service)
-    return Response(f"{server_ip}:{port}")
-
-
 class DeploymentViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
     queryset = models.Deployment.objects.all()
     serializer_class = serializers.DeploymentSerializer
@@ -287,18 +276,20 @@ class SNSView(views.APIView):
 def lti_file_handler(request, *args, **kwargs):
     project = get_object_or_404(Project, kwargs.get('project_project'))
     workspace = get_object_or_404(models.Server, kwargs.get('server'))
+    path = kwargs.get('path', '')
     task = lti.delay(
         project.pk,
         workspace.pk,
         request.user.pk,
         request.namespace.name,
-        request.data
+        request.data,
+        path
     )
     task_url = reverse('lti-task', kwargs={
         'version': request.version,
         'namespace': request.namespace.name,
         'task_id': task.id,
-        'path': kwargs.get('path', '')
+        'path': path
     })
     access_token = create_auth_jwt(request.user)
     return Response({'task_url': task_url, 'access_token': access_token},
@@ -317,3 +308,15 @@ def lti_ready(request, *args, **kwargs):
     path = kwargs.get('path')
     url = f'{endpoint}{path}?access_token={workspace.access_token}'
     return Response({'url': url})
+
+
+@api_view(['post'])
+@authentication_classes([])
+@permission_classes([])
+def submit_assignment(request, *args, **kwargs):
+    workspace = get_object_or_404(models.Server, kwargs.get('server'))
+    if 'path' not in request.data:
+        return Response({'message': 'No path'}, status=status.HTTP_400_BAD_REQUEST)
+    path = request.data['path']
+    send_assignment.delay(str(workspace.pk), path)
+    return Response({'message': 'OK'})

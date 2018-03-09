@@ -1,4 +1,3 @@
-import ujson
 import logging
 import shutil
 from pathlib import Path
@@ -10,6 +9,8 @@ from django.conf import settings
 from django.core.validators import RegexValidator
 from django.utils.encoding import force_bytes, force_text
 from django_redis.serializers.base import BaseSerializer
+import ujson
+
 log = logging.getLogger(__name__)
 
 
