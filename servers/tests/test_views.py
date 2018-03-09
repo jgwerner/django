@@ -207,19 +207,6 @@ class ServerTest(APITestCase):
         self.assertIsNotNone(server_reloaded)
         self.assertFalse(server_reloaded.is_active)
 
-    @patch('servers.spawners.docker.DockerSpawner.status')
-    def test_server_internal_running(self, server_status):
-        server_status.return_value = Server.RUNNING
-        server = ServerFactory(project=self.project, config={'ports': {'jupyter': '1234'}})
-        url = reverse('server_internal', kwargs={'server_server': server.pk, 'service': 'jupyter', **self.url_kwargs})
-        server.access_token = create_server_jwt(self.user, str(server.pk))
-        server.save()
-        response = self.client.get(url, {'access_token': server.access_token})
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        server_ip = server.get_private_ip()
-        expected = f"{server_ip}:1234"
-        self.assertEqual(expected, response.data)
-
     def test_server_stop_perm(self):
         server = ServerFactory(project=self.project)
         self.url_kwargs.update({
@@ -407,20 +394,6 @@ class ServerTestWithName(APITestCase):
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertIsNone(Server.objects.filter(pk=server.pk, is_active=True).first())
-
-    @patch('servers.spawners.docker.DockerSpawner.status')
-    def test_server_internal_running(self, server_status):
-        server_status.return_value = Server.RUNNING
-        server = ServerFactory(project=self.project, config={'ports': {'jupyter': '1234'}})
-        url = reverse('server_internal', kwargs={
-            'server_server': server.name, 'service': 'jupyter', **self.url_kwargs})
-        server.access_token = create_server_jwt(self.user, str(server.pk))
-        server.save()
-        response = self.client.get(url, {'access_token': server.access_token})
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        server_ip = server.get_private_ip()
-        expected = f"{server_ip}:1234"
-        self.assertEqual(expected, response.data)
 
     def test_server_start_permisisons(self):
         server = ServerFactory(project=self.project)
