@@ -6,7 +6,6 @@ from projects.utils import perform_project_copy
 from projects.tests.factories import CollaboratorFactory
 from users.tests.factories import UserFactory
 from servers.tests.factories import ServerFactory
-from .factories import ServerSizeFactory
 from ..models import Server, ServerSize
 from ..tasks import lti
 
@@ -22,10 +21,11 @@ class LTITest(TestCase):
 
     def test_lti_copy(self):
         data = {
-            'user_id': str(uuid.uuid4()),
+            'custom_canvas_user_id': str(uuid.uuid4()),
             'lis_person_contact_email_primary': 'jdoe@example.com',
+            'ext_roles': ''
         }
-        namespace, workspace_id = lti(self.project.pk, '', self.user.pk, self.user.username, data)
+        namespace, workspace_id = lti(self.project.pk, '', self.user.pk, self.user.username, data, '')
         self.assertEqual(namespace, 'jdoe')
         self.assertTrue(User.objects.filter(username='jdoe').exists())
         self.assertTrue(Server.objects.filter(pk=workspace_id).exists())
@@ -36,10 +36,11 @@ class LTITest(TestCase):
         learner.profile.config = {'canvas_user_id': canvas_user_id}
         learner.save()
         data = {
-            'user_id': canvas_user_id,
-            'lis_person_contact_email_primary': learner.email
+            'custom_canvas_user_id': canvas_user_id,
+            'lis_person_contact_email_primary': learner.email,
+            'ext_roles': ''
         }
-        namespace, workspace_id = lti(self.project.pk, '', learner.pk, self.user.username, data)
+        namespace, workspace_id = lti(self.project.pk, '', learner.pk, self.user.username, data, '')
         self.assertEqual(namespace, learner.username)
         self.assertTrue(Server.objects.filter(pk=workspace_id).exists())
         workspace = Server.objects.get(pk=workspace_id)
@@ -51,11 +52,12 @@ class LTITest(TestCase):
         learner.profile.config = {'canvas_user_id': canvas_user_id}
         learner.save()
         data = {
-            'user_id': canvas_user_id,
-            'lis_person_contact_email_primary': learner.email
+            'custom_canvas_user_id': canvas_user_id,
+            'lis_person_contact_email_primary': learner.email,
+            'ext_roles': ''
         }
         learner_project = perform_project_copy(learner, str(self.project.pk))
-        namespace, workspace_id = lti(self.project.pk, '', learner.pk, self.user.username, data)
+        namespace, workspace_id = lti(self.project.pk, '', learner.pk, self.user.username, data, '')
         self.assertEqual(namespace, learner.username)
         self.assertTrue(Server.objects.filter(pk=workspace_id).exists())
         workspace = Server.objects.get(pk=workspace_id)
@@ -68,11 +70,12 @@ class LTITest(TestCase):
         learner.profile.config = {'canvas_user_id': canvas_user_id}
         learner.save()
         data = {
-            'user_id': canvas_user_id,
-            'lis_person_contact_email_primary': learner.email
+            'custom_canvas_user_id': canvas_user_id,
+            'lis_person_contact_email_primary': learner.email,
+            'ext_roles': ''
         }
         learner_project = perform_project_copy(learner, str(self.project.pk))
         workspace = ServerFactory(project=learner_project, config={'type': 'jupyter'}, is_active=True)
-        namespace, workspace_id = lti(self.project.pk, '', learner.pk, self.user.username, data)
+        namespace, workspace_id = lti(self.project.pk, '', learner.pk, self.user.username, data, '')
         self.assertEqual(namespace, learner.username)
         self.assertEqual(workspace_id, str(workspace.pk))

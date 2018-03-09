@@ -684,7 +684,8 @@ class LTITest(APITestCase):
         url = reverse('project-file-select', kwargs={'version': settings.DEFAULT_VERSION})
         data = {
             'lti_version': '1',
-            'content_item_return_url': 'http://example.com'
+            'content_item_return_url': 'http://example.com',
+            'ext_lti_assignment_id': '123'
         }
         resp = self.client.post(url, data)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
