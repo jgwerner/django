@@ -338,6 +338,22 @@ class ProjectTest(ProjectTestMixin, APITestCase):
         project = Project.objects.get(pk=project.pk)
         self.assertEqual(project.name, data['name'])
 
+    def test_project_update_with_same_name(self):
+        collaborator = CollaboratorFactory(user=self.user)
+        project = collaborator.project
+        assign_perm('write_project', self.user, project)
+        url = reverse('project-detail', kwargs={'namespace': self.user.username,
+                                                'project': project.pk,
+                                                'version': settings.DEFAULT_VERSION})
+        data = dict(
+            name=project.name,
+            description='Test description',
+        )
+        response = self.client.put(url, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        project = Project.objects.get(pk=project.pk)
+        self.assertEqual(project.name, data['name'])
+
     def test_project_partial_update(self):
         collaborator = CollaboratorFactory(user=self.user)
         project = collaborator.project
@@ -464,25 +480,7 @@ class ProjectTestWithName(ProjectTestMixin, APITestCase):
             description='Test description',
         )
         response = self.client.put(url, data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        project = Project.objects.get(pk=project.pk)
-        self.assertEqual(project.name, data['name'])
-
-    def test_updating_project_with_common_name(self):
-        collaborator = CollaboratorFactory(user=self.user, project__name="Foo")
-        project = collaborator.project
-        CollaboratorFactory(project__name="Foo")
-        assign_perm('write_project', self.user, project)
-        url = reverse('project-detail', kwargs={'namespace': self.user.username,
-                                                'project': project.name,
-                                                'version': settings.DEFAULT_VERSION})
-        data = dict(
-            description='Test description',
-        )
-        response = self.client.patch(url, data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        project = Project.objects.get(pk=project.pk)
-        self.assertEqual(project.description, data['description'])
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_project_partial_update(self):
         collaborator = CollaboratorFactory(user=self.user)
@@ -494,9 +492,7 @@ class ProjectTestWithName(ProjectTestMixin, APITestCase):
         data = {'description': "Foo",
                 'name': project.name}
         response = self.client.patch(url, data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        project = Project.objects.get(pk=project.pk)
-        self.assertEqual(project.description, data['description'])
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_project_delete(self):
         collaborator = CollaboratorFactory(user=self.user)
@@ -536,19 +532,6 @@ class ProjectTestWithName(ProjectTestMixin, APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         assign_perm('read_project', self.user, project)
         response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    def test_project_write_perm(self):
-        collaborator = CollaboratorFactory(user=self.user)
-        project = collaborator.project
-        url = reverse('project-detail', kwargs={'namespace': self.user.username,
-                                                'project': project.name,
-                                                'version': settings.DEFAULT_VERSION})
-        data = {'description': "Foo"}
-        response = self.client.patch(url, data=data)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        assign_perm('write_project', self.user, project)
-        response = self.client.patch(url, data=data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_create_collaborator(self):
@@ -713,4 +696,3 @@ class LTITest(APITestCase):
         self.assertEqual(graph['@type'], "LtiLinkItem")
         self.assertIn('@id', graph)
         test_file.unlink()
-        root.rmdir()

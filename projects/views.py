@@ -1,22 +1,24 @@
 import logging
 import json
 from urllib.parse import quote
+from django.http import Http404
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db.models import Q
-from rest_framework import viewsets, status, permissions, exceptions
+from rest_framework import viewsets, status, permissions
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, authentication_classes, permission_classes, renderer_classes
 from rest_framework.generics import CreateAPIView
 from rest_framework.renderers import TemplateHTMLRenderer
 
 from base.views import NamespaceMixin, LookupByMultipleFields
+from base.utils import validate_uuid
 from canvas.authorization import CanvasAuth
 from projects.serializers import (ProjectSerializer,
                                   CollaboratorSerializer,
                                   CloneGitProjectSerializer)
 from projects.models import Project, Collaborator
-from projects.permissions import ProjectPermission, ProjectChildPermission, has_project_permission
+from projects.permissions import ProjectPermission, ProjectChildPermission
 from projects.utils import (has_copy_permission,
                             perform_project_copy,
                             check_project_name_exists)
@@ -36,19 +38,6 @@ class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewS
     ordering_fields = ('name',)
     lookup_url_kwarg = 'project'
 
-    def get_object(self):
-        project = None
-        all_projects = self.get_queryset()
-        collab = Collaborator.objects.filter(project__in=all_projects,
-                                             user=self.request.namespace.object).first()
-        if collab is not None:
-            project = collab.project
-        if project is None:
-            raise exceptions.NotFound()
-        if has_project_permission(self.request, project):
-            return project
-        raise exceptions.PermissionDenied()
-
     def get_queryset(self):
         filter_name = self.request.query_params.get('name')
         filter_dict = {}
@@ -60,32 +49,10 @@ class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewS
             projects = projects.filter(Q(private=False) | Q(collaborator__user=self.request.user))
         return projects
 
-    def _update(self, request, partial, *args, **kwargs):
-        instance = self.get_object()
-        user = request.user
-
-        if not user.has_perm("projects.write_project", instance):
-            return Response(data={'message': "Insufficient permissions to modify project"},
-                            status=status.HTTP_403_FORBIDDEN)
-
-        update_data = request.data
-
-        context = self.get_serializer_context()
-        context.update({'pk': instance.pk})
-        serializer = self.serializer_class(instance, data=update_data,
-                                           partial=partial,
-                                           context=context)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-
-        return Response(data=serializer.data,
-                        status=status.HTTP_200_OK)
-
     def update(self, request, *args, **kwargs):
-        return self._update(request, False, *args, **kwargs)
-
-    def partial_update(self, request, *args, **kwargs):
-        return self._update(request, True, *args, **kwargs)
+        if not validate_uuid(kwargs.get('project', '')):
+            raise Http404
+        return super().update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()

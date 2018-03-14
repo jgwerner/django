@@ -225,13 +225,16 @@ class DeploymentSerializer(serializers.ModelSerializer):
                               framework=framework,
                               **validated_data)
         project_pk = self.context['view'].kwargs.get('project_project')
+        namespace = self.context['request'].namespace
         if validate_uuid(project_pk):
-            instance.project = Project.objects.tbs_get(project_pk)
-        else:
-            project = Collaborator.objects.filter(user=self.context['request'].namespace.object,
+            project = Project.objects.tbs_get(project_pk)
+        elif namespace.type == 'user':
+            project = Collaborator.objects.filter(user=namespace.object,
                                                   project__name=project_pk,
                                                   owner=True).first().project
-            instance.project = project
+        else:
+            project = Project.objects.filter(project__name=project_pk, team=namespace.object).first()
+        instance.project = project
         instance.access_token = create_server_jwt(user, str(pk))
         instance.save()
         return instance

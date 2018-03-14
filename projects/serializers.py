@@ -25,7 +25,7 @@ class ProjectSerializer(SearchSerializerMixin, serializers.ModelSerializer):
 
     def validate_name(self, value):
         request = self.context['request']
-        existing_pk = self.context.get("pk")
+        existing_pk = self.context['view'].kwargs.get('project')
 
         if check_project_name_exists(value, request, existing_pk):
             raise serializers.ValidationError("You can have only one project named %s" % value)
