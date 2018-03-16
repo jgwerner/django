@@ -29,7 +29,7 @@ from .consumers import ServerStatusConsumer
 from .tasks import start_server, stop_server, terminate_server, deploy, delete_deployment, lti, send_assignment
 from .permissions import ServerChildPermission, ServerActionPermission
 from . import serializers, models
-from .utils import get_server_usage, get_server_url
+from .utils import get_server_usage, get_server_url, create_server
 
 log = logging.getLogger('servers')
 jwt_response_payload_handler = api_settings.JWT_RESPONSE_PAYLOAD_HANDLER
@@ -275,7 +275,9 @@ class SNSView(views.APIView):
 @renderer_classes([TemplateHTMLRenderer])
 def lti_file_handler(request, *args, **kwargs):
     project = get_object_or_404(Project, kwargs.get('project_project'))
-    workspace = get_object_or_404(models.Server, kwargs.get('server'))
+    workspace = models.Server.objects.filter(pk=kwargs.get('server')).first()
+    if workspace is None:
+        workspace = create_server(request.user, project, 'workspace')
     path = kwargs.get('path', '')
     task = lti.delay(
         project.pk,
