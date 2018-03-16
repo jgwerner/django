@@ -86,7 +86,7 @@ def lti(project_pk, workspace_pk, user_pk, namespace, data, path):
         workspace = learner_project.servers.filter(config__type='jupyter', is_active=True).first()
         if workspace is None:
             workspace = create_server(learner, learner_project, 'workspace')
-            namespace = learner.username
+        namespace = learner.username
         if 'custom_canvas_assignment_id' in data:
             if 'assignments' not in workspace.config:
                 workspace.config['assignments'] = []
