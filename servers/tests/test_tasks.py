@@ -21,7 +21,7 @@ class LTITest(TestCase):
 
     def test_lti_copy(self):
         data = {
-            'custom_canvas_user_id': str(uuid.uuid4()),
+            'user_id': str(uuid.uuid4()),
             'lis_person_contact_email_primary': 'jdoe@example.com',
             'ext_roles': ''
         }
@@ -36,7 +36,7 @@ class LTITest(TestCase):
         learner.profile.config = {'canvas_user_id': canvas_user_id}
         learner.save()
         data = {
-            'custom_canvas_user_id': canvas_user_id,
+            'user_id': canvas_user_id,
             'lis_person_contact_email_primary': learner.email,
             'ext_roles': ''
         }
@@ -52,7 +52,7 @@ class LTITest(TestCase):
         learner.profile.config = {'canvas_user_id': canvas_user_id}
         learner.save()
         data = {
-            'custom_canvas_user_id': canvas_user_id,
+            'user_id': canvas_user_id,
             'lis_person_contact_email_primary': learner.email,
             'ext_roles': ''
         }
@@ -70,7 +70,7 @@ class LTITest(TestCase):
         learner.profile.config = {'canvas_user_id': canvas_user_id}
         learner.save()
         data = {
-            'custom_canvas_user_id': canvas_user_id,
+            'user_id': canvas_user_id,
             'lis_person_contact_email_primary': learner.email,
             'ext_roles': ''
         }
