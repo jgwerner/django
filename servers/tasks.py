@@ -65,7 +65,7 @@ def normalize_canvas_url(url):
 def lti(project_pk, workspace_pk, user_pk, namespace, data, path):
     project = Project.objects.get(pk=project_pk, is_active=True)
     user = User.objects.get(pk=user_pk)
-    canvas_user_id = data['custom_canvas_user_id']
+    canvas_user_id = data['user_id']
     ext_roles = data['ext_roles']
     if 'ims/lis/Instructor' not in ext_roles and canvas_user_id != user.profile.config.get('canvas_user_id', ''):
         email = data['lis_person_contact_email_primary']
