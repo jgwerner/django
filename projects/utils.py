@@ -69,6 +69,8 @@ def has_copy_permission(request=None, user=None, project=None):
         if project.private:
             has_perm = Collaborator.objects.filter(user=user,
                                                    project=project).exists()
+            if not has_perm and project.team is not None:
+                has_perm = user.team_groups.filter(team=project.team).exists()
         else:
             has_perm = True
     return has_perm
