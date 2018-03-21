@@ -23,6 +23,7 @@ from projects.utils import (has_copy_permission,
                             perform_project_copy,
                             check_project_name_exists)
 from servers.utils import get_server_url, create_server
+from teams.models import Team
 from teams.permissions import TeamGroupPermission
 
 User = get_user_model()
@@ -134,7 +135,10 @@ class CloneGitProject(CreateAPIView):
 @permission_classes([])
 @renderer_classes([TemplateHTMLRenderer])
 def file_selection(request, *args, **kwargs):
-    projects = Project.objects.filter(collaborator__user=request.user, is_active=True)
+    projects = Project.objects.filter(
+        Q(collaborator__user=request.user) | Q(team__in=Team.objects.filter(groups__user=request.user)),
+        Q(is_active=True)
+    )
 
     def iterate_dir(directory):
         for item in directory.iterdir():
@@ -159,7 +163,7 @@ def file_selection(request, *args, **kwargs):
             quoted = quote(path, safe='/')
             scheme = 'https' if settings.HTTPS else 'http'
             url = get_server_url(str(project.pk), str(workspace.pk), scheme,
-                                 f"/{quoted}", namespace=project.owner.username)
+                                 f"/{quoted}", namespace=project.namespace_name)
             files.append({
                 'path': path,
                 'content_items': json.dumps({

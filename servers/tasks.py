@@ -62,10 +62,10 @@ def normalize_canvas_url(url):
 
 
 @shared_task()
-def lti(project_pk, workspace_pk, user_pk, namespace, data, path):
+def lti(project_pk, workspace_pk, user_pk, data, path):
     project = Project.objects.get(pk=project_pk, is_active=True)
     user = User.objects.get(pk=user_pk)
-    canvas_user_id = data['custom_canvas_user_id']
+    canvas_user_id = data['user_id']
     ext_roles = data['ext_roles']
     if 'ims/lis/Instructor' not in ext_roles and canvas_user_id != user.profile.config.get('canvas_user_id', ''):
         email = data['lis_person_contact_email_primary']
@@ -84,7 +84,6 @@ def lti(project_pk, workspace_pk, user_pk, namespace, data, path):
         if learner_project is None:
             learner_project = perform_project_copy(learner, str(project.pk))
         workspace = learner_project.servers.filter(config__type='jupyter', is_active=True).first()
-        namespace = learner.username
         if 'custom_canvas_assignment_id' in data:
             if 'assignments' not in workspace.config:
                 workspace.config['assignments'] = []
@@ -118,14 +117,15 @@ def lti(project_pk, workspace_pk, user_pk, namespace, data, path):
                 time.sleep(2)
                 break
             time.sleep(1)
-    return namespace, str(workspace.pk)
+    return str(workspace.pk)
 
 
 @shared_task()
 def send_assignment(workspace_pk, path):
     workspace = Server.objects.get(is_active=True, pk=workspace_pk)
     assignment = next((a for a in workspace.config.get('assignments', []) if a['path'] == path))
-    teacher = Project.objects.get(pk=workspace.project.config['copied_from']).owner
+    project = Project.objects.get(pk=workspace.project.config['copied_from'])
+    teacher = project.owner if isinstance(project.owner, User) else project.owner.owner
     oauth_app = teacher.oauth2_provider_application.get(name__icontains='canvas')
     oauth_session = OAuth1Session(oauth_app.client_id, client_secret=oauth_app.client_secret)
     scheme = 'https' if settings.HTTPS else 'http'

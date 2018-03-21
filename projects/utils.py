@@ -77,17 +77,18 @@ def has_copy_permission(request=None, user=None, project=None):
 def copy_servers(old_project: Project, new_project: Project) -> None:
     log.info(f"Copying servers from {old_project.pk} to {new_project.pk}")
     servers = Server.objects.filter(project=old_project, is_active=True)
+    owner = new_project.owner if isinstance(new_project.owner, User) else new_project.owner.owner
 
     for server in servers:
         server_copy = server
         server_copy.pk = None
         server_copy.project = new_project
-        server_copy.created_by = new_project.owner
-        server_copy.access_token = create_server_jwt(new_project.owner, server_copy.id)
+        server_copy.created_by = owner
+        server_copy.access_token = create_server_jwt(owner, server_copy.id)
         server_copy.config = {'type': server_copy.config['type']}
         server_copy.save()
         for permission in [perm[0] for perm in Server._meta.permissions]:
-            assign_perm(permission, new_project.owner, server)
+            assign_perm(permission, owner, server)
         log.info(f"Copied {server.pk}")
 
 
