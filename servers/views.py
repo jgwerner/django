@@ -193,7 +193,7 @@ class ServerSizeViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
 def check_token(request, version, project_project, server):
     server = models.Server.objects.only('access_token').tbs_get(server)
     auth_header = request.META.get('HTTP_AUTHORIZATION')
-    if auth_header and auth_header.startswith('Bearer'):
+    if auth_header and ' ' in auth_header and auth_header.startswith('Bearer'):
         token = auth_header.split()[1]
         return Response() if token == server.access_token else Response(status=status.HTTP_401_UNAUTHORIZED)
     return Response(status=status.HTTP_401_UNAUTHORIZED)

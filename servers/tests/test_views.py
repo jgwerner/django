@@ -8,7 +8,7 @@ from django.test import override_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from jwt_auth.utils import create_server_jwt, create_auth_jwt
+from jwt_auth.utils import create_auth_jwt
 from projects.tests.factories import CollaboratorFactory, ProjectFactory
 from servers.models import Server, SshTunnel, ServerRunStatistics
 from users.tests.factories import UserFactory
@@ -32,8 +32,48 @@ class ServerTest(APITestCase):
                            'version': settings.DEFAULT_VERSION}
         self.server_size = ServerSizeFactory(name='Nano')
         ServerSizeFactory()
-        token = create_auth_jwt(self.user)
-        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
+        self.token = create_auth_jwt(self.user)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {self.token}')
+
+    def test_check_token_ok(self):
+        server = ServerFactory(project=self.project, config={'type': 'jupyter'}, created_by=self.user)
+        kwargs = {'server': str(server.pk), **self.url_kwargs}
+        url = reverse('server-auth', kwargs=kwargs)
+        cli = self.client_class(HTTP_AUTHORIZATION=f'Bearer {server.access_token}')
+        resp = cli.post(url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+    def test_check_token_use_user_token(self):
+        server = ServerFactory(project=self.project, config={'type': 'jupyter'}, created_by=self.user)
+        kwargs = {'server': str(server.pk), **self.url_kwargs}
+        url = reverse('server-auth', kwargs=kwargs)
+        cli = self.client_class(HTTP_AUTHORIZATION=f'Bearer {self.token}')
+        resp = cli.post(url)
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_check_token_no_auth_header(self):
+        server = ServerFactory(project=self.project, config={'type': 'jupyter'}, created_by=self.user)
+        kwargs = {'server': str(server.pk), **self.url_kwargs}
+        url = reverse('server-auth', kwargs=kwargs)
+        cli = self.client_class()
+        resp = cli.post(url)
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_check_token_wrong_token_type(self):
+        server = ServerFactory(project=self.project, config={'type': 'jupyter'}, created_by=self.user)
+        kwargs = {'server': str(server.pk), **self.url_kwargs}
+        url = reverse('server-auth', kwargs=kwargs)
+        cli = self.client_class(HTTP_AUTHORIZATION=f'Token {self.token}')
+        resp = cli.post(url)
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_check_token_empty_token(self):
+        server = ServerFactory(project=self.project, config={'type': 'jupyter'}, created_by=self.user)
+        kwargs = {'server': str(server.pk), **self.url_kwargs}
+        url = reverse('server-auth', kwargs=kwargs)
+        cli = self.client_class(HTTP_AUTHORIZATION=f'Bearer')
+        resp = cli.post(url)
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_create_server(self):
         url = reverse('server-list', kwargs=self.url_kwargs)
@@ -221,8 +261,6 @@ class ServerTest(APITestCase):
 
     def test_server_api_key(self):
         server = ServerFactory(project=self.project)
-        server.access_token = create_server_jwt(self.user, str(server.pk))
-        server.save()
         self.url_kwargs.update({'server': str(server.pk)})
         url = reverse('server-api-key', kwargs=self.url_kwargs)
         resp = self.client.get(url)
@@ -239,8 +277,6 @@ class ServerTest(APITestCase):
 
     def test_server_api_key_verify(self):
         server = ServerFactory(project=self.project)
-        server.access_token = create_server_jwt(self.user, str(server.pk))
-        server.save()
         self.url_kwargs.update({'server': str(server.pk)})
         url = reverse('server-api-key-verify', kwargs=self.url_kwargs)
         data = {"token": server.access_token}
@@ -433,8 +469,6 @@ class ServerTestWithName(APITestCase):
 
     def test_server_api_key(self):
         server = ServerFactory(project=self.project)
-        server.access_token = create_server_jwt(self.user, server.name)
-        server.save()
         self.url_kwargs.update({'server': str(server.pk)})
         url = reverse('server-api-key', kwargs=self.url_kwargs)
         resp = self.client.get(url)
@@ -451,8 +485,6 @@ class ServerTestWithName(APITestCase):
 
     def test_server_api_key_verify(self):
         server = ServerFactory(project=self.project)
-        server.access_token = create_server_jwt(self.user, str(server.pk))
-        server.save()
         self.url_kwargs.update({'server': server.name})
         url = reverse('server-api-key-verify', kwargs=self.url_kwargs)
         data = {"token": server.access_token}
