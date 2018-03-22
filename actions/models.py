@@ -7,6 +7,8 @@ from django.urls import reverse
 from django.utils import timezone
 from requests import Session, Request
 
+from .utils import SkipJSONEncoder
+
 from jwt_auth.utils import create_auth_jwt
 
 
@@ -57,6 +59,7 @@ class Action(models.Model):
     can_be_cancelled = models.BooleanField(default=False)
     can_be_retried = models.BooleanField(default=False)
     is_user_action = models.BooleanField(default=True)
+    headers = JSONField(default={}, encoder=SkipJSONEncoder)
 
     objects = ActionQuerySet.as_manager()
 

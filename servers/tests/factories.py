@@ -7,6 +7,7 @@ from factory import fuzzy
 from projects.tests.factories import ProjectFactory
 from servers import models
 from users.tests.factories import UserFactory
+from jwt_auth.utils import create_server_jwt
 
 
 class ServerSizeFactory(factory.django.DjangoModelFactory):
@@ -33,6 +34,11 @@ class ServerFactory(factory.django.DjangoModelFactory):
     image_name = '3blades/server'
     is_active = True
     config = {'type': 'proxy'}
+
+    @factory.post_generation
+    def access_token(self, create, extracted, **kwargs):
+        self.access_token = create_server_jwt(self.created_by, str(self.pk))
+        self.save()
 
 
 class ServerRunStatisticsFactory(factory.django.DjangoModelFactory):
