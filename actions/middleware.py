@@ -63,7 +63,7 @@ class ActionMiddleware(object):
                 ip=self._get_client_ip(request),
                 payload=body,
                 state=Action.PENDING,
-                headers=dict(request.META),
+                headers=request.META,
             )
         request.action = action
 
