@@ -189,6 +189,7 @@ class ServerSizeViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
 
 
 @api_view(['POST'])
+@authentication_classes([])
 @permission_classes((AllowAny,))
 def check_token(request, version, project_project, server):
     server = models.Server.objects.only('access_token').tbs_get(server)
