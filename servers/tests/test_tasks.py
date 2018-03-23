@@ -85,7 +85,7 @@ class LTITeamsTest(TestCase):
         self.team = TeamFactory()
         self.group = GroupFactory(name='owners', team=self.team)
         self.user.team_groups.add(self.group)
-        self.project = ProjectFactory(team=self.team)
+        self.project = ProjectFactory(team=self.team, private=False)
 
     def test_lti_copy(self):
         data = {
