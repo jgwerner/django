@@ -29,7 +29,7 @@ from .consumers import ServerStatusConsumer
 from .tasks import start_server, stop_server, terminate_server, deploy, delete_deployment, lti, send_assignment
 from .permissions import ServerChildPermission, ServerActionPermission
 from . import serializers, models
-from .utils import get_server_usage, get_server_url
+from .utils import get_server_usage, get_server_url, create_server
 
 log = logging.getLogger('servers')
 jwt_response_payload_handler = api_settings.JWT_RESPONSE_PAYLOAD_HANDLER
@@ -189,11 +189,12 @@ class ServerSizeViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
 
 
 @api_view(['POST'])
+@authentication_classes([])
 @permission_classes((AllowAny,))
 def check_token(request, version, project_project, server):
     server = models.Server.objects.only('access_token').tbs_get(server)
     auth_header = request.META.get('HTTP_AUTHORIZATION')
-    if auth_header and auth_header.startswith('Bearer'):
+    if auth_header and ' ' in auth_header and auth_header.startswith('Bearer'):
         token = auth_header.split()[1]
         return Response() if token == server.access_token else Response(status=status.HTTP_401_UNAUTHORIZED)
     return Response(status=status.HTTP_401_UNAUTHORIZED)
@@ -275,7 +276,9 @@ class SNSView(views.APIView):
 @renderer_classes([TemplateHTMLRenderer])
 def lti_file_handler(request, *args, **kwargs):
     project = get_object_or_404(Project, kwargs.get('project_project'))
-    workspace = get_object_or_404(models.Server, kwargs.get('server'))
+    workspace = models.Server.objects.filter(pk=kwargs.get('server')).first()
+    if workspace is None:
+        workspace = create_server(request.user, project, 'workspace')
     path = kwargs.get('path', '')
     task = lti.delay(
         project.pk,

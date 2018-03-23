@@ -61,13 +61,18 @@
     <form action="{{ action_url}}" name="fileForm" method="post">
       <input type="hidden" value="ContentItemSelection" name="lti_message_type" />
       <input type="hidden" value="{{ lti_version }}" name="lti_version" />
-      <h2>Projects:</h2>
+      <h2>Select notebook file:</h2>
       <ul>{% for project in projects %}
-        <li><a href="#" class="directory">{{ project.name }}</a>
-          <ul style="display: none;">{% for file in project.files %}
+        <li class="project">
+          <a href="#" class="directory">
+            {{ project.name }}
+            <i class="arrow-down"{% if not forloop.first %} style="display: none;"{% endif %}>↓</i>
+            <i class="arrow-right"{% if forloop.first %} style="display: none;"{% endif %}>→</i>
+          </a>
+          <ul{% if not forloop.first %} style="display: none;"{% endif %}>{% for file in project.files %}
             <li>
               <label>
-                <input type="radio" id="url" value="{{ file.content_items|escape }}" name="content_items" />
+                <input type="radio" id="url" value="{{ file.content_items|escape }}" name="content_items" required />
                 {{ file.path }}
               </label>
             </li>
@@ -80,11 +85,17 @@
     (function() {
       document.querySelectorAll('.directory').forEach(function(item) {
         item.onclick = function (e) {
-          var fileList = e.target.parentElement.lastElementChild;
+          var fileList = e.target.closest('.project').querySelector('ul'),
+              arrowDown = e.target.parentElement.querySelector('.arrow-down'),
+              arrowRight = e.target.parentElement.querySelector('.arrow-right');
           if (fileList.style.display === "none") {
             fileList.style.display = "block";
+            arrowDown.style.display = "inline";
+            arrowRight.style.display = "none";
           } else {
             fileList.style.display = "none";
+            arrowDown.style.display = "none";
+            arrowRight.style.display = "inline";
           }
         }
       });

@@ -84,6 +84,8 @@ def lti(project_pk, workspace_pk, user_pk, data, path):
         if learner_project is None:
             learner_project = perform_project_copy(learner, str(project.pk))
         workspace = learner_project.servers.filter(config__type='jupyter', is_active=True).first()
+        if workspace is None:
+            workspace = create_server(learner, learner_project, 'workspace')
         if 'custom_canvas_assignment_id' in data:
             if 'assignments' not in workspace.config:
                 workspace.config['assignments'] = []
@@ -106,8 +108,8 @@ def lti(project_pk, workspace_pk, user_pk, data, path):
             workspace.save()
     else:
         workspace = Server.objects.filter(is_active=True, pk=workspace_pk).first()
-    if workspace is None:
-        workspace = create_server(learner, learner_project, 'workspace')
+        if workspace is None:
+            workspace = create_server(user, project, 'workspace')
     if workspace.status != workspace.RUNNING:
         workspace.spawner.start()
         # wait 30 sec for workspace to start
