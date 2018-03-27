@@ -150,3 +150,4 @@ def send_assignment(workspace_pk, path):
     response = oauth_session.post(assignment['outcome_url'], data=xml,
                                   headers={'Content-Type': 'application/xml'})
     response.raise_for_status()
+    log.debug(f"[Send assignment] LTI Response: {response.__dict__}")
