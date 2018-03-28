@@ -25,7 +25,8 @@ class LTITest(TestCase):
             'lis_person_contact_email_primary': 'jdoe@example.com',
             'ext_roles': ''
         }
-        namespace, workspace_id = lti(self.project.pk, '', self.user.pk, self.user.username, data, '')
+        namespace, workspace_id, assignment_id = lti(
+            self.project.pk, '', self.user.pk, self.user.username, data, '')
         self.assertEqual(namespace, 'jdoe')
         self.assertTrue(User.objects.filter(username='jdoe').exists())
         self.assertTrue(Server.objects.filter(pk=workspace_id).exists())
@@ -40,7 +41,8 @@ class LTITest(TestCase):
             'lis_person_contact_email_primary': learner.email,
             'ext_roles': ''
         }
-        namespace, workspace_id = lti(self.project.pk, '', self.user.pk, self.user.username, data, '')
+        namespace, workspace_id, assignment_id = lti(
+            self.project.pk, '', self.user.pk, self.user.username, data, '')
         self.assertEqual(namespace, learner.username)
         self.assertTrue(Server.objects.filter(pk=workspace_id).exists())
         workspace = Server.objects.get(pk=workspace_id)
@@ -57,7 +59,8 @@ class LTITest(TestCase):
             'ext_roles': ''
         }
         learner_project = perform_project_copy(learner, str(self.project.pk))
-        namespace, workspace_id = lti(self.project.pk, '', self.user.pk, self.user.username, data, '')
+        namespace, workspace_id, assignment_id = lti(
+            self.project.pk, '', self.user.pk, self.user.username, data, '')
         self.assertEqual(namespace, learner.username)
         self.assertTrue(Server.objects.filter(pk=workspace_id).exists())
         workspace = Server.objects.get(pk=workspace_id)
@@ -76,6 +79,7 @@ class LTITest(TestCase):
         }
         learner_project = perform_project_copy(learner, str(self.project.pk))
         workspace = ServerFactory(project=learner_project, config={'type': 'jupyter'}, is_active=True)
-        namespace, workspace_id = lti(self.project.pk, '', self.user.pk, self.user.username, data, '')
+        namespace, workspace_id, assingment_id = lti(
+            self.project.pk, '', self.user.pk, self.user.username, data, '')
         self.assertEqual(namespace, learner.username)
         self.assertEqual(workspace_id, str(workspace.pk))
