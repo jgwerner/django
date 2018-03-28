@@ -63,10 +63,12 @@ def normalize_canvas_url(url):
 
 @shared_task()
 def lti(project_pk, workspace_pk, user_pk, namespace, data, path):
+    log.debug(f'[LTI] data: {data}')
     project = Project.objects.get(pk=project_pk, is_active=True)
     user = User.objects.get(pk=user_pk)
     canvas_user_id = data['user_id']
     ext_roles = data['ext_roles']
+    assignment_id = None
     if 'ims/lis/Instructor' not in ext_roles and canvas_user_id != user.profile.config.get('canvas_user_id', ''):
         email = data['lis_person_contact_email_primary']
         learner = User.objects.filter(
@@ -120,13 +122,13 @@ def lti(project_pk, workspace_pk, user_pk, namespace, data, path):
                 time.sleep(2)
                 break
             time.sleep(1)
-    return namespace, str(workspace.pk)
+    return namespace, str(workspace.pk), assignment_id
 
 
 @shared_task()
-def send_assignment(workspace_pk, path):
+def send_assignment(workspace_pk, assignment_id):
     workspace = Server.objects.get(is_active=True, pk=workspace_pk)
-    assignment = next((a for a in workspace.config.get('assignments', []) if a['path'] == path))
+    assignment = next((a for a in workspace.config.get('assignments', []) if a['id'] == assignment_id))
     teacher = Project.objects.get(pk=workspace.project.config['copied_from']).owner
     oauth_app = teacher.oauth2_provider_application.get(name__icontains='canvas')
     oauth_session = OAuth1Session(oauth_app.client_id, client_secret=oauth_app.client_secret)
@@ -137,7 +139,7 @@ def send_assignment(workspace_pk, path):
         'namespace': namespace,
         'project_project': str(workspace.project.pk),
         'server': str(workspace.pk),
-        'path': path
+        'path': assignment['path']
     })
     domain = Site.objects.get_current().domain
     url = f"{scheme}://{domain}{url_path}"
@@ -150,3 +152,4 @@ def send_assignment(workspace_pk, path):
     response = oauth_session.post(assignment['outcome_url'], data=xml,
                                   headers={'Content-Type': 'application/xml'})
     response.raise_for_status()
+    log.debug(f"[Send assignment] LTI Response: {response.__dict__}")
