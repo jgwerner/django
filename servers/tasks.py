@@ -1,6 +1,5 @@
 import time
 import uuid
-from urllib.parse import urlsplit, urlunsplit
 from celery import shared_task
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -53,14 +52,6 @@ def delete_deployment(deployment):
     deployment_action('delete', deployment)
 
 
-def normalize_canvas_url(url):
-    canvas_url = list(urlsplit(settings.CANVAS_URL))
-    url = list(urlsplit(url))
-    url[0] = canvas_url[0]
-    url[1] = canvas_url[1]
-    return urlunsplit(url)
-
-
 @shared_task()
 def lti(project_pk, workspace_pk, user_pk, namespace, data, path):
     log.debug(f'[LTI] data: {data}')
@@ -100,7 +91,7 @@ def lti(project_pk, workspace_pk, user_pk, namespace, data, path):
                 'course_id': data['custom_canvas_course_id'],
                 'user_id': data['custom_canvas_user_id'],
                 'path': path,
-                'outcome_url': normalize_canvas_url(data['lis_outcome_service_url']),
+                'outcome_url': data['lis_outcome_service_url'],
             }
             if 'lis_result_sourcedid' in data:
                 assignment['source_did'] = data['lis_result_sourcedid']

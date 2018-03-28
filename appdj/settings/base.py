@@ -148,7 +148,6 @@ AUTHENTICATION_BACKENDS = (
     'social_core.backends.google.GoogleOAuth2',
     'social_core.backends.github.GithubOAuth2',
     'social_core.backends.slack.SlackOAuth2',
-    'canvas.oauth2.CanvasOAuth2',
     'users.backends.ActiveUserBackend',
     'guardian.backends.ObjectPermissionBackend',
 )
@@ -467,5 +466,3 @@ USAGE_WARNING_THRESHOLDS = os.environ.get("USAGE_WARNING_THRESHOLDS", "75,90,100
 BILLING_BUCKET_SIZE_GB = os.environ.get("BILLING_BUCKET_SIZE_GB", 5)
 
 BUCKET_COST_USD = os.environ.get("BUCKET_COST_USD", 5)
-
-CANVAS_URL = os.environ.get('CANVAS_URL')
