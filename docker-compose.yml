@@ -52,7 +52,7 @@ services:
     entrypoint: ''
   celery:
     build: .
-    command: /srv/env/bin/celery -A appdj worker -l info
+    command: /srv/env/bin/celery -A appdj worker -l info --without-heartbeat
     volumes:
       - .:/srv/app
       - /workspaces:/workspaces

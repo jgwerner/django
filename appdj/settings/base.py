@@ -148,7 +148,6 @@ AUTHENTICATION_BACKENDS = (
     'social_core.backends.google.GoogleOAuth2',
     'social_core.backends.github.GithubOAuth2',
     'social_core.backends.slack.SlackOAuth2',
-    'canvas.oauth2.CanvasOAuth2',
     'users.backends.ActiveUserBackend',
     'guardian.backends.ObjectPermissionBackend',
 )
@@ -357,6 +356,8 @@ CELERY_BROKER_HEARTBEAT = None  # We're using TCP keep-alive instead
 CELERY_BROKER_CONNECTION_TIMEOUT = 30  # May require a long timeout due to Linux DNS timeouts etc
 CELERY_SEND_EVENTS = False  # Will not create celeryev.* queues
 CELERY_EVENT_QUEUE_EXPIRES = 60  # Will delete all celeryev. queues without consumers after 1 minute.
+CELERY_WORKER_CONCURENCY = 50
+CELERY_WORKER_PREFETCH_MULTIPLYER = 1
 CELERY_BROKER_URL = os.environ.get('RABBITMQ_URL')
 CELERY_REDBEAT_REDIS_URL = os.environ.get('REDIS_URL')
 CELERY_BEAT_SCHEDULER = 'redbeat:RedBeatScheduler'
@@ -465,5 +466,3 @@ USAGE_WARNING_THRESHOLDS = os.environ.get("USAGE_WARNING_THRESHOLDS", "75,90,100
 BILLING_BUCKET_SIZE_GB = os.environ.get("BILLING_BUCKET_SIZE_GB", 5)
 
 BUCKET_COST_USD = os.environ.get("BUCKET_COST_USD", 5)
-
-CANVAS_URL = os.environ.get('CANVAS_URL')

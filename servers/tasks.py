@@ -1,6 +1,5 @@
 import time
 import uuid
-from urllib.parse import urlsplit, urlunsplit
 from celery import shared_task
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -53,20 +52,14 @@ def delete_deployment(deployment):
     deployment_action('delete', deployment)
 
 
-def normalize_canvas_url(url):
-    canvas_url = list(urlsplit(settings.CANVAS_URL))
-    url = list(urlsplit(url))
-    url[0] = canvas_url[0]
-    url[1] = canvas_url[1]
-    return urlunsplit(url)
-
-
 @shared_task()
 def lti(project_pk, workspace_pk, user_pk, data, path):
+    log.debug(f'[LTI] data: {data}')
     project = Project.objects.get(pk=project_pk, is_active=True)
     user = User.objects.get(pk=user_pk)
     canvas_user_id = data['user_id']
     ext_roles = data['ext_roles']
+    assignment_id = None
     if 'ims/lis/Instructor' not in ext_roles and canvas_user_id != user.profile.config.get('canvas_user_id', ''):
         email = data['lis_person_contact_email_primary']
         learner = User.objects.filter(
@@ -83,6 +76,8 @@ def lti(project_pk, workspace_pk, user_pk, data, path):
         learner_project = learner.projects.filter(config__copied_from=str(project.pk), is_active=True).first()
         if learner_project is None:
             learner_project = perform_project_copy(learner, str(project.pk))
+            learner_project.team = None
+            learner_project.save()
         workspace = learner_project.servers.filter(config__type='jupyter', is_active=True).first()
         if workspace is None:
             workspace = create_server(learner, learner_project, 'workspace')
@@ -97,7 +92,7 @@ def lti(project_pk, workspace_pk, user_pk, data, path):
                 'course_id': data['custom_canvas_course_id'],
                 'user_id': data['custom_canvas_user_id'],
                 'path': path,
-                'outcome_url': normalize_canvas_url(data['lis_outcome_service_url']),
+                'outcome_url': data['lis_outcome_service_url'],
             }
             if 'lis_result_sourcedid' in data:
                 assignment['source_did'] = data['lis_result_sourcedid']
@@ -119,15 +114,14 @@ def lti(project_pk, workspace_pk, user_pk, data, path):
                 time.sleep(2)
                 break
             time.sleep(1)
-    return str(workspace.pk)
+    return str(workspace.pk), assignment_id
 
 
 @shared_task()
-def send_assignment(workspace_pk, path):
+def send_assignment(workspace_pk, assignment_id):
     workspace = Server.objects.get(is_active=True, pk=workspace_pk)
-    assignment = next((a for a in workspace.config.get('assignments', []) if a['path'] == path))
-    project = Project.objects.get(pk=workspace.project.config['copied_from'])
-    teacher = project.owner if isinstance(project.owner, User) else project.owner.owner
+    assignment = next((a for a in workspace.config.get('assignments', []) if a['id'] == assignment_id))
+    teacher = Project.objects.get(pk=workspace.project.config['copied_from']).owner
     oauth_app = teacher.oauth2_provider_application.get(name__icontains='canvas')
     oauth_session = OAuth1Session(oauth_app.client_id, client_secret=oauth_app.client_secret)
     scheme = 'https' if settings.HTTPS else 'http'
@@ -137,7 +131,7 @@ def send_assignment(workspace_pk, path):
         'namespace': namespace,
         'project_project': str(workspace.project.pk),
         'server': str(workspace.pk),
-        'path': path
+        'path': assignment['path']
     })
     domain = Site.objects.get_current().domain
     url = f"{scheme}://{domain}{url_path}"
@@ -150,3 +144,4 @@ def send_assignment(workspace_pk, path):
     response = oauth_session.post(assignment['outcome_url'], data=xml,
                                   headers={'Content-Type': 'application/xml'})
     response.raise_for_status()
+    log.debug(f"[Send assignment] LTI Response: {response.__dict__}")

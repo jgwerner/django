@@ -300,7 +300,7 @@ def lti_file_handler(request, *args, **kwargs):
 
 @api_view(['get'])
 def lti_ready(request, *args, **kwargs):
-    workspace_id = AsyncResult(kwargs.get('task_id')).get()
+    workspace_id, assignment_id = AsyncResult(kwargs.get('task_id')).get()
     workspace = models.Server.objects.filter(pk=workspace_id).first()
     if workspace is None:
         return Response({'error': 'No workspace created'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -309,6 +309,8 @@ def lti_ready(request, *args, **kwargs):
                               scheme, '/endpoint/proxy/lab/tree/', namespace=workspace.namespace_name)
     path = kwargs.get('path')
     url = f'{endpoint}{path}?access_token={workspace.access_token}'
+    if assignment_id:
+        url += f'&assignment_id={assignment_id}'
     return Response({'url': url})
 
 
@@ -317,8 +319,8 @@ def lti_ready(request, *args, **kwargs):
 @permission_classes([])
 def submit_assignment(request, *args, **kwargs):
     workspace = get_object_or_404(models.Server, kwargs.get('server'))
-    if 'path' not in request.data:
-        return Response({'message': 'No path'}, status=status.HTTP_400_BAD_REQUEST)
-    path = request.data['path']
-    send_assignment.delay(str(workspace.pk), path)
+    assignment_id = kwargs.get('assignment_id')
+    if assignment_id is None:
+        return Response({'message': 'No assignment id'}, status=status.HTTP_400_BAD_REQUEST)
+    send_assignment.delay(str(workspace.pk), assignment_id)
     return Response({'message': 'OK'})

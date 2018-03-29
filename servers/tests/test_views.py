@@ -813,7 +813,7 @@ class LTITest(APITestCase):
         self.assertIn('access_token', resp.data)
 
         with patch('celery.result.AsyncResult.get') as get_result:
-            get_result.return_value = (self.user.username, str(self.server.pk))
+            get_result.return_value = (str(self.server.pk), None)
             task_resp = self.api_client.get(resp.data['task_url'])
         self.assertEqual(task_resp.status_code, status.HTTP_200_OK)
         self.assertIn('url', task_resp.data)

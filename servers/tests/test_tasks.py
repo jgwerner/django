@@ -26,7 +26,8 @@ class LTITest(TestCase):
             'lis_person_contact_email_primary': 'jdoe@example.com',
             'ext_roles': ''
         }
-        workspace_id = lti(self.project.pk, '', self.user.pk, data, '')
+        workspace_id, assignment_id = lti(
+            self.project.pk, '', self.user.pk, data, '')
         self.assertTrue(User.objects.filter(username='jdoe').exists())
         self.assertTrue(Server.objects.filter(pk=workspace_id).exists())
 
@@ -40,7 +41,8 @@ class LTITest(TestCase):
             'lis_person_contact_email_primary': learner.email,
             'ext_roles': ''
         }
-        workspace_id = lti(self.project.pk, '', learner.pk, data, '')
+        workspace_id, assignment_id = lti(
+            self.project.pk, '', self.user.pk, data, '')
         self.assertTrue(Server.objects.filter(pk=workspace_id).exists())
         workspace = Server.objects.get(pk=workspace_id)
         self.assertEqual(learner.pk, workspace.project.owner.pk)
@@ -56,7 +58,8 @@ class LTITest(TestCase):
             'ext_roles': ''
         }
         learner_project = perform_project_copy(learner, str(self.project.pk))
-        workspace_id = lti(self.project.pk, '', learner.pk, data, '')
+        workspace_id, assignment_id = lti(
+            self.project.pk, '', self.user.pk, data, '')
         self.assertTrue(Server.objects.filter(pk=workspace_id).exists())
         workspace = Server.objects.get(pk=workspace_id)
         self.assertEqual(learner.pk, workspace.project.owner.pk)
@@ -74,7 +77,8 @@ class LTITest(TestCase):
         }
         learner_project = perform_project_copy(learner, str(self.project.pk))
         workspace = ServerFactory(project=learner_project, config={'type': 'jupyter'}, is_active=True)
-        workspace_id = lti(self.project.pk, '', learner.pk, data, '')
+        workspace_id, assingment_id = lti(
+            self.project.pk, '', self.user.pk, data, '')
         self.assertEqual(workspace_id, str(workspace.pk))
 
 
@@ -93,7 +97,7 @@ class LTITeamsTest(TestCase):
             'lis_person_contact_email_primary': 'jdoe@example.com',
             'ext_roles': ''
         }
-        workspace_id = lti(self.project.pk, '', self.user.pk, data, '')
+        workspace_id, assignment_id = lti(self.project.pk, '', self.user.pk, data, '')
         self.assertTrue(User.objects.filter(username='jdoe').exists())
         self.assertTrue(Server.objects.filter(pk=workspace_id).exists())
 
@@ -107,7 +111,7 @@ class LTITeamsTest(TestCase):
             'lis_person_contact_email_primary': learner.email,
             'ext_roles': ''
         }
-        workspace_id = lti(self.project.pk, '', learner.pk, data, '')
+        workspace_id, assignment_id = lti(self.project.pk, '', learner.pk, data, '')
         self.assertTrue(Server.objects.filter(pk=workspace_id).exists())
         workspace = Server.objects.get(pk=workspace_id)
         self.assertEqual(learner.pk, workspace.project.owner.pk)
@@ -123,7 +127,9 @@ class LTITeamsTest(TestCase):
             'ext_roles': ''
         }
         learner_project = perform_project_copy(learner, str(self.project.pk))
-        workspace_id = lti(self.project.pk, '', learner.pk, data, '')
+        learner_project.team = None
+        learner_project.save()
+        workspace_id, assignment_id = lti(self.project.pk, '', learner.pk, data, '')
         self.assertTrue(Server.objects.filter(pk=workspace_id).exists())
         workspace = Server.objects.get(pk=workspace_id)
         self.assertEqual(learner.pk, workspace.project.owner.pk)
@@ -141,5 +147,6 @@ class LTITeamsTest(TestCase):
         }
         learner_project = perform_project_copy(learner, str(self.project.pk))
         workspace = ServerFactory(project=learner_project, config={'type': 'jupyter'}, is_active=True)
-        workspace_id = lti(self.project.pk, '', learner.pk, data, '')
+        workspace_id, assingment_id = lti(
+            self.project.pk, '', self.user.pk, data, '')
         self.assertEqual(workspace_id, str(workspace.pk))
