@@ -284,7 +284,6 @@ def lti_file_handler(request, *args, **kwargs):
         project.pk,
         workspace.pk,
         request.user.pk,
-        request.namespace.name,
         request.data,
         path
     )
@@ -301,13 +300,13 @@ def lti_file_handler(request, *args, **kwargs):
 
 @api_view(['get'])
 def lti_ready(request, *args, **kwargs):
-    namespace, workspace_id, assignment_id = AsyncResult(kwargs.get('task_id')).get()
+    workspace_id, assignment_id = AsyncResult(kwargs.get('task_id')).get()
     workspace = models.Server.objects.filter(pk=workspace_id).first()
     if workspace is None:
         return Response({'error': 'No workspace created'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     scheme = 'https' if settings.HTTPS else 'http'
     endpoint = get_server_url(str(workspace.project.pk), str(workspace.pk),
-                              scheme, '/endpoint/proxy/lab/tree/', namespace=namespace)
+                              scheme, '/endpoint/proxy/lab/tree/', namespace=workspace.namespace_name)
     path = kwargs.get('path')
     url = f'{endpoint}{path}?access_token={workspace.access_token}'
     if assignment_id:

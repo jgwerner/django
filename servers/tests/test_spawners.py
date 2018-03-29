@@ -158,6 +158,7 @@ class TestDockerSpawnerForModel(TransactionTestCase):
         self.assertEqual(self.spawner._get_user_timezone(), 'UTC')
         self.user.profile.timezone = 'EDT'
         self.user.profile.save()
+        self.spawner.user.profile.refresh_from_db()
         self.assertEqual(self.spawner._get_user_timezone(), 'EDT')
 
 

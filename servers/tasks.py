@@ -53,7 +53,7 @@ def delete_deployment(deployment):
 
 
 @shared_task()
-def lti(project_pk, workspace_pk, user_pk, namespace, data, path):
+def lti(project_pk, workspace_pk, user_pk, data, path):
     log.debug(f'[LTI] data: {data}')
     project = Project.objects.get(pk=project_pk, is_active=True)
     user = User.objects.get(pk=user_pk)
@@ -76,10 +76,11 @@ def lti(project_pk, workspace_pk, user_pk, namespace, data, path):
         learner_project = learner.projects.filter(config__copied_from=str(project.pk), is_active=True).first()
         if learner_project is None:
             learner_project = perform_project_copy(learner, str(project.pk))
+            learner_project.team = None
+            learner_project.save()
         workspace = learner_project.servers.filter(config__type='jupyter', is_active=True).first()
         if workspace is None:
             workspace = create_server(learner, learner_project, 'workspace')
-        namespace = learner.username
         if 'custom_canvas_assignment_id' in data:
             if 'assignments' not in workspace.config:
                 workspace.config['assignments'] = []
@@ -113,7 +114,7 @@ def lti(project_pk, workspace_pk, user_pk, namespace, data, path):
                 time.sleep(2)
                 break
             time.sleep(1)
-    return namespace, str(workspace.pk), assignment_id
+    return str(workspace.pk), assignment_id
 
 
 @shared_task()

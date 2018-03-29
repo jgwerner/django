@@ -6,11 +6,14 @@ from django.db.models.functions import Coalesce, Now, Greatest
 from django.contrib.sites.shortcuts import get_current_site
 from django.contrib.sites.models import Site
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from guardian.shortcuts import assign_perm
 
 from projects.models import Project
 from servers.models import ServerRunStatistics, Server, ServerSize
 from jwt_auth.utils import create_server_jwt
+
+User = get_user_model()
 
 
 def server_action(action: str, server: Union[str, Server]) -> bool:
@@ -75,5 +78,6 @@ def create_server(user, project, name, image=settings.JUPYTER_IMAGE, typ='jupyte
         ).first(),
     )
     for permission in [perm[0] for perm in workspace._meta.permissions]:
-        assign_perm(permission, project.owner, workspace)
+        owner = project.owner if isinstance(project.owner, User) else project.owner.owner
+        assign_perm(permission, owner, workspace)
     return workspace

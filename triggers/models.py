@@ -16,7 +16,8 @@ logger = logging.getLogger('triggers')
 
 class TriggerQuerySet(TBSQuerySet):
     def namespace(self, namespace):
-        return self.filter(user=namespace.object)
+        user = namespace.object if namespace.type == 'user' else namespace.object.owner
+        return self.filter(user=user)
 
 
 class Trigger(models.Model):
