@@ -9,10 +9,11 @@ from django.db.models import Sum, Max, F
 from django.db.models.functions import Coalesce, Now
 from django.urls import reverse
 from rest_framework import status, viewsets, views
-from rest_framework.decorators import api_view, permission_classes, renderer_classes, list_route, authentication_classes
+from rest_framework.decorators import api_view, permission_classes, renderer_classes, list_route, authentication_classes, parser_classes
 from rest_framework.response import Response
 from rest_framework.renderers import TemplateHTMLRenderer
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework_jwt.settings import api_settings
 
 from base.views import LookupByMultipleFields
@@ -273,6 +274,7 @@ class SNSView(views.APIView):
 @api_view(['post'])
 @authentication_classes([CanvasAuth])
 @permission_classes([])
+@parser_classes([MultiPartParser, FormParser])
 @renderer_classes([TemplateHTMLRenderer])
 def lti_file_handler(request, *args, **kwargs):
     project = get_object_or_404(Project, kwargs.get('project_project'))
