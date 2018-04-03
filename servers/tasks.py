@@ -1,5 +1,6 @@
 import time
 import uuid
+from pathlib import Path
 from celery import shared_task
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -117,24 +118,44 @@ def lti(project_pk, workspace_pk, user_pk, data, path):
     return str(workspace.pk), assignment_id
 
 
+def copy_assignment_file(source: Path, target: Path):
+    """
+    :param source: Students assignment path
+    :param target: Teachers assignment path
+    """
+    if not source.exists():
+        raise FileNotFoundError(f"[Assignment Copy] Source file {source} does not exists.")
+    if not target.exists():
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.touch()
+    target.write_bytes(source.read_bytes())
+
+
 @shared_task()
 def send_assignment(workspace_pk, assignment_id):
-    workspace = Server.objects.get(is_active=True, pk=workspace_pk)
-    assignment = next((a for a in workspace.config.get('assignments', []) if a['id'] == assignment_id))
-    teacher = Project.objects.get(pk=workspace.project.config['copied_from']).owner
+    learner_workspace = Server.objects.get(is_active=True, pk=workspace_pk)
+    learner = learner_workspace.project.owner
+    teacher_project = Project.objects.get(pk=learner_workspace.project.config['copied_from'])
+    teacher_workspace = teacher_project.servers.get(is_active=True, config__type='jupyter')
+    assignment = next((a for a in learner_workspace.config.get('assignments', []) if a['id'] == assignment_id))
+    teacher = teacher_project.owner
+    assingment_path = learner_workspace.project.resource_root() / assignment['path']
+    teacher_assignment_path = Path('assignments', learner.email, assignment['path'])
+    copy_assignment_file(assingment_path, teacher_project.resource_root() / teacher_assignment_path)
     oauth_app = teacher.oauth2_provider_application.get(name__icontains='canvas')
     oauth_session = OAuth1Session(oauth_app.client_id, client_secret=oauth_app.client_secret)
     scheme = 'https' if settings.HTTPS else 'http'
-    namespace = workspace.project.namespace_name
+    namespace = teacher_project.namespace_name
     url_path = reverse('lti-file', kwargs={
         'version': settings.DEFAULT_VERSION,
         'namespace': namespace,
-        'project_project': str(workspace.project.pk),
-        'server': str(workspace.pk),
-        'path': assignment['path']
+        'project_project': str(teacher_project.pk),
+        'server': str(teacher_workspace.pk),
+        'path': teacher_assignment_path
     })
     domain = Site.objects.get_current().domain
     url = f"{scheme}://{domain}{url_path}"
+    log.debug(f"[Send assignment] Server url: {url}")
     context = {
         'msg_id': uuid.uuid4().hex,
         'source_did': assignment['source_did'],
