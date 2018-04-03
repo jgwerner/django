@@ -807,7 +807,7 @@ class LTITest(APITestCase):
         })
         with patch('canvas.authorization.CanvasAuth.authenticate') as authenticate:
             authenticate.return_value = (self.user, None)
-            resp = self.client.post(url, {})
+            resp = self.client.post(url, {}, format='multipart')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertIn('task_url', resp.data)
         self.assertIn('access_token', resp.data)

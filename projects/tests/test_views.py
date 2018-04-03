@@ -669,8 +669,8 @@ class LTITest(APITestCase):
             'lti_version': '1',
             'content_item_return_url': 'http://example.com',
             'ext_lti_assignment_id': '123'
-        }
-        resp = self.client.post(url, data)
+            }
+        resp = self.client.post(url, data, format='multipart')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertIn('lti_version', resp.data)
         self.assertEqual(resp.data['lti_version'], data['lti_version'])

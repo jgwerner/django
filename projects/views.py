@@ -7,9 +7,10 @@ from django.contrib.auth import get_user_model
 from django.db.models import Q
 from rest_framework import viewsets, status, permissions
 from rest_framework.response import Response
-from rest_framework.decorators import api_view, authentication_classes, permission_classes, renderer_classes
+from rest_framework.decorators import api_view, authentication_classes, permission_classes, renderer_classes, parser_classes
 from rest_framework.generics import CreateAPIView
 from rest_framework.renderers import TemplateHTMLRenderer
+from rest_framework.parsers import MultiPartParser, FormParser
 
 from base.views import NamespaceMixin, LookupByMultipleFields
 from base.utils import validate_uuid
@@ -133,6 +134,7 @@ class CloneGitProject(CreateAPIView):
 @api_view(['post'])
 @authentication_classes([CanvasAuth])
 @permission_classes([])
+@parser_classes([MultiPartParser, FormParser])
 @renderer_classes([TemplateHTMLRenderer])
 def file_selection(request, *args, **kwargs):
     projects = Project.objects.filter(
