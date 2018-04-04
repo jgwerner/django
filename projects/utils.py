@@ -182,4 +182,7 @@ def move_roots():
             project_id = project_dir.parts[-1]
             if validate_uuid(project_id):
                 new_project_path = root / project_id
-                project_dir.rename(new_project_path)
+                if not new_project_path.exists():
+                    project_dir.rename(new_project_path)
+                else:
+                    shutil.rmtree(str(project_dir), ignore_errors=True)
