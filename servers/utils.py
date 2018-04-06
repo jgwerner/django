@@ -85,6 +85,8 @@ def create_server(user, project, name, image=settings.JUPYTER_IMAGE, typ='jupyte
 
 
 def email_to_username(email: str) -> str:
+    if not email:
+        raise ValueError("Email is empty")
     # get local part of the email
     username = email.split('@')[0]
     # get username without +tag

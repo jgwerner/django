@@ -4,6 +4,10 @@ from ..utils import email_to_username
 
 
 class TestUtils(TestCase):
+    def test_email_emty_to_username(self):
+        with self.assertRaises(ValueError):
+            email_to_username('')
+
     def test_email_to_username(self):
         expected = 'john'
         email = f'{expected}@example.com'
@@ -47,7 +51,7 @@ class TestUtils(TestCase):
         self.assertEqual(expected, username)
 
     def test_email_with_everything_to_username(self):
-        expected = 'johntest'
-        email = "(comment1)!#$%&'*/=?^`{{|}}~john.test!#$%&'*/=?^`{{|}}~(comment2)+tag123@example.com"
+        expected = 'johntest_test-test'
+        email = "(comment1)!#$%&'*/=?^`{{|}}~john.test_test-test!#$%&'*/=?^`{{|}}~(comment2)+tag123@example.com"
         username = email_to_username(email)
         self.assertEqual(expected, username)

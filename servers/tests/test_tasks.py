@@ -23,7 +23,7 @@ class LTITest(TestCase):
     def test_lti_copy(self):
         data = {
             'user_id': str(uuid.uuid4()),
-            'lis_person_contact_email_primary': "jdoe!#$%&'*-/=?^_`{|}~+test@example.com",
+            'lis_person_contact_email_primary': 'jdoe@example.com',
             'ext_roles': ''
         }
         workspace_id, assignment_id = lti(
