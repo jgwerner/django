@@ -14,7 +14,7 @@ from projects.models import Project
 from projects.utils import perform_project_copy
 from .models import Server, Deployment
 from .spawners import get_spawner_class, get_deployer_class
-from .utils import create_server, server_action
+from .utils import create_server, server_action, email_to_username
 import logging
 log = logging.getLogger('servers')
 Spawner = get_spawner_class()
@@ -69,7 +69,7 @@ def lti(project_pk, workspace_pk, user_pk, data, path):
         ).first()
         if learner is None:
             learner = User.objects.create_user(
-                username=email.split("@")[0].replace('.', '_'),
+                username=email_to_username(email),
                 email=email,
             )
             learner.profile.config['canvas_user_id'] = canvas_user_id
