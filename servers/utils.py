@@ -1,4 +1,5 @@
 import uuid
+import re
 from typing import Union
 from datetime import datetime
 from django.db.models import Sum, Max, F, Count
@@ -81,3 +82,15 @@ def create_server(user, project, name, image=settings.JUPYTER_IMAGE, typ='jupyte
         owner = project.owner if isinstance(project.owner, User) else project.owner.owner
         assign_perm(permission, owner, workspace)
     return workspace
+
+
+def email_to_username(email: str) -> str:
+    # get local part of the email
+    username = email.split('@')[0]
+    # get username without +tag
+    username = username.split('+')[0]
+    # remove comments from email
+    username = re.sub(r'\([^)]*\)', '', username)
+    # remove special characters
+    username = re.sub(r'[^\w-]+', '', username)
+    return username
