@@ -69,7 +69,7 @@ class UserProfile(models.Model):
     last_login_ip = models.CharField(max_length=20, blank=True, null=True)
     login_count = models.IntegerField(blank=True, null=True)
     timezone = models.CharField(db_column='Timezone', max_length=20, blank=True, null=True)
-    config = JSONField(default={})
+    config = JSONField(default={}, blank=True)
 
     def resource_root(self):
         return Path(settings.RESOURCE_DIR, self.user.username)
