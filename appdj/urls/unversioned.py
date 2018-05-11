@@ -134,6 +134,8 @@ urlpatterns = [
         servers_views.check_token, name='server-auth'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/deployments/(?P<deployment>[^/.]+)/deploy/$',
         servers_views.deploy_deployment, name='deploy'),
+    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/endpoint/proxy/lab/tree/(?P<path>.*?/?\w+(?:\.\w+)+)$',
+        servers_views.lti_redirect, name='lti-redirect'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/(?P<path>.*?/?\w+(?:\.\w+)+)$',
         servers_views.lti_file_handler, name='lti-file'),
     url(r'^servers/', include(servers_router.urls)),

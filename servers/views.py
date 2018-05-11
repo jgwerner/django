@@ -1,3 +1,4 @@
+import time
 import logging
 import json
 import requests
@@ -8,6 +9,7 @@ from django.http import Http404
 from django.db.models import Sum, Max, F
 from django.db.models.functions import Coalesce, Now
 from django.urls import reverse
+from django.shortcuts import redirect
 from rest_framework import status, viewsets, views
 from rest_framework.decorators import api_view, permission_classes, renderer_classes, list_route, authentication_classes, parser_classes
 from rest_framework.response import Response
@@ -193,7 +195,9 @@ class ServerSizeViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
 @authentication_classes([])
 @permission_classes((AllowAny,))
 def check_token(request, version, project_project, server):
-    server = models.Server.objects.only('access_token').tbs_get(server)
+    server = models.Server.objects.only('access_token').tbs_filter(server).first()
+    if server is None:
+        raise Http404
     auth_header = request.META.get('HTTP_AUTHORIZATION')
     if auth_header and ' ' in auth_header and auth_header.startswith('Bearer'):
         token = auth_header.split()[1]
@@ -269,6 +273,24 @@ class SNSView(views.APIView):
             if models.Server.objects.filter(is_active=True, pk=server_id).exists():
                 ServerStatusConsumer.update_status(server_id, message['detail']['desiredStatus'])
         return Response({"message": "OK"})
+
+
+@api_view(['get'])
+@authentication_classes([])
+@permission_classes([])
+def lti_redirect(request, *args, **kwargs):
+    get_object_or_404(Project, kwargs.get('project_project'))
+    workspace = models.Server.objects.tbs_filter_str(kwargs.get('server')).first()
+    if workspace is None:
+        raise Http404
+    token = request.GET.get('access_token')
+    if workspace.access_token == token:
+        workspace.is_active = True
+        workspace.config = {"type": "jupyter"}
+        workspace.save()
+        start_server.apply_async(args=[kwargs.get("server")], task_id=str(request.action.pk))
+    time.sleep(5)
+    return redirect(request.get_full_path())
 
 
 @api_view(['post'])

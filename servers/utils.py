@@ -19,7 +19,7 @@ User = get_user_model()
 
 def server_action(action: str, server: Union[str, Server]) -> bool:
     if isinstance(server, str):
-        server = Server.objects.tbs_get(server)
+        server = Server.objects.tbs_filter_str(server).get()
     if action != "start" or server.can_be_started:
         spawner = server.spawner
         getattr(spawner, action)()

@@ -14,7 +14,7 @@ class TBSQuerySetMixin:
         if hasattr(self.model, "is_active") and ("is_active" not in kwargs):
             kwargs['is_active'] = True
         if isinstance(value, str):
-            return self._tbs_filter_str(value, *args, **kwargs)
+            return self.tbs_filter_str(value, *args, **kwargs)
         if isinstance(value, Iterable):
             return self._tbs_filter_iterable(value, *args, **kwargs)
         return self.filter(*args, **kwargs)
@@ -33,7 +33,7 @@ class TBSQuerySetMixin:
             kwargs[self.model.NATURAL_KEY] = value
         return self.get(*args, **kwargs)
 
-    def _tbs_filter_str(self, value, *args, **kwargs):
+    def tbs_filter_str(self, value, *args, **kwargs):
         if validate_uuid(value):
             return self.filter(*args, pk=value, **kwargs)
         return self.filter(*args, **{self.model.NATURAL_KEY: value}, **kwargs)
