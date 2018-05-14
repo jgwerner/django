@@ -81,30 +81,12 @@ def lti(project_pk, workspace_pk, user_pk, data, path):
         workspace = learner_project.servers.filter(config__type='jupyter', is_active=True).first()
         if workspace is None:
             workspace = create_server(learner, learner_project, 'workspace')
-        if 'custom_canvas_assignment_id' in data:
-            if 'assignments' not in workspace.config:
-                workspace.config['assignments'] = []
-            assignment_id = data['custom_canvas_assignment_id']
-            index, assignment = next(((i, a) for i, a in enumerate(workspace.config['assignments'])
-                                      if a['id'] == assignment_id), (-1, None))
-            assignment = {
-                'id': data['custom_canvas_assignment_id'],
-                'course_id': data['custom_canvas_course_id'],
-                'user_id': data['custom_canvas_user_id'],
-                'path': path,
-                'outcome_url': data['lis_outcome_service_url'],
-            }
-            if 'lis_result_sourcedid' in data:
-                assignment['source_did'] = data['lis_result_sourcedid']
-            if index < 0:
-                workspace.config['assignments'].append(assignment)
-            else:
-                workspace.config['assignments'][index] = assignment
-            workspace.save()
     else:
         workspace = Server.objects.filter(is_active=True, pk=workspace_pk).first()
         if workspace is None:
             workspace = create_server(user, project, 'workspace')
+    if 'custom_canvas_assignment_id' in data:
+        setup_assignment(workspace, data, path)
     if workspace.status != workspace.RUNNING:
         workspace.spawner.start()
         # wait 30 sec for workspace to start
@@ -115,6 +97,28 @@ def lti(project_pk, workspace_pk, user_pk, data, path):
                 break
             time.sleep(1)
     return str(workspace.pk), assignment_id
+
+
+def setup_assignment(workspace, data, path):
+    if 'assignments' not in workspace.config:
+        workspace.config['assignments'] = []
+    assignment_id = data['custom_canvas_assignment_id']
+    index, assignment = next(((i, a) for i, a in enumerate(workspace.config['assignments'])
+                              if a['id'] == assignment_id), (-1, None))
+    assignment = {
+        'id': data['custom_canvas_assignment_id'],
+        'course_id': data['custom_canvas_course_id'],
+        'user_id': data['custom_canvas_user_id'],
+        'path': path,
+        'outcome_url': data['lis_outcome_service_url'],
+    }
+    if 'lis_result_sourcedid' in data:
+        assignment['source_did'] = data['lis_result_sourcedid']
+    if index < 0:
+        workspace.config['assignments'].append(assignment)
+    else:
+        workspace.config['assignments'][index] = assignment
+    workspace.save()
 
 
 def copy_assignment_file(source: Path, target: Path):
