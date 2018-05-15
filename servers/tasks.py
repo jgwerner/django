@@ -54,40 +54,43 @@ def delete_deployment(deployment):
 
 
 @shared_task()
-def lti(project_pk, workspace_pk, user_pk, data, path):
+def lti(project_pk, workspace_pk, data, path):
     log.debug(f'[LTI] data: {data}')
-    project = Project.objects.get(pk=project_pk, is_active=True)
-    user = User.objects.get(pk=user_pk)
-    canvas_user_id = data['user_id']
-    assignment_id = None
     email = data['lis_person_contact_email_primary']
-    if email != user.email and canvas_user_id != user.profile.config.get('canvas_user_id', ''):
-        learner = User.objects.filter(
-            Q(email=email) |
-            Q(profile__config__canvas_user_id=canvas_user_id)
-        ).first()
-        if learner is None:
-            learner = User.objects.create_user(
-                username=email_to_username(email),
-                email=email,
-            )
-            learner.profile.config['canvas_user_id'] = canvas_user_id
-            learner.profile.save()
-        learner_project = learner.projects.filter(config__copied_from=str(project.pk), is_active=True).first()
-        if learner_project is None:
-            learner_project = perform_project_copy(learner, str(project.pk))
-            learner_project.team = None
-            learner_project.save()
-        workspace = learner_project.servers.filter(config__type='jupyter', is_active=True).first()
-        if workspace is None:
-            workspace = create_server(learner, learner_project, 'workspace')
-    else:
-        workspace = Server.objects.filter(is_active=True, pk=workspace_pk).first()
-        if workspace is None:
-            workspace = create_server(user, project, 'workspace')
-    if 'custom_canvas_assignment_id' in data:
-        setup_assignment(workspace, data, path)
+    learner = User.objects.filter(email=email).first()
+    if learner is None:
+        learner = User.objects.create_user(
+            username=email_to_username(email),
+            email=email,
+        )
+    if 'canvas_user_id' not in learner.profile.config:
+        canvas_user_id = data['user_id']
+        learner.profile.config['canvas_user_id'] = canvas_user_id
+        learner.profile.save()
+    learner_project = learner.projects.filter(
+        Q(config__copied_from=project_pk) |
+        Q(pk=project_pk),
+        Q(is_active=True)
+    ).first()
+    if learner_project is None:
+        log.debug(f"Creating learner project from {project_pk}")
+        learner_project = perform_project_copy(learner, str(project_pk))
+        learner_project.team = None
+        learner_project.save()
+    workspace = learner_project.servers.filter(
+        config__type='jupyter',
+        is_active=True
+    ).first()
+    if workspace is None:
+        log.debug("Creating learner workspace")
+        workspace = create_server(learner, learner_project, 'workspace')
+    assignment_id = None
+    if ('custom_canvas_assignment_id' in data and
+            project_pk != str(learner_project.pk)):
+        log.debug("Setting up assignment")
+        assignment_id = setup_assignment(workspace, data, path)
     if workspace.status != workspace.RUNNING:
+        log.debug(f"Starting workspace {workspace.pk}")
         workspace.spawner.start()
         # wait 30 sec for workspace to start
         for i in range(30):
@@ -119,6 +122,7 @@ def setup_assignment(workspace, data, path):
     else:
         workspace.config['assignments'][index] = assignment
     workspace.save()
+    return assignment_id
 
 
 def copy_assignment_file(source: Path, target: Path):

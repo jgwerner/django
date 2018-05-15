@@ -15,8 +15,17 @@ User = get_user_model()
 
 class LTITest(TestCase):
     def setUp(self):
-        ServerSize.objects.get_or_create(name='Nano', cpu=1, memory=512, active=True, cost_per_second=0.0)
-        col = CollaboratorFactory(project__copying_enabled=True, project__private=False)
+        ServerSize.objects.get_or_create(
+            name='Nano',
+            cpu=1,
+            memory=512,
+            active=True,
+            cost_per_second=0.0
+        )
+        col = CollaboratorFactory(
+            project__copying_enabled=True,
+            project__private=False
+        )
         self.project = col.project
         self.user = col.user
 
@@ -26,7 +35,7 @@ class LTITest(TestCase):
             'lis_person_contact_email_primary': 'jdoe@example.com',
         }
         workspace_id, assignment_id = lti(
-            self.project.pk, '', self.user.pk, data, '')
+            str(self.project.pk), '', data, '')
         self.assertTrue(User.objects.filter(username='jdoe').exists())
         self.assertTrue(Server.objects.filter(pk=workspace_id).exists())
 
@@ -40,7 +49,7 @@ class LTITest(TestCase):
             'lis_person_contact_email_primary': learner.email,
         }
         workspace_id, assignment_id = lti(
-            self.project.pk, '', self.user.pk, data, '')
+            str(self.project.pk), '', data, '')
         self.assertTrue(Server.objects.filter(pk=workspace_id).exists())
         workspace = Server.objects.get(pk=workspace_id)
         self.assertEqual(learner.pk, workspace.project.owner.pk)
@@ -56,7 +65,7 @@ class LTITest(TestCase):
         }
         learner_project = perform_project_copy(learner, str(self.project.pk))
         workspace_id, assignment_id = lti(
-            self.project.pk, '', self.user.pk, data, '')
+            str(self.project.pk), '', data, '')
         self.assertTrue(Server.objects.filter(pk=workspace_id).exists())
         workspace = Server.objects.get(pk=workspace_id)
         self.assertEqual(learner.pk, workspace.project.owner.pk)
@@ -72,15 +81,25 @@ class LTITest(TestCase):
             'lis_person_contact_email_primary': learner.email,
         }
         learner_project = perform_project_copy(learner, str(self.project.pk))
-        workspace = ServerFactory(project=learner_project, config={'type': 'jupyter'}, is_active=True)
+        workspace = ServerFactory(
+            project=learner_project,
+            config={'type': 'jupyter'},
+            is_active=True
+        )
         workspace_id, assingment_id = lti(
-            self.project.pk, '', self.user.pk, data, '')
+            str(self.project.pk), '', data, '')
         self.assertEqual(workspace_id, str(workspace.pk))
 
 
 class LTITeamsTest(TestCase):
     def setUp(self):
-        ServerSize.objects.get_or_create(name='Nano', cpu=1, memory=512, active=True, cost_per_second=0.0)
+        ServerSize.objects.get_or_create(
+            name='Nano',
+            cpu=1,
+            memory=512,
+            active=True,
+            cost_per_second=0.0
+        )
         self.user = UserFactory()
         self.team = TeamFactory()
         self.group = GroupFactory(name='owners', team=self.team)
@@ -92,7 +111,7 @@ class LTITeamsTest(TestCase):
             'user_id': str(uuid.uuid4()),
             'lis_person_contact_email_primary': 'jdoe@example.com',
         }
-        workspace_id, assignment_id = lti(self.project.pk, '', self.user.pk, data, '')
+        workspace_id, assignment_id = lti(str(self.project.pk), '', data, '')
         self.assertTrue(User.objects.filter(username='jdoe').exists())
         self.assertTrue(Server.objects.filter(pk=workspace_id).exists())
 
@@ -105,7 +124,7 @@ class LTITeamsTest(TestCase):
             'user_id': canvas_user_id,
             'lis_person_contact_email_primary': learner.email,
         }
-        workspace_id, assignment_id = lti(self.project.pk, '', self.user.pk, data, '')
+        workspace_id, assignment_id = lti(str(self.project.pk), '', data, '')
         self.assertTrue(Server.objects.filter(pk=workspace_id).exists())
         workspace = Server.objects.get(pk=workspace_id)
         self.assertEqual(learner.pk, workspace.project.owner.pk)
@@ -123,7 +142,7 @@ class LTITeamsTest(TestCase):
         learner_project = perform_project_copy(learner, str(self.project.pk))
         learner_project.team = None
         learner_project.save()
-        workspace_id, assignment_id = lti(self.project.pk, '', self.user.pk, data, '')
+        workspace_id, assignment_id = lti(str(self.project.pk), '', data, '')
         self.assertTrue(Server.objects.filter(pk=workspace_id).exists())
         workspace = Server.objects.get(pk=workspace_id)
         self.assertEqual(learner.pk, workspace.project.owner.pk)
@@ -140,7 +159,11 @@ class LTITeamsTest(TestCase):
             'ext_roles': ''
         }
         learner_project = perform_project_copy(learner, str(self.project.pk))
-        workspace = ServerFactory(project=learner_project, config={'type': 'jupyter'}, is_active=True)
+        workspace = ServerFactory(
+            project=learner_project,
+            config={'type': 'jupyter'},
+            is_active=True
+        )
         workspace_id, assingment_id = lti(
-            self.project.pk, '', self.user.pk, data, '')
+            str(self.project.pk), '', data, '')
         self.assertEqual(workspace_id, str(workspace.pk))
