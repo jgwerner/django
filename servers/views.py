@@ -307,7 +307,6 @@ def lti_file_handler(request, *args, **kwargs):
     task = lti.delay(
         project.pk,
         workspace.pk,
-        request.user.pk,
         request.data,
         path
     )
