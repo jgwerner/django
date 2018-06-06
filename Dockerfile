@@ -9,6 +9,7 @@ RUN apk update \
     git \
     postgresql-dev \
     libffi-dev \
+    zlib-dev \
     libjpeg \
     jpeg-dev \
     curl
