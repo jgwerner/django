@@ -18,7 +18,7 @@ urlpatterns = [
     url(r'^auth/temp-token-auth/$', users_views.my_api_key, name='temp-token-auth'),
     url(r'^auth/jwt-token-refresh/$', jwt_views.RefreshJSONWebToken.as_view(), name='refresh-jwt'),
     url(r'^auth/jwt-token-verify/$', jwt_views.VerifyJSONWebToken.as_view(), name='verify-jwt'),
-    url(r'^auth/register/$', djoser_views.RegistrationView.as_view(), name='register'),
+    url(r'^auth/register/$', djoser_views.UserCreateView.as_view(), name='register'),
     url(r'^auth/activate/$', djoser_views.ActivationView.as_view(), name='activate'),
     url(r'^auth/authorize/?$', oauth2_views.AuthorizationView.as_view(), name="authorize"),
     url(r'^auth/token/?$', oauth2_views.TokenView.as_view(), name="token"),
@@ -36,11 +36,8 @@ urlpatterns = [
 
 if settings.DEBUG:
     import debug_toolbar
-    from swagger_docs.views import get_swagger_view
 
-    schema_view = get_swagger_view(title='3blades API', url=settings.FORCE_SCRIPT_NAME or '/')
     urlpatterns += [
         url(r'^__debug__/', include(debug_toolbar.urls)),
-        url(r'^swagger/$', schema_view)
     ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns = staticfiles_urlpatterns() + urlpatterns

@@ -477,7 +477,7 @@ class UserTest(APITestCase):
         out_mail = mail.outbox[0]
         self.assertEqual(len(out_mail.to), 1)
         self.assertEqual(out_mail.to[0], "test_user@example.com")
-        self.assertEqual(out_mail.subject, "Account activation on IllumiDesk")
+        self.assertEqual(out_mail.subject, "Account activation on example.com")
 
     def test_unconfirmed_user_cannot_login(self):
         send_register_request()

@@ -291,9 +291,9 @@ REST_FRAMEWORK = {
 
 DJOSER = {
     'DOMAIN': os.getenv("TBS_DOMAIN"),
-    'SITE_NAME': "IllumiDesk",
     'PASSWORD_RESET_CONFIRM_URL': "auth/password-reset?uid={uid}&token={token}",
-    'SERIALIZERS': {'user': "users.serializers.UserSerializer",
+    'SERIALIZERS': {'user_create': "users.serializers.UserSerializer",
+                    'user': "users.serializers.UserSerializer",
                     'user_registration': "users.serializers.UserSerializer",
                     'token': "jwt_auth.serializers.JWTSerializer"},
     'SEND_ACTIVATION_EMAIL': True,
