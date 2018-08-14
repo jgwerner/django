@@ -36,11 +36,8 @@ urlpatterns = [
 
 if settings.DEBUG:
     import debug_toolbar
-    from swagger_docs.views import get_swagger_view
 
-    schema_view = get_swagger_view(title='3blades API', url=settings.FORCE_SCRIPT_NAME or '/')
     urlpatterns += [
         url(r'^__debug__/', include(debug_toolbar.urls)),
-        url(r'^swagger/$', schema_view)
     ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns = staticfiles_urlpatterns() + urlpatterns
