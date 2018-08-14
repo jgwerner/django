@@ -1,5 +1,4 @@
 from rest_framework.permissions import BasePermission
-from rest_framework.compat import is_authenticated
 
 
 class DeleteAdminOnly(BasePermission):
@@ -7,7 +6,7 @@ class DeleteAdminOnly(BasePermission):
         return (
             request.user and (
                 request.method == 'DELETE' and request.user.is_staff or
-                request.method != 'DELETE' and is_authenticated(request.user)
+                request.method != 'DELETE' and request.user.is_authenticated
             ))
 
 
@@ -16,7 +15,7 @@ class PostAdminOnly(BasePermission):
         return (
             request.user and (
                 request.method == 'POST' and request.user.is_staff or
-                request.method != 'POST' and is_authenticated(request.user)
+                request.method != 'POST' and request.user.is_authenticated
             ))
 
 
