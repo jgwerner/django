@@ -1,4 +1,4 @@
-FROM python:alpine
+FROM python:3.6-alpine
 
 MAINTAINER 3Blades <contact@3blades.io>
 
