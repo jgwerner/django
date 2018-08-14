@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime
 from unittest.mock import patch
 from guardian.shortcuts import assign_perm
@@ -807,13 +808,13 @@ class LTITest(APITestCase):
         })
         with patch('canvas.authorization.CanvasAuth.authenticate') as authenticate:
             authenticate.return_value = (self.user, None)
-            resp = self.client.post(url, {})
+            resp = self.client.post(url, {}, format='multipart')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertIn('task_url', resp.data)
         self.assertIn('access_token', resp.data)
 
         with patch('celery.result.AsyncResult.get') as get_result:
-            get_result.return_value = (self.user.username, str(self.server.pk))
+            get_result.return_value = (str(self.server.pk), None)
             task_resp = self.api_client.get(resp.data['task_url'])
         self.assertEqual(task_resp.status_code, status.HTTP_200_OK)
         self.assertIn('url', task_resp.data)
@@ -822,3 +823,44 @@ class LTITest(APITestCase):
         self.assertIn(str(self.project.pk), task_resp.data['url'])
         self.assertIn(self.user.username, task_resp.data['url'])
         self.assertIn('access_token', task_resp.data['url'])
+
+    def test_lti_redirect_no_project(self):
+        path = 'test.py'
+        url = reverse('lti-redirect', kwargs={
+            'version': settings.DEFAULT_VERSION,
+            'namespace': self.user.username,
+            'project_project': str(uuid.uuid4()),
+            'server': str(self.server.pk),
+            'path': path
+        })
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_lti_redirect_no_server(self):
+        path = 'test.py'
+        url = reverse('lti-redirect', kwargs={
+            'version': settings.DEFAULT_VERSION,
+            'namespace': self.user.username,
+            'project_project': str(self.project.pk),
+            'server': str(uuid.uuid4()),
+            'path': path
+        })
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_lti_redirect_inactive_server(self):
+        self.server.is_active = False
+        self.server.save()
+        path = 'test.py'
+        url = reverse('lti-redirect', kwargs={
+            'version': settings.DEFAULT_VERSION,
+            'namespace': self.user.username,
+            'project_project': str(self.project.pk),
+            'server': str(self.server.pk),
+            'path': path
+        })
+        with patch("servers.tasks.start_server", return_value=None):
+            resp = self.client.get(url, {'access_token': self.server.access_token})
+        self.assertEqual(resp.status_code, status.HTTP_302_FOUND)
+        self.server.refresh_from_db()
+        self.assertTrue(self.server.is_active)

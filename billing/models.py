@@ -164,7 +164,8 @@ class Plan(StripeModel):
 
 class SubscriptionQuerySet(TBSQuerySet):
     def namespace(self, namespace):
-        return self.filter(customer__user=namespace.object)
+        user = namespace.object if namespace.type == 'user' else namespace.object.owner
+        return self.filter(customer__user=user)
 
 
 class Subscription(StripeModel):
@@ -213,7 +214,8 @@ class Subscription(StripeModel):
 
 class InvoiceQuerySet(TBSQuerySet):
     def namespace(self, namespace):
-        return self.filter(customer__user=namespace.object)
+        user = namespace.object if namespace.type == 'user' else namespace.object.owner
+        return self.filter(customer__user=user)
 
 
 class Invoice(StripeModel):
@@ -251,7 +253,8 @@ class Invoice(StripeModel):
 
 class InvoiceItemQuerySet(TBSQuerySet):
     def namespace(self, namespace):
-        return self.filter(invoice__customer__user=namespace.object)
+        user = namespace.object if namespace.type == 'user' else namespace.object.owner
+        return self.filter(invoice__customer__user=user)
 
 
 class InvoiceItem(StripeModel):

@@ -1,3 +1,4 @@
+import time
 import logging
 import json
 import requests
@@ -8,11 +9,13 @@ from django.http import Http404
 from django.db.models import Sum, Max, F
 from django.db.models.functions import Coalesce, Now
 from django.urls import reverse
+from django.shortcuts import redirect
 from rest_framework import status, viewsets, views
-from rest_framework.decorators import api_view, permission_classes, renderer_classes, list_route, authentication_classes
+from rest_framework.decorators import api_view, permission_classes, renderer_classes, list_route, authentication_classes, parser_classes
 from rest_framework.response import Response
 from rest_framework.renderers import TemplateHTMLRenderer
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework_jwt.settings import api_settings
 
 from base.views import LookupByMultipleFields
@@ -192,7 +195,9 @@ class ServerSizeViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
 @authentication_classes([])
 @permission_classes((AllowAny,))
 def check_token(request, version, project_project, server):
-    server = models.Server.objects.only('access_token').tbs_get(server)
+    server = models.Server.objects.only('access_token').tbs_filter(server).first()
+    if server is None:
+        raise Http404
     auth_header = request.META.get('HTTP_AUTHORIZATION')
     if auth_header and ' ' in auth_header and auth_header.startswith('Bearer'):
         token = auth_header.split()[1]
@@ -270,9 +275,28 @@ class SNSView(views.APIView):
         return Response({"message": "OK"})
 
 
+@api_view(['get'])
+@authentication_classes([])
+@permission_classes([])
+def lti_redirect(request, *args, **kwargs):
+    get_object_or_404(Project, kwargs.get('project_project'))
+    workspace = models.Server.objects.tbs_filter_str(kwargs.get('server')).first()
+    if workspace is None:
+        raise Http404
+    token = request.GET.get('access_token')
+    if workspace.access_token == token:
+        workspace.is_active = True
+        workspace.config = {"type": "jupyter"}
+        workspace.save()
+        start_server.apply_async(args=[kwargs.get("server")], task_id=str(request.action.pk))
+    time.sleep(5)
+    return redirect(request.get_full_path())
+
+
 @api_view(['post'])
 @authentication_classes([CanvasAuth])
 @permission_classes([])
+@parser_classes([MultiPartParser, FormParser])
 @renderer_classes([TemplateHTMLRenderer])
 def lti_file_handler(request, *args, **kwargs):
     project = get_object_or_404(Project, kwargs.get('project_project'))
@@ -283,8 +307,6 @@ def lti_file_handler(request, *args, **kwargs):
     task = lti.delay(
         project.pk,
         workspace.pk,
-        request.user.pk,
-        request.namespace.name,
         request.data,
         path
     )
@@ -301,15 +323,17 @@ def lti_file_handler(request, *args, **kwargs):
 
 @api_view(['get'])
 def lti_ready(request, *args, **kwargs):
-    namespace, workspace_id = AsyncResult(kwargs.get('task_id')).get()
+    workspace_id, assignment_id = AsyncResult(kwargs.get('task_id')).get()
     workspace = models.Server.objects.filter(pk=workspace_id).first()
     if workspace is None:
         return Response({'error': 'No workspace created'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     scheme = 'https' if settings.HTTPS else 'http'
     endpoint = get_server_url(str(workspace.project.pk), str(workspace.pk),
-                              scheme, '/endpoint/proxy/lab/tree/', namespace=namespace)
+                              scheme, '/endpoint/proxy/lab/tree/', namespace=workspace.namespace_name)
     path = kwargs.get('path')
     url = f'{endpoint}{path}?access_token={workspace.access_token}'
+    if assignment_id:
+        url += f'&assignment_id={assignment_id}'
     return Response({'url': url})
 
 
@@ -318,8 +342,8 @@ def lti_ready(request, *args, **kwargs):
 @permission_classes([])
 def submit_assignment(request, *args, **kwargs):
     workspace = get_object_or_404(models.Server, kwargs.get('server'))
-    if 'path' not in request.data:
-        return Response({'message': 'No path'}, status=status.HTTP_400_BAD_REQUEST)
-    path = request.data['path']
-    send_assignment.delay(str(workspace.pk), path)
+    assignment_id = kwargs.get('assignment_id')
+    if assignment_id is None:
+        return Response({'message': 'No assignment id'}, status=status.HTTP_400_BAD_REQUEST)
+    send_assignment.delay(str(workspace.pk), assignment_id)
     return Response({'message': 'OK'})

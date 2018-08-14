@@ -13,6 +13,7 @@ services:
       - HOST=http://api
       - PORT=80
       - VERSION=v1
+      - C_FORCE_ROOT=True
   api:
     build: .
     command: /srv/env/bin/gunicorn --bind 0.0.0.0:80 --reload --workers 1 --log-level=DEBUG --error-logfile=- --access-logfile=- appdj.wsgi

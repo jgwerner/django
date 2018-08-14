@@ -1,4 +1,5 @@
 import uuid
+import re
 from typing import Union
 from datetime import datetime
 from django.db.models import Sum, Max, F, Count
@@ -6,16 +7,19 @@ from django.db.models.functions import Coalesce, Now, Greatest
 from django.contrib.sites.shortcuts import get_current_site
 from django.contrib.sites.models import Site
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from guardian.shortcuts import assign_perm
 
 from projects.models import Project
 from servers.models import ServerRunStatistics, Server, ServerSize
 from jwt_auth.utils import create_server_jwt
 
+User = get_user_model()
+
 
 def server_action(action: str, server: Union[str, Server]) -> bool:
     if isinstance(server, str):
-        server = Server.objects.tbs_get(server)
+        server = Server.objects.tbs_filter_str(server).get()
     if action != "start" or server.can_be_started:
         spawner = server.spawner
         getattr(spawner, action)()
@@ -75,5 +79,20 @@ def create_server(user, project, name, image=settings.JUPYTER_IMAGE, typ='jupyte
         ).first(),
     )
     for permission in [perm[0] for perm in workspace._meta.permissions]:
-        assign_perm(permission, project.owner, workspace)
+        owner = project.owner if isinstance(project.owner, User) else project.owner.owner
+        assign_perm(permission, owner, workspace)
     return workspace
+
+
+def email_to_username(email: str) -> str:
+    if not email:
+        raise ValueError("Email is empty")
+    # get local part of the email
+    username = email.split('@')[0]
+    # get username without +tag
+    username = username.split('+')[0]
+    # remove comments from email
+    username = re.sub(r'\([^)]*\)', '', username)
+    # remove special characters
+    username = re.sub(r'[^\w-]+', '', username)
+    return username

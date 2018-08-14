@@ -1,16 +1,17 @@
 import abc
 import os
 import logging
-import requests
 from typing import List, Dict
 from pathlib import Path
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
-from django.utils.functional import cached_property
 from raven import Client
 
 from jwt_auth.utils import create_auth_jwt
+
+User = get_user_model()
 
 raven_client = Client(os.environ.get("SENTRY_DSN"))
 
@@ -43,12 +44,17 @@ class SpawnerInterface(metaclass=abc.ABCMeta):
 
 
 class BaseSpawner(SpawnerInterface):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        project_owner = self.server.project.owner
+        self.user = project_owner if isinstance(project_owner, User) else project_owner.owner
+
     def _get_cmd(self) -> List[str]:
         logger.info("Getting command")
         cmd = [
             '/runner',
-            f'--key={create_auth_jwt(self.server.project.owner)}',
-            f'--ns={self.server.project.get_owner_name()}',
+            f'--key={create_auth_jwt(self.user)}',
+            f'--ns={self.server.project.namespace_name}',
             f'--projectID={self.server.project.pk}',
             f'--serverID={self.server.pk}',
             f'--root={Site.objects.get_current().domain}',
@@ -62,7 +68,7 @@ class BaseSpawner(SpawnerInterface):
             cmd.append(f'--type={self.server.get_type()}')
         if self.server.config['type'] in settings.SERVER_COMMANDS:
             cmd.extend([
-                part.format(server=self.server, version=settings.DEFAULT_VERSION)
+                part.format(namespace=self.server.project.namespace_name, server=self.server, version=settings.DEFAULT_VERSION)
                 for part in settings.SERVER_COMMANDS[self.server.config['type']].split()
             ])
         if 'command' in self.server.config:
@@ -109,8 +115,8 @@ class BaseSpawner(SpawnerInterface):
     def _get_user_timezone(self) -> str:
         tz = 'UTC'
         try:
-            owner_profile = self.server.project.owner.profile
-        except self.server.project.owner._meta.model.profile.RelatedObjectDoesNotExist:
+            owner_profile = self.user.profile
+        except self.user._meta.model.profile.RelatedObjectDoesNotExist:
             return tz
         if owner_profile and owner_profile.timezone:
             tz = owner_profile.timezone
@@ -126,7 +132,7 @@ class TraefikMixin:
         labels = {"traefik.enable": "true"}
         server_uri = ''.join([
             f"/{settings.DEFAULT_VERSION}",
-            f"/{self.server.project.owner.username}",
+            f"/{self.server.project.namespace_name}",
             f"/projects/{self.server.project_id}",
             f"/servers/{self.server.id}/endpoint/"
         ])
