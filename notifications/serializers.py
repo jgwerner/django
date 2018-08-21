@@ -2,8 +2,6 @@ import logging
 from rest_framework import serializers
 from users.serializers import UserSerializer
 from users.models import User, Email
-from billing.models import Subscription, Invoice
-from billing.serializers import SubscriptionSerializer, InvoiceSerializer
 from .models import Notification, NotificationType, NotificationSettings
 
 log = logging.getLogger('notifications')
@@ -22,12 +20,6 @@ class GenericRelatedField(serializers.RelatedField):
         if isinstance(value, User):
             data['content_type'] = 'user'
             data.update(UserSerializer(value).data)
-        elif isinstance(value, Subscription):
-            data['content_type'] = 'subscription'
-            data.update(SubscriptionSerializer(value).data)
-        elif isinstance(value, Invoice):
-            data['content_type'] = 'invoice'
-            data.update(InvoiceSerializer(value).data)
         else:
             log.error(f"{value} has not been added to the generic related field yet. Fix it.")
         return data

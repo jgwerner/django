@@ -11,9 +11,6 @@ from django.core import mail
 from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
 
-from billing.tests.factories import PlanFactory
-from billing.models import Subscription, Plan
-from billing.stripe_utils import create_plan_in_stripe
 from users.tests.factories import UserFactory, EmailFactory
 from users.tests.utils import generate_random_image
 from utils import create_ssh_key
@@ -36,16 +33,6 @@ def send_register_request(*args, **kwargs):
     return response
 
 
-def create_plan_dict(trial_period=None):
-    obj_dict = vars(PlanFactory.build())
-    if trial_period is not None:
-        obj_dict['trial_period_days'] = trial_period
-    data_dict = {key: obj_dict[key] for key in obj_dict
-                 if key in [f.name for f in Plan._meta.get_fields()] and key not in ["stripe_id", "created",
-                                                                                     "id", "metadata"]}
-    return data_dict
-
-
 class UserTest(APITestCase):
     def setUp(self):
         self.admin = UserFactory(is_staff=True, username='admin')
@@ -65,23 +52,6 @@ class UserTest(APITestCase):
             shutil.rmtree(user_dir)
         for img_file in self.image_files:
             os.remove(img_file)
-
-    def _create_plan_in_stripe(self, trial_period=None):
-        plan_data = create_plan_dict(trial_period)
-        plan = create_plan_in_stripe(plan_data)
-        plan.save()
-        self.plans_to_delete.append(plan)
-        return plan
-
-    def _create_subscription_in_stripe(self, trial_period=7):
-        plan = self._create_plan_in_stripe(trial_period)
-        url = reverse("subscription-list", kwargs={'namespace': self.user.username,
-                                                   'version': settings.DEFAULT_VERSION})
-        data = {'plan': str(plan.pk)}
-        self.user_client.post(url, json.dumps(data), content_type="application/json")
-
-        subscription = Subscription.objects.get(plan=plan)
-        return subscription
 
     def test_my_api_key(self):
         url = reverse("temp-token-auth")

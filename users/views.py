@@ -24,8 +24,6 @@ from users.serializers import (UserSerializer,
                                EmailSerializer,
                                IntegrationSerializer)
 from jwt_auth.utils import create_auth_jwt
-from billing.models import Subscription
-from billing.stripe_utils import cancel_subscriptions
 
 log = logging.getLogger("users")
 User = get_user_model()
@@ -85,9 +83,6 @@ class UserViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
         if self._check_for_permission_to_destroy():
             instance = self.get_object()
             deactivate_user(instance)
-            if settings.ENABLE_BILLING:
-                sub_ids = Subscription.objects.filter(customer=instance.customer).values_list('id')
-                cancel_subscriptions(sub_ids)
             instance.save()
             resp_status = status.HTTP_204_NO_CONTENT
         else:

@@ -19,7 +19,6 @@ class Migration(migrations.Migration):
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ('auth', '0001_initial'),
-        ('billing', '0003_auto_20170807_1114'),
     ]
 
     operations = [
@@ -53,10 +52,7 @@ class Migration(migrations.Migration):
                 ('avatar_url', models.CharField(blank=True, max_length=100, null=True)),
                 ('avatar', models.ImageField(blank=True, null=True, upload_to=teams.models.team_directory_path)),
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('billing_plan', models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='billing.Plan')),
                 ('created_by', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='teams_created', to=settings.AUTH_USER_MODEL)),
-                ('customer', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='teams', to='billing.Customer')),
-                ('default_billing_address', models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='billing.BillingAddress')),
             ],
             options={
                 'ordering': ('-modified', '-created'),

@@ -40,8 +40,7 @@ class TeamSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Team
-        fields = ('id', 'customer', 'name', 'description', 'website', 'location', 'groups', 'created_by')
-        read_only_fields = ('customer',)
+        fields = ('id', 'name', 'description', 'website', 'location', 'groups', 'created_by')
 
     def validate_name(self, value):
         if User.objects.filter(username=value, is_active=True).exists():

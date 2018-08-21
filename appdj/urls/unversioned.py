@@ -25,7 +25,6 @@ from servers import views as servers_views
 from users import views as user_views
 from triggers import views as trigger_views
 from teams import views as team_views
-from billing import views as billing_views
 from search.views import SearchView
 from canvas.views import CanvasXML, Auth, ApplicationViewSet
 
@@ -50,23 +49,10 @@ server_router.register(r'stats', servers_views.ServerStatisticsViewSet)
 server_router.register(r'triggers', trigger_views.ServerActionViewSet)
 
 
-router.register(r'billing/cards', billing_views.CardViewSet)
-router.register(r'billing/plans', billing_views.PlanViewSet)
-router.register(r'billing/subscriptions', billing_views.SubscriptionViewSet)
-router.register(r'billing/invoices', billing_views.InvoiceViewSet)
-router.register(r'billing/(?P<invoice_id>[\w-]+)/invoice-items', billing_views.InvoiceItemViewSet)
-
 router.register(r'service/(?P<server>[^/.]+)/trigger', trigger_views.ServerActionViewSet)
 
 teams_router = routers.SimpleRouter()
 teams_router.register(r'teams', team_views.TeamViewSet)
-
-teams_billing_router = routers.NestedSimpleRouter(teams_router, r'teams', lookup='team')
-teams_billing_router.register(r'billing/subscriptions', team_views.TeamSubscriptionViewSet,
-                              base_name='team-subscription')
-teams_billing_router.register(r'billing/invoices', team_views.TeamInvoiceViewSet, base_name='team-invoices')
-teams_billing_router.register(r'billing/(?P<invoice_id>[\w-]+)/invoice-items', team_views.TeamInvoiceItemViewSet,
-                              base_name='team-invoice-items')
 
 teams_sub_router = routers.NestedSimpleRouter(teams_router, r'teams', lookup='team')
 teams_sub_router.register(r'groups', team_views.GroupViewSet)
@@ -139,19 +125,11 @@ urlpatterns = [
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/(?P<path>.*?/?\w+(?:\.\w+)+)$',
         servers_views.lti_file_handler, name='lti-file'),
     url(r'^servers/', include(servers_router.urls)),
-    url(r'^webhooks/incoming/billing/invoice_created/$', billing_views.stripe_invoice_created,
-        name='stripe-invoice-created'),
-    url(r'^webhooks/incoming/billing/invoice_payment_failed/$', billing_views.stripe_invoice_payment_failed,
-        name='stripe-invoice-payment-failed'),
-    url(r'^webhooks/incoming/billing/invoice_payment_success/$', billing_views.stripe_invoice_payment_success,
-        name='stripe-invoice-payment-success'),
     url(r'^(?P<namespace>[\w-]+)/notifications/', include("notifications.urls")),
     url(r'^(?P<namespace>[\w-]+)/teams/(?P<team_team>[\w-]+)/groups/(?P<group>[^/.]+)/add/',
         team_views.add_user_to_group, name='add-user-to-group'),
     url(r'^(?P<namespace>[\w-]+)/teams/(?P<team_team>[\w-]+)/groups/(?P<group>[^/.]+)/remove/',
         team_views.remove_user_from_group, name='remove-user-from-group'),
-    url(r'^webhooks/incoming/billing/subscription-updated/$', billing_views.stripe_subscription_updated,
-        name='stripe-subscription-updated'),
     url(r'^(?P<namespace>[\w-]+)/notifications/', include("notifications.urls"))
 ]
 
@@ -164,11 +142,6 @@ def handler404(request):
 @api_view()
 def handler500(request):
     raise APIException(detail="Internal Server Error", code=500)
-
-
-urlpatterns += [
-    url(r'^', include(teams_billing_router.urls)),
-]
 
 
 if settings.DEBUG:

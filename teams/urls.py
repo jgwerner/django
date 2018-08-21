@@ -31,18 +31,9 @@ my_teams_router.register(r'teams', team_views.TeamViewSet, base_name='my-team')
 my_teams_sub_router = routers.NestedSimpleRouter(my_teams_router, r'teams', lookup='team')
 my_teams_sub_router.register(r'groups', team_views.GroupViewSet, base_name='my-group')
 
-if settings.ENABLE_BILLING:
-    teams_billing_router = routers.NestedSimpleRouter(teams_router, r'teams', lookup='team')
-    teams_billing_router.register(r'billing/subscriptions', team_views.TeamSubscriptionViewSet,
-                                  base_name='team-subscription')
-    teams_billing_router.register(r'billing/invoices', team_views.TeamInvoiceViewSet, base_name='team-invoices')
-    teams_billing_router.register(r'billing/(?P<invoice_id>[\w-]+)/invoice-items',
-                                  team_views.TeamInvoiceItemViewSet, base_name='team-invoice-items')
-
 urlpatterns = [
     url(r'^me/', include(my_teams_router.urls)),
     url(r'^me/', include(my_teams_sub_router.urls)),
     url(r'^', include(teams_router.urls)),
     url(r'^', include(teams_sub_router.urls)),
-    url(r'^', include(teams_billing_router.urls)),
 ]

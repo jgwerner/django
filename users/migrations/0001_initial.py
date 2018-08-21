@@ -17,7 +17,6 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('auth', '0001_initial'),
-        ('billing', '0001_initial'),
     ]
 
     operations = [
@@ -69,8 +68,6 @@ class Migration(migrations.Migration):
                 ('last_login_ip', models.CharField(blank=True, max_length=20, null=True)),
                 ('login_count', models.IntegerField(blank=True, null=True)),
                 ('timezone', models.CharField(blank=True, db_column='Timezone', max_length=20, null=True)),
-                ('billing_plan', models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='billing.Plan')),
-                ('default_billing_address', models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='billing.BillingAddress')),
             ],
         ),
         migrations.AddField(
