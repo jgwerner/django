@@ -14,7 +14,7 @@ def check_and_make_dir(sub_dir):
 handlers = {}
 loggers = {}
 
-for app in ['actions', 'base', 'billing', 'infrastructure',
+for app in ['actions', 'base', 'infrastructure',
             'jwt_auth', 'notifications', 'projects',
             'servers', 'triggers', 'users']:
     app_handler = {'level': "DEBUG",

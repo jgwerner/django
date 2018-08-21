@@ -61,7 +61,6 @@ INSTALLED_APPS = [
     'base',
     'notifications',
     'users',
-    'billing',
     'projects',
     'servers',
     'actions',
@@ -85,7 +84,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.contrib.sites.middleware.CurrentSiteMiddleware',
     'base.middleware.NamespaceMiddleware',
-    'billing.middleware.SubscriptionMiddleware'
 ]
 
 ROOT_URLCONF = 'appdj.urls.base'
@@ -403,8 +401,6 @@ SOCIAL_AUTH_SLACK_SECRET = os.environ.get('SLACK_SECRET')
 CORS_ORIGIN_ALLOW_ALL = True
 
 LOGGING = TBS_LOGGING
-
-ENABLE_BILLING = os.environ.get("ENABLE_BILLING", "false").lower() == "true"
 
 # A list of url *names* that require a subscription to access.
 SUBSCRIPTION_REQUIRED_URLS = ["server-start"]

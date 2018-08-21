@@ -31,7 +31,7 @@ def create_notification(user: User, actor, target, notif_type: NotificationType)
                                 is_active=settings.enabled)
     log.info(f"Created notification {notification}")
 
-    if notif_type.entity == "billing" or settings.emails_enabled:
+    if settings.emails_enabled:
         log.info("Settings have enabled emails. Emailing notification.")
         template_name_str = f"notifications/{notif_type.template_name}."
 
