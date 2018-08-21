@@ -40,7 +40,7 @@ RAVEN_CONFIG = {
     'release': raven.fetch_git_sha(os.path.dirname(os.pardir)),
 }
 
-# SPAWNER = 'servers.spawners.docker.DockerSpawner'
+SPAWNER = 'servers.spawners.docker.DockerSpawner'
 
 STRIPE_WEBHOOK_SECRETS = {'stripe_subscription_updated': "whsec_RSx9LWemXIP0SDRKTmUEMbaVxZNAc8f1",
                           'stripe_invoice_payment_failed': "whsec_7tD4DpkmWA8ZGhnikmxPwoB1jgSpB8p5",

@@ -145,11 +145,13 @@ CHANNEL_LAYERS = {
 }
 
 AUTHENTICATION_BACKENDS = (
-    'social_core.backends.google.GoogleOAuth2',
-    'social_core.backends.github.GithubOAuth2',
+    'jwt_auth.oauth2.AuthCodeGoogle',
+    'jwt_auth.oauth2.AuthCodeGithub',
     'social_core.backends.slack.SlackOAuth2',
+    'rest_framework_social_oauth2.backends.DjangoOAuth2',
     'users.backends.ActiveUserBackend',
     'guardian.backends.ObjectPermissionBackend',
+    'django.contrib.auth.backends.ModelBackend',
 )
 
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.environ.get('GOOGLE_CLIENT_ID', '')
@@ -277,6 +279,7 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
+        'oauth2_provider.ext.rest_framework.OAuth2Authentication',
         'rest_framework_social_oauth2.authentication.SocialAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'canvas.authorization.CanvasAuth',
