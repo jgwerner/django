@@ -215,7 +215,6 @@ BCRYPT_LOG_ROUNDS = 13
 
 JWT_AUTH = {
     'JWT_EXPIRATION_DELTA': datetime.timedelta(days=30),
-    'JWT_AUTH_HEADER_PREFIX': 'Bearer',
     'JWT_ALLOW_REFRESH': True,
     'JWT_DECODE_HANDLER': 'jwt_auth.utils.jwt_decode_handler'
 }
