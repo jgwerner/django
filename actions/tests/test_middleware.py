@@ -30,7 +30,7 @@ class ActionMiddlewareFunctionalTest(TestCase):
     def setUp(self):
         self.user = UserFactory()
         token = create_auth_jwt(self.user)
-        self.factory = APIRequestFactory(HTTP_AUTHORIZATION=f'Bearer {token}')
+        self.factory = APIRequestFactory(HTTP_AUTHORIZATION=f'JWT {token}')
         base_handler = BaseHandler()
         base_handler.load_middleware()
         self.middleware = ActionMiddleware(get_response=base_handler.get_response)
@@ -112,7 +112,7 @@ class ActionMiddlewareTest(TestCase):
     def setUp(self):
         self.user = UserFactory()
         token = create_auth_jwt(self.user)
-        self.factory = APIRequestFactory(HTTP_AUTHORIZATION=f'Bearer {token}')
+        self.factory = APIRequestFactory(HTTP_AUTHORIZATION=f'JWT {token}')
         base_handler = BaseHandler()
         base_handler.load_middleware()
         self.middleware = ActionMiddleware(get_response=base_handler.get_response)
@@ -239,6 +239,6 @@ class GetUserTestCase(TestCase):
 
     def test_get_user_from_token_heder_jwt(self):
         request = self.factory.request()
-        request.META['HTTP_AUTHORIZATION'] = 'Bearer {}'.format(self.jwt)
+        request.META['HTTP_AUTHORIZATION'] = 'JWT {}'.format(self.jwt)
         user = get_user_from_token_header(request)
         self.assertEqual(self.user.pk, user.pk)

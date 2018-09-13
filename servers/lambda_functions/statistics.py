@@ -87,7 +87,7 @@ class APIAuth(AuthBase):
         self.token = token
 
     def __call__(self, r):
-        r.headers['Authorization'] = f'Bearer {self.token}'
+        r.headers['Authorization'] = f'JWT {self.token}'
         return r
 
 

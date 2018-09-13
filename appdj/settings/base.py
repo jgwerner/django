@@ -415,13 +415,7 @@ es_use_ssl = "https://" in es_url
 
 HAYSTACK_CONNECTIONS = {
     "default": {
-        'ENGINE': 'haystack_elasticsearch.elasticsearch5.Elasticsearch5SearchEngine',
-        'URL': es_url,
-        'INDEX_NAME': '3blades',
-        'KWARGS': {
-            'http_auth': (os.getenv("ELASTICSEARCH_USER"), os.getenv("ELASTICSEARCH_PASSWORD")),
-            'use_ssl': es_use_ssl,
-        }
+        'ENGINE': 'haystack.backends.simple_backend.SimpleEngine'
     }
 }
 

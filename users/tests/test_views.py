@@ -41,8 +41,8 @@ class UserTest(APITestCase):
         self.user.save()
         admin_token = create_auth_jwt(self.admin)
         user_token = create_auth_jwt(self.user)
-        self.admin_client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {admin_token}')
-        self.user_client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {user_token}')
+        self.admin_client = self.client_class(HTTP_AUTHORIZATION=f'JWT {admin_token}')
+        self.user_client = self.client_class(HTTP_AUTHORIZATION=f'JWT {user_token}')
         self.to_remove = []
         self.image_files = []
         self.plans_to_delete = []
@@ -524,8 +524,7 @@ class UserTest(APITestCase):
 class EmailTest(APITestCase):
     def setUp(self):
         self.user = UserFactory()
-        token = create_auth_jwt(self.user)
-        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
+        self.client.force_authenticate(user=self.user)
 
     def test_list_has_access_to_all_my_emails(self):
         EmailFactory(public=True, user=self.user)
@@ -617,8 +616,7 @@ class EmailTest(APITestCase):
 class UserIntegrationTest(APITestCase):
     def setUp(self):
         self.user = UserFactory()
-        token = create_auth_jwt(self.user)
-        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
+        self.client.force_authenticate(user=self.user)
 
     def test_creating_integration(self):
         url = reverse("usersocialauth-list", kwargs={'version': settings.DEFAULT_VERSION})

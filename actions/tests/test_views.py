@@ -23,8 +23,7 @@ from .factories import ActionFactory
 class ActionTest(APITestCase):
     def setUp(self):
         self.user = UserFactory()
-        token = create_auth_jwt(self.user)
-        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
+        self.client.force_authenticate(user=self.user)
 
     def test_list_actions(self):
         collaborator = CollaboratorFactory(user=self.user)

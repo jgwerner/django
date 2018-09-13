@@ -39,7 +39,7 @@ class TestJWT(APITestCase):
 
     def test_one_time_jwt_with_view(self):
         token = create_one_time_jwt(self.user)
-        cli = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
+        cli = self.client_class(HTTP_AUTHORIZATION=f'JWT {token}')
         url = reverse('temp-token-auth')
         resp = cli.get(url)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
@@ -49,7 +49,7 @@ class TestJWT(APITestCase):
     @override_settings(JWT_TMP_EXPIRATION_DELTA=timedelta(seconds=1))
     def test_one_time_jwt_with_view_expiry(self):
         token = create_one_time_jwt(self.user)
-        cli = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
+        cli = self.client_class(HTTP_AUTHORIZATION=f'JWT {token}')
         url = reverse('temp-token-auth')
         sleep(1)
         resp = cli.get(url)

@@ -27,8 +27,7 @@ class TriggerTest(APITestCase):
         collaborator = CollaboratorFactory()
         self.user = collaborator.user
         self.project = collaborator.project
-        token = create_auth_jwt(self.user)
-        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
+        self.client.force_authenticate(user=self.user)
 
     def test_create_trigger(self):
         server = ServerFactory(project=self.project)
@@ -78,8 +77,8 @@ class ServerActionTestCase(APILiveServerTestCase):
         self.user = collaborator.user
         self.project = collaborator.project
         self.token = create_auth_jwt(self.user)
-        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {self.token}')
         self.server = ServerFactory(project=self.project)
+        self.client = self.client_class(HTTP_AUTHORIZATION=f'JWT {self.token}')
         self.url_kwargs = {
             'namespace': self.user.username,
             'project_project': str(self.project.pk),

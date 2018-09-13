@@ -50,7 +50,7 @@
       (function(){
         fetch("{{ task_url }}", {
           headers: {
-            'Authorization': 'Bearer {{ access_token }}'
+            'Authorization': 'JWT {{ access_token }}'
           }
         }).then(function(response) {
           return response.json();
