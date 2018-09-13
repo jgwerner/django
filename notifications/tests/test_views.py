@@ -14,8 +14,7 @@ class NotificationsViewTest(APITestCase):
 
     def setUp(self):
         self.user = UserFactory()
-        token = create_auth_jwt(self.user)
-        self.client = self.client_class(HTTP_AUTHORIZATION=f"Bearer {token}")
+        self.client.force_authenticate(user=self.user)
 
     def test_list_notifications_no_params(self):
         # It's obviously nonsensical to have the actor and target both be
@@ -196,8 +195,7 @@ class NotificationSettingsViewTest(APITestCase):
         self.user = UserFactory()
         self.email = EmailFactory(user=self.user,
                                   address=self.user.email)
-        token = create_auth_jwt(self.user)
-        self.client = self.client_class(HTTP_AUTHORIZATION=f"Bearer {token}")
+        self.client.force_authenticate(user=self.user)
 
     def test_create_notification_settings(self):
         url = reverse("notification-settings", kwargs={'version': settings.DEFAULT_VERSION,

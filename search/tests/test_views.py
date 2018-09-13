@@ -18,8 +18,7 @@ class SearchTestCase(APITestCase):
             last_name='Craig',
             email='scraig@gmail.com'
         )
-        token = create_auth_jwt(self.user)
-        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
+        self.client.force_authenticate(user=self.user)
         UserFactory.create_batch(4)
         self.url = reverse('search', kwargs={'namespace': self.user.username,
                                              'version': settings.DEFAULT_VERSION})

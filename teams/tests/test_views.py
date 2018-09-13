@@ -18,8 +18,7 @@ class TeamTest(APITransactionTestCase):
 
     def setUp(self):
         self.user = UserFactory()
-        token = create_auth_jwt(self.user)
-        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
+        self.client.force_authenticate(user=self.user)
 
     def test_create_team(self):
         url = reverse('team-list', kwargs={'version': settings.DEFAULT_VERSION})
@@ -80,8 +79,8 @@ class TeamTest(APITransactionTestCase):
 
     def _create_base_permission_test(self):
         owner = UserFactory()
-        token = create_auth_jwt(owner)
-        cli = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
+        cli = self.client_class()
+        cli.force_authenticate(user=owner)
         team = TeamFactory(created_by=owner)
         return team, cli
 

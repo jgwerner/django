@@ -27,7 +27,7 @@ def get_user_from_token_header(request):
     if not token_header or ' ' not in token_header:
         return
     prefix, token = token_header.split()
-    if prefix == 'Bearer':
+    if prefix == 'JWT':
         return get_user_from_jwt(token)
 
 

@@ -11,7 +11,6 @@ services:
       - db
       - cache
       - broker
-      - search
     labels:
       - "traefik.enable=true"
       - "traefik.backend=api"
@@ -28,7 +27,6 @@ services:
       - db
       - cache
       - broker
-      - search
     ports:
       - "9000:80"
     entrypoint: ''
@@ -48,7 +46,6 @@ services:
       - db
       - cache
       - broker
-      - search
     entrypoint: ''
   celery:
     build: .
@@ -61,7 +58,6 @@ services:
       - db
       - cache
       - broker
-      - search
     entrypoint: ''
   beat:
     build: .
@@ -74,7 +70,6 @@ services:
       - db
       - cache
       - broker
-      - search
     entrypoint: ''
   db:
     image: postgres:9.6-alpine
@@ -84,10 +79,6 @@ services:
     image: rabbitmq:alpine
     ports:
       - "5672:5672"
-  search:
-    image: elasticsearch:5-alpine
-    ports:
-      - "9200:9200"
   cache:
     image: redis:alpine
     ports:

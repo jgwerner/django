@@ -83,7 +83,7 @@ class Action(models.Model):
         url = '{}{}'.format(url, self.path)
         s = Session()
         token = create_auth_jwt(self.user)
-        headers = {'AUTHORIZATION': 'Bearer {}'.format(token)}
+        headers = {'AUTHORIZATION': 'JWT {}'.format(token)}
         request = Request(self.method.upper(), url, json=self.payload, headers=headers).prepare()
         resp = s.send(request)
         resp.raise_for_status()

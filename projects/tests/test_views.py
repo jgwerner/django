@@ -32,8 +32,7 @@ class ProjectTestMixin(object):
 class ProjectTest(ProjectTestMixin, APITestCase):
     def setUp(self):
         self.user = UserFactory()
-        token = create_auth_jwt(self.user)
-        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
+        self.client.force_authenticate(user=self.user)
 
     def test_create_project(self):
         url = reverse('project-list', kwargs={'namespace': self.user.username,
@@ -239,15 +238,14 @@ class ProjectTest(ProjectTestMixin, APITestCase):
 
     def test_create_project_with_different_user(self):
         staff_user = UserFactory(is_staff=True)
-        token = create_auth_jwt(staff_user)
-        client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
+        self.client.force_authenticate(user=staff_user)
         url = reverse('project-list', kwargs={'namespace': self.user.username,
                                               'version': settings.DEFAULT_VERSION})
         data = dict(
             name='Test1',
             description='Test description',
         )
-        response = client.post(url, data)
+        response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Project.objects.count(), 1)
         project = Project.objects.get()
@@ -452,8 +450,7 @@ class ProjectTest(ProjectTestMixin, APITestCase):
 class ProjectTestWithName(ProjectTestMixin, APITestCase):
     def setUp(self):
         self.user = UserFactory()
-        token = create_auth_jwt(self.user)
-        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
+        self.client.force_authenticate(user=self.user)
 
     def test_project_details(self):
         collaborator = CollaboratorFactory(user=self.user)
@@ -554,8 +551,7 @@ class ProjectTestWithName(ProjectTestMixin, APITestCase):
 class CollaboratorTest(ProjectTestMixin, APITestCase):
     def setUp(self):
         self.user = UserFactory()
-        token = create_auth_jwt(self.user)
-        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
+        self.client.force_authenticate(user=self.user)
 
     def test_create_collaborator(self):
         # Implicitly create project

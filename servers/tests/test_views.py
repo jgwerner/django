@@ -33,14 +33,13 @@ class ServerTest(APITestCase):
                            'version': settings.DEFAULT_VERSION}
         self.server_size = ServerSizeFactory(name='Nano')
         ServerSizeFactory()
-        self.token = create_auth_jwt(self.user)
-        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {self.token}')
+        self.client.force_authenticate(user=self.user)
 
     def test_check_token_ok(self):
         server = ServerFactory(project=self.project, config={'type': 'jupyter'}, created_by=self.user)
         kwargs = {'server': str(server.pk), **self.url_kwargs}
         url = reverse('server-auth', kwargs=kwargs)
-        cli = self.client_class(HTTP_AUTHORIZATION=f'Bearer {server.access_token}')
+        cli = self.client_class(HTTP_AUTHORIZATION=f'JWT {server.access_token}')
         resp = cli.post(url)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
 
@@ -48,7 +47,8 @@ class ServerTest(APITestCase):
         server = ServerFactory(project=self.project, config={'type': 'jupyter'}, created_by=self.user)
         kwargs = {'server': str(server.pk), **self.url_kwargs}
         url = reverse('server-auth', kwargs=kwargs)
-        cli = self.client_class(HTTP_AUTHORIZATION=f'Bearer {self.token}')
+        token = create_auth_jwt(self.user)
+        cli = self.client_class(HTTP_AUTHORIZATION=f'JWT {token}')
         resp = cli.post(url)
         self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
 
@@ -64,7 +64,8 @@ class ServerTest(APITestCase):
         server = ServerFactory(project=self.project, config={'type': 'jupyter'}, created_by=self.user)
         kwargs = {'server': str(server.pk), **self.url_kwargs}
         url = reverse('server-auth', kwargs=kwargs)
-        cli = self.client_class(HTTP_AUTHORIZATION=f'Token {self.token}')
+        token = create_auth_jwt(self.user)
+        cli = self.client_class(HTTP_AUTHORIZATION=f'Token {token}')
         resp = cli.post(url)
         self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
 
@@ -72,7 +73,7 @@ class ServerTest(APITestCase):
         server = ServerFactory(project=self.project, config={'type': 'jupyter'}, created_by=self.user)
         kwargs = {'server': str(server.pk), **self.url_kwargs}
         url = reverse('server-auth', kwargs=kwargs)
-        cli = self.client_class(HTTP_AUTHORIZATION=f'Bearer')
+        cli = self.client_class(HTTP_AUTHORIZATION=f'JWT')
         resp = cli.post(url)
         self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
 
@@ -315,8 +316,7 @@ class ServerTestWithName(APITestCase):
                            'version': settings.DEFAULT_VERSION}
         self.server_size = ServerSizeFactory(name='Nano')
         ServerSizeFactory()
-        token = create_auth_jwt(self.user)
-        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
+        self.client.force_authenticate(user=self.user)
 
     def test_validate_server_name_prevents_duplicate_name(self):
         # Passing a project server name identical to an existing server name should error
@@ -521,8 +521,7 @@ class ServerRunStatisticsTestCase(APITestCase):
         self.url_kwargs = {'namespace': self.user.username,
                            'project_project': str(self.project.pk),
                            'version': settings.DEFAULT_VERSION}
-        token = create_auth_jwt(self.user)
-        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
+        self.client.force_authenticate(user=self.user)
 
     def test_list(self):
         stats = ServerRunStatisticsFactory(server__project=self.project)
@@ -615,8 +614,7 @@ class ServerRunStatisticsTestCaseWithName(APITestCase):
         self.url_kwargs = {'namespace': self.user.username,
                            'project_project': self.project.name,
                            'version': settings.DEFAULT_VERSION}
-        token = create_auth_jwt(self.user)
-        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
+        self.client.force_authenticate(user=self.user)
 
     def test_list(self):
         stats = ServerRunStatisticsFactory(server__project=self.project)
@@ -662,8 +660,7 @@ class ServerStatisticsTestCase(APITestCase):
         self.url_kwargs = {'namespace': self.user.username,
                            'project_project': str(self.project.pk),
                            'version': settings.DEFAULT_VERSION}
-        token = create_auth_jwt(self.user)
-        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
+        self.client.force_authenticate(user=self.user)
 
     def test_list(self):
         stats = ServerStatisticsFactory(server__project=self.project)
@@ -691,8 +688,7 @@ class ServerStatisticsTestCaseWithName(APITestCase):
         self.url_kwargs = {'namespace': self.user.username,
                            'project_project': self.project.name,
                            'version': settings.DEFAULT_VERSION}
-        token = create_auth_jwt(self.user)
-        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
+        self.client.force_authenticate(user=self.user)
 
     def test_list(self):
         stats = ServerStatisticsFactory(server__project=self.project)
@@ -716,8 +712,7 @@ class ServerStatisticsTestCaseWithName(APITestCase):
 class ServerSizeTestCase(APITestCase):
     def setUp(self):
         self.user = UserFactory()
-        token = create_auth_jwt(self.user)
-        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
+        self.client.force_authenticate(user=self.user)
         self.server_size = ServerSizeFactory()
 
     def test_server_size_detail(self):
@@ -732,15 +727,14 @@ class ServerSizeTestCase(APITestCase):
         non_staff = UserFactory()
         non_staff.is_staff = False
         non_staff.save()
-        token = create_auth_jwt(non_staff)
-        client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
+        self.client.force_authenticate(user=non_staff)
 
         data = {'name': "Permission Test",
                 'cpu': 4,
                 'memory': 1024,
                 'active': True}
         url = reverse("serversize-list", kwargs={'version': settings.DEFAULT_VERSION})
-        response = client.post(url, data=data)
+        response = self.client.post(url, data=data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
@@ -749,8 +743,7 @@ class DeploymentTest(APITestCase):
         collaborator = CollaboratorFactory()
         self.user = collaborator.user
         self.project = collaborator.project
-        token = create_auth_jwt(self.user)
-        self.client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
+        self.client.force_authenticate(user=self.user)
 
     def test_create_deployment_using_runtime_and_fw_names(self):
         runtime = RuntimeFactory()
@@ -769,8 +762,7 @@ class DeploymentTest(APITestCase):
 
     def test_create_deployment_for_project_duplicate(self):
         proj = CollaboratorFactory(project__name=self.project.name).project
-        token = create_auth_jwt(proj.owner)
-        client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
+        self.client.force_authenticate(user=proj.owner)
 
         runtime = RuntimeFactory()
         framework = FrameworkFactory()
@@ -782,7 +774,7 @@ class DeploymentTest(APITestCase):
                 'runtime': str(runtime.pk),
                 'framework': str(framework.pk),
                 'config': {}}
-        response = client.post(url, data=data)
+        response = self.client.post(url, data=data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         deployment = Deployment.objects.get(pk=response.data['id'])
         self.assertEqual(deployment.project, proj)
@@ -794,8 +786,7 @@ class LTITest(APITestCase):
         self.user = col.user
         self.project = col.project
         self.server = ServerFactory(project=self.project, config={'type': 'jupyter'})
-        token = create_auth_jwt(self.user)
-        self.api_client = self.client_class(HTTP_AUTHORIZATION=f'Bearer {token}')
+        self.client.force_authenticate(user=self.user)
 
     def test_lti_file_handler(self):
         path = 'test.py'
@@ -815,7 +806,7 @@ class LTITest(APITestCase):
 
         with patch('celery.result.AsyncResult.get') as get_result:
             get_result.return_value = (str(self.server.pk), None)
-            task_resp = self.api_client.get(resp.data['task_url'])
+            task_resp = self.client.get(resp.data['task_url'])
         self.assertEqual(task_resp.status_code, status.HTTP_200_OK)
         self.assertIn('url', task_resp.data)
         self.assertIn(path, task_resp.data['url'])

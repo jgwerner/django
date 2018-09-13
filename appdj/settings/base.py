@@ -215,7 +215,6 @@ BCRYPT_LOG_ROUNDS = 13
 
 JWT_AUTH = {
     'JWT_EXPIRATION_DELTA': datetime.timedelta(days=30),
-    'JWT_AUTH_HEADER_PREFIX': 'Bearer',
     'JWT_ALLOW_REFRESH': True,
     'JWT_DECODE_HANDLER': 'jwt_auth.utils.jwt_decode_handler'
 }
@@ -416,13 +415,7 @@ es_use_ssl = "https://" in es_url
 
 HAYSTACK_CONNECTIONS = {
     "default": {
-        'ENGINE': 'haystack_elasticsearch.elasticsearch5.Elasticsearch5SearchEngine',
-        'URL': es_url,
-        'INDEX_NAME': '3blades',
-        'KWARGS': {
-            'http_auth': (os.getenv("ELASTICSEARCH_USER"), os.getenv("ELASTICSEARCH_PASSWORD")),
-            'use_ssl': es_use_ssl,
-        }
+        'ENGINE': 'haystack.backends.simple_backend.SimpleEngine'
     }
 }
 
