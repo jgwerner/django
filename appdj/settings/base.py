@@ -53,7 +53,6 @@ INSTALLED_APPS = [
     'corsheaders',
     'guardian',
     'django_filters',
-    'haystack',
     'djoser',
     'django_ses',
     'treebeard',
@@ -408,18 +407,6 @@ SUBSCRIPTION_REQUIRED_URLS = ["server-start"]
 # But I'm not sure if they're secure and what not for prod
 MEDIA_ROOT = "/workspaces/"
 MEDIA_URL = "/media/"
-
-
-es_url = os.environ.get("ELASTICSEARCH_URL", "http://search:9200/")
-es_use_ssl = "https://" in es_url
-
-HAYSTACK_CONNECTIONS = {
-    "default": {
-        'ENGINE': 'haystack.backends.simple_backend.SimpleEngine'
-    }
-}
-
-HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
 
 DOCKER_NET = os.environ.get('DOCKER_NET', 'tbs-net')
 

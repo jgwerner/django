@@ -1,10 +1,8 @@
 import logging
-from django.conf import settings
 from django.http import JsonResponse
 from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django.views.decorators.csrf import csrf_exempt
-from haystack.query import SearchQuerySet, EmptySearchQuerySet
 from social_django.models import UserSocialAuth
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
@@ -130,10 +128,7 @@ class UserSearchView(ListModelMixin, viewsets.GenericViewSet):
         return Response(serializer.data)
 
     def get_queryset(self):
-        qs = EmptySearchQuerySet()
-        if 'q' in self.request.GET:
-            qs = SearchQuerySet().filter(content=self.request.GET.get('q', ''))
-        return qs
+        return None
 
 
 class RegisterView(CreateAPIView):
