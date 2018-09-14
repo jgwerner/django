@@ -2,6 +2,7 @@ import logging
 from pathlib import Path
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.contrib.postgres.fields import JSONField
+from django.contrib.postgres.indexes import GinIndex
 from django.conf import settings
 from django.db import models, IntegrityError
 from django.contrib.auth.models import AbstractUser, UserManager
@@ -33,6 +34,11 @@ class User(AbstractUser):
     team_groups = models.ManyToManyField('teams.Group', blank=True, related_name="user_set", related_query_name="user")
 
     objects = CustomUserManager()
+
+    class Meta(AbstractUser.Meta):
+        indexes = (
+            GinIndex(fields=["username", "email", "first_name", "last_name"]),
+        )
 
     def save(self, *args, **kwargs):
         username = self.username
