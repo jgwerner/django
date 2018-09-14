@@ -4,6 +4,7 @@ from decimal import Decimal
 
 from django.conf import settings
 from django.contrib.postgres.fields import HStoreField, JSONField
+from django.contrib.postgres.indexes import GinIndex
 from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
@@ -97,6 +98,11 @@ class Server(ServerModelAbstract):
     image_name = models.CharField(max_length=100, blank=True)
     host = models.ForeignKey('infrastructure.DockerHost', related_name='servers', null=True, blank=True)
     last_start = models.DateTimeField(null=True)
+
+    class Meta(ServerModelAbstract.Meta):
+        indexes = (
+            GinIndex(fields=["name"]),
+        )
 
     @property
     def spawner(self):
