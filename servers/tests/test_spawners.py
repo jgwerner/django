@@ -67,11 +67,7 @@ class TestDockerSpawnerForModel(TransactionTestCase):
             "type": "jupyter"
         }
         cmd = self.spawner._get_cmd()
-        self.assertIn("/runner", cmd)
-        self.assertIn(f'--ns={self.user.username}', cmd)
-        self.assertIn(f'--projectID={self.server.project.pk}', cmd)
-        self.assertIn(f'--serverID={self.server.pk}', cmd)
-        self.assertIn('--type=proxy', cmd)
+        self.assertIn('jupyter', cmd)
 
     def test_get_command_generic(self):
         self.server.config = {

@@ -51,21 +51,23 @@ class BaseSpawner(SpawnerInterface):
 
     def _get_cmd(self) -> List[str]:
         logger.info("Getting command")
-        cmd = [
-            '/runner',
-            f'--key={create_auth_jwt(self.user)}',
-            f'--ns={self.server.project.namespace_name}',
-            f'--projectID={self.server.project.pk}',
-            f'--serverID={self.server.pk}',
-            f'--root={Site.objects.get_current().domain}',
-            f'--secret={settings.SECRET_KEY}'
-        ]
-        if 'script' in self.server.config:
-            cmd.append(f'--script={self.server.config["script"]}')
-        if 'function' in self.server.config:
-            cmd.append(f'--function={self.server.config["function"]}')
-        if 'type' in self.server.config:
-            cmd.append(f'--type={self.server.get_type()}')
+        cmd = []
+        if self.server.config['type'] != 'jupyter':
+            cmd = [
+                '/runner',
+                f'--key={create_auth_jwt(self.user)}',
+                f'--ns={self.server.project.namespace_name}',
+                f'--projectID={self.server.project.pk}',
+                f'--serverID={self.server.pk}',
+                f'--root={Site.objects.get_current().domain}',
+                f'--secret={settings.SECRET_KEY}'
+            ]
+            if 'script' in self.server.config:
+                cmd.append(f'--script={self.server.config["script"]}')
+            if 'function' in self.server.config:
+                cmd.append(f'--function={self.server.config["function"]}')
+            if 'type' in self.server.config:
+                cmd.append(f'--type={self.server.get_type()}')
         if self.server.config['type'] in settings.SERVER_COMMANDS:
             cmd.extend([
                 part.format(namespace=self.server.project.namespace_name, server=self.server, version=settings.DEFAULT_VERSION)
