@@ -387,7 +387,8 @@ SERVER_TYPE_MAPPING = {'jupyter': 'proxy', 'rstudio': 'proxy'}
 SERVER_ENDPOINT_URLS = {'restful': '/restful/', 'proxy': '/proxy/'}
 SERVER_COMMANDS = {
     'jupyter': 'jupyter lab --NotebookApp.base_url=' +
-    '"/{version}/{namespace}/projects/{server.project.pk}/servers/{server.pk}/endpoint/proxy"',
+    '"/{version}/{namespace}/projects/{server.project.pk}/servers/{server.pk}/endpoint/proxy"' +
+    ' --NotebookApp.token={server.access_token} --NotebookApp.port=8080',
     'rstudio': '/init',
 }
 # slack

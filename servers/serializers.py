@@ -118,7 +118,7 @@ class ServerSerializer(SearchSerializerMixin, BaseServerSerializer):
         if obj.access_token == "":
             log.info(f"Server {obj.pk} doesn't have an access token. Not appending anything to the endpoint.")
             return base_url
-        base_url += f"?access_token={obj.access_token}"
+        base_url += f"?token={obj.access_token}"
         return base_url
 
     def get_logs_url(self, obj):
