@@ -331,7 +331,7 @@ def lti_ready(request, *args, **kwargs):
     endpoint = get_server_url(str(workspace.project.pk), str(workspace.pk),
                               scheme, '/endpoint/proxy/lab/tree/', namespace=workspace.namespace_name)
     path = kwargs.get('path')
-    url = f'{endpoint}{path}?access_token={workspace.access_token}'
+    url = f'{endpoint}{path}?token={workspace.access_token}'
     if assignment_id:
         url += f'&assignment_id={assignment_id}'
     return Response({'url': url})
