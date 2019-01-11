@@ -32,6 +32,7 @@ The IllumiDesk/app-backend application interacts with various internal applicati
 | EMAIL_HOST_PASSWORD | <string> | Password associated with EMAIL_HOST_USER |
 | EMAIL_USE_TLS | <boolean> | Enables Transport Layer Security (TLS) when talking to SMTP server |
 | EMAIL_USE_SSL | <boolean> | Enables implicit TLS (commonly known as "SSL") when talking to SMTP server |
+| EXTERNAL_IPV4 | <string> | External facing IPV4 address, required by webapp to accept connections without a domain name. |
 | GITHUB_CLIENT_ID | <string> | Client ID for Github account |
 | GITHUB_CLIENT_SECRET | <string> | Secret access key associated with GITHUB_CLIENT_ID |
 | GOOGLE_CLIENT_ID | <string> | Client ID for Google account |
