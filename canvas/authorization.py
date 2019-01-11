@@ -7,6 +7,8 @@ from django.contrib.auth import get_user_model
 from oauth2_provider.models import Application
 from oauthlib.oauth1 import RequestValidator, SignatureOnlyEndpoint
 
+from servers.utils import email_to_username
+
 User = get_user_model()
 
 
@@ -49,11 +51,13 @@ class CanvasAuth(authentication.BaseAuthentication):
         )
         if valid and Application.objects.filter(
                 client_id=request.data['oauth_consumer_key']).exists():
-            user = User.objects.filter(
-                email=request.data['lis_person_contact_email_primary']
-            ).first()
+            email = request.data['lis_person_contact_email_primary']
+            user = User.objects.filter(email=email).first()
             if user is None:
-                return None
+                user = User.objects.create_user(
+                    username=email_to_username(email),
+                    email=email
+                )
             if 'canvas_user_id' not in user.profile.config:
                 user.profile.config['canvas_user_id'] = request.data['user_id']
                 user.profile.save()
