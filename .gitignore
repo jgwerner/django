@@ -76,9 +76,6 @@ target/
 # celery beat schedule file
 celerybeat-schedule
 
-# dotenv
-.env
-
 # virtualenv
 .venv/
 venv/
@@ -113,3 +110,6 @@ celerybeat.pid
 # lambda func
 stats.zip
 vendored/
+
+# tmp workspaces folder
+workspaces/
