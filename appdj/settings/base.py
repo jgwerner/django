@@ -422,7 +422,7 @@ DEFAULT_STRIPE_PLAN_ID = os.getenv("DEFAULT_STRIPE_PLAN_ID", "threeblades-free-p
 
 NVIDIA_DOCKER_HOST = os.environ.get('NVIDIA_DOCKER_HOST')
 
-SPAWNER = 'servers.spawners.ecs.ECSSpawner'
+SPAWNER = 'servers.spawners.docker.DockerSpawner'
 DEPLOYER = 'servers.spawners.aws_lambda.deployer.LambdaDeployer'
 SCHEDULER = 'servers.spawners.ecs.JobScheduler'
 JUPYTER_IMAGE = os.environ.get('JUPYTER_IMAGE', 'illumidesk/datascience-notebook')
