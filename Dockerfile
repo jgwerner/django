@@ -1,7 +1,5 @@
 FROM python:3.6-alpine
 
-MAINTAINER 3Blades <contact@3blades.io>
-
 RUN apk update \
  && apk upgrade \
  && apk add --no-cache \
