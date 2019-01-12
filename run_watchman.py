@@ -10,6 +10,6 @@ if __name__ == "__main__":
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", settings_module)
     log.info("Just set DJANGO_SETTINGS_MODULE to {mod}".format(mod=settings_module))
     django.setup()
-    from projects.file_watch_handler import run
+    from appdj.projects.file_watch_handler import run
     files_sent_by_watchman = json.load(sys.stdin)
     run(files_sent_by_watchman)
