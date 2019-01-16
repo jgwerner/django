@@ -1,5 +1,6 @@
 import logging
 import tarfile
+import time
 from io import BytesIO
 
 from django.conf import settings
@@ -37,6 +38,27 @@ class DockerSpawner(TraefikMixin, BaseSpawner):
         except APIError as e:
             logger.error(e.response.content)
             raise
+        if self.server.config['type'] == 'jupyter':
+            tar_stream = BytesIO()
+            tar = tarfile.TarFile.xzopen(
+                name='config.tar.xz',
+                fileobj=tar_stream, mode="w"
+            )
+            jupyter_config = self._get_jupyter_config()
+            tarinfo = tarfile.TarInfo(name="jupyter_notebook_config.py")
+            tarinfo.size = len(jupyter_config)
+            tarinfo.mtime = time.time()
+            tar.addfile(
+                tarinfo,
+                BytesIO(jupyter_config.encode('utf-8'))
+            )
+            tar.close()
+            tar_stream.seek(0)
+            self.client.api.put_archive(
+                container=self.server.container_name,
+                path='/root/.jupyter',
+                data=tar_stream,
+            )
         self.server.last_start = timezone.now()
 
     def _get_host_config(self):

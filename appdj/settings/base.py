@@ -386,9 +386,8 @@ SERVER_TYPES = {"restful", "cron", "proxy", "batch"}
 SERVER_TYPE_MAPPING = {'jupyter': 'proxy', 'rstudio': 'proxy'}
 SERVER_ENDPOINT_URLS = {'restful': '/restful/', 'proxy': '/proxy/'}
 SERVER_COMMANDS = {
-    'jupyter': 'jupyter lab --NotebookApp.base_url=' +
-    '"/{version}/{namespace}/projects/{server.project.pk}/servers/{server.pk}/endpoint/proxy"' +
-    ' --NotebookApp.token={server.access_token} --NotebookApp.port=8080 --notebook-dir=/resources',
+    'jupyter': 'jupyter lab' +
+    ' --NotebookApp.token={server.access_token}',
     'rstudio': '/init',
 }
 # slack
@@ -426,6 +425,7 @@ SPAWNER = 'servers.spawners.docker.DockerSpawner'
 DEPLOYER = 'servers.spawners.aws_lambda.deployer.LambdaDeployer'
 SCHEDULER = 'servers.spawners.ecs.JobScheduler'
 JUPYTER_IMAGE = os.environ.get('JUPYTER_IMAGE', 'illumidesk/datascience-notebook')
+PROJECT_DATA_BUCKET = os.environ.get('PROJECT_DATA_BUCKET', 'illumidesk-user-data')
 ECS_CLUSTER = os.environ.get('ECS_CLUSTER', 'default')
 BATCH_COMPUTE_ENV = os.environ.get('BATCH_COMPUTE_ENV')
 BATCH_JOB_QUEUE = os.environ.get('BATCH_JOB_QUEUE')
