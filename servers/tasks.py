@@ -10,7 +10,7 @@ from django.db.models import Q
 from django.template.loader import render_to_string
 from requests_oauthlib import OAuth1Session
 
-from projects.models import Project
+from projects.models import Project, Collaborator
 from projects.utils import perform_project_copy
 from .models import Server, Deployment
 from .spawners import get_spawner_class, get_deployer_class
@@ -74,6 +74,7 @@ def lti(project_pk, workspace_pk, data, path):
     ).first()
     if learner_project is None:
         log.debug(f"Creating learner project from {project_pk}")
+        Collaborator.objects.get_or_create(user=learner, project_id=project_pk)
         learner_project = perform_project_copy(learner, str(project_pk))
         learner_project.team = None
         learner_project.save()
