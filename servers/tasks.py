@@ -74,7 +74,7 @@ def lti(project_pk, workspace_pk, data, path):
     ).first()
     if learner_project is None:
         log.debug(f"Creating learner project from {project_pk}")
-        Collaborator.objects.get_or_create(user=learner, project_id=project_pk)
+        Collaborator.objects.get_or_create(user=learner, project_id=project_pk, owner=True)
         learner_project = perform_project_copy(learner, str(project_pk))
         learner_project.team = None
         learner_project.save()
