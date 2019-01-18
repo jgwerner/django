@@ -6,8 +6,8 @@ from guardian.shortcuts import assign_perm, remove_perm
 
 from appdj.base.serializers import SearchSerializerMixin
 from appdj.base.utils import validate_uuid
-from jwt_auth.utils import create_server_jwt
-from servers.models import (ServerSize, Server,
+from appdj.jwt_auth.utils import create_server_jwt
+from .models import (ServerSize, Server,
                             ServerRunStatistics,
                             ServerStatistics,
                             SshTunnel,

@@ -3,7 +3,7 @@
 from __future__ import unicode_literals
 
 from django.db import migrations
-import users.models
+import appdj.users.models
 
 
 class Migration(migrations.Migration):
@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
         migrations.AlterModelManagers(
             name='user',
             managers=[
-                ('objects', users.models.CustomUserManager()),
+                ('objects', appdj.users.models.CustomUserManager()),
             ],
         ),
     ]

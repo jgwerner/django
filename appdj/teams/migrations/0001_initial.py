@@ -8,7 +8,7 @@ from django.db import migrations, models
 import django.db.models.deletion
 import django.utils.timezone
 import django_extensions.db.fields
-import teams.models
+import appdj.teams.models
 import uuid
 
 
@@ -50,7 +50,7 @@ class Migration(migrations.Migration):
                 ('website', models.URLField(blank=True)),
                 ('location', models.CharField(blank=True, max_length=100)),
                 ('avatar_url', models.CharField(blank=True, max_length=100, null=True)),
-                ('avatar', models.ImageField(blank=True, null=True, upload_to=teams.models.team_directory_path)),
+                ('avatar', models.ImageField(blank=True, null=True, upload_to=appdj.teams.models.team_directory_path)),
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('created_by', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='teams_created', to=settings.AUTH_USER_MODEL)),
             ],

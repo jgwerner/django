@@ -7,7 +7,7 @@ import django.contrib.postgres.fields.jsonb
 import django.core.validators
 from django.db import migrations, models
 import django.db.models.deletion
-import projects.models
+import appdj.projects.models
 import uuid
 
 

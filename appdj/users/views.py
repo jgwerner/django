@@ -16,12 +16,12 @@ from appdj.base.views import LookupByMultipleFields
 from utils import create_ssh_key, deactivate_user
 
 from appdj.base.utils import get_object_or_404
-from users.filters import UserSearchFilter
-from users.models import Email
-from users.serializers import (UserSerializer,
+from .filters import UserSearchFilter
+from .models import Email
+from .serializers import (UserSerializer,
                                EmailSerializer,
                                IntegrationSerializer)
-from jwt_auth.utils import create_auth_jwt
+from appdj.jwt_auth.utils import create_auth_jwt
 
 log = logging.getLogger("users")
 User = get_user_model()

@@ -76,7 +76,7 @@ urlpatterns = [
     url(r'^me/$', user_views.me, name="me"),
     url(r'^projects/lti/select/$', project_views.file_selection, name='project-file-select'),
     url(r'^(?P<namespace>[\w-]+)/search/$', SearchView.as_view(), name='search'),
-    url(r'^actions/', include('actions.urls')),
+    url(r'^actions/', include('appdj.actions.urls')),
     url(r'^(?P<namespace>[\w-]+)/triggers/send-slack-message/$', trigger_views.SlackMessageView.as_view(),
         name='send-slack-message'),
     url(r'^(?P<namespace>[\w-]+)/triggers/(?P<trigger>[\w-]+)/start/$', trigger_views.start,
@@ -125,12 +125,12 @@ urlpatterns = [
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/(?P<path>.*?/?\w+(?:\.\w+)+)$',
         servers_views.lti_file_handler, name='lti-file'),
     url(r'^servers/', include(servers_router.urls)),
-    url(r'^(?P<namespace>[\w-]+)/notifications/', include("notifications.urls")),
+    url(r'^(?P<namespace>[\w-]+)/notifications/', include("appdj.notifications.urls")),
     url(r'^(?P<namespace>[\w-]+)/teams/(?P<team_team>[\w-]+)/groups/(?P<group>[^/.]+)/add/',
         team_views.add_user_to_group, name='add-user-to-group'),
     url(r'^(?P<namespace>[\w-]+)/teams/(?P<team_team>[\w-]+)/groups/(?P<group>[^/.]+)/remove/',
         team_views.remove_user_from_group, name='remove-user-from-group'),
-    url(r'^(?P<namespace>[\w-]+)/notifications/', include("notifications.urls"))
+    url(r'^(?P<namespace>[\w-]+)/notifications/', include("appdj.notifications.urls"))
 ]
 
 

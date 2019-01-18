@@ -1,7 +1,7 @@
 import logging
 from rest_framework import serializers
-from users.serializers import UserSerializer
-from users.models import User, Email
+from appdj.users.serializers import UserSerializer
+from appdj.users.models import User, Email
 from .models import Notification, NotificationType, NotificationSettings
 
 log = logging.getLogger('notifications')

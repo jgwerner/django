@@ -6,10 +6,11 @@ from django.conf.urls.static import static
 from djoser import views as djoser_views
 
 from oauth2_provider import views as oauth2_views
-from jwt_auth import views as jwt_views
+from appdj.jwt_auth import views as jwt_views
 from appdj.base.views import tbs_status
-from users import views as users_views
+from appdj.users import views as users_views
 from appdj.servers import views as servers_views
+from .unversioned import urlpatterns as unversioned_urls
 
 
 urlpatterns = [
@@ -28,7 +29,7 @@ urlpatterns = [
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^tbs-admin/', admin.site.urls),
     url(r'^(?P<version>{major_version}(\.[0-9]+)?)/'.format(major_version=settings.DEFAULT_VERSION),
-        include("appdj.urls.unversioned")),
+        include(unversioned_urls)),
     url(r'^tbs-status/', tbs_status, name="tbs-status")
 ]
 

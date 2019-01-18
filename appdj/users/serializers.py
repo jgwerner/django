@@ -6,7 +6,7 @@ from social_django.models import UserSocialAuth
 
 from appdj.base.views import RequestUserMixin
 from appdj.base.serializers import SearchSerializerMixin
-from users.models import UserProfile, Email
+from .models import UserProfile, Email
 from appdj.projects.models import Collaborator
 from appdj.projects.utils import perform_project_copy
 User = get_user_model()

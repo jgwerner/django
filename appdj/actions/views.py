@@ -3,7 +3,7 @@ from rest_framework.decorators import api_view
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 
-from appdj.celery import app as celery_app
+from celery import app as celery_app
 from .serializers import ActionSerializer
 from .models import Action
 

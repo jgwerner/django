@@ -11,8 +11,8 @@ from django.contrib.auth import get_user_model
 from guardian.shortcuts import assign_perm
 
 from appdj.projects.models import Project
-from servers.models import ServerRunStatistics, Server, ServerSize
-from jwt_auth.utils import create_server_jwt
+from .models import ServerRunStatistics, Server, ServerSize
+from appdj.jwt_auth.utils import create_server_jwt
 
 User = get_user_model()
 

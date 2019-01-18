@@ -2,7 +2,7 @@ import jwt
 from rest_framework import serializers
 from rest_framework_jwt.serializers import JSONWebTokenSerializer, VerificationBaseSerializer
 
-from servers.models import Server
+from appdj.servers.models import Server
 
 
 class JWTSerializer(JSONWebTokenSerializer):

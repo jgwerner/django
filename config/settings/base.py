@@ -82,7 +82,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'jwt_auth.middleware.OAuthUIMiddleware',
+    'appdj.jwt_auth.middleware.OAuthUIMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
@@ -301,10 +301,10 @@ REST_FRAMEWORK = {
 DJOSER = {
     'DOMAIN': os.getenv("TBS_DOMAIN"),
     'PASSWORD_RESET_CONFIRM_URL': "auth/password-reset?uid={uid}&token={token}",
-    'SERIALIZERS': {'user_create': "users.serializers.UserSerializer",
-                    'user': "users.serializers.UserSerializer",
-                    'user_registration': "users.serializers.UserSerializer",
-                    'token': "jwt_auth.serializers.JWTSerializer"},
+    'SERIALIZERS': {'user_create': "appdj.users.serializers.UserSerializer",
+                    'user': "appdj.users.serializers.UserSerializer",
+                    'user_registration': "appdj.users.serializers.UserSerializer",
+                    'token': "appdj.jwt_auth.serializers.JWTSerializer"},
     'SEND_ACTIVATION_EMAIL': True,
     'ACTIVATION_URL': "auth/activate?uid={uid}&token={token}"
 }

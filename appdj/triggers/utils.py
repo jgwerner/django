@@ -4,8 +4,8 @@ from django.utils import timezone
 from django.contrib.sites.shortcuts import get_current_site
 from redbeat import RedBeatSchedulerEntry
 
-from appdj.celery import app
-from users.models import UserProfile
+from celery import app
+from appdj.users.models import UserProfile
 
 
 def get_beat_entry(trigger):

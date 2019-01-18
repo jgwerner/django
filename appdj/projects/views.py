@@ -14,7 +14,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 
 from appdj.base.views import NamespaceMixin, LookupByMultipleFields
 from appdj.base.utils import validate_uuid
-from canvas.authorization import CanvasAuth
+from appdj.canvas.authorization import CanvasAuth
 from .serializers import (ProjectSerializer,
                                   CollaboratorSerializer,
                                   CloneGitProjectSerializer)
@@ -23,9 +23,9 @@ from .permissions import ProjectPermission, ProjectChildPermission
 from .utils import (has_copy_permission,
                             perform_project_copy,
                             check_project_name_exists)
-from servers.utils import get_server_url, create_server
-from teams.models import Team
-from teams.permissions import TeamGroupPermission
+from appdj.servers.utils import get_server_url, create_server
+from appdj.teams.models import Team
+from appdj.teams.permissions import TeamGroupPermission
 
 User = get_user_model()
 

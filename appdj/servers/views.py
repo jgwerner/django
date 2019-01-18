@@ -21,13 +21,13 @@ from rest_framework_jwt.settings import api_settings
 from appdj.base.views import LookupByMultipleFields
 from appdj.base.permissions import IsAdminUser
 from appdj.base.utils import get_object_or_404, validate_uuid
-from canvas.authorization import CanvasAuth
+from appdj.canvas.authorization import CanvasAuth
 from appdj.projects.permissions import ProjectChildPermission
 from appdj.projects.models import Project
-from jwt_auth.views import JWTApiView
-from jwt_auth.serializers import VerifyJSONWebTokenServerSerializer
-from jwt_auth.utils import create_server_jwt, create_auth_jwt
-from teams.permissions import TeamGroupPermission
+from appdj.jwt_auth.views import JWTApiView
+from appdj.jwt_auth.serializers import VerifyJSONWebTokenServerSerializer
+from appdj.jwt_auth.utils import create_server_jwt, create_auth_jwt
+from appdj.teams.permissions import TeamGroupPermission
 from .consumers import ServerStatusConsumer
 from .tasks import start_server, stop_server, terminate_server, deploy, delete_deployment, lti, send_assignment
 from .permissions import ServerChildPermission, ServerActionPermission

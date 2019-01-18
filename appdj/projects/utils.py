@@ -13,7 +13,7 @@ from appdj.teams.models import Team
 from appdj.base.utils import validate_uuid
 from .models import Project, Collaborator
 from appdj.servers.models import Server
-from jwt_auth.utils import create_server_jwt
+from appdj.jwt_auth.utils import create_server_jwt
 
 log = logging.getLogger('projects')
 

@@ -4,7 +4,7 @@ from django.urls import reverse
 from rest_framework import serializers
 from social_django.models import UserSocialAuth
 
-from actions.models import Action
+from appdj.actions.models import Action
 from appdj.servers.models import Server
 from .models import Trigger
 from .slack import send_message

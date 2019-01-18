@@ -9,8 +9,8 @@ from rest_framework.serializers import Serializer
 
 from appdj.projects.serializers import ProjectSerializer
 from appdj.projects.models import Project
-from users.serializers import UserSerializer
-from users.models import User
+from appdj.users.serializers import UserSerializer
+from appdj.users.models import User
 from appdj.servers.serializers import ServerSearchSerializer
 from appdj.servers.serializers import Server
 

@@ -7,8 +7,8 @@ from appdj.base.serializers import SearchSerializerMixin
 from appdj.projects.models import Project, Collaborator
 from .utils import create_ancillary_project_stuff, check_project_name_exists
 from .tasks import clone_git_repo
-from servers.utils import stop_all_servers_for_project
-from servers.models import Server
+from appdj.servers.utils import stop_all_servers_for_project
+from appdj.servers.models import Server
 
 User = get_user_model()
 
