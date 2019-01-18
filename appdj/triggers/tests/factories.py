@@ -1,8 +1,8 @@
 import factory
 
-from actions.tests.factories import ActionFactory
-from users.tests.factories import UserFactory
-from triggers.models import Trigger
+from appdj.actions.tests.factories import ActionFactory
+from appdj.users.tests.factories import UserFactory
+from ..models import Trigger
 
 
 class TriggerFactory(factory.django.DjangoModelFactory):

@@ -3,8 +3,8 @@ from django.conf import settings
 from django.urls import reverse
 from django.test import TestCase
 
-from actions.models import Action
-from projects.tests.factories import CollaboratorFactory
+from ..models import Action
+from appdj.projects.tests.factories import CollaboratorFactory
 
 
 class TestAction(TestCase):

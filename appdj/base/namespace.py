@@ -9,7 +9,7 @@ class Namespace(object):
 
     @staticmethod
     def from_name(name):
-        from teams.models import Team
+        from appdj.teams.models import Team
         ns = Namespace(name=name)
         ns.object = get_user_model().objects.filter(username=name,
                                                     is_active=True).first()

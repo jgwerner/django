@@ -2,7 +2,7 @@ from django.conf import settings
 from django.test import override_settings
 from rest_framework.test import APITestCase
 
-from users.tests.factories import UserFactory
+from appdj.users.tests.factories import UserFactory
 
 from ..middleware import add_to_url_query, add_one_time_token_to_response
 

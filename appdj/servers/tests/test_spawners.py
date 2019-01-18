@@ -9,8 +9,8 @@ from botocore.stub import Stubber
 from django.conf import settings
 from django.test import TransactionTestCase, TestCase
 
-from projects.tests.factories import CollaboratorFactory
-from servers.tests.fake_docker_api_client.fake_api import FAKE_CONTAINER_ID
+from appdj.projects.tests.factories import CollaboratorFactory
+from .fake_docker_api_client.fake_api import FAKE_CONTAINER_ID
 from ..spawners.docker import DockerSpawner
 from ..spawners.ecs import ECSSpawner, JobScheduler, SpawnerException, BatchScheduler
 from ..spawners.aws_lambda.deployer import LambdaDeployer

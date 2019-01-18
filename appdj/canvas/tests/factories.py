@@ -1,7 +1,7 @@
 import factory
 from oauth2_provider.models import Application
 
-from users.tests.factories import UserFactory
+from appdj.users.tests.factories import UserFactory
 
 
 class ApplicationFactory(factory.django.DjangoModelFactory):

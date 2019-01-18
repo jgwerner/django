@@ -7,8 +7,8 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from rest_framework_jwt.utils import jwt_decode_handler
 
-from servers.tests.factories import ServerFactory
-from users.tests.factories import UserFactory
+from appdj.servers.tests.factories import ServerFactory
+from appdj.users.tests.factories import UserFactory
 
 from ..utils import create_one_time_jwt, validate_one_time_token, create_server_jwt
 

@@ -1,8 +1,8 @@
 from django.test import TestCase
 from docker import client
 
-from users.tests.factories import UserFactory
-from infrastructure.models import DockerHost
+from appdj.users.tests.factories import UserFactory
+from ..models import DockerHost
 
 
 class TestDockerHost(TestCase):

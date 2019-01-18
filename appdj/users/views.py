@@ -13,7 +13,7 @@ from rest_framework.response import Response
 
 from appdj.base.permissions import PostAdminOnly
 from appdj.base.views import LookupByMultipleFields
-from utils import create_ssh_key, deactivate_user
+from ..utils import create_ssh_key, deactivate_user
 
 from appdj.base.utils import get_object_or_404
 from .filters import UserSearchFilter

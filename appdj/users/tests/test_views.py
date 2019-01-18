@@ -11,12 +11,12 @@ from django.core import mail
 from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
 
-from users.tests.factories import UserFactory, EmailFactory
-from users.tests.utils import generate_random_image
-from utils import create_ssh_key
-from jwt_auth.utils import create_auth_jwt
-from projects.models import Collaborator
-from projects.utils import create_templates
+from .factories import UserFactory, EmailFactory
+from .utils import generate_random_image
+from ...utils import create_ssh_key
+from appdj.jwt_auth.utils import create_auth_jwt
+from appdj.projects.models import Collaborator
+from appdj.projects.utils import create_templates
 import logging
 log = logging.getLogger('users')
 User = get_user_model()

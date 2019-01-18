@@ -1,6 +1,6 @@
 import factory
-from users.tests.factories import UserFactory
-from .models import Project, Collaborator
+from appdj.users.tests.factories import UserFactory
+from ..models import Project, Collaborator
 
 
 class ProjectFactory(factory.django.DjangoModelFactory):

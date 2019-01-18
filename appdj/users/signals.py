@@ -2,8 +2,8 @@ from django import dispatch
 from django.contrib.auth import get_user_model
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from utils import create_ssh_key
-from users.models import UserProfile
+from ..utils import create_ssh_key
+from .models import UserProfile
 
 
 @receiver(post_save, sender=get_user_model())

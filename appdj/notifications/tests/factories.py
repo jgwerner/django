@@ -5,8 +5,8 @@ from datetime import timedelta
 from django.utils import timezone
 from factory import fuzzy
 
-from users.tests.factories import UserFactory
-from notifications.models import Notification, NotificationType, NotificationSettings
+from appdj.users.tests.factories import UserFactory
+from ..models import Notification, NotificationType, NotificationSettings
 
 
 class NotificationTypeFactory(factory.django.DjangoModelFactory):

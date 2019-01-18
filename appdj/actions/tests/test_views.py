@@ -5,13 +5,13 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from actions.models import Action
-from projects.tests.factories import CollaboratorFactory
-from servers.tests.factories import ServerFactory, ServerSizeFactory
-from triggers.tests.factories import TriggerFactory
-from teams.tests.factories import TeamFactory
-from users.tests.factories import UserFactory
-from jwt_auth.utils import create_auth_jwt
+from ..models import Action
+from appdj.projects.tests.factories import CollaboratorFactory
+from appdj.servers.tests.factories import ServerFactory, ServerSizeFactory
+from appdj.triggers.tests.factories import TriggerFactory
+from appdj.teams.tests.factories import TeamFactory
+from appdj.users.tests.factories import UserFactory
+from appdj.jwt_auth.utils import create_auth_jwt
 from .factories import ActionFactory
 
 

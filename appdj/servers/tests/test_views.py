@@ -9,12 +9,12 @@ from django.test import override_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from jwt_auth.utils import create_auth_jwt
-from projects.tests.factories import CollaboratorFactory, ProjectFactory
-from servers.models import Server, SshTunnel, ServerRunStatistics
-from users.tests.factories import UserFactory
-from servers.models import Deployment
-from servers.tests.factories import (ServerSizeFactory,
+from appdj.jwt_auth.utils import create_auth_jwt
+from appdj.projects.tests.factories import CollaboratorFactory, ProjectFactory
+from ..models import Server, SshTunnel, ServerRunStatistics
+from appdj.users.tests.factories import UserFactory
+from ..models import Deployment
+from .factories import (ServerSizeFactory,
                                      ServerStatisticsFactory,
                                      ServerRunStatisticsFactory,
                                      ServerFactory,

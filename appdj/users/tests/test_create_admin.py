@@ -4,9 +4,9 @@ from django.test import TestCase
 from django.db import transaction
 from django.contrib.auth import get_user_model
 from django.conf import settings
-from users.management.commands.create_admin import Command
-from users.tests.factories import UserFactory
-from users.models import UserProfile
+from ..management.commands.create_admin import Command
+from .factories import UserFactory
+from ..models import UserProfile
 User = get_user_model()
 
 

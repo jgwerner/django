@@ -3,11 +3,11 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from users.tests.factories import UserFactory, EmailFactory
+from appdj.users.tests.factories import UserFactory, EmailFactory
 
-from notifications.models import Notification, NotificationSettings
+from ..models import Notification, NotificationSettings
 from .factories import NotificationFactory, NotificationSettingsFactory
-from jwt_auth.utils import create_auth_jwt
+from appdj.jwt_auth.utils import create_auth_jwt
 
 
 class NotificationsViewTest(APITestCase):

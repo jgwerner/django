@@ -1,7 +1,7 @@
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
-from users.tests.factories import UserFactory
+from appdj.users.tests.factories import UserFactory
 
 
 class TestJWTViews(APITestCase):

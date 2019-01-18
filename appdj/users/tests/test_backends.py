@@ -1,6 +1,6 @@
 from django.test import TestCase
-from users.tests.factories import UserFactory
-from users.backends import ActiveUserBackend
+from .factories import UserFactory
+from ..backends import ActiveUserBackend
 
 
 class ActiveUserBackendTestCase(TestCase):

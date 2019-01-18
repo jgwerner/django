@@ -8,16 +8,16 @@ from rest_framework import status
 from rest_framework.test import APITestCase, APILiveServerTestCase
 
 from appdj.base.namespace import Namespace
-from actions.models import Action
-from actions.tests.factories import ActionFactory
-from triggers.models import Trigger
-from triggers.serializers import ServerActionSerializer
-from triggers.tests.factories import TriggerFactory
-from triggers.utils import get_beat_entry
-from projects.models import Project
-from projects.tests.factories import CollaboratorFactory
-from servers.tests.factories import ServerFactory
-from jwt_auth.utils import create_auth_jwt
+from appdj.actions.models import Action
+from appdj.actions.tests.factories import ActionFactory
+from ..models import Trigger
+from ..serializers import ServerActionSerializer
+from .factories import TriggerFactory
+from ..utils import get_beat_entry
+from appdj.projects.models import Project
+from appdj.projects.tests.factories import CollaboratorFactory
+from appdj.servers.tests.factories import ServerFactory
+from appdj.jwt_auth.utils import create_auth_jwt
 import logging
 log = logging.getLogger('triggers')
 

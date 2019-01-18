@@ -6,9 +6,9 @@ from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.conf import settings
-from users.tests.factories import UserFactory
-from users.models import UserProfile
-from utils import create_ssh_key, deactivate_user
+from .factories import UserFactory
+from ..models import UserProfile
+from ...utils import create_ssh_key, deactivate_user
 
 User = get_user_model()
 

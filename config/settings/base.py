@@ -25,7 +25,7 @@ from .tbslog import TBS_LOGGING
 # (app-backend/config/settings/base.py - 3 = app-backend/)
 ROOT_DIR = environ.Path(__file__) - 3
 APPS_DIR = ROOT_DIR.path('appdj')
-
+print(BASE_DIR)
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 
 # Quick-start development settings - unsuitable for production
@@ -152,11 +152,11 @@ CHANNEL_LAYERS = {
 }
 
 AUTHENTICATION_BACKENDS = (
-    'jwt_auth.oauth2.AuthCodeGoogle',
-    'jwt_auth.oauth2.AuthCodeGithub',
+    'appdj.jwt_auth.oauth2.AuthCodeGoogle',
+    'appdj.jwt_auth.oauth2.AuthCodeGithub',
     'social_core.backends.slack.SlackOAuth2',
     'rest_framework_social_oauth2.backends.DjangoOAuth2',
-    'users.backends.ActiveUserBackend',
+    'appdj.users.backends.ActiveUserBackend',
     'guardian.backends.ObjectPermissionBackend',
     'django.contrib.auth.backends.ModelBackend',
 )

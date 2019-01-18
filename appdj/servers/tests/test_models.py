@@ -3,9 +3,9 @@ from uuid import UUID
 from django.test import TestCase
 from django_redis import get_redis_connection
 
-from projects.tests.factories import CollaboratorFactory
-from servers.models import Server
-from servers.tests.factories import ServerFactory
+from appdj.projects.tests.factories import CollaboratorFactory
+from ..models import Server
+from .factories import ServerFactory
 
 
 class TestServer(TestCase):

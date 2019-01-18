@@ -5,10 +5,10 @@ from django.test import TestCase, Client, override_settings
 from rest_framework import status
 from rest_framework.test import APITransactionTestCase, APITestCase
 
-from users.tests.factories import UserFactory, EmailFactory
-from projects.tests.factories import ProjectFactory
-from servers.tests.factories import ServerFactory, ServerSizeFactory
-from jwt_auth.utils import create_auth_jwt
+from appdj.users.tests.factories import UserFactory, EmailFactory
+from appdj.projects.tests.factories import ProjectFactory
+from appdj.servers.tests.factories import ServerFactory, ServerSizeFactory
+from appdj.jwt_auth.utils import create_auth_jwt
 
 from .factories import TeamFactory
 from ..models import Team, Group

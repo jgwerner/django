@@ -2,9 +2,9 @@ from django.urls import reverse
 from django.conf import settings
 from rest_framework.test import APITestCase
 
-from users.tests.factories import UserFactory
-from projects.tests.factories import ProjectFactory, CollaboratorFactory
-from servers.tests.factories import ServerFactory
+from appdj.users.tests.factories import UserFactory
+from appdj.projects.tests.factories import ProjectFactory, CollaboratorFactory
+from appdj.servers.tests.factories import ServerFactory
 
 
 class SearchTestCase(APITestCase):

@@ -8,12 +8,12 @@ from guardian.shortcuts import assign_perm
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from projects.tests.factories import CollaboratorFactory
-from servers.models import Server
-from servers.tests.factories import ServerFactory
-from users.tests.factories import UserFactory
-from projects.models import Project, Collaborator
-from jwt_auth.utils import create_auth_jwt
+from .factories import CollaboratorFactory
+from appdj.servers.models import Server
+from appdj.servers.tests.factories import ServerFactory
+from appdj.users.tests.factories import UserFactory
+from ..models import Project, Collaborator
+from appdj.jwt_auth.utils import create_auth_jwt
 
 
 class ProjectTestMixin(object):

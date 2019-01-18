@@ -8,7 +8,7 @@ from django.urls import reverse
 
 from appdj.actions.models import Action
 from appdj.base.models import TBSQuerySet
-from utils import copy_model
+from ..utils import copy_model
 
 
 logger = logging.getLogger('triggers')

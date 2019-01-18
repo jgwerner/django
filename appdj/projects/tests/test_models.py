@@ -1,7 +1,7 @@
 from django.test import TestCase
 
-from projects.models import Project
-from projects.tests.factories import CollaboratorFactory
+from ..models import Project
+from .factories import CollaboratorFactory
 
 
 class ProjectTestCase(TestCase):

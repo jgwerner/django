@@ -1,7 +1,7 @@
 import factory
 
-from users.tests.factories import UserFactory
-from teams.models import Team, Group
+from appdj.users.tests.factories import UserFactory
+from appdj.teams.models import Team, Group
 
 
 class TeamFactory(factory.django.DjangoModelFactory):

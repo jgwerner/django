@@ -4,10 +4,10 @@ from django.utils import timezone
 from datetime import timedelta
 from factory import fuzzy
 
-from projects.tests.factories import ProjectFactory
-from servers import models
-from users.tests.factories import UserFactory
-from jwt_auth.utils import create_server_jwt
+from appdj.projects.tests.factories import ProjectFactory
+from .. import models
+from appdj.users.tests.factories import UserFactory
+from appdj.jwt_auth.utils import create_server_jwt
 
 
 class ServerSizeFactory(factory.django.DjangoModelFactory):

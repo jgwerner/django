@@ -10,12 +10,12 @@ from rest_framework import status
 from rest_framework.test import APIRequestFactory
 from rest_framework_jwt.settings import api_settings
 
-from actions.views import ActionList
+from ..views import ActionList
 from appdj.celery import set_action_state
-from projects.tests.factories import CollaboratorFactory
-from servers.tests.factories import ServerFactory
-from users.tests.factories import UserFactory
-from jwt_auth.utils import create_auth_jwt
+from appdj.projects.tests.factories import CollaboratorFactory
+from appdj.servers.tests.factories import ServerFactory
+from appdj.users.tests.factories import UserFactory
+from appdj.jwt_auth.utils import create_auth_jwt
 from .factories import ActionFactory
 from ..middleware import ActionMiddleware, get_user_from_jwt, get_user_from_token_header
 from ..models import Action

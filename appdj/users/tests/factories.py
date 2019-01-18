@@ -5,8 +5,8 @@ from django.db.models.signals import post_save
 from django.contrib.auth import get_user_model
 
 from appdj.base.tests.factories import FuzzyEmail
-from users.models import UserProfile, Email
-from users.signals import create_user_ssh_key
+from ..models import UserProfile, Email
+from ..signals import create_user_ssh_key
 
 User = get_user_model()
 

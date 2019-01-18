@@ -1,8 +1,8 @@
 from django.db import transaction
 from django.test import TestCase
-from servers.management.commands.create_server_size import Command
-from servers.models import ServerSize
-from servers.tests.factories import ServerSizeFactory
+from ..management.commands.create_server_size import Command
+from ..models import ServerSize
+from .factories import ServerSizeFactory
 
 
 class CreateServerSizeCommandTest(TestCase):

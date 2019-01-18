@@ -2,11 +2,11 @@ import uuid
 from unittest import TestCase
 from django.contrib.auth import get_user_model
 
-from projects.utils import perform_project_copy
-from projects.tests.factories import CollaboratorFactory, ProjectFactory
-from teams.tests.factories import TeamFactory, GroupFactory
-from users.tests.factories import UserFactory
-from servers.tests.factories import ServerFactory
+from appdj.projects.utils import perform_project_copy
+from appdj.projects.tests.factories import CollaboratorFactory, ProjectFactory
+from appdj.teams.tests.factories import TeamFactory, GroupFactory
+from appdj.users.tests.factories import UserFactory
+from .factories import ServerFactory
 from ..models import Server, ServerSize
 from ..tasks import lti
 

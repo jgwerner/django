@@ -4,14 +4,14 @@ from django.conf import settings
 from django.contrib.sites.models import Site
 from rest_framework.test import APILiveServerTestCase
 
-from actions.models import Action
-from actions.tests.factories import ActionFactory
-from projects.models import Project
-from projects.tests.factories import CollaboratorFactory
-from servers.tests.factories import ServerFactory
-from triggers.models import Trigger
-from triggers.tests.factories import TriggerFactory
-from jwt_auth.utils import create_auth_jwt
+from appdj.actions.models import Action
+from appdj.actions.tests.factories import ActionFactory
+from appdj.projects.models import Project
+from appdj.projects.tests.factories import CollaboratorFactory
+from appdj.servers.tests.factories import ServerFactory
+from ..models import Trigger
+from .factories import TriggerFactory
+from appdj.jwt_auth.utils import create_auth_jwt
 
 
 class TriggerTest(APILiveServerTestCase):

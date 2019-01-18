@@ -1,7 +1,7 @@
 import factory
 
-from infrastructure.models import DockerHost
-from users.tests.factories import UserFactory
+from ..models import DockerHost
+from appdj.users.tests.factories import UserFactory
 
 
 class DockerHostFactory(factory.django.DjangoModelFactory):
