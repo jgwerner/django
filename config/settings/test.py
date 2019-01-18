@@ -3,8 +3,8 @@ from .base import *
 
 SECRET_KEY = 'test'
 
-RESOURCE_DIR = '/tmp/3blades'
-MEDIA_ROOT = "/tmp/3blades"
+RESOURCE_DIR = 'tmp/3blades'
+MEDIA_ROOT = "tmp/3blades"
 
 
 PASSWORD_HASHERS = (

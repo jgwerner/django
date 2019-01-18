@@ -111,5 +111,5 @@ celerybeat.pid
 stats.zip
 vendored/
 
-# tmp workspaces folder
-workspaces/
+# tmp folder (for testing and workspaces artifacts)
+tmp/
