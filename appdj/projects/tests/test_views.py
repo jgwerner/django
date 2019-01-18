@@ -653,7 +653,7 @@ class LTITest(APITestCase):
         self.project = col.project
         self.server = ServerFactory(project=self.project, config={'type': 'jupyter'})
 
-    @patch('canvas.authorization.CanvasAuth.authenticate')
+    @patch('appdj.canvas.authorization.CanvasAuth.authenticate')
     def test_file_selection(self, authenticate):
         authenticate.return_value = (self.user, None)
         root = self.project.resource_root()

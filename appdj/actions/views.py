@@ -29,5 +29,5 @@ def cancel(request, version, pk=None):
     action = get_object_or_404(Action, pk=pk)
     if not action.can_be_cancelled:
         return Response({'message': 'This action can not be cancelled'}, status=status.HTTP_404_NOT_FOUND)
-    celery_app.control.revoke(str(action.pk))
+    celery_app.control.Control.revoke(str(action.pk))
     return Response({'message': 'OK'})

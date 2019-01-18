@@ -797,7 +797,7 @@ class LTITest(APITestCase):
             'server': str(self.server.pk),
             'path': path,
         })
-        with patch('canvas.authorization.CanvasAuth.authenticate') as authenticate:
+        with patch('appdj.canvas.authorization.CanvasAuth.authenticate') as authenticate:
             authenticate.return_value = (self.user, None)
             resp = self.client.post(url, {}, format='multipart')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
@@ -850,7 +850,7 @@ class LTITest(APITestCase):
             'server': str(self.server.pk),
             'path': path
         })
-        with patch("servers.tasks.start_server", return_value=None):
+        with patch("appdj.servers.tasks.start_server", return_value=None):
             resp = self.client.get(url, {'access_token': self.server.access_token})
         self.assertEqual(resp.status_code, status.HTTP_302_FOUND)
         self.server.refresh_from_db()

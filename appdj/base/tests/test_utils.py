@@ -5,8 +5,8 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from ..factories import ProjectFactory
-from ....utils import copy_model, create_ssh_key
+from appdj.projects.tests.factories import ProjectFactory
+from ...utils import copy_model, create_ssh_key
 
 User = get_user_model()
 

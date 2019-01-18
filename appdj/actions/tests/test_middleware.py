@@ -11,7 +11,7 @@ from rest_framework.test import APIRequestFactory
 from rest_framework_jwt.settings import api_settings
 
 from ..views import ActionList
-from appdj.celery import set_action_state
+from celery import set_action_state
 from appdj.projects.tests.factories import CollaboratorFactory
 from appdj.servers.tests.factories import ServerFactory
 from appdj.users.tests.factories import UserFactory

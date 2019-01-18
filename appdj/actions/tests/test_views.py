@@ -18,7 +18,7 @@ from .factories import ActionFactory
 @override_settings(MIDDLEWARE=(
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'base.middleware.NamespaceMiddleware',
+    'appdj.base.middleware.NamespaceMiddleware',
 ))
 class ActionTest(APITestCase):
     def setUp(self):

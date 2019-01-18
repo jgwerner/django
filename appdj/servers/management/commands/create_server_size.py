@@ -1,6 +1,6 @@
 import logging
 from django.core.management import BaseCommand
-from appdj.settings.base import SERVER_SIZE
+from django.conf import settings
 
 from appdj.servers.models import ServerSize
 log = logging.getLogger("servers")
@@ -12,12 +12,12 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         log.info("Adding default entries to ServerSize table...")
         try:
-            for i in SERVER_SIZE:
+            for i in settings.SERVER_SIZE:
                 ServerSize.objects.update_or_create(
                     name__iexact=i,
                     defaults={
                         'name': i,
-                        'memory': SERVER_SIZE[i],
+                        'memory': settings.SERVER_SIZE[i],
                         'cpu': 1,
                         'active': True
                     }
