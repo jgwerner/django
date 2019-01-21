@@ -1,6 +1,7 @@
 import abc
 import os
 import logging
+from cryptography.fernet import Fernet
 from typing import List, Dict
 from pathlib import Path
 
@@ -129,17 +130,17 @@ class BaseSpawner(SpawnerInterface):
         return [{v: k for k, v in settings.SERVER_PORT_MAPPING.items()}[self.server.get_type()]]
 
     def _get_jupyter_config(self) -> str:
+        iam_secret = Fernet(settings.CRYPTO_KEY).decrypt(self.user.profile.config['iam_secret_access_key'].encode())
         return render_to_string(
             'servers/jupyter_config.py.tmpl',
             {
                 'version': settings.DEFAULT_VERSION,
                 'namespace': self.server.project.namespace_name,
                 'server': self.server,
-                'access_key_id': settings.AWS_ACCESS_KEY_ID,
-                'secret_access_key': settings.AWS_SECRET_ACCESS_KEY,
+                'access_key_id': self.user.profile.config['iam_access_key_id'],
                 'region': settings.AWS_DEFAULT_REGION,
-                'bucket': settings.PROJECT_DATA_BUCKET,
-                'path_prefix': str(self.server.project.pk),
+                'secret_access_key': iam_secret.decode(),
+                'bucket': str(self.server.project.pk),
             }
         )
 

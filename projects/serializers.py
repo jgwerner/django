@@ -5,7 +5,7 @@ from rest_framework import serializers
 
 from base.serializers import SearchSerializerMixin
 from projects.models import Project, Collaborator
-from .utils import create_ancillary_project_stuff, check_project_name_exists
+from .utils import create_ancillary_project_stuff, check_project_name_exists, assing_s3_user_permissions
 from .tasks import clone_git_repo
 from servers.utils import stop_all_servers_for_project
 from servers.models import Server
@@ -76,7 +76,7 @@ class CollaboratorSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         permissions = validated_data.pop('permissions', ['read_project'])
         member = validated_data.pop('member')
-        project = self._get_project() 
+        project = self._get_project()
         owner = validated_data.get("owner", False)
         user = User.objects.filter(Q(username=member) | Q(email=member), is_active=True).first()
 
@@ -94,7 +94,7 @@ class CollaboratorSerializer(serializers.ModelSerializer):
         return Collaborator.objects.create(user=user, project=project, **validated_data)
 
     def update(self, instance, validated_data):
-        project = self._get_project() 
+        project = self._get_project()
         owner = validated_data.get('owner', False)
         if owner is True:
             updated = Collaborator.objects.filter(project=project).exclude(user=instance.user).update(owner=False)

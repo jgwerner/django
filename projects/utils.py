@@ -1,21 +1,52 @@
 import logging
+import json
 import os
 import shutil
 from typing import List
 from copy import deepcopy
 from pathlib import Path
 from distutils.dir_util import copy_tree
+
+import boto3
 from django.conf import settings
 from rest_framework.request import Request
 from guardian.shortcuts import assign_perm
 from users.models import User
 from teams.models import Team
 from base.utils import validate_uuid
-from .models import Project, Collaborator
 from servers.models import Server
 from jwt_auth.utils import create_server_jwt
+from .models import Project, Collaborator
 
 log = logging.getLogger('projects')
+
+
+def assing_s3_user_permissions(user: User, project: Project) -> None:
+    """
+    Assign permissions for project S3 bucket
+
+    https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.put_bucket_policy
+    """
+    s3 = boto3.client('s3')
+    collaborator_iam_ids = [col.profile.config['iam_id'] for col in project.collaborators.all() if 'iam_id' in col.profile.config]
+    policy = {
+        'Version': '2012-10-17',
+        'Statement': [{
+            'Sid': 'AddPerm1',
+            'Effect': 'Allow',
+            'Principal': {'AWS': collaborator_iam_ids},
+            'Action': ['s3:GetObject', 's3:DeleteObject', 's3:PutObject'],
+            'Resource': f"arn:aws:s3:::{project.pk}/*"
+        },
+        {
+            'Sid': 'AddPerm2',
+            'Effect': 'Allow',
+            'Principal': {'AWS': collaborator_iam_ids},
+            'Action': ['s3:ListBucket'],
+            'Resource': f"arn:aws:s3:::{project.pk}"
+        }]
+    }
+    s3.put_bucket_policy(Bucket=str(project.pk), Policy=json.dumps(policy))
 
 
 def assign_to_user(user: User, project: Project) -> None:
@@ -24,11 +55,19 @@ def assign_to_user(user: User, project: Project) -> None:
     Collaborator.objects.create(project=project, owner=True, user=user)
     assign_perm('write_project', user, project)
     assign_perm('read_project', user, project)
+    assing_s3_user_permissions(user, project)
 
 
 def assign_to_team(team: Team, project: Project) -> None:
     project.team = team
     project.save()
+
+
+def create_project_s3_bucket(project: Project) -> None:
+    s3 = boto3.client('s3')
+    s3.create_bucket(
+        Bucket=str(project.pk),
+    )
 
 
 def create_ancillary_project_stuff(request: Request, project: Project, user: User=None) -> None:
@@ -40,6 +79,7 @@ def create_ancillary_project_stuff(request: Request, project: Project, user: Use
     else:
         assign_to_team(request.namespace.object, project)
     project.resource_root().mkdir(parents=True, exist_ok=True)
+    create_project_s3_bucket(project)
 
 
 def has_copy_permission(request=None, user=None, project=None):
