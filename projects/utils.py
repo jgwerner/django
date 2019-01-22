@@ -28,23 +28,28 @@ def assing_s3_user_permissions(user: User, project: Project) -> None:
     https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.put_bucket_policy
     """
     s3 = boto3.client('s3')
+    s3.delete_bucket_policy(
+        Bucket=str(project.pk)
+    )
     collaborator_iam_ids = [col.profile.config['iam_id'] for col in project.collaborators.all() if 'iam_id' in col.profile.config]
     policy = {
         'Version': '2012-10-17',
-        'Statement': [{
-            'Sid': 'AddPerm1',
-            'Effect': 'Allow',
-            'Principal': {'AWS': collaborator_iam_ids},
-            'Action': ['s3:GetObject', 's3:DeleteObject', 's3:PutObject'],
-            'Resource': f"arn:aws:s3:::{project.pk}/*"
-        },
-        {
-            'Sid': 'AddPerm2',
-            'Effect': 'Allow',
-            'Principal': {'AWS': collaborator_iam_ids},
-            'Action': ['s3:ListBucket'],
-            'Resource': f"arn:aws:s3:::{project.pk}"
-        }]
+        'Statement': [
+            {
+                'Sid': 'ObjectPerms',
+                'Effect': 'Allow',
+                'Principal': {'AWS': collaborator_iam_ids},
+                'Action': ['s3:GetObject', 's3:DeleteObject', 's3:PutObject'],
+                'Resource': f"arn:aws:s3:::{project.pk}/*"
+            },
+            {
+                'Sid': 'BucketPerms',
+                'Effect': 'Allow',
+                'Principal': {'AWS': collaborator_iam_ids},
+                'Action': ['s3:ListBucket'],
+                'Resource': f"arn:aws:s3:::{project.pk}"
+            }
+        ]
     }
     s3.put_bucket_policy(Bucket=str(project.pk), Policy=json.dumps(policy))
 
