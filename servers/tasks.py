@@ -86,8 +86,7 @@ def lti(project_pk, workspace_pk, data, path):
         log.debug("Creating learner workspace")
         workspace = create_server(learner, learner_project, 'workspace')
     assignment_id = None
-    if ('custom_canvas_assignment_id' in data and
-            project_pk != str(learner_project.pk)):
+    if 'custom_canvas_assignment_id' in data:
         log.debug("Setting up assignment")
         assignment_id = setup_assignment(workspace, data, path)
     if workspace.status != workspace.RUNNING:
