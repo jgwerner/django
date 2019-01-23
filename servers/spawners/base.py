@@ -7,6 +7,7 @@ from pathlib import Path
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
+from django.template.loader import render_to_string
 from raven import Client
 
 from jwt_auth.utils import create_auth_jwt
@@ -70,7 +71,7 @@ class BaseSpawner(SpawnerInterface):
                 cmd.append(f'--type={self.server.get_type()}')
         if self.server.config['type'] in settings.SERVER_COMMANDS:
             cmd.extend([
-                part.format(namespace=self.server.project.namespace_name, server=self.server, version=settings.DEFAULT_VERSION)
+                part.format(server=self.server)
                 for part in settings.SERVER_COMMANDS[self.server.config['type']].split()
             ])
         if 'command' in self.server.config:
@@ -126,6 +127,21 @@ class BaseSpawner(SpawnerInterface):
 
     def _get_exposed_ports(self) -> List[Dict[str, str]]:
         return [{v: k for k, v in settings.SERVER_PORT_MAPPING.items()}[self.server.get_type()]]
+
+    def _get_jupyter_config(self) -> str:
+        return render_to_string(
+            'servers/jupyter_config.py.tmpl',
+            {
+                'version': settings.DEFAULT_VERSION,
+                'namespace': self.server.project.namespace_name,
+                'server': self.server,
+                'access_key_id': settings.AWS_ACCESS_KEY_ID,
+                'secret_access_key': settings.AWS_SECRET_ACCESS_KEY,
+                'region': settings.AWS_DEFAULT_REGION,
+                'bucket': settings.PROJECT_DATA_BUCKET,
+                'path_prefix': str(self.server.project.pk),
+            }
+        )
 
 
 class TraefikMixin:
