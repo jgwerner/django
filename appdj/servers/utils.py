@@ -92,4 +92,9 @@ def email_to_username(email: str) -> str:
     username = re.sub(r'\([^)]*\)', '', username)
     # remove special characters
     username = re.sub(r'[^\w-]+', '', username)
+    user = User.objects.filter(username=username).only('username').first() 
+    if user is not None:
+        ints_in_username = [int(s) for s in re.findall(r'\d+', user.username)]
+        last = ints_in_username[-1]+1 if ints_in_username else 1
+        username = f'{username}{last}'
     return username
