@@ -10,6 +10,7 @@ from django.core.validators import RegexValidator
 from django.utils.encoding import force_bytes, force_text
 from django_redis.serializers.base import BaseSerializer
 import ujson
+import os
 
 log = logging.getLogger(__name__)
 
@@ -31,6 +32,8 @@ def create_ssh_key(user):
     if not user_ssh_dir.exists():
         user_ssh_dir.mkdir(parents=True, exist_ok=True)
     user_ssh_private_key_file = user_ssh_dir.joinpath("id_rsa")
+    if user_ssh_private_key_file.exists():
+        os.remove(user_ssh_private_key_file)
     user_ssh_private_key_file.touch()
     user_ssh_private_key_file.write_bytes(private_key.private_bytes(
         encoding=serialization.Encoding.PEM,

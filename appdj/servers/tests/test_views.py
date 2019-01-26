@@ -307,6 +307,8 @@ class ServerTest(APITestCase):
 
 
 class ServerTestWithName(APITestCase):
+    maxDiff = None
+    
     def setUp(self):
         collaborator = CollaboratorFactory()
         self.user = collaborator.user
