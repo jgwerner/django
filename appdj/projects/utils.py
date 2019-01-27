@@ -163,7 +163,7 @@ def create_templates(projects: List[str]=[settings.GETTING_STARTED_PROJECT]):
         assign_perm("write_project", user, project)
 
         Path(settings.RESOURCE_DIR, str(project.pk)).mkdir(parents=True, exist_ok=True)
-        base_path = f"projects/example_templates/{proj_name}/"
+        base_path = f"appdj/projects/example_templates/{proj_name}/"
 
         for filename in os.listdir(base_path):
             full_path = base_path + filename

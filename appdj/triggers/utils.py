@@ -4,7 +4,7 @@ from django.utils import timezone
 from django.contrib.sites.shortcuts import get_current_site
 from redbeat import RedBeatSchedulerEntry
 
-from celery import app
+from config.celery import app
 from appdj.users.models import UserProfile
 
 
@@ -25,7 +25,7 @@ def create_beat_entry(request, trigger):
         interval = celery.schedules.crontab(*trigger.schedule.split(), nowfun=timezone.now)
         entry = RedBeatSchedulerEntry(
             f'dispatch_{trigger.pk}',
-            'triggers.tasks.dispatch_trigger',
+            'appdj.triggers.tasks.dispatch_trigger',
             interval,
             app=app,
             args=[str(trigger.pk), url]

@@ -5,4 +5,4 @@ class TeamsConfig(AppConfig):
     name = 'teams'
 
     def ready(self):
-        import teams.signals # noqa
+        import .signals # noqa
