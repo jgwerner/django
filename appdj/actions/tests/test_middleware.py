@@ -11,7 +11,7 @@ from rest_framework.test import APIRequestFactory
 from rest_framework_jwt.settings import api_settings
 
 from ..views import ActionList
-from celery import set_action_state
+from config.celery import set_action_state
 from appdj.projects.tests.factories import CollaboratorFactory
 from appdj.servers.tests.factories import ServerFactory
 from appdj.users.tests.factories import UserFactory
@@ -24,7 +24,7 @@ from ..models import Action
 @override_settings(MIDDLEWARE=(
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'base.middleware.NamespaceMiddleware',
+    'appdj.base.middleware.NamespaceMiddleware',
 ))
 class ActionMiddlewareFunctionalTest(TestCase):
     def setUp(self):
@@ -106,7 +106,7 @@ class ActionMiddlewareFunctionalTest(TestCase):
 @override_settings(MIDDLEWARE=(
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'base.middleware.NamespaceMiddleware',
+    'appdj.base.middleware.NamespaceMiddleware',
 ))
 class ActionMiddlewareTest(TestCase):
     def setUp(self):

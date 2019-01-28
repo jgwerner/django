@@ -54,3 +54,5 @@ STRIPE_WEBHOOK_SECRETS = {'stripe_subscription_updated': "foo",
                           'stripe_invoice_created': "foo"}
 
 AUTH_PASSWORD_VALIDATORS = []
+# force to use only http
+HTTPS = False

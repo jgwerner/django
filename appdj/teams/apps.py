@@ -2,7 +2,7 @@ from django.apps import AppConfig
 
 
 class TeamsConfig(AppConfig):
-    name = 'teams'
+    name = 'appdj.teams'
 
     def ready(self):
-        import .signals # noqa
+        from . import signals # noqa

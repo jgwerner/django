@@ -5,4 +5,4 @@ class ActionsConfig(AppConfig):
     name = 'appdj.actions'
 
     def ready(self):
-        import .signals # noqa
+        from . import signals # noqa

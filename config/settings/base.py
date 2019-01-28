@@ -25,7 +25,6 @@ from .tbslog import TBS_LOGGING
 # (app-backend/config/settings/base.py - 3 = app-backend/)
 ROOT_DIR = environ.Path(__file__) - 3
 APPS_DIR = ROOT_DIR.path('appdj')
-print(BASE_DIR)
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 
 # Quick-start development settings - unsuitable for production
@@ -67,18 +66,18 @@ INSTALLED_APPS = [
     'django_ses',
     'treebeard',
 
-    'appdj.base',
-    'appdj.notifications',
-    'appdj.users',
-    'appdj.projects',
-    'appdj.servers',
-    'appdj.actions',
-    'appdj.infrastructure',
-    'appdj.triggers',
-    'appdj.jwt_auth',
-    'appdj.search',
-    'appdj.teams',
-    'appdj.canvas',
+    'appdj.base.apps.BaseConfig',
+    'appdj.notifications.apps.NotificationsConfig',
+    'appdj.users.apps.UsersConfig',
+    'appdj.projects.apps.ProjectsConfig',
+    'appdj.servers.apps.ServersConfig',
+    'appdj.actions.apps.ActionsConfig',
+    'appdj.infrastructure.apps.InfrastructureConfig',
+    'appdj.triggers.apps.TriggersConfig',
+    'appdj.jwt_auth.apps.JwtAuthConfig',
+    'appdj.search.apps.SearchConfig',
+    'appdj.teams.apps.TeamsConfig',
+    'appdj.canvas.apps.CanvasConfig',
 ]
 
 MIDDLEWARE = [

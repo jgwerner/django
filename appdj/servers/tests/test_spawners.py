@@ -94,7 +94,7 @@ class TestDockerSpawnerForModel(TransactionTestCase):
         }
         ssh_path = self.spawner._get_ssh_path()
         if ssh_path:
-            expected['binds'].append('{}:{}/.ssh'.format(ssh_path, settings.SERVER_RESOURCE_DIR)
+            expected['binds'].append('{}:{}/.ssh'.format(ssh_path, settings.SERVER_RESOURCE_DIR))
         
         self.assertDictEqual(expected, self.spawner._get_host_config())
 
