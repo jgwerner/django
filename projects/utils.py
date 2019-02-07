@@ -57,7 +57,7 @@ def assing_s3_user_permissions(user: User, project: Project) -> None:
 def assign_to_user(user: User, project: Project) -> None:
     log.info(f"Creating default collaborator, assigning permissions, and creating project resource root.")
     Collaborator.objects.filter(project=project, owner=True).delete()
-    Collaborator.objects.create(project=project, owner=True, user=user)
+    Collaborator.objects.get_or_create(project=project, owner=True, user=user)
     assign_perm('write_project', user, project)
     assign_perm('read_project', user, project)
     assing_s3_user_permissions(user, project)

@@ -56,7 +56,7 @@ class DockerSpawner(TraefikMixin, BaseSpawner):
             tar_stream.seek(0)
             self.client.api.put_archive(
                 container=self.server.container_name,
-                path='/root/.jupyter',
+                path='/etc/jupyter/',
                 data=tar_stream,
             )
         self.server.last_start = timezone.now()
