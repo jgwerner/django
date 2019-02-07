@@ -10,6 +10,7 @@ from django.db.models import Q
 from django.template.loader import render_to_string
 from requests_oauthlib import OAuth1Session
 
+from canvas.models import CanvasInstance
 from projects.models import Project, Collaborator
 from projects.utils import perform_project_copy
 from .models import Server, Deployment
@@ -114,6 +115,7 @@ def setup_assignment(workspace, data, path):
         'user_id': data['custom_canvas_user_id'],
         'path': path,
         'outcome_url': data['lis_outcome_service_url'],
+        'instance_guid': data['tool_consumer_instance_guid']
     }
     if 'lis_result_sourcedid' in data:
         assignment['source_did'] = data['lis_result_sourcedid']
@@ -145,11 +147,10 @@ def send_assignment(workspace_pk, assignment_id):
     teacher_project = Project.objects.get(pk=learner_workspace.project.config['copied_from'])
     teacher_workspace = teacher_project.servers.get(is_active=True, config__type='jupyter')
     assignment = next((a for a in learner_workspace.config.get('assignments', []) if a['id'] == assignment_id))
-    teacher = teacher_project.owner
     assingment_path = learner_workspace.project.resource_root() / assignment['path']
     teacher_assignment_path = Path('assignments', learner.email, assignment['path'])
     copy_assignment_file(assingment_path, teacher_project.resource_root() / teacher_assignment_path)
-    oauth_app = teacher.oauth2_provider_application.get(name__icontains='canvas')
+    oauth_app = CanvasInstance.objects.filter(instance_guid=assignment['instance_guid']).first().applications.first()
     oauth_session = OAuth1Session(oauth_app.client_id, client_secret=oauth_app.client_secret)
     scheme = 'https' if settings.HTTPS else 'http'
     namespace = teacher_project.namespace_name

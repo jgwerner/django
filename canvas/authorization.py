@@ -8,6 +8,7 @@ from oauth2_provider.models import Application
 from oauthlib.oauth1 import RequestValidator, SignatureOnlyEndpoint
 
 from servers.utils import email_to_username
+from canvas.models import CanvasInstance
 
 User = get_user_model()
 
@@ -49,8 +50,16 @@ class CanvasAuth(authentication.BaseAuthentication):
             body=request.body.decode(),
             headers=self.normalize_headers(request),
         )
-        if valid and Application.objects.filter(
-                client_id=request.data['oauth_consumer_key']).exists():
+        application = Application.objects.filter(
+            client_id=request.data['oauth_consumer_key']).first()
+        canvas_instance = application.canvasinstance_set.first()
+        if canvas_instance is None:
+            canvas_instance = CanvasInstance.objects.create(
+                instance_guid=request.data['tool_consumer_instance_guid'],
+                name=request.data['tool_consumer_instance_name']
+            )
+            canvas_instance.applications.add(application)
+        if valid and application is not None:
             email = request.data['lis_person_contact_email_primary']
             user = User.objects.filter(email=email).first()
             if user is None:
