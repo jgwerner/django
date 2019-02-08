@@ -14,7 +14,6 @@ import os
 import dj_database_url
 import datetime
 import uuid
-from base64 import b64encode
 from appdj.settings import BASE_DIR
 from appdj.settings.tbslog import TBS_LOGGING
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -25,7 +24,7 @@ from appdj.settings.tbslog import TBS_LOGGING
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('SECRET_KEY', 'test')
 STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', "test secret key")
-CRYPTO_KEY = b64encode(SECRET_KEY[:32].encode())
+CRYPTO_KEY = os.environ.get('CRYPTO_KEY').encode()
 
 
 # SECURITY WARNING: don't run with debug turned on in production!

@@ -1,8 +1,9 @@
-from jupyter_core.paths import jupyter_data_dir
 import subprocess
 import os
 import errno
 import stat
+from s3contents import S3ContentsManager
+from jupyter_core.paths import jupyter_data_dir
 from s3contents import S3ContentsManager
 
 c = get_config()
@@ -10,19 +11,20 @@ c = get_config()
 c.NotebookApp.allow_root = True
 c.NotebookApp.allow_origin = '*'
 c.NotebookApp.base_url = "/{{version}}/{{namespace}}/projects/{{server.project.pk}}/servers/{{server.pk}}/endpoint/proxy"
-c.NotebookApp.contents_manager_class = S3ContentsManager
 c.NotebookApp.iopub_data_rate_limit=1.0e10
 c.NotebookApp.ip = '0.0.0.0'
 c.NotebookApp.open_browser = False
 c.NotebookApp.port = 8080
 c.NotebookApp.tornado_settings = { 'headers': { 'Content-Security-Policy': "child-src * " } }
+# https://github.com/jupyter/notebook/issues/3130
+c.FileContentsManager.delete_to_trash = False
+
+c.NotebookApp.contents_manager_class = S3ContentsManager
 c.S3ContentsManager.access_key_id = "{{ access_key_id }}"
 c.S3ContentsManager.secret_access_key = "{{ secret_access_key }}"
 c.S3ContentsManager.region_name = "{{ region }}"
 c.S3ContentsManager.bucket = "{{ bucket }}"
 c.S3ContentsManager.prefix = "{{ path_prefix }}"
-# https://github.com/jupyter/notebook/issues/3130
-c.FileContentsManager.delete_to_trash = False
 
 # Generate a self-signed certificate
 if 'GEN_CERT' in os.environ:

@@ -58,6 +58,7 @@ def lti(project_pk, workspace_pk, data, path):
     log.debug(f'[LTI] data: {data}')
     email = data['lis_person_contact_email_primary']
     learner = User.objects.filter(email=email).first()
+    log.debug('[LTI] learner %s', learner)
     if learner is None:
         learner = User.objects.create_user(
             username=email_to_username(email),
@@ -67,11 +68,8 @@ def lti(project_pk, workspace_pk, data, path):
         canvas_user_id = data['user_id']
         learner.profile.config['canvas_user_id'] = canvas_user_id
         learner.profile.save()
-    learner_project = learner.projects.filter(
-        Q(config__copied_from=project_pk) |
-        Q(pk=project_pk),
-        Q(is_active=True)
-    ).first()
+    learner_project = Collaborator.objects.filter(user=learner, owner=True, project__is_active=True).first().project
+    log.debug('[LTI] learner project: %s', learner_project.pk)
     if learner_project is None:
         log.debug(f"Creating learner project from {project_pk}")
         Collaborator.objects.get_or_create(user=learner, project_id=project_pk)

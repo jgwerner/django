@@ -24,14 +24,13 @@ def create_user_ssh_key(sender, instance, created, **kwargs):
         create_ssh_key(instance)
 
 
-@receiver(post_save, sender=User)
-def create_aws_iam_user(sender, instance, created, **kwargs):
-    if 'iam_secret_access_key' in instance.profile.config:
+def create_aws_iam_user(user):
+    if 'iam_secret_access_key' in user.profile.config:
         return
     client = boto3.client('iam')
     try:
         response = client.create_user(
-            UserName=instance.username,
+            UserName=user.username,
         )
     except client.exceptions.EntityAlreadyExistsException:
         pass
@@ -40,14 +39,19 @@ def create_aws_iam_user(sender, instance, created, **kwargs):
             GroupName='IllumiDesk',
             UserName=response['User']['UserName']
         )
-        instance.profile.config['iam_id'] = response['User']['UserId']
-        instance.profile.config['iam_username'] = response['User']['UserName']
-        instance.profile.save()
-    response = client.create_access_key(UserName=instance.profile.config['iam_username'])
-    instance.profile.config['iam_access_key_id'] = response['AccessKey']['AccessKeyId']
+        user.profile.config['iam_id'] = response['User']['UserId']
+        user.profile.config['iam_username'] = response['User']['UserName']
+        user.profile.save()
+    response = client.create_access_key(UserName=user.profile.config['iam_username'])
+    user.profile.config['iam_access_key_id'] = response['AccessKey']['AccessKeyId']
     secret = Fernet(settings.CRYPTO_KEY).encrypt(response['AccessKey']['SecretAccessKey'].encode())
-    instance.profile.config['iam_secret_access_key'] = secret.decode()
-    instance.profile.save()
+    user.profile.config['iam_secret_access_key'] = secret.decode()
+    user.profile.save()
+
+
+@receiver(post_save, sender=User)
+def create_aws_iam_user_receiver(sender, instance, created, **kwargs):
+    create_aws_iam_user(instance)
 
 
 user_authenticated = dispatch.Signal(providing_args=['user'])
