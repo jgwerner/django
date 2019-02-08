@@ -22,7 +22,8 @@ from projects.models import Project, Collaborator
 from projects.permissions import ProjectPermission, ProjectChildPermission
 from projects.utils import (has_copy_permission,
                             perform_project_copy,
-                            check_project_name_exists)
+                            check_project_name_exists,
+                            list_project_root)
 from servers.utils import get_server_url, create_server
 from teams.models import Team
 from teams.permissions import TeamGroupPermission
@@ -39,17 +40,6 @@ class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewS
     filter_fields = ('private', 'name')
     ordering_fields = ('name',)
     lookup_url_kwarg = 'project'
-
-    def get_queryset(self):
-        filter_name = self.request.query_params.get('name')
-        filter_dict = {}
-        if filter_name:
-            filter_dict = {'name': filter_name}
-        projects = Project.objects.namespace(self.request.namespace).tbs_filter(self.kwargs.get('project'),
-                                                                                **filter_dict)
-        if self.request.user != self.request.namespace.object:
-            projects = projects.filter(Q(private=False) | Q(collaborator__user=self.request.user))
-        return projects
 
     def update(self, request, *args, **kwargs):
         if not validate_uuid(kwargs.get('project', '')):
@@ -142,15 +132,6 @@ def file_selection(request, *args, **kwargs):
         Q(is_active=True)
     )
 
-    def iterate_dir(directory):
-        for item in directory.iterdir():
-            if item.name.startswith('.'):
-                continue
-            if item.is_dir():
-                yield from iterate_dir(item)
-            else:
-                yield item
-
     projects_context = []
     for project in projects:
         project_root = project.resource_root()
@@ -160,27 +141,28 @@ def file_selection(request, *args, **kwargs):
         if workspace is None:
             workspace = create_server(request.user, project, 'workspace')
         files = []
-        for f in iterate_dir(project_root):
-            path = str(f.relative_to(project_root))
+        for f in list_project_root(project):
+            path = f['Key']
             quoted = quote(path, safe='/')
             scheme = 'https' if settings.HTTPS else 'http'
             url = get_server_url(str(project.pk), str(workspace.pk), scheme,
                                  f"/{quoted}", namespace=project.namespace_name)
-            files.append({
-                'path': path,
-                'content_items': json.dumps({
-                    "@context": "http://purl.imsglobal.org/ctx/lti/v1/ContentItem",
-                    "@graph": [{
-                        "@type": "LtiLinkItem",
-                        "@id": url,
-                        "url": url,
-                        "title": f.name,
-                        "text": f.name,
-                        "mediaType": "application/vnd.ims.lti.v1.ltilink",
-                        "placementAdvice": {"presentationDocumentTarget": "frame"}
-                    }]
+            if not f['Key'].startswith('.'):
+                files.append({
+                    'path': path,
+                    'content_items': json.dumps({
+                        "@context": "http://purl.imsglobal.org/ctx/lti/v1/ContentItem",
+                        "@graph": [{
+                            "@type": "LtiLinkItem",
+                            "@id": url,
+                            "url": url,
+                            "title": f['Key'],
+                            "text": f['Key'],
+                            "mediaType": "application/vnd.ims.lti.v1.ltilink",
+                            "placementAdvice": {"presentationDocumentTarget": "frame"}
+                        }]
+                    })
                 })
-            })
         projects_context.append({
             'name': project.name,
             'files': files

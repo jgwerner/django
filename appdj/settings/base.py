@@ -24,6 +24,7 @@ from appdj.settings.tbslog import TBS_LOGGING
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('SECRET_KEY', 'test')
 STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', "test secret key")
+CRYPTO_KEY = os.environ.get('CRYPTO_KEY').encode()
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -425,7 +426,6 @@ SPAWNER = 'servers.spawners.docker.DockerSpawner'
 DEPLOYER = 'servers.spawners.aws_lambda.deployer.LambdaDeployer'
 SCHEDULER = 'servers.spawners.ecs.JobScheduler'
 JUPYTER_IMAGE = os.environ.get('JUPYTER_IMAGE', 'illumidesk/datascience-notebook')
-PROJECT_DATA_BUCKET = os.environ.get('PROJECT_DATA_BUCKET', 'illumidesk-user-data')
 ECS_CLUSTER = os.environ.get('ECS_CLUSTER', 'default')
 BATCH_COMPUTE_ENV = os.environ.get('BATCH_COMPUTE_ENV')
 BATCH_JOB_QUEUE = os.environ.get('BATCH_JOB_QUEUE')
