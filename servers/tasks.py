@@ -144,9 +144,9 @@ def send_assignment(workspace_pk, assignment_id):
     teacher_workspace = teacher_project.servers.get(is_active=True, config__type='jupyter')
     assignment = next((a for a in learner_workspace.config.get('assignments', []) if a['id'] == assignment_id))
     teacher = teacher_project.owner
-    assingment_path = learner_workspace.project.resource_root() / assignment['path']
+    assignment_path = learner_workspace.project.resource_root() / assignment['path']
     teacher_assignment_path = Path('assignments', learner.email, assignment['path'])
-    copy_assignment_file(assingment_path, teacher_project.resource_root() / teacher_assignment_path)
+    copy_assignment_file(assignment_path, teacher_project.resource_root() / teacher_assignment_path)
     oauth_app = teacher.oauth2_provider_application.get(name__icontains='canvas')
     oauth_session = OAuth1Session(oauth_app.client_id, client_secret=oauth_app.client_secret)
     scheme = 'https' if settings.HTTPS else 'http'

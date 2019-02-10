@@ -26,8 +26,5 @@ docker ps
 python3.6 -m pip install -U pip setuptools wheel
 python3.6 -m pip install -r requirements/dev.txt
 python3.6 -m pip install codecov
-python3.6 -m pip install teamcity-messages
-# Setup teamcity test runner so we can test results in teamcity
-echo 'TEST_RUNNER = "teamcity.django.TeamcityDjangoRunner"' >> appdj/settings/test.py
 # Run the tests
-python3.6 -W ignore tbs_coverage.py run manage.py test --parallel 16 && coverage combine && coverage report -m
+python3.6 -W ignore illumidesk-coverage.py run manage.py test --parallel 16 && coverage combine && coverage report -m
