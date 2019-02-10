@@ -49,7 +49,6 @@ INSTALLED_APPS = [
     'social_django',
     'rest_framework_social_oauth2',
     'storages',
-    'django_extensions',
     'cacheops',
     'corsheaders',
     'guardian',
@@ -122,11 +121,15 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'False') == 'True'
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
 
-# Database
-# https://docs.djangoproject.com/en/1.10/ref/settings/#databases
-
 DATABASES = {
-    'default': dj_database_url.config(conn_max_age=600, default='postgres://postgres:@localhost:5432/postgres')
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DATABASE_NAME'),
+        'USER': os.getenv('DATABASE_USER'),
+        'PASSWORD': os.getenv('DATABASE_PASSWORD'),
+        'HOST': os.getenv('DATABASE_HOST'),
+        'PORT': os.getenv('DATABASE_PORT')
+    }
 }
 
 # Channels

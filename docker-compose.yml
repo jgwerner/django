@@ -1,12 +1,11 @@
-version: '2'
+version: '3'
 services:
   api:
     build: .
-    command: /srv/env/bin/gunicorn --bind 0.0.0.0:80 --reload --workers 1 --log-level=DEBUG --error-logfile=- --access-logfile=- appdj.wsgi
+    command: /srv/env/bin/gunicorn --bind 0.0.0.0:80 --reload --workers 1 --log-level=INFO --error-logfile=- --access-logfile=- appdj.wsgi
     volumes:
       - .:/srv/app
-      - /workspaces:/workspaces
-    env_file: env
+    env_file: .env
     depends_on:
       - db
       - cache
@@ -21,8 +20,7 @@ services:
     command: /srv/env/bin/daphne -p 80 -b 0.0.0.0 -v 2 appdj.asgi:channel_layer
     volumes:
       - .:/srv/app
-      - /workspaces:/workspaces
-    env_file: env
+    env_file: .env
     depends_on:
       - db
       - cache
@@ -40,8 +38,7 @@ services:
     command: /srv/env/bin/python manage.py runworker -v 2
     volumes:
       - .:/srv/app
-      - /workspaces:/workspaces
-    env_file: env
+    env_file: .env
     depends_on:
       - db
       - cache
@@ -52,8 +49,7 @@ services:
     command: /srv/env/bin/celery -A appdj worker -l info --without-heartbeat
     volumes:
       - .:/srv/app
-      - /workspaces:/workspaces
-    env_file: env
+    env_file: .env
     depends_on:
       - db
       - cache
@@ -64,8 +60,7 @@ services:
     command: /srv/env/bin/celery -A appdj beat -l debug
     volumes:
       - .:/srv/app
-      - /workspaces:/workspaces
-    env_file: env
+    env_file: .env
     depends_on:
       - db
       - cache
@@ -84,23 +79,21 @@ services:
     ports:
       - "6379:6379"
   server:
-    image: 3blades/traefik
+    image: illumidesk/traefik
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "5000:80"
       - "8081:8080"
   nginx:
-    image: 3blades/nginx
+    image: illumidesk/nginx
     command: /nginx/sbin/nginx -p '' -g 'daemon off;'
     labels:
       - "traefik.enable=true"
       - "traefik.backend=nginx"
       - "traefik.nginx.frontend.rule=PathPrefix:/media"
-    volumes:
-      - /workspaces:/workspaces
 
 networks:
   default:
     external:
-      name: tbs-net
+      name: illumidesk-net

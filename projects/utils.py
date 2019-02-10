@@ -23,7 +23,7 @@ from .models import Project, Collaborator
 log = logging.getLogger('projects')
 
 
-def assing_s3_user_permissions(user: User, project: Project) -> None:
+def assign_s3_user_permissions(user: User, project: Project) -> None:
     """
     Assign permissions for project S3 bucket
 
@@ -67,7 +67,7 @@ def assign_to_user(user: User, project: Project) -> None:
     Collaborator.objects.get_or_create(project=project, owner=True, user=user)
     assign_perm('write_project', user, project)
     assign_perm('read_project', user, project)
-    assing_s3_user_permissions(user, project)
+    assign_s3_user_permissions(user, project)
 
 
 def assign_to_team(team: Team, project: Project) -> None:

@@ -1,4 +1,6 @@
 import boto3
+import logging
+
 from cryptography.fernet import Fernet
 
 from django import dispatch
@@ -9,8 +11,9 @@ from django.dispatch import receiver
 from utils import create_ssh_key
 from users.models import UserProfile
 
-User = get_user_model()
+logger = logging.getLogger(__name__)
 
+User = get_user_model()
 
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
