@@ -2,8 +2,8 @@ import raven
 from .base import *
 
 ALLOWED_HOSTS = ['localhost', os.getenv('EXTERNAL_IPV4'), 'api.illumidesk.com']
-if 'TBS_HOST' in os.environ:
-    ALLOWED_HOSTS.append(os.environ['TBS_HOST'])
+if 'APP_SCHEME' in os.environ:
+    ALLOWED_HOSTS.append(os.environ['APP_SCHEME'])
 
 # Adding possible load balancer IP addresses.
 # It's necessary to add the whole range because this address can change.

@@ -70,7 +70,7 @@ class UserSerializer(SearchSerializerMixin, serializers.ModelSerializer):
         Email.objects.create(user=user, address=validated_data['email'])
 
         try:
-            getting_started_proj = Collaborator.objects.get(user__username="3bladestemplates",
+            getting_started_proj = Collaborator.objects.get(user__username="illumidesktemplates",
                                                             owner=True,
                                                             project__name=settings.GETTING_STARTED_PROJECT).project
             perform_project_copy(user=user,
@@ -78,7 +78,7 @@ class UserSerializer(SearchSerializerMixin, serializers.ModelSerializer):
                                  request=None)
 
         except Collaborator.DoesNotExist as e:
-            log.error(f"The getting started project doesn't exist for the 3bladestemplate user! Cannot "
+            log.error(f"The getting started project doesn't exist for the illumidesktemplate user! Cannot "
                       f"copy it to the user {user}'s account.")
             log.exception(e)
         except Exception as e:

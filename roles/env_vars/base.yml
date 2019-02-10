@@ -13,7 +13,11 @@ db_name: postgres
 db_password:
 
 # env file
-database_url: postgres://postgres:@localhost:5432/postgres
+database_host: localhost
+database_port: 5432
+database_name: postgres
+database_user: postgres
+database_password:
 is_debug: true
 redis_url: redis://localhost:6379/0
 django_settings_module: appdj.settings.dev
