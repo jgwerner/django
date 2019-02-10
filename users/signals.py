@@ -33,15 +33,17 @@ def create_aws_iam_user(user):
             UserName=user.username,
         )
     except client.exceptions.EntityAlreadyExistsException:
-        pass
+        response = client.get_user(
+            UserName=user.username,
+        )
     else:
         client.add_user_to_group(
             GroupName='IllumiDesk',
             UserName=response['User']['UserName']
         )
-        user.profile.config['iam_id'] = response['User']['UserId']
-        user.profile.config['iam_username'] = response['User']['UserName']
-        user.profile.save()
+    user.profile.config['iam_id'] = response['User']['UserId']
+    user.profile.config['iam_username'] = response['User']['UserName']
+    user.profile.save()
     response = client.create_access_key(UserName=user.profile.config['iam_username'])
     user.profile.config['iam_access_key_id'] = response['AccessKey']['AccessKeyId']
     secret = Fernet(settings.CRYPTO_KEY).encrypt(response['AccessKey']['SecretAccessKey'].encode())
