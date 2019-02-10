@@ -6,7 +6,7 @@
 
 ### Requirements
 
-> Newest version of docker-compose conflicts with docker-py. Install latest version of docker-py with `pip install docker` or remove it entirely from your system.
+Newest version of docker-compose conflicts with docker-py. Install latest version of docker-py with `pip install docker` or remove it entirely from your system.
 
 We recommend using Ubuntu Xenial (16.04), although these instructions should also work with other Linux distributions and Mac OSX. Requirements are:
 
