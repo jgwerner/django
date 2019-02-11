@@ -12,4 +12,4 @@ def create_s3_bucket(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=Collaborator)
 def assign_s3_permissions(sender, instance, created, **kwargs):
-    assign_s3_user_permissions(instance.user, instance.project)
+    assign_s3_user_permissions(instance.project)
