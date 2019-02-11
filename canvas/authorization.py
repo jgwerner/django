@@ -1,11 +1,13 @@
 import re
 import time
+
 from django.core.cache import cache
 from django.conf import settings
-from rest_framework import authentication
 from django.contrib.auth import get_user_model
+
 from oauth2_provider.models import Application
 from oauthlib.oauth1 import RequestValidator, SignatureOnlyEndpoint
+from rest_framework import authentication
 
 from servers.utils import email_to_username
 

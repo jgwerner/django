@@ -1,6 +1,10 @@
 import logging
+
 from django import template
-log = logging.getLogger('notifications')
+
+
+logger = logging.getLogger(__name__)
+
 register = template.Library()
 
 

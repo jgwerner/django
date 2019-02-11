@@ -5,8 +5,8 @@ from django.contrib.sites.models import Site
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        host = os.environ.get('TBS_HOST')
-        port = os.environ.get('TBS_PORT')
+        host = os.environ.get('APP_SCHEME')
+        port = os.environ.get('APP_PORT')
         if port != '80':
             host = f'{host}:{port}'
         site = Site.objects.first()

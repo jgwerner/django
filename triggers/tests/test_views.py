@@ -1,9 +1,12 @@
+import logging
 import requests
 from unittest.mock import MagicMock
 from urllib.parse import urlparse
+
 from django.urls import reverse
 from django.conf import settings
 from django.contrib.sites.models import Site
+
 from rest_framework import status
 from rest_framework.test import APITestCase, APILiveServerTestCase
 
@@ -18,8 +21,9 @@ from projects.models import Project
 from projects.tests.factories import CollaboratorFactory
 from servers.tests.factories import ServerFactory
 from jwt_auth.utils import create_auth_jwt
-import logging
-log = logging.getLogger('triggers')
+
+
+logger = logging.getLogger(__name__)
 
 
 class TriggerTest(APITestCase):

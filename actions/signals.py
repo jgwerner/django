@@ -8,7 +8,8 @@ from django.contrib.sites.models import Site
 from triggers.models import Trigger
 from .models import Action
 
-logger = logging.getLogger("actions")
+
+logger = logging.getLogger(__name__)
 
 
 @receiver(post_save, sender=Action)

@@ -1,13 +1,13 @@
 ## General Support
 
-If you're looking for general support, please utilize our Slack community channel [https://3bladescommunity.slack.com/) rather than GitHub Issues. (You can sign up [here](https://slackin-tkscnxhpky.now.sh/) if you haven't done so).
+If you're looking for general support, please utilize our Slack community channel [https://illumidesk.slack.com/) rather than GitHub Issues.
 
 ## New Issue Check List for Fixes
 
 Use the following check list to make sure your issue is opened properly.
 
 - [ ] I have documented what installation method was used, such as Docker, as well as other relevant configuration settings.
-- [ ] I have checked 3blades logs for python stacktraces and included it here as text if any.
+- [ ] I have checked illumidesk logs for python stacktraces and included it here as text if any.
 - [ ] I have reproduced the issue with the latest released version of IllumiDesk.
 - [ ] I searched for open and closed issues for a similar one, but did not see any.
 - [ ] I have documented expected result, actual result and steps to reproduce error.

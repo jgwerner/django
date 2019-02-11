@@ -1,24 +1,29 @@
 import filecmp
-import shutil
-import os
 import json
+import logging
+import os
+import shutil
 from uuid import uuid4
+
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core import mail
+
 from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
 
-from users.tests.factories import UserFactory, EmailFactory
-from users.tests.utils import generate_random_image
-from utils import create_ssh_key
+from base.utils import create_ssh_key
 from jwt_auth.utils import create_auth_jwt
 from projects.models import Collaborator
 from projects.utils import create_templates
-import logging
-log = logging.getLogger('users')
+from users.tests.factories import UserFactory, EmailFactory
+from users.tests.utils import generate_random_image
+
+
+logger = logging.getLogger(__name__)
+
 User = get_user_model()
 
 
@@ -420,11 +425,11 @@ class UserTest(APITestCase):
                                              user__username="getting_started_test").first()
         self.assertIsNotNone(collab)
         orig_project = Collaborator.objects.filter(project__name="GettingStarted",
-                                                   user__username="3bladestemplates").first()
+                                                   user__username="illumidesktemplates").first()
         project = collab.project
         self.assertNotEqual(orig_project.pk, project.pk)
         self.to_remove.append(collab.user.profile.resource_root())
-        template_user = User.objects.filter(username="3bladestemplates").first()
+        template_user = User.objects.filter(username="illumidesktemplates").first()
         self.assertIsNotNone(template_user)
         self.to_remove.append(template_user.profile.resource_root())
 
