@@ -1,6 +1,8 @@
 import logging
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
+
 from rest_framework import serializers
 from social_django.models import UserSocialAuth
 
@@ -9,8 +11,11 @@ from base.serializers import SearchSerializerMixin
 from users.models import UserProfile, Email
 from projects.models import Collaborator
 from projects.utils import perform_project_copy
+
+
+logger = logging.getLogger(__name__)
+
 User = get_user_model()
-log = logging.getLogger('users')
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -70,7 +75,7 @@ class UserSerializer(SearchSerializerMixin, serializers.ModelSerializer):
         Email.objects.create(user=user, address=validated_data['email'])
 
         try:
-            getting_started_proj = Collaborator.objects.get(user__username="3bladestemplates",
+            getting_started_proj = Collaborator.objects.get(user__username="illumidesktemplates",
                                                             owner=True,
                                                             project__name=settings.GETTING_STARTED_PROJECT).project
             perform_project_copy(user=user,
@@ -78,12 +83,12 @@ class UserSerializer(SearchSerializerMixin, serializers.ModelSerializer):
                                  request=None)
 
         except Collaborator.DoesNotExist as e:
-            log.error(f"The getting started project doesn't exist for the 3bladestemplate user! Cannot "
+            logger.error(f"The getting started project doesn't exist for the 3bladestemplate user! Cannot "
                       f"copy it to the user {user}'s account.")
-            log.exception(e)
+            logger.exception(e)
         except Exception as e:
-            log.error("Unkown exception encountered during creation of Getting Started project. Stacktrace: ")
-            log.exception(e)
+            logger.error("Unkown exception encountered during creation of Getting Started project. Stacktrace: ")
+            logger.exception(e)
 
         return user
 

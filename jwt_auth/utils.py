@@ -1,7 +1,9 @@
 import jwt
 from datetime import datetime
+
 from django.conf import settings
 from django.core.cache import cache
+
 from rest_framework_jwt.settings import api_settings
 from rest_framework_jwt.utils import jwt_decode_handler as rest_jwt_decode_handler
 

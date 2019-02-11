@@ -1,10 +1,14 @@
 import logging
+
 from django.conf import settings as django_settings
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import get_template
+
 from users.models import Email, User
 from .models import Notification, NotificationType, NotificationSettings
-log = logging.getLogger('notifications')
+
+
+logger = logging.getLogger(__name__)
 
 
 def create_notification(user: User, actor, target, notif_type: NotificationType) -> Notification:
@@ -17,7 +21,7 @@ def create_notification(user: User, actor, target, notif_type: NotificationType)
                                                                    defaults={'enabled': True,
                                                                              'emails_enabled': True})
     if created:
-        log.info(f"{notif_type.entity} notification settings did not exist for user {user}, so they were created.")
+        logger.info(f"{notif_type.entity} notification settings did not exist for user {user}, so they were created.")
         # This is the de facto default email address
         email = Email.objects.filter(user=user,
                                      address=user.email).first()
@@ -29,10 +33,10 @@ def create_notification(user: User, actor, target, notif_type: NotificationType)
                                 target=target,
                                 type=notif_type,
                                 is_active=settings.enabled)
-    log.info(f"Created notification {notification}")
+    logger.info(f"Created notification {notification}")
 
     if settings.emails_enabled:
-        log.info("Settings have enabled emails. Emailing notification.")
+        logger.info("Settings have enabled emails. Emailing notification.")
         template_name_str = f"notifications/{notif_type.template_name}."
 
         try:
@@ -64,6 +68,6 @@ def create_notification(user: User, actor, target, notif_type: NotificationType)
             log.exception(e)
 
         notification.emailed = True
-        log.info(f"Emailed notification.")
+        logger.info(f"Emailed notification.")
 
     return notification
