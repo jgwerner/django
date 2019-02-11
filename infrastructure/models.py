@@ -7,7 +7,7 @@ import docker
 from .managers import DockerHostQuerySet
 
 
-logger = logging.getLogger("infrastructure")
+logger = logging.getLogger(__name__)
 
 
 class DockerHost(models.Model):

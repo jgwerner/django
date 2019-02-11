@@ -1,9 +1,10 @@
 import logging
+
 from django.http import JsonResponse
 from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django.views.decorators.csrf import csrf_exempt
-from social_django.models import UserSocialAuth
+
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
 from rest_framework.generics import CreateAPIView
@@ -11,19 +12,22 @@ from rest_framework.mixins import ListModelMixin
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from base.permissions import PostAdminOnly
-from base.views import LookupByMultipleFields
-from utils import create_ssh_key, deactivate_user
+from social_django.models import UserSocialAuth
 
+from base.permissions import PostAdminOnly
 from base.utils import get_object_or_404
+from base.views import LookupByMultipleFields
+from base.utils import create_ssh_key, deactivate_user
+from jwt_auth.utils import create_auth_jwt
 from users.filters import UserSearchFilter
 from users.models import Email
 from users.serializers import (UserSerializer,
                                EmailSerializer,
                                IntegrationSerializer)
-from jwt_auth.utils import create_auth_jwt
 
-log = logging.getLogger("users")
+
+logger = logging.getLogger(__name__)
+
 User = get_user_model()
 
 
@@ -99,12 +103,12 @@ def avatar(request, version, user_pk):
             profile = user.profile
             profile.avatar = request.FILES.get("image")
             profile.save()
-            log.info("Updated avatar for user: {user}".format(user=user.username))
+            logger.info("Updated avatar for user: {user}".format(user=user.username))
             data = UserSerializer(instance=user,
                                   context={'request': request}).data
         except Exception as e:
             data = {'message': str(e)}
-            log.exception(e)
+            logger.exception(e)
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
     else:
         data = {'message': "Only POST is allowed for this URL."}

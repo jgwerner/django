@@ -2,7 +2,7 @@ import time
 import logging
 import json
 import requests
-from celery.result import AsyncResult
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.http import Http404
@@ -10,8 +10,16 @@ from django.db.models import Sum, Max, F
 from django.db.models.functions import Coalesce, Now
 from django.urls import reverse
 from django.shortcuts import redirect
+
 from rest_framework import status, viewsets, views
-from rest_framework.decorators import api_view, permission_classes, renderer_classes, list_route, authentication_classes, parser_classes
+from rest_framework.decorators import (
+    api_view,
+    permission_classes,
+    renderer_classes,
+    list_route,
+    authentication_classes,
+    parser_classes
+)
 from rest_framework.response import Response
 from rest_framework.renderers import TemplateHTMLRenderer
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -29,13 +37,24 @@ from jwt_auth.serializers import VerifyJSONWebTokenServerSerializer
 from jwt_auth.utils import create_server_jwt, create_auth_jwt
 from teams.permissions import TeamGroupPermission
 from .consumers import ServerStatusConsumer
-from .tasks import start_server, stop_server, terminate_server, deploy, delete_deployment, lti, send_assignment
+from .tasks import (
+    start_server,
+    stop_server,
+    terminate_server,
+    deploy,
+    delete_deployment,
+    lti,
+    send_assignment
+)
 from .permissions import ServerChildPermission, ServerActionPermission
 from . import serializers, models
 from .utils import get_server_usage, get_server_url, create_server
 
-log = logging.getLogger('servers')
+
+logger = logging.getLogger(__name__)
+
 jwt_response_payload_handler = api_settings.JWT_RESPONSE_PAYLOAD_HANDLER
+
 User = get_user_model()
 
 
@@ -239,8 +258,8 @@ def deployment_auth(request):
     if deployment is None:
         return Response(status=status.HTTP_404_NOT_FOUND)
     data = {'user_id': str(deployment.project.owner.pk)}
-    log.info(deployment.access_token)
-    log.info(serializer.validated_data['token'])
+    logger.info(deployment.access_token)
+    logger.info(serializer.validated_data['token'])
     if deployment.access_token != serializer.validated_data['token']:
         data['token'] = "Token is invalid"
         return Response(data, status.HTTP_401_UNAUTHORIZED)
@@ -255,13 +274,13 @@ class SNSView(views.APIView):
         if sns_message_type_header not in request.META:
             return Response({"message": "OK"})
         payload = json.loads(request.body.decode('utf-8'))
-        log.debug("SNS payload: %s" % payload)
+        logger.debug("SNS payload: %s" % payload)
         message_type = request.META[sns_message_type_header]
         if message_type == 'SubscriptionConfirmation':
             url = payload.get('SubscribeURL', '')
             resp = requests.get(url)
             if resp.status_code != 200:
-                log.error("SNS verification failed.", extra={
+                logger.error("SNS verification failed.", extra={
                     'verification_response': resp.content,
                     'sns_payload': self.request.body
                 })
@@ -324,7 +343,7 @@ def lti_file_handler(request, *args, **kwargs):
 @api_view(['get'])
 def lti_ready(request, *args, **kwargs):
     workspace_id, assignment_id = AsyncResult(kwargs.get('task_id')).get()
-    log.debug("[lti_ready], %s, %s", workspace_id, assignment_id)
+    logger.debug("[lti_ready], %s, %s", workspace_id, assignment_id)
     workspace = models.Server.objects.filter(pk=workspace_id).first()
     if workspace is None:
         return Response({'error': 'No workspace created'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

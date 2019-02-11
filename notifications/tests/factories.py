@@ -1,9 +1,9 @@
+from datetime import timedelta
 import factory
+from factory import fuzzy
 import random
 
-from datetime import timedelta
 from django.utils import timezone
-from factory import fuzzy
 
 from users.tests.factories import UserFactory
 from notifications.models import Notification, NotificationType, NotificationSettings

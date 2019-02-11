@@ -1,6 +1,7 @@
 import requests
 import logging
 from collections import defaultdict
+
 from django.db import models
 from django.conf import settings
 from django.contrib.postgres.fields import JSONField
@@ -11,7 +12,7 @@ from base.models import TBSQuerySet
 from utils import copy_model
 
 
-logger = logging.getLogger('triggers')
+logger = logging.getLogger(__name__)
 
 
 class TriggerQuerySet(TBSQuerySet):

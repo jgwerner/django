@@ -1,16 +1,20 @@
 import logging
 from pathlib import Path
+
 from django.core.validators import validate_unicode_slug
 from django.conf import settings
 from django.contrib.postgres.fields import JSONField
 from django.contrib.postgres.indexes import GinIndex
 from django.db import models
 from django.urls import reverse
+
 from guardian.shortcuts import get_perms
 from social_django.models import UserSocialAuth
 
 from .managers import ProjectQuerySet, CollaboratorQuerySet
-log = logging.getLogger('projects')
+
+
+logger = logging.getLogger(__name__)
 
 
 class Project(models.Model):

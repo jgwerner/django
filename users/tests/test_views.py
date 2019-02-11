@@ -1,24 +1,29 @@
 import filecmp
-import shutil
-import os
 import json
+import logging
+import os
+import shutil
 from uuid import uuid4
+
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core import mail
+
 from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
 
-from users.tests.factories import UserFactory, EmailFactory
-from users.tests.utils import generate_random_image
-from utils import create_ssh_key
+from base.utils import create_ssh_key
 from jwt_auth.utils import create_auth_jwt
 from projects.models import Collaborator
 from projects.utils import create_templates
-import logging
-log = logging.getLogger('users')
+from users.tests.factories import UserFactory, EmailFactory
+from users.tests.utils import generate_random_image
+
+
+logger = logging.getLogger(__name__)
+
 User = get_user_model()
 
 
