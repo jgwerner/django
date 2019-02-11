@@ -57,7 +57,7 @@ class UserSerializer(SearchSerializerMixin, serializers.ModelSerializer):
                                                         user__is_active=True).exists()
 
         if existing_user_email or existing_secondary_email:
-            log.info(f"Rejected creating/updating user due to email conflict: {value}")
+            logger.info(f"Rejected creating/updating user due to email conflict: {value}")
             raise serializers.ValidationError(f"The email {value} is taken")
 
         return value
@@ -94,7 +94,7 @@ class UserSerializer(SearchSerializerMixin, serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         if "profile" in validated_data:
-            log.info("Profile information found in update request. Setting information accordingly.")
+            logger.info("Profile information found in update request. Setting information accordingly.")
             profile_data = validated_data.pop('profile')
             user_profile = UserProfile.objects.get(user=instance)
 
@@ -127,7 +127,7 @@ class EmailSerializer(RequestUserMixin, serializers.ModelSerializer):
                                                         user__is_active=True).exists()
 
         if existing_user_email or existing_secondary_email:
-            log.info(f'Rejected creating/updating Email object due to email conflict: {value}')
+            logger.info(f'Rejected creating/updating Email object due to email conflict: {value}')
             raise serializers.ValidationError(f"The email {value} is taken")
 
         return value

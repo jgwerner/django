@@ -3,13 +3,14 @@ import logging
 
 from cryptography.fernet import Fernet
 
+from botocore.exceptions import ClientError
 from django import dispatch
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from utils import create_ssh_key
+from base.utils import create_ssh_key
 from users.models import UserProfile
 
 
@@ -32,25 +33,30 @@ def create_iam_access_key(user):
     client = boto3.client('iam')
     access_keys = client.list_access_keys(UserName=user.username)
     # We need to delete all old keys first
+    username = f'{user.username}-{user.pk}'
     for access_key in access_keys['AccessKeyMetadata']:
-        client.delete_access_key(
-            UserName=user.username,
-            AccessKeyId=access_key['AccessKeyId']
-        )
-    return client.create_access_key(UserName=user.username)
+        try:
+            client.delete_access_key(
+                UserName=username,
+                AccessKeyId=access_key['AccessKeyId']
+            )
+        except ClientError:
+            pass
+    return client.create_access_key(UserName=username)
 
 
 def create_aws_iam_user(user):
     if 'iam_secret_access_key' in user.profile.config:
         return
     client = boto3.client('iam')
+    username = f'{user.username}-{user.pk}'
     try:
         response = client.create_user(
-            UserName=user.username,
+            UserName=username,
         )
     except client.exceptions.EntityAlreadyExistsException:
         response = client.get_user(
-            UserName=user.username,
+            UserName=username,
         )
     else:
         client.add_user_to_group(

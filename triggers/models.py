@@ -9,7 +9,7 @@ from django.urls import reverse
 
 from actions.models import Action
 from base.models import TBSQuerySet
-from utils import copy_model
+from base.utils import copy_model
 
 
 logger = logging.getLogger(__name__)
