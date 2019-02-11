@@ -1,6 +1,6 @@
 # Contributing Guidelines
 
-Interested in making a contribution? Great! Just read through [this guide](https://github.com/3Blades/opensource/blob/master/CONTRIBUTING.md) and you should be good to go! If you have any questions or concerns, feel free to reach out to us in our Slack [community channel](https://slack.3blades.io/).
+Interested in making a contribution? Great! Just read through [this guide](https://github.com/illumidesk/opensource/blob/master/CONTRIBUTING.md) and you should be good to go! If you have any questions or concerns, feel free to reach out to us in our Slack [community channel](https://slack.illumidesk.com/).
 
 ## IllumiDesk community guidelines
 

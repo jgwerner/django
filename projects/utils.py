@@ -198,10 +198,10 @@ def perform_project_copy(user: User, project_id: str, request: Request=None, new
 
 
 def create_templates(projects: List[str]=[settings.GETTING_STARTED_PROJECT]):
-    user = User.objects.filter(username="3bladestemplates").first()
+    user = User.objects.filter(username="illumidesktemplates").first()
     if user is None:
-        user = User.objects.create_superuser(username="3bladestemplates",
-                                             email="templates@3blades.io",
+        user = User.objects.create_superuser(username="illumidesktemplates",
+                                             email="templates@illumidesk.com",
                                              password="FizzBuzz")
 
     for proj_name in projects:

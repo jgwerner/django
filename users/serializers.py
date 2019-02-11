@@ -75,7 +75,7 @@ class UserSerializer(SearchSerializerMixin, serializers.ModelSerializer):
         Email.objects.create(user=user, address=validated_data['email'])
 
         try:
-            getting_started_proj = Collaborator.objects.get(user__username="3bladestemplates",
+            getting_started_proj = Collaborator.objects.get(user__username="illumidesktemplates",
                                                             owner=True,
                                                             project__name=settings.GETTING_STARTED_PROJECT).project
             perform_project_copy(user=user,

@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/1.10/ref/settings/
 """
 
 import os
-import dj_database_url
 import datetime
 import uuid
 from appdj.settings import BASE_DIR
@@ -182,10 +181,10 @@ SOCIAL_AUTH_PIPELINE = (
 
 OAUTH2_PROVIDER_APPLICATION_MODEL = 'oauth2_provider.Application'
 
-HTTPS = os.environ.get("TBS_HTTPS", "false").lower() == "true"
+HTTPS = os.environ.get("TLS", "false").lower() == "true"
 LOGIN_URL = '/api-auth/login/'
 LOGIN_REDIRECT_URL = '{scheme}://{host}/auth/token-login'.format(
-    scheme='https' if HTTPS else 'http', host=os.environ.get('TBS_DOMAIN'))
+    scheme='https' if HTTPS else 'http', host=os.environ.get('APP_DOMAIN'))
 LOGOUT_URL = '/api-auth/logout/'
 
 # Password validation
@@ -293,7 +292,7 @@ REST_FRAMEWORK = {
 }
 
 DJOSER = {
-    'DOMAIN': os.getenv("TBS_DOMAIN"),
+    'DOMAIN': os.getenv("APP_DOMAIN"),
     'PASSWORD_RESET_CONFIRM_URL': "auth/password-reset?uid={uid}&token={token}",
     'SERIALIZERS': {'user_create': "users.serializers.UserSerializer",
                     'user': "users.serializers.UserSerializer",

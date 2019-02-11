@@ -425,11 +425,11 @@ class UserTest(APITestCase):
                                              user__username="getting_started_test").first()
         self.assertIsNotNone(collab)
         orig_project = Collaborator.objects.filter(project__name="GettingStarted",
-                                                   user__username="3bladestemplates").first()
+                                                   user__username="illumidesktemplates").first()
         project = collab.project
         self.assertNotEqual(orig_project.pk, project.pk)
         self.to_remove.append(collab.user.profile.resource_root())
-        template_user = User.objects.filter(username="3bladestemplates").first()
+        template_user = User.objects.filter(username="illumidesktemplates").first()
         self.assertIsNotNone(template_user)
         self.to_remove.append(template_user.profile.resource_root())
 
