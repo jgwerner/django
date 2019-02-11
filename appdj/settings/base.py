@@ -411,7 +411,7 @@ SUBSCRIPTION_REQUIRED_URLS = ["server-start"]
 MEDIA_ROOT = "/workspaces/"
 MEDIA_URL = "/media/"
 
-DOCKER_NET = os.environ.get('DOCKER_NET', 'tbs-net')
+DOCKER_NET = os.environ.get('DOCKER_NET', 'illumidesk-net')
 
 MOCK_STRIPE = os.environ.get("MOCK_STRIPE", "false").lower() == "true"
 

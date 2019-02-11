@@ -31,9 +31,9 @@ def create_user_ssh_key(sender, instance, created, **kwargs):
 
 def create_iam_access_key(user):
     client = boto3.client('iam')
-    access_keys = client.list_access_keys(UserName=user.username)
-    # We need to delete all old keys first
     username = f'{user.username}-{user.pk}'
+    access_keys = client.list_access_keys(UserName=username)
+    # We need to delete all old keys first
     for access_key in access_keys['AccessKeyMetadata']:
         try:
             client.delete_access_key(
