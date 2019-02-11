@@ -26,6 +26,17 @@ def create_user_ssh_key(sender, instance, created, **kwargs):
     if created:
         create_ssh_key(instance)
 
+def create_iam_access_key(user):
+    client = boto3.client('iam')
+    access_keys = client.list_access_keys(UserName=user.username)
+    # We need to delete all old keys first
+    for access_key in access_keys['AccessKeyMetadata']:
+        client.delete_access_key(
+            UserName=user.username,
+            AccessKeyId=access_key['AccessKeyId']
+        )
+    return client.create_access_key(UserName=user.username)
+
 
 def create_aws_iam_user(user):
     if 'iam_secret_access_key' in user.profile.config:
@@ -47,7 +58,7 @@ def create_aws_iam_user(user):
     user.profile.config['iam_id'] = response['User']['UserId']
     user.profile.config['iam_username'] = response['User']['UserName']
     user.profile.save()
-    response = client.create_access_key(UserName=user.profile.config['iam_username'])
+    response = create_iam_access_key(user)
     user.profile.config['iam_access_key_id'] = response['AccessKey']['AccessKeyId']
     secret = Fernet(settings.CRYPTO_KEY).encrypt(response['AccessKey']['SecretAccessKey'].encode())
     user.profile.config['iam_secret_access_key'] = secret.decode()
