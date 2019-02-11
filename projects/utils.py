@@ -1,26 +1,30 @@
+import boto3
+from botocore.exceptions import ClientError
+from copy import deepcopy
+from distutils.dir_util import copy_tree
 import logging
 import json
 import os
+from pathlib import Path
 import shutil
 from typing import List
-from copy import deepcopy
-from pathlib import Path
-from distutils.dir_util import copy_tree
 
-import boto3
-from botocore.exceptions import ClientError
 from django.conf import settings
+
 from rest_framework.request import Request
+
+from base.utils import validate_uuid
 from guardian.shortcuts import assign_perm
+from jwt_auth.utils import create_server_jwt
+from servers.models import Server
+from teams.models import Team
 from users.models import User
 from users.signals import create_aws_iam_user
-from teams.models import Team
-from base.utils import validate_uuid
-from servers.models import Server
-from jwt_auth.utils import create_server_jwt
+
 from .models import Project, Collaborator
 
-log = logging.getLogger('projects')
+
+logger = logging.getLogger(__name__)
 
 
 def assign_s3_user_permissions(user: User, project: Project) -> None:
@@ -29,7 +33,7 @@ def assign_s3_user_permissions(user: User, project: Project) -> None:
 
     https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.put_bucket_policy
     """
-    log.info("Assign project user %s permissions to project %s", user, project.pk)
+    logger.info("Assign project user %s permissions to project %s", user, project.pk)
     s3 = boto3.client('s3')
     s3.delete_bucket_policy(
         Bucket=str(project.pk)
@@ -62,7 +66,7 @@ def assign_s3_user_permissions(user: User, project: Project) -> None:
 
 
 def assign_to_user(user: User, project: Project) -> None:
-    log.info(f"Creating default collaborator, assigning permissions, and creating project resource root.")
+    logger.info(f"Creating default collaborator, assigning permissions, and creating project resource root.")
     Collaborator.objects.filter(project=project, owner=True).delete()
     Collaborator.objects.get_or_create(project=project, owner=True, user=user)
     assign_perm('write_project', user, project)
@@ -76,7 +80,7 @@ def assign_to_team(team: Team, project: Project) -> None:
 
 
 def create_project_s3_bucket(project: Project) -> None:
-    log.info("Create project bucket: %s", project.pk)
+    logger.info("Create project bucket: %s", project.pk)
     s3 = boto3.client('s3')
     s3.create_bucket(
         Bucket=str(project.pk),
@@ -114,7 +118,7 @@ def has_copy_permission(request=None, user=None, project=None):
         proj_pk = request.data.get("project")
         project = Project.objects.get(pk=proj_pk)
     elif user is None or project is None:
-        log.error(f"Called has_copy_permission() without enough information. User: {user}, Project: {project}.")
+        logger.error(f"Called has_copy_permission() without enough information. User: {user}, Project: {project}.")
         raise ValueError("When calling has_copy_function, either request or both user and project must be specified.")
 
     has_perm = False
@@ -130,7 +134,7 @@ def has_copy_permission(request=None, user=None, project=None):
 
 
 def copy_servers(old_project: Project, new_project: Project) -> None:
-    log.info(f"Copying servers from {old_project.pk} to {new_project.pk}")
+    logger.info(f"Copying servers from {old_project.pk} to {new_project.pk}")
     servers = Server.objects.filter(project=old_project, is_active=True)
     owner = new_project.owner if isinstance(new_project.owner, User) else new_project.owner.owner
 
@@ -145,18 +149,18 @@ def copy_servers(old_project: Project, new_project: Project) -> None:
         server_copy.save()
         for permission in [perm[0] for perm in Server._meta.permissions]:
             assign_perm(permission, owner, server)
-        log.info(f"Copied {server.pk}")
+        logger.info(f"Copied {server.pk}")
 
 
 def perform_project_copy(user: User, project_id: str, request: Request=None, new_name: str=None) -> Project:
-    log.info(f"Attempting to copy project {project_id} for user {user}")
+    logger.info(f"Attempting to copy project {project_id} for user {user}")
     new_proj = None
     proj_to_copy = Project.objects.get(pk=project_id)
     old_resource_root = proj_to_copy.resource_root()
 
     if has_copy_permission(user=user, project=proj_to_copy):
 
-        log.info(f"User {user} has approved copy permissions, proceeding.")
+        logger.info(f"User {user} has approved copy permissions, proceeding.")
         new_proj = deepcopy(proj_to_copy)
         if new_name is not None:
             new_proj.name = new_name
@@ -182,10 +186,10 @@ def perform_project_copy(user: User, project_id: str, request: Request=None, new
 
         create_ancillary_project_stuff(request, new_proj, user=user_to_pass)
         if old_resource_root.is_dir():
-            log.info(f"Copying files from the {old_resource_root} to {new_proj.resource_root()}")
+            logger.info(f"Copying files from the {old_resource_root} to {new_proj.resource_root()}")
             copy_tree(str(old_resource_root), str(new_proj.resource_root()))
         else:
-            log.info(f"It seems {old_resource_root} does not exist, so there is nothing to copy.")
+            logger.info(f"It seems {old_resource_root} does not exist, so there is nothing to copy.")
 
         copy_project_bucket(proj_to_copy, new_proj)
         copy_servers(proj_to_copy, new_proj)

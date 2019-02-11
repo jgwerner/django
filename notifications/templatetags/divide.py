@@ -1,6 +1,10 @@
 import logging
+
 from django import template
-log = logging.getLogger('notifications')
+
+
+logger = logging.getLogger(__name__)
+
 register = template.Library()
 
 
@@ -10,12 +14,12 @@ def divide(value, arg):
     try:
         divisor = int(arg)
     except ValueError:
-        log.exception(f"Error trying to cast {arg} to an int.")
+        logger.exception(f"Error trying to cast {arg} to an int.")
     try:
         if divisor is not None and divisor != 0:
             quotient = value / divisor
     except TypeError as e:
-        log.exception(f"Exception while attempting to use divide filter tag: {e}")
+        logger.exception(f"Exception while attempting to use divide filter tag: {e}")
     return quotient
 
 

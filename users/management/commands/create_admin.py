@@ -1,8 +1,10 @@
 import logging
+
 from django.contrib.auth import get_user_model
 from django.core.management import BaseCommand
 
-log = logging.getLogger('users')
+
+logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
@@ -24,7 +26,7 @@ class Command(BaseCommand):
         admin_exists = User.objects.filter(username=options.get('username', "admin"),
                                            is_active=True).exists()
         if admin_exists:
-            log.info("Admin user already exists. Doing nothing.")
+            logger.info("Admin user already exists. Doing nothing.")
         else:
             User.objects.create_superuser(options.get('username', "admin"),
                                           options.get('email', "admin@example.com"),

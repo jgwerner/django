@@ -1,6 +1,8 @@
 import logging
+
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
+
 from rest_framework import serializers
 from social_django.models import UserSocialAuth
 
@@ -10,7 +12,8 @@ from .models import Trigger
 from .slack import send_message
 from .utils import create_beat_entry
 
-logger = logging.getLogger("triggers")
+
+logger = logging.getLogger(__name__)
 
 
 class TriggerActionSerializer(serializers.ModelSerializer):
