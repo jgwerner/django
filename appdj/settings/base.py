@@ -313,7 +313,7 @@ CACHES = {
         'BACKEND': 'django_redis.cache.RedisCache',
         'LOCATION': os.environ.get('REDIS_URL'),
         'OPTIONS': {
-            'SERIALIZER_CLASS': 'utils.UJSONSerializer',
+            'SERIALIZER_CLASS': 'base.utils.UJSONSerializer',
             'PARSER_CLASS': 'redis.connection.HiredisParser',
             'SOCKET_CONNECT_TIMEOUT': 5,
             'SOCKET_TIMEOUT': 5

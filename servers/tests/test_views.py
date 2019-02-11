@@ -2,10 +2,12 @@ import uuid
 from datetime import datetime
 from unittest.mock import patch
 from guardian.shortcuts import assign_perm
+
 from django.urls import reverse
 from django.utils import timezone
 from django.conf import settings
 from django.test import override_settings
+
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -128,7 +130,7 @@ class ServerTest(APITestCase):
                 'config': {'type': "jupyter"}}
         from django.db import transaction
         import logging
-        log = logging.getLogger('servers')
+        logger = logging.getLogger(__name__)
         try:
             with transaction.atomic():
                 response = self.client.post(url, data=data)

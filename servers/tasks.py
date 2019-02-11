@@ -1,13 +1,17 @@
+import logging
 import time
 import uuid
 from pathlib import Path
-from celery import shared_task
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
 from django.urls import reverse
 from django.db.models import Q
 from django.template.loader import render_to_string
+
+from celery import shared_task
+
 from requests_oauthlib import OAuth1Session
 
 from projects.models import Project, Collaborator
@@ -15,8 +19,10 @@ from projects.utils import perform_project_copy
 from .models import Server, Deployment
 from .spawners import get_spawner_class, get_deployer_class
 from .utils import create_server, server_action, email_to_username
-import logging
-log = logging.getLogger('servers')
+
+
+logger = logging.getLogger(__name__)
+
 Spawner = get_spawner_class()
 Deployer = get_deployer_class()
 User = get_user_model()
@@ -55,10 +61,10 @@ def delete_deployment(deployment):
 
 @shared_task()
 def lti(project_pk, workspace_pk, data, path):
-    log.debug(f'[LTI] data: {data}')
+    logger.debug(f'[LTI] data: {data}')
     email = data['lis_person_contact_email_primary']
     learner = User.objects.filter(email=email).first()
-    log.debug('[LTI] learner %s', learner)
+    logger.debug('[LTI] learner %s', learner)
     if learner is None:
         learner = User.objects.create_user(
             username=email_to_username(email),
@@ -69,9 +75,9 @@ def lti(project_pk, workspace_pk, data, path):
         learner.profile.config['canvas_user_id'] = canvas_user_id
         learner.profile.save()
     learner_project = Collaborator.objects.filter(user=learner, owner=True, project__is_active=True).first().project
-    log.debug('[LTI] learner project: %s', learner_project.pk)
+    logger.debug('[LTI] learner project: %s', learner_project.pk)
     if learner_project is None:
-        log.debug(f"Creating learner project from {project_pk}")
+        logger.debug(f"Creating learner project from {project_pk}")
         Collaborator.objects.get_or_create(user=learner, project_id=project_pk)
         learner_project = perform_project_copy(learner, str(project_pk))
         learner_project.team = None
@@ -81,14 +87,14 @@ def lti(project_pk, workspace_pk, data, path):
         is_active=True
     ).first()
     if workspace is None:
-        log.debug("Creating learner workspace")
+        logger.debug("Creating learner workspace")
         workspace = create_server(learner, learner_project, 'workspace')
     assignment_id = None
     if 'custom_canvas_assignment_id' in data:
-        log.debug("Setting up assignment")
+        logger.debug("Setting up assignment")
         assignment_id = setup_assignment(workspace, data, path)
     if workspace.status != workspace.RUNNING:
-        log.debug(f"Starting workspace {workspace.pk}")
+        logger.debug(f"Starting workspace {workspace.pk}")
         workspace.spawner.start()
         # wait 30 sec for workspace to start
         for i in range(30):
@@ -160,7 +166,7 @@ def send_assignment(workspace_pk, assignment_id):
     })
     domain = Site.objects.get_current().domain
     url = f"{scheme}://{domain}{url_path}"
-    log.debug(f"[Send assignment] Server url: {url}")
+    logger.debug(f"[Send assignment] Server url: {url}")
     context = {
         'msg_id': uuid.uuid4().hex,
         'source_did': assignment['source_did'],
@@ -170,4 +176,4 @@ def send_assignment(workspace_pk, assignment_id):
     response = oauth_session.post(assignment['outcome_url'], data=xml,
                                   headers={'Content-Type': 'application/xml'})
     response.raise_for_status()
-    log.debug(f"[Send assignment] LTI Response: {response.__dict__}")
+    logger.debug(f"[Send assignment] LTI Response: {response.__dict__}")
