@@ -9,6 +9,7 @@ sleep 1
 /srv/env/bin/python /srv/app/manage.py create_server_size
 /srv/env/bin/python /srv/app/manage.py site_host
 /srv/env/bin/python /srv/app/manage.py create_templates
-/srv/env/bin/python /srv/app/manage.py move_dirs
+/srv/env/bin/python /srv/app/manage.py create_iam_users
+/srv/env/bin/python /srv/app/manage.py create_project_buckets
 
 exec "$@"
