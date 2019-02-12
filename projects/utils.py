@@ -195,6 +195,7 @@ def perform_project_copy(user: User, project_id: str, request: Request=None, new
         if old_resource_root.is_dir():
             logger.info(f"Copying files from the {old_resource_root} to {new_proj.resource_root()}")
             copy_tree(str(old_resource_root), str(new_proj.resource_root()))
+            copy_project_bucket(proj_to_copy, new_proj)
         else:
             logger.info(f"It seems {old_resource_root} does not exist, so there is nothing to copy.")
 
@@ -274,4 +275,5 @@ def copy_project_bucket(source_project, destination_project):
             'Bucket': settings.PROJECTS_BUCKET,
             'Key': fil['Key']
         }
-        s3.meta.client.copy(source, str(destination_project.pk), fil['Key'])
+        key = f'{destination_project.pk}/' + '/'.join(fil['Key'].split('/')[1:])
+        s3.meta.client.copy(source, settings.PROJECTS_BUCKET, key)

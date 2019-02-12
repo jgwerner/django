@@ -145,7 +145,8 @@ def file_selection(request, *args, **kwargs):
             workspace = create_server(request.user, project, 'workspace')
         files = []
         for f in list_project_root(project):
-            path = f['Key']
+            # Remove project id from path
+            path = '/'.join(f['Key'].split('/')[1:])
             quoted = quote(path, safe='/')
             scheme = 'https' if settings.HTTPS else 'http'
             url = get_server_url(str(project.pk), str(workspace.pk), scheme,
