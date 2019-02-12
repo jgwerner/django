@@ -195,9 +195,9 @@ def perform_project_copy(user: User, project_id: str, request: Request=None, new
         if old_resource_root.is_dir():
             logger.info(f"Copying files from the {old_resource_root} to {new_proj.resource_root()}")
             copy_tree(str(old_resource_root), str(new_proj.resource_root()))
-            copy_project_bucket(proj_to_copy, new_proj)
         else:
             logger.info(f"It seems {old_resource_root} does not exist, so there is nothing to copy.")
+        copy_project_bucket(proj_to_copy, new_proj)
 
         copy_servers(proj_to_copy, new_proj)
 
