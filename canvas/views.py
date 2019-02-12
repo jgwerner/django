@@ -5,11 +5,13 @@ from django.contrib.sites.shortcuts import get_current_site
 from rest_framework import views, viewsets
 from rest_framework.response import Response
 from rest_framework.parsers import FormParser
-from oauth2_provider.models import Application
+from oauth2_provider.models import get_application_model
 
 from .authorization import CanvasAuth
 from .serializers import ApplicationSerializer
 from .renderer import CanvasRenderer
+
+Application = get_application_model()
 
 
 class CanvasXML(views.APIView):

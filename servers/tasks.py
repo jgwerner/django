@@ -16,6 +16,7 @@ from celery import shared_task
 
 from requests_oauthlib import OAuth1Session
 
+from canvas.models import CanvasInstance
 from projects.models import Project, Collaborator
 from projects.utils import perform_project_copy
 from .models import Server, Deployment
@@ -122,6 +123,7 @@ def setup_assignment(workspace, data, path):
         'user_id': data['custom_canvas_user_id'],
         'path': path,
         'outcome_url': data['lis_outcome_service_url'],
+        'instance_guid': data['tool_consumer_instance_guid']
     }
     if 'lis_result_sourcedid' in data:
         assignment['source_did'] = data['lis_result_sourcedid']
@@ -152,7 +154,7 @@ def send_assignment(workspace_pk, assignment_id):
     assignment_path = Path(str(learner_workspace.project.pk), assignment['path'])
     teacher_assignment_path = Path(str(teacher_project.pk), 'submissions', learner.email, assignment['path'])
     copy_assignment_file(str(teacher_assignment_path), str(assignment_path))
-    oauth_app = teacher.oauth2_provider_application.get(name__icontains='canvas')
+    oauth_app = CanvasInstance.objects.filter(instance_guid=assignment['instance_guid']).first().applications.first()
     oauth_session = OAuth1Session(oauth_app.client_id, client_secret=oauth_app.client_secret)
     scheme = 'https' if settings.HTTPS else 'http'
     namespace = teacher_project.namespace_name
