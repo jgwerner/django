@@ -78,14 +78,12 @@ def lti(project_pk, workspace_pk, data, path):
         learner.profile.config['canvas_user_id'] = canvas_user_id
         learner.profile.save()
     Collaborator.objects.get_or_create(user=learner, project_id=project_pk)
-    learner_collaborator = Collaborator.objects.filter(user=learner, owner=True, project__is_active=True).first()
-    if learner_collaborator is None:
+    learner_project = learner.projects.filter(config__copied_from=project_pk).first()
+    if learner_project is None:
         logger.debug(f"Creating learner project from {project_pk}")
         learner_project = perform_project_copy(learner, str(project_pk))
         learner_project.team = None
         learner_project.save()
-    else:
-        learner_project = learner_collaborator.project
     logger.debug('[LTI] learner project: %s', learner_project.pk)
     workspace = learner_project.servers.filter(
         config__type='jupyter',
@@ -152,8 +150,9 @@ def send_assignment(workspace_pk, assignment_id):
     assignment = next((a for a in learner_workspace.config.get('assignments', []) if a['id'] == assignment_id))
     teacher = teacher_project.owner
     assignment_path = Path(str(learner_workspace.project.pk), assignment['path'])
-    teacher_assignment_path = Path(str(teacher_project.pk), 'submissions', learner.email, assignment['path'])
-    copy_assignment_file(str(teacher_assignment_path), str(assignment_path))
+    teacher_assignment_path = Path('submissions', learner.email, assignment['path'])
+    s3_teacher_assignment_path = Path(str(teacher_project.pk)) / teacher_assignment_path
+    copy_assignment_file(str(assignment_path), str(s3_teacher_assignment_path))
     oauth_app = CanvasInstance.objects.filter(instance_guid=assignment['instance_guid']).first().applications.first()
     oauth_session = OAuth1Session(oauth_app.client_id, client_secret=oauth_app.client_secret)
     scheme = 'https' if settings.HTTPS else 'http'
