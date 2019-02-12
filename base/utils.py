@@ -62,11 +62,11 @@ def create_ssh_key(user):
 def deactivate_user(user):
     user.is_active = False
     if user.profile.resource_root().exists():
-        log.info(f"Deleting user {user.username}'s files from disk.")
-        log.info(f"Path to be deleted: {user.profile.resource_root()}")
+        logger.info(f"Deleting user {user.username}'s files from disk.")
+        logger.info(f"Path to be deleted: {user.profile.resource_root()}")
         shutil.rmtree(str(user.profile.resource_root()))
     else:
-        log.info(f"User {user} had no files created yet. Nothing to delete.")
+        logger.info(f"User {user} had no files created yet. Nothing to delete.")
 
 
 def google_access_token_decoder(resp_str):

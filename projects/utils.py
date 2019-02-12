@@ -33,36 +33,52 @@ def assign_s3_user_permissions(project: Project) -> None:
 
     https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.put_bucket_policy
     """
-    logger.info("Assign project user %s permissions to project %s", user, project.pk)
+    logger.info("Assign project collaborators permissions to project %s", project.pk)
     s3 = boto3.client('s3')
-    s3.delete_bucket_policy(
-        Bucket=str(project.pk)
-    )
     collaborator_iam_ids = []
+    s3.put_object(
+        Bucket=settings.PROJECTS_BUCKET,
+        Key=f'{project.pk}/.keep',
+        Body=b''
+    )
     for col in project.collaborators.all():
         if 'iam_id' not in col.profile.config:
             create_aws_iam_user(col)
         collaborator_iam_ids.append(col.profile.config['iam_id'])
+    statements = [
+        {
+            'Sid': f'ObjectPerms-{project.pk}',
+            'Effect': 'Allow',
+            'Principal': {'AWS': collaborator_iam_ids},
+            'Action': ['s3:GetObject', 's3:GetObjectAcl', 's3:DeleteObject', 's3:PutObject', 's3:PutObjectAcl'],
+            'Resource': f"arn:aws:s3:::{settings.PROJECTS_BUCKET}/{project.pk}/*"
+        },
+        {
+            'Sid': f'BucketPerms-{project.pk}',
+            'Effect': 'Allow',
+            'Principal': {'AWS': collaborator_iam_ids},
+            'Action': ['s3:ListBucket'],
+            'Resource': f"arn:aws:s3:::{settings.PROJECTS_BUCKET}",
+            'Condition': {"StringLike": {"s3:prefix": [f"{project.pk}/*"]}}
+        }
+    ]
     policy = {
-        'Version': '2012-10-17',
-        'Statement': [
-            {
-                'Sid': 'ObjectPerms',
-                'Effect': 'Allow',
-                'Principal': {'AWS': collaborator_iam_ids},
-                'Action': ['s3:GetObject', 's3:DeleteObject', 's3:PutObject'],
-                'Resource': f"arn:aws:s3:::{project.pk}/*"
-            },
-            {
-                'Sid': 'BucketPerms',
-                'Effect': 'Allow',
-                'Principal': {'AWS': collaborator_iam_ids},
-                'Action': ['s3:ListBucket'],
-                'Resource': f"arn:aws:s3:::{project.pk}"
-            }
-        ]
+        "Version": "2012-10-17",
+        "Statement": []
     }
-    s3.put_bucket_policy(Bucket=str(project.pk), Policy=json.dumps(policy))
+    try:
+        policy = json.loads(s3.get_bucket_policy(Bucket=settings.PROJECTS_BUCKET)['Policy'])
+    except ClientError:
+        pass
+    sids = {statement['Sid']: i for i, statement in enumerate(policy['Statement'])}
+    for statement in statements:
+        index = sids.get(statement['Sid'])
+        if index:
+            policy['Statement'][index] = statement
+        else:
+            policy['Statement'].append(statement)
+    logger.debug("Project %s policy: %s", project.pk, policy)
+    s3.put_bucket_policy(Bucket=settings.PROJECTS_BUCKET, Policy=json.dumps(policy))
 
 
 def assign_to_user(user: User, project: Project) -> None:
@@ -79,16 +95,7 @@ def assign_to_team(team: Team, project: Project) -> None:
     project.save()
 
 
-def create_project_s3_bucket(project: Project) -> None:
-    logger.info("Create project bucket: %s", project.pk)
-    s3 = boto3.client('s3')
-    s3.create_bucket(
-        Bucket=str(project.pk),
-    )
-
-
 def create_ancillary_project_stuff(request: Request, project: Project, user: User=None) -> None:
-    create_project_s3_bucket(project)
     if user is not None:
         assign_to_user(user, project)
     elif request.namespace.type == 'user':
@@ -191,7 +198,6 @@ def perform_project_copy(user: User, project_id: str, request: Request=None, new
         else:
             logger.info(f"It seems {old_resource_root} does not exist, so there is nothing to copy.")
 
-        copy_project_bucket(proj_to_copy, new_proj)
         copy_servers(proj_to_copy, new_proj)
 
     return new_proj
@@ -253,7 +259,8 @@ def list_project_root(project):
     s3 = boto3.client('s3')
     try:
         return s3.list_objects_v2(
-            Bucket=str(project.pk)
+            Bucket=settings.PROJECTS_BUCKET,
+            Prefix=str(project.pk)
         )['Contents']
     except ClientError as e:
         if e.response['Error']['Code'] == 'NoSuchBucket':
@@ -264,7 +271,7 @@ def copy_project_bucket(source_project, destination_project):
     s3 = boto3.resource('s3')
     for fil in list_project_root(source_project):
         source = {
-            'Bucket': str(source_project.pk),
+            'Bucket': settings.PROJECTS_BUCKET,
             'Key': fil['Key']
         }
         s3.meta.client.copy(source, str(destination_project.pk), fil['Key'])

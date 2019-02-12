@@ -140,7 +140,8 @@ class BaseSpawner(SpawnerInterface):
                 'access_key_id': self.user.profile.config['iam_access_key_id'],
                 'region': settings.AWS_DEFAULT_REGION,
                 'secret_access_key': iam_secret.decode(),
-                'bucket': str(self.server.project.pk),
+                'bucket': settings.PROJECTS_BUCKET,
+                'path_prefix': str(self.server.project.pk)
             }
         )
 

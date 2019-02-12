@@ -45,6 +45,7 @@ class DockerSpawner(TraefikMixin, BaseSpawner):
                 fileobj=tar_stream, mode="w"
             )
             jupyter_config = self._get_jupyter_config()
+            logger.debug("Jupyter config: %s", jupyter_config)
             tarinfo = tarfile.TarInfo(name="jupyter_notebook_config.py")
             tarinfo.size = len(jupyter_config)
             tarinfo.mtime = time.time()

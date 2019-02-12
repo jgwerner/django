@@ -411,7 +411,7 @@ SUBSCRIPTION_REQUIRED_URLS = ["server-start"]
 MEDIA_ROOT = "/workspaces/"
 MEDIA_URL = "/media/"
 
-DOCKER_NET = os.environ.get('DOCKER_NET', 'tbs-net')
+DOCKER_NET = os.environ.get('DOCKER_NET', 'illumidesk-net')
 
 MOCK_STRIPE = os.environ.get("MOCK_STRIPE", "false").lower() == "true"
 
@@ -448,3 +448,4 @@ USAGE_WARNING_THRESHOLDS = os.environ.get("USAGE_WARNING_THRESHOLDS", "75,90,100
 BILLING_BUCKET_SIZE_GB = os.environ.get("BILLING_BUCKET_SIZE_GB", 5)
 
 BUCKET_COST_USD = os.environ.get("BUCKET_COST_USD", 5)
+PROJECTS_BUCKET = os.environ.get('PROJECTS_BUCKET')

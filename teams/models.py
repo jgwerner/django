@@ -8,7 +8,7 @@ from django_extensions.db.models import TimeStampedModel
 from treebeard.mp_tree import MP_Node
 
 from base.models import TBSQuerySet
-from utils import alphanumeric
+from base.utils import alphanumeric
 from .managers import GroupManager
 
 User = get_user_model()
