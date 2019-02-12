@@ -3,6 +3,8 @@ import time
 import uuid
 from pathlib import Path
 
+import boto3
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
@@ -74,14 +76,16 @@ def lti(project_pk, workspace_pk, data, path):
         canvas_user_id = data['user_id']
         learner.profile.config['canvas_user_id'] = canvas_user_id
         learner.profile.save()
-    learner_project = Collaborator.objects.filter(user=learner, owner=True, project__is_active=True).first().project
-    logger.debug('[LTI] learner project: %s', learner_project.pk)
-    if learner_project is None:
+    Collaborator.objects.get_or_create(user=learner, project_id=project_pk)
+    learner_collaborator = Collaborator.objects.filter(user=learner, owner=True, project__is_active=True).first()
+    if learner_collaborator is None:
         logger.debug(f"Creating learner project from {project_pk}")
-        Collaborator.objects.get_or_create(user=learner, project_id=project_pk)
         learner_project = perform_project_copy(learner, str(project_pk))
         learner_project.team = None
         learner_project.save()
+    else:
+        learner_project = learner_collaborator.project
+    logger.debug('[LTI] learner project: %s', learner_project.pk)
     workspace = learner_project.servers.filter(
         config__type='jupyter',
         is_active=True
@@ -129,17 +133,12 @@ def setup_assignment(workspace, data, path):
     return assignment_id
 
 
-def copy_assignment_file(source: Path, target: Path):
-    """
-    :param source: Students assignment path
-    :param target: Teachers assignment path
-    """
-    if not source.exists():
-        raise FileNotFoundError(f"[Assignment Copy] Source file {source} does not exists.")
-    if not target.exists():
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.touch()
-    target.write_bytes(source.read_bytes())
+def copy_assignment_file(source, target):
+    s3 = boto3.client('s3')
+    s3.copy({
+        'Bucket': settings.PROJECTS_BUCKET,
+        'Key': source
+    }, settings.PROJECTS_BUCKET, target)
 
 
 @shared_task()
@@ -150,9 +149,9 @@ def send_assignment(workspace_pk, assignment_id):
     teacher_workspace = teacher_project.servers.get(is_active=True, config__type='jupyter')
     assignment = next((a for a in learner_workspace.config.get('assignments', []) if a['id'] == assignment_id))
     teacher = teacher_project.owner
-    assignment_path = learner_workspace.project.resource_root() / assignment['path']
-    teacher_assignment_path = Path('assignments', learner.email, assignment['path'])
-    copy_assignment_file(assignment_path, teacher_project.resource_root() / teacher_assignment_path)
+    assignment_path = Path(str(learner_workspace.project.pk), assignment['path'])
+    teacher_assignment_path = Path(str(teacher_project.pk), 'submissions', learner.email, assignment['path'])
+    copy_assignment_file(str(teacher_assignment_path), str(assignment_path))
     oauth_app = teacher.oauth2_provider_application.get(name__icontains='canvas')
     oauth_session = OAuth1Session(oauth_app.client_id, client_secret=oauth_app.client_secret)
     scheme = 'https' if settings.HTTPS else 'http'

@@ -269,11 +269,11 @@ def list_project_root(project):
 
 
 def copy_project_bucket(source_project, destination_project):
-    s3 = boto3.resource('s3')
+    s3 = boto3.client('s3')
     for fil in list_project_root(source_project):
         source = {
             'Bucket': settings.PROJECTS_BUCKET,
             'Key': fil['Key']
         }
         key = f'{destination_project.pk}/' + '/'.join(fil['Key'].split('/')[1:])
-        s3.meta.client.copy(source, settings.PROJECTS_BUCKET, key)
+        s3.copy(source, settings.PROJECTS_BUCKET, key)
