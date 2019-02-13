@@ -14,6 +14,7 @@ from django.template.loader import render_to_string
 
 from celery import shared_task
 
+from requests.exceptions import HTTPError
 from requests_oauthlib import OAuth1Session
 
 from canvas.models import CanvasInstance
@@ -175,5 +176,12 @@ def send_assignment(workspace_pk, assignment_id):
     xml = render_to_string('servers/assignment.xml', context)
     response = oauth_session.post(assignment['outcome_url'], data=xml,
                                   headers={'Content-Type': 'application/xml'})
-    response.raise_for_status()
+    try:
+        response.raise_for_status()
+    except HTTPError as e:
+        if e.response.status_code == 422:
+            oauth_session = OAuth1Session(oauth_app.client_id, client_secret=oauth_app.client_secret)
+            response = oauth_session.post(assignment['outcome_url'], data=xml,
+                                          headers={'Content-Type': 'application/xml'})
+            response.raise_for_status()
     logger.debug(f"[Send assignment] LTI Response: {response.__dict__}")
