@@ -59,4 +59,3 @@ The IllumiDesk/app-backend application interacts with various internal applicati
 | APP_SCHEME | <string> | An additional host name or IP address from which the application will allow connections, added to Django's ALLOWED_HOSTS |
 | TLS | <boolean> | Enables application's use of secure HTTP |
 | TRAVIS_PULL_REQUEST | <boolean> | Enables Travis CI's automated Docker image building upon pull request submission |
-| UI_API_URL | <string> | URL for IllumiDesk UI accessing the API |

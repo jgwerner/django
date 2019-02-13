@@ -1,0 +1,23 @@
+sudo: required
+
+language: python
+python:
+  - "3.6"
+
+services:
+  - docker
+
+branches:
+  only:
+    - master
+    - production
+
+before_install:
+  - bash scripts/before_install.sh
+
+script:
+  - set -e
+  - make build-all
+
+after_success:
+  - bash scripts/after_success.sh

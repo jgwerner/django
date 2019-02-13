@@ -1,14 +1,10 @@
-[![Build Status](https://travis-ci.com/IllumiDesk/app-backend.svg?token=y3jvxynhJQZHELnDYJdy&branch=master)](https://travis-ci.com/IllumiDesk/app-backend)
+[![![Build Status](https://travis-ci.com/IllumiDesk/app-backend.svg?token=y3jvxynhJQZHELnDYJdy&branch=master)](https://travis-ci.com/IllumiDesk/app-backend)
 
-# IllumiDesk Backend Server
+# IllumiDesk Backend Services
 
 ## Dev Setup with Docker
 
 ### Requirements
-
-Newest version of docker-compose conflicts with docker-py. Install latest version of docker-py with `pip install docker` or remove it entirely from your system.
-
-We recommend using Ubuntu Xenial (16.04), although these instructions should also work with other Linux distributions and Mac OSX. Requirements are:
 
 - [Python 3.6](https://www.python.org/downloads/release/python-360/)
 - [Docker](https://docs.docker.com/engine/installation/)
@@ -17,10 +13,6 @@ We recommend using Ubuntu Xenial (16.04), although these instructions should als
 > `docker-compose` may hang after installation. Apply executable permissions to docker-compose binary:
 
     sudo chmod +x /usr/local/bin/docker-compose
-
-If using Debian or Ubuntu Linux distributions, you may have to install dependencies to support SSH using your operating system's package manager:
-
-    sudo apt-get install -y libpq-dev libssl-dev
 
 We maintain an `docker-compose.yml` file to launch our working `app-backend` stack. Launching the full stack may be necessary to support integration testing, such as creating new user workspaces. Services include (in alphabetical order):
 
@@ -31,27 +23,30 @@ We maintain an `docker-compose.yml` file to launch our working `app-backend` sta
 - [Traefik](https://hub.docker.com/_/traefik)
 - [Nginx](https://hub.docker.com/_/nginx)
 
-> `docker-compose up -d` should check for latest image and pull newer image if one exists, but it may be necessary to pull images explicitly using `docker pull <image-name>`.
-
 ### Launch Stack
+
+Establish your environment variables. The `env` file included in this repo includes a sensible set of
+defaults which should work to launch a basic version of the application:
+
+    cp env.compose .env
 
 Use the following command to launch the full stack with docker compose (-d for detached mode):
 
-    sudo docker-compose up -d
+    docker-compose -f docker-compose-dev.yml up -d
 
-Verify docker containers with `docker-compose ps`. `docker-compose ps -a` will show containers that have the `Exited` status.
+> `docker-compose up -d` should check for latest image and pull newer image if one exists, but it may be necessary to pull images explicitly using `docker pull illumidesk/<image-name>`.
 
 Create admin (superuser) user:
 
-    sudo docker-compose exec api /srv/env/bin/python manage.py createsuperuser
+    docker-compose exec api /srv/env/bin/python manage.py createsuperuser
 
 Collect static files:
 
-    sudo docker-compose exec api /srv/env/bin/python manage.py collectstatic
+    docker-compose exec api /srv/env/bin/python manage.py collectstatic
 
 Access API docs page and login:
 
-    http://localhost:5000/illumidesk-admin/
+    http://localhost:5000/tbs-admin/
 
 ### Relaunch Stack After Code Update
 
@@ -68,13 +63,24 @@ you will need to recreate your super user and fetch static assets:
     docker-compose exec api /srv/env/bin/python manage.py collectstatic
     docker-compose exec api /srv/env/bin/python manage.py createsuperuser
 
+### Run Tests
+
+Update Django settings so that it uses `test` module:
+
+    export DJANGO_SETTINGS_MODULE=appdj.settings.test
+
+Run tests:
+
+    docker-compose -f docker-compose-test.yml up -d
+    docker-compose exec api /srv/env/bin/python manage.py test
+
 ## Dev Setup with Django on Host
 
 Sometimes you may not need to run and test the full stack. Under these circumstances some developers may find that running the Django backend server directly on the host improves development/test cycles.
 
 At a minimum, `app-backend` requires Postgres, Redis, and RabbitMQ.
 
-To run services individually, use the docker run command. 
+To run services individually, use the docker run command.
 
 Postgres:
 
@@ -88,6 +94,16 @@ RabbitMQ:
 
     docker run --name my-redis -d rabbitmq:alpine
 
+Confirm environment variables:
+
+    cp env.virtualenv .env
+
+Set up virtualenv and install dependencies:
+
+    virtualenv -p python3.6 venv
+    source/venv/bin/activate
+    pip install -r requirements/dev.txt
+
 Run database migrations:
 
     python manage.py migrate
@@ -99,6 +115,12 @@ Create admin (superuser) user:
 Run application:
 
     python manage.py runserver 0.0.0.0:8000
+
+Login:
+
+    http://localhost:8000/tbs-admin/
+
+> Note that the port when using `docker-compose` is `5000` and when using the virtual environment on the host it's `8000`.
 
 ### Run Tests
 
@@ -114,6 +136,8 @@ Run tests:
 
 The IllumiDesk/app-backend application interacts with various internal applications and external, third-party services. The following descriptions should help to understand the most important of these variables:
 
+The IllumiDesk/app-backend application interacts with various internal applications and external, third-party services. The following descriptions should help to understand the most important of these variables:
+
 | Variable  |  Type | Note  |
 |---|---|---|
 | AWS_SES_ACCESS_KEY_ID |<string> | Pair with AWS_SES_SECRET_ACCESS_KEY to access Simple Email Service (SES) |
@@ -126,6 +150,11 @@ The IllumiDesk/app-backend application interacts with various internal applicati
 | ECS_CLUSTER | <string> | Name of Elastic Container Service (ECS) Cluster |
 | AWS_STORAGE_BUCKET_NAME | <string> | Your AWS storage bucket name |
 | AWS_S3_CUSTOM_DOMAIN | <string> | Domain of S3, if used as a Content Delivery Network (CDN) |
+| DATABASE_HOST=localhost | <string> | Database host |
+| DATABASE_USER=postgres | <string> | Database user |
+| DATABASE_PASSWORD | <string> | Database password |
+| DATABASE_PORT | <string> | Database port |
+| DATABASE_NAME | <string> | Database name |
 | DEBUG | <boolean> | Enables the app's debug mode |
 | DEFAULT_FROM_EMAIL | <email> | Default email address for sending app-backend messages |
 | DEFAULT_STRIPE_PLAN_ID | <string> | Name of Stripe subscription plan (also the default for new users) |
@@ -164,9 +193,8 @@ The IllumiDesk/app-backend application interacts with various internal applicati
 | STRIPE_SECRET_KEY | <string> | Secret key associated with Stripe payment information |
 | APP_DOMAIN | <string> | Domain of IllumiDesk main development environment |
 | APP_SCHEME | <string> | An additional host name or IP address from which the application will allow connections, added to Django's ALLOWED_HOSTS |
-| APP_SCHEME | <boolean> | Enables application's use of secure HTTP |
+| TLS | <boolean> | Enables application's use of secure HTTP |
 | TRAVIS_PULL_REQUEST | <boolean> | Enables Travis CI's automated Docker image building upon pull request submission |
-| UI_API_URL | <string> | URL for IllumiDesk UI accessing the API |
 
 ## Trouble Shooting
 
@@ -175,6 +203,8 @@ The IllumiDesk/app-backend application interacts with various internal applicati
 If you are running app-backend without docker, then you need to make sure all environment variables are set correctly. Verify by checking them with the echo command, such as:
 
     echo $DATABASE_HOST
+
+Or, just print all of them with `printenv`.
 
 ## Contributing
 
