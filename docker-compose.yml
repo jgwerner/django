@@ -3,8 +3,6 @@ services:
   api:
     build: .
     command: /srv/env/bin/gunicorn --bind 0.0.0.0:80 --reload --workers 1 --log-level=INFO --error-logfile=- --access-logfile=- appdj.wsgi
-    volumes:
-      - .:/srv/app
     env_file: .env
     depends_on:
       - db
@@ -18,8 +16,6 @@ services:
   channels:
     build: .
     command: /srv/env/bin/daphne -p 80 -b 0.0.0.0 -v 2 appdj.asgi:channel_layer
-    volumes:
-      - .:/srv/app
     env_file: .env
     depends_on:
       - db
@@ -36,8 +32,6 @@ services:
   channel_worker:
     build: .
     command: /srv/env/bin/python manage.py runworker -v 2
-    volumes:
-      - .:/srv/app
     env_file: .env
     depends_on:
       - db
@@ -47,8 +41,6 @@ services:
   celery:
     build: .
     command: /srv/env/bin/celery -A appdj worker -l info --without-heartbeat
-    volumes:
-      - .:/srv/app
     env_file: .env
     depends_on:
       - db
@@ -84,7 +76,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "5000:80"
-      - "8081:8080"
+      - "8080:8080"
   nginx:
     image: illumidesk/nginx
     command: /nginx/sbin/nginx -p '' -g 'daemon off;'

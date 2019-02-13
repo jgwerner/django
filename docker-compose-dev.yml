@@ -5,7 +5,6 @@ services:
     command: /srv/env/bin/gunicorn --bind 0.0.0.0:80 --reload --workers 1 --log-level=DEBUG --error-logfile=- --access-logfile=- appdj.wsgi
     volumes:
       - .:/srv/app
-      - /workspaces:/workspaces
     env_file: env
     depends_on:
       - db
@@ -21,7 +20,6 @@ services:
     command: /srv/env/bin/daphne -p 80 -b 0.0.0.0 -v 2 appdj.asgi:channel_layer
     volumes:
       - .:/srv/app
-      - /workspaces:/workspaces
     env_file: env
     depends_on:
       - db
@@ -40,7 +38,6 @@ services:
     command: /srv/env/bin/python manage.py runworker -v 2
     volumes:
       - .:/srv/app
-      - /workspaces:/workspaces
     env_file: env
     depends_on:
       - db
@@ -52,7 +49,6 @@ services:
     command: /srv/env/bin/celery -A appdj worker -l info --without-heartbeat
     volumes:
       - .:/srv/app
-      - /workspaces:/workspaces
     env_file: env
     depends_on:
       - db
@@ -64,7 +60,6 @@ services:
     command: /srv/env/bin/celery -A appdj beat -l debug
     volumes:
       - .:/srv/app
-      - /workspaces:/workspaces
     env_file: env
     depends_on:
       - db

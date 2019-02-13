@@ -17,9 +17,6 @@ services:
   api:
     build: .
     command: /srv/env/bin/gunicorn --bind 0.0.0.0:80 --reload --workers 1 --log-level=DEBUG --error-logfile=- --access-logfile=- appdj.wsgi
-    volumes:
-      - .:/srv/app
-      - /workspaces:/workspaces
     env_file: api_tests/env
     ports:
       - "80:80"
@@ -39,8 +36,6 @@ services:
   celery:
     build: .
     command: /srv/env/bin/celery -A appdj worker -l info
-    volumes:
-      - /workspaces:/workspaces
     env_file: api_tests/env
     depends_on:
       - db
