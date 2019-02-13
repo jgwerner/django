@@ -25,7 +25,7 @@ help:
 
 build/%: DARGS?=
 build/%: ## Build and tag a stack
-	docker build $(DARGS) --rm --force-rm -t $(OWNER)/$(notdir $@):$(TAG) ./$(notdir $@)
+	docker build $(DARGS) --rm --force-rm -t $(OWNER)/$(notdir $@):$(TAG) ./reverse-proxies/$(notdir $@)
 
 build-all: $(foreach I,$(ALL_IMAGES), build/$(I) ) ## Build all stacks
 
