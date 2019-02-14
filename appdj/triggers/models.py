@@ -7,15 +7,9 @@ from django.conf import settings
 from django.contrib.postgres.fields import JSONField
 from django.urls import reverse
 
-<<<<<<< HEAD:appdj/triggers/models.py
 from appdj.actions.models import Action
 from appdj.base.models import TBSQuerySet
 from appdj.base.utils import copy_model
-=======
-from actions.models import Action
-from base.models import TBSQuerySet
-from base.utils import copy_model
->>>>>>> upstream/master:triggers/models.py
 
 
 logger = logging.getLogger(__name__)
