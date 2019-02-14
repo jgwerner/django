@@ -11,8 +11,9 @@ __pycache__/
 # Retry
 *.retry
 
-# PyCharm
+# IDES like PyCharm or VSCode
 *.idea
+.vscode/
 
 # Distribution / packaging
 env/
