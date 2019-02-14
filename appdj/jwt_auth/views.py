@@ -14,7 +14,8 @@ jwt_response_payload_handler = api_settings.JWT_RESPONSE_PAYLOAD_HANDLER
 class JWTApiView(JSONWebTokenAPIView):
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-
+        print('request.data', request.data)
+        print(serializer.is_valid())
         if serializer.is_valid():
             user = serializer.object.get('user') or request.user
             token = serializer.object.get('token')

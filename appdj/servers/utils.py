@@ -21,6 +21,7 @@ def server_action(action: str, server: Union[str, Server]) -> bool:
     if isinstance(server, str):
         server = Server.objects.tbs_filter_str(server).get()
     spawner = server.spawner
+    print('spawner to execute the action:', spawner)
     getattr(spawner, action)()
 
 

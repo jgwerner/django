@@ -52,7 +52,9 @@ class ServerViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
         serializer = serializers.ServerStatusSerializer(servers, many=True)
         return Response(serializer.data)
 
-    def perform_destroy(self, instance):
+    def perform_destroy(self, instance):        
+        print('self.request.action', str(self.request.action))
+        print('self.request.action.pk', self.request.action.pk)
         terminate_server.apply_async(
             args=[instance.pk],
             task_id=str(self.request.action.pk)

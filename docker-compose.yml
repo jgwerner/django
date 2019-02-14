@@ -1,12 +1,12 @@
-version: '2'
+version: '3'
 services:
   api:
     build: .
-    command: /srv/env/bin/gunicorn --bind 0.0.0.0:80 --reload --workers 1 --log-level=DEBUG --error-logfile=- --access-logfile=- appdj.wsgi
+    command: /srv/env/bin/gunicorn --bind 0.0.0.0:80 --reload --workers 1 --log-level=DEBUG --error-logfile=- --access-logfile=- config.wsgi
     volumes:
       - .:/srv/app
       - /workspaces:/workspaces
-    env_file: env
+    env_file: .env
     depends_on:
       - db
       - cache
@@ -18,11 +18,11 @@ services:
       - "traefik.frontend.rule=PathPrefix:/"
   channels:
     build: .
-    command: /srv/env/bin/daphne -p 80 -b 0.0.0.0 -v 2 appdj.asgi:channel_layer
+    command: /srv/env/bin/daphne -p 80 -b 0.0.0.0 -v 2 config.asgi:channel_layer
     volumes:
       - .:/srv/app
       - /workspaces:/workspaces
-    env_file: env
+    env_file: .env
     depends_on:
       - db
       - cache
@@ -41,7 +41,7 @@ services:
     volumes:
       - .:/srv/app
       - /workspaces:/workspaces
-    env_file: env
+    env_file: .env
     depends_on:
       - db
       - cache
@@ -53,7 +53,7 @@ services:
     volumes:
       - .:/srv/app
       - /workspaces:/workspaces
-    env_file: env
+    env_file: .env
     depends_on:
       - db
       - cache
@@ -65,7 +65,7 @@ services:
     volumes:
       - .:/srv/app
       - /workspaces:/workspaces
-    env_file: env
+    env_file: .env
     depends_on:
       - db
       - cache
