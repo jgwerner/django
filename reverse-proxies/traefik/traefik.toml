@@ -1,0 +1,59 @@
+################################################################
+# Global configuration
+################################################################
+
+debug = false
+logLevel = "ERROR"
+defaultEntryPoints = ["http"]
+
+[entryPoints]
+    [entryPoints.http]
+    address = ":80"
+
+# use default stdout. this allows for using any log driver to pipe logs
+# to a third party service.
+[traefikLog]
+
+format = "common"
+
+[accessLog]
+
+format = "common"
+
+################################################################
+# Web configuration backend
+################################################################
+
+[web]
+
+address = ":8080"
+
+################################################################
+# Docker configuration backend
+################################################################
+
+[docker]
+
+endpoint = "unix:///var/run/docker.sock"
+
+domain = "localhost"
+
+exposedbydefault = true
+
+watch = true
+
+################################################################
+# File configuration backend
+################################################################
+[file]
+
+[backends]
+  [backends.userspace]
+    [backends.userspace.servers.manager_1]
+    url = "http://192.168.8.100:5000"
+
+[frontends]
+  [frontends.userspace]
+  backend = "userspace"
+    [frontends.userspace.routes.server]
+    rule = "PathPrefix:/{version}/{namespace}/projects/{project}/servers/{server}/endpoint"

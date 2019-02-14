@@ -1,8 +1,10 @@
 from time import sleep
 from datetime import timedelta
+
 from django.urls import reverse
 from django.core.cache import cache
 from django.test import override_settings
+
 from rest_framework import status
 from rest_framework.test import APITestCase
 from rest_framework_jwt.utils import jwt_decode_handler
@@ -10,8 +12,11 @@ from rest_framework_jwt.utils import jwt_decode_handler
 from appdj.servers.tests.factories import ServerFactory
 from appdj.users.tests.factories import UserFactory
 
-from ..utils import create_one_time_jwt, validate_one_time_token, create_server_jwt
-
+from base.utils import (
+    create_one_time_jwt,
+    validate_one_time_token,
+    create_server_jwt
+)
 
 class TestJWT(APITestCase):
     def setUp(self):

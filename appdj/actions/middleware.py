@@ -4,14 +4,16 @@ import ujson
 from django.contrib.auth import get_user_model
 from django.http import HttpRequest, HttpResponse
 from django.utils import timezone
+
+from appdj.jwt_auth.serializers import VerifyJSONWebTokenSerializer
 from rest_framework import status
 from rest_framework.views import get_view_name
-from appdj.jwt_auth.serializers import VerifyJSONWebTokenSerializer
 
 from .models import Action
 from appdj.triggers.models import Trigger
 
-log = logging.getLogger('actions')
+
+logger = logging.getLogger(__name__)
 
 User = get_user_model()
 

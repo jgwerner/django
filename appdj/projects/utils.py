@@ -1,12 +1,19 @@
+import boto3
+from botocore.exceptions import ClientError
+from copy import deepcopy
+from distutils.dir_util import copy_tree
 import logging
+import json
 import os
+from pathlib import Path
 import shutil
 from typing import List
-from copy import deepcopy
-from pathlib import Path
-from distutils.dir_util import copy_tree
+
 from django.conf import settings
+
 from rest_framework.request import Request
+
+from base.utils import validate_uuid
 from guardian.shortcuts import assign_perm
 from appdj.users.models import User
 from appdj.teams.models import Team
@@ -14,16 +21,73 @@ from appdj.base.utils import validate_uuid
 from .models import Project, Collaborator
 from appdj.servers.models import Server
 from appdj.jwt_auth.utils import create_server_jwt
+from appdj.users.signals import create_aws_iam_user
 
-log = logging.getLogger('projects')
+
+logger = logging.getLogger(__name__)
+
+
+def assign_s3_user_permissions(project: Project) -> None:
+    """
+    Assign permissions for project S3 bucket
+
+    https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.put_bucket_policy
+    """
+    logger.info("Assign project collaborators permissions to project %s", project.pk)
+    s3 = boto3.client('s3')
+    collaborator_iam_ids = []
+    s3.put_object(
+        Bucket=settings.PROJECTS_BUCKET,
+        Key=f'{project.pk}/.keep',
+        Body=b''
+    )
+    for col in project.collaborators.all():
+        if 'iam_id' not in col.profile.config:
+            create_aws_iam_user(col)
+        collaborator_iam_ids.append(col.profile.config['iam_id'])
+    statements = [
+        {
+            'Sid': f'ObjectPerms-{project.pk}',
+            'Effect': 'Allow',
+            'Principal': {'AWS': collaborator_iam_ids},
+            'Action': ['s3:GetObject', 's3:GetObjectAcl', 's3:DeleteObject', 's3:PutObject', 's3:PutObjectAcl'],
+            'Resource': f"arn:aws:s3:::{settings.PROJECTS_BUCKET}/{project.pk}/*"
+        },
+        {
+            'Sid': f'BucketPerms-{project.pk}',
+            'Effect': 'Allow',
+            'Principal': {'AWS': collaborator_iam_ids},
+            'Action': ['s3:ListBucket'],
+            'Resource': f"arn:aws:s3:::{settings.PROJECTS_BUCKET}",
+            'Condition': {"StringLike": {"s3:prefix": [f"{project.pk}/*"]}}
+        }
+    ]
+    policy = {
+        "Version": "2012-10-17",
+        "Statement": []
+    }
+    try:
+        policy = json.loads(s3.get_bucket_policy(Bucket=settings.PROJECTS_BUCKET)['Policy'])
+    except ClientError:
+        pass
+    sids = {statement['Sid']: i for i, statement in enumerate(policy['Statement'])}
+    for statement in statements:
+        index = sids.get(statement['Sid'])
+        if index:
+            policy['Statement'][index] = statement
+        else:
+            policy['Statement'].append(statement)
+    logger.debug("Project %s policy: %s", project.pk, policy)
+    s3.put_bucket_policy(Bucket=settings.PROJECTS_BUCKET, Policy=json.dumps(policy))
 
 
 def assign_to_user(user: User, project: Project) -> None:
-    log.info(f"Creating default collaborator, assigning permissions, and creating project resource root.")
+    logger.info(f"Creating default collaborator, assigning permissions, and creating project resource root.")
     Collaborator.objects.filter(project=project, owner=True).delete()
     Collaborator.objects.get_or_create(project=project, owner=True, user=user)
     assign_perm('write_project', user, project)
     assign_perm('read_project', user, project)
+    assign_s3_user_permissions(project)
 
 
 def assign_to_team(team: Team, project: Project) -> None:
@@ -61,7 +125,7 @@ def has_copy_permission(request=None, user=None, project=None):
         proj_pk = request.data.get("project")
         project = Project.objects.get(pk=proj_pk)
     elif user is None or project is None:
-        log.error(f"Called has_copy_permission() without enough information. User: {user}, Project: {project}.")
+        logger.error(f"Called has_copy_permission() without enough information. User: {user}, Project: {project}.")
         raise ValueError("When calling has_copy_function, either request or both user and project must be specified.")
 
     has_perm = False
@@ -77,7 +141,7 @@ def has_copy_permission(request=None, user=None, project=None):
 
 
 def copy_servers(old_project: Project, new_project: Project) -> None:
-    log.info(f"Copying servers from {old_project.pk} to {new_project.pk}")
+    logger.info(f"Copying servers from {old_project.pk} to {new_project.pk}")
     servers = Server.objects.filter(project=old_project, is_active=True)
     owner = new_project.owner if isinstance(new_project.owner, User) else new_project.owner.owner
 
@@ -86,26 +150,29 @@ def copy_servers(old_project: Project, new_project: Project) -> None:
         server_copy.pk = None
         server_copy.project = new_project
         server_copy.created_by = owner
+        server_copy.image_name = server.image_name
         server_copy.access_token = create_server_jwt(owner, server_copy.id)
         server_copy.config = {'type': server_copy.config['type']}
         server_copy.save()
         for permission in [perm[0] for perm in Server._meta.permissions]:
             assign_perm(permission, owner, server)
-        log.info(f"Copied {server.pk}")
+        logger.info(f"Copied {server.pk}")
 
 
 def perform_project_copy(user: User, project_id: str, request: Request=None, new_name: str=None) -> Project:
-    log.info(f"Attempting to copy project {project_id} for user {user}")
+    logger.info(f"Attempting to copy project {project_id} for user {user}")
     new_proj = None
     proj_to_copy = Project.objects.get(pk=project_id)
     old_resource_root = proj_to_copy.resource_root()
 
     if has_copy_permission(user=user, project=proj_to_copy):
 
-        log.info(f"User {user} has approved copy permissions, proceeding.")
+        logger.info(f"User {user} has approved copy permissions, proceeding.")
         new_proj = deepcopy(proj_to_copy)
         if new_name is not None:
             new_proj.name = new_name
+        else:
+            new_proj.name = f"{proj_to_copy.name}-Copy"
         new_proj.pk = None
         new_proj.config['copied_from'] = project_id
 
@@ -126,10 +193,11 @@ def perform_project_copy(user: User, project_id: str, request: Request=None, new
 
         create_ancillary_project_stuff(request, new_proj, user=user_to_pass)
         if old_resource_root.is_dir():
-            log.info(f"Copying files from the {old_resource_root} to {new_proj.resource_root()}")
+            logger.info(f"Copying files from the {old_resource_root} to {new_proj.resource_root()}")
             copy_tree(str(old_resource_root), str(new_proj.resource_root()))
         else:
-            log.info(f"It seems {old_resource_root} does not exist, so there is nothing to copy.")
+            logger.info(f"It seems {old_resource_root} does not exist, so there is nothing to copy.")
+        copy_project_bucket(proj_to_copy, new_proj)
 
         copy_servers(proj_to_copy, new_proj)
 
@@ -137,10 +205,10 @@ def perform_project_copy(user: User, project_id: str, request: Request=None, new
 
 
 def create_templates(projects: List[str]=[settings.GETTING_STARTED_PROJECT]):
-    user = User.objects.filter(username="3bladestemplates").first()
+    user = User.objects.filter(username="illumidesktemplates").first()
     if user is None:
-        user = User.objects.create_superuser(username="3bladestemplates",
-                                             email="templates@3blades.io",
+        user = User.objects.create_superuser(username="illumidesktemplates",
+                                             email="templates@illumidesk.com",
                                              password="FizzBuzz")
 
     for proj_name in projects:
@@ -186,3 +254,26 @@ def move_roots():
                     project_dir.rename(new_project_path)
                 else:
                     shutil.rmtree(str(project_dir), ignore_errors=True)
+
+
+def list_project_root(project):
+    s3 = boto3.client('s3')
+    try:
+        return s3.list_objects_v2(
+            Bucket=settings.PROJECTS_BUCKET,
+            Prefix=str(project.pk)
+        )['Contents']
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'NoSuchBucket':
+            return []
+
+
+def copy_project_bucket(source_project, destination_project):
+    s3 = boto3.client('s3')
+    for fil in list_project_root(source_project):
+        source = {
+            'Bucket': settings.PROJECTS_BUCKET,
+            'Key': fil['Key']
+        }
+        key = f'{destination_project.pk}/' + '/'.join(fil['Key'].split('/')[1:])
+        s3.copy(source, settings.PROJECTS_BUCKET, key)

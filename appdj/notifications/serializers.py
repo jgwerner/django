@@ -1,10 +1,12 @@
 import logging
+
 from rest_framework import serializers
 from appdj.users.serializers import UserSerializer
 from appdj.users.models import User, Email
 from .models import Notification, NotificationType, NotificationSettings
 
-log = logging.getLogger('notifications')
+
+logger = logging.getLogger(__name__)
 
 
 class GenericRelatedField(serializers.RelatedField):

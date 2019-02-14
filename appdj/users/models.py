@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.contrib.postgres.fields import JSONField
 from django.contrib.postgres.indexes import GinIndex
@@ -11,7 +12,7 @@ from django.urls import reverse
 from appdj.base.models import TBSQuerySet
 
 
-log = logging.getLogger('users')
+logger = logging.getLogger(__name__)
 
 
 class CustomUserManager(UserManager.from_queryset(TBSQuerySet)):

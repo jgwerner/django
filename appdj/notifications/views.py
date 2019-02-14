@@ -1,4 +1,5 @@
 import logging
+
 from rest_framework import (viewsets, mixins,
                             status)
 from rest_framework.response import Response
@@ -6,7 +7,9 @@ from rest_framework.decorators import list_route
 from appdj.base.utils import validate_uuid
 from .models import Notification, NotificationSettings
 from .serializers import NotificationSerializer, NotificationSettingsSerializer
-log = logging.getLogger('notifications')
+
+
+logger = logging.getLogger(__name__)
 
 
 class NotificationViewSet(viewsets.GenericViewSet,
@@ -32,7 +35,7 @@ class NotificationViewSet(viewsets.GenericViewSet,
 
         entity = self.kwargs.get('entity')
         if entity is not None:
-            log.info(f"Filtering by entity: {entity}")
+            logger.info(f"Filtering by entity: {entity}")
             if not validate_uuid(entity):
                 qs = qs.filter(type__entity=entity)
 
@@ -48,7 +51,7 @@ class NotificationViewSet(viewsets.GenericViewSet,
             notif_ids = []
 
         if notif_ids:
-            log.info(f"About to update the following notifications: \n{notif_ids}\n"
+            logger.info(f"About to update the following notifications: \n{notif_ids}\n"
                      f"With this data: {request.data}")
             notifications = self.get_queryset().filter(pk__in=notif_ids)
             notifications.update(**request.data)

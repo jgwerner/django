@@ -17,14 +17,14 @@ RUN pip install virtualenv
 RUN mkdir -p /srv/
 WORKDIR /srv/
 RUN virtualenv env --python=python3
-RUN . env/bin/activate; pip --no-cache-dir install --upgrade setuptools pip wheel
+RUN . env/bin/activate; pip install --upgrade setuptools pip wheel
 
 WORKDIR /srv/app/
 
 ADD requirements/ /srv/app/requirements
 
 # install requirements to run app
-RUN . ../env/bin/activate; pip --no-cache-dir install -r requirements/dev.txt
+RUN . ../env/bin/activate; pip install -r requirements/dev.txt
 
 ADD . /srv/app
 

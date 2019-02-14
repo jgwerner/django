@@ -45,6 +45,7 @@ class DockerSpawner(TraefikMixin, BaseSpawner):
                 fileobj=tar_stream, mode="w"
             )
             jupyter_config = self._get_jupyter_config()
+            logger.debug("Jupyter config: %s", jupyter_config)
             tarinfo = tarfile.TarInfo(name="jupyter_notebook_config.py")
             tarinfo.size = len(jupyter_config)
             tarinfo.mtime = time.time()
@@ -56,7 +57,7 @@ class DockerSpawner(TraefikMixin, BaseSpawner):
             tar_stream.seek(0)
             self.client.api.put_archive(
                 container=self.server.container_name,
-                path='/root/.jupyter',
+                path='/etc/jupyter/',
                 data=tar_stream,
             )
         self.server.last_start = timezone.now()

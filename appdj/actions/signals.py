@@ -1,4 +1,5 @@
 import logging
+
 from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -7,7 +8,8 @@ from django.contrib.sites.models import Site
 from appdj.triggers.models import Trigger
 from .models import Action
 
-logger = logging.getLogger("actions")
+
+logger = logging.getLogger(__name__)
 
 
 @receiver(post_save, sender=Action)

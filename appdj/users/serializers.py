@@ -1,6 +1,8 @@
 import logging
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
+
 from rest_framework import serializers
 from social_django.models import UserSocialAuth
 
@@ -9,8 +11,9 @@ from appdj.base.serializers import SearchSerializerMixin
 from .models import UserProfile, Email
 from appdj.projects.models import Collaborator
 from appdj.projects.utils import perform_project_copy
+
+logger = logging.getLogger(__name__)
 User = get_user_model()
-log = logging.getLogger('users')
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -52,7 +55,7 @@ class UserSerializer(SearchSerializerMixin, serializers.ModelSerializer):
                                                         user__is_active=True).exists()
 
         if existing_user_email or existing_secondary_email:
-            log.info(f"Rejected creating/updating user due to email conflict: {value}")
+            logger.info(f"Rejected creating/updating user due to email conflict: {value}")
             raise serializers.ValidationError(f"The email {value} is taken")
 
         return value
@@ -70,7 +73,7 @@ class UserSerializer(SearchSerializerMixin, serializers.ModelSerializer):
         Email.objects.create(user=user, address=validated_data['email'])
 
         try:
-            getting_started_proj = Collaborator.objects.get(user__username="3bladestemplates",
+            getting_started_proj = Collaborator.objects.get(user__username="illumidesktemplates",
                                                             owner=True,
                                                             project__name=settings.GETTING_STARTED_PROJECT).project
             perform_project_copy(user=user,
@@ -78,18 +81,18 @@ class UserSerializer(SearchSerializerMixin, serializers.ModelSerializer):
                                  request=None)
 
         except Collaborator.DoesNotExist as e:
-            log.error(f"The getting started project doesn't exist for the 3bladestemplate user! Cannot "
+            logger.error(f"The getting started project doesn't exist for the Illumidesktemplate user! Cannot "
                       f"copy it to the user {user}'s account.")
-            log.exception(e)
+            logger.exception(e)
         except Exception as e:
-            log.error("Unkown exception encountered during creation of Getting Started project. Stacktrace: ")
-            log.exception(e)
+            logger.error("Unkown exception encountered during creation of Getting Started project. Stacktrace: ")
+            logger.exception(e)
 
         return user
 
     def update(self, instance, validated_data):
         if "profile" in validated_data:
-            log.info("Profile information found in update request. Setting information accordingly.")
+            logger.info("Profile information found in update request. Setting information accordingly.")
             profile_data = validated_data.pop('profile')
             user_profile = UserProfile.objects.get(user=instance)
 
@@ -122,7 +125,7 @@ class EmailSerializer(RequestUserMixin, serializers.ModelSerializer):
                                                         user__is_active=True).exists()
 
         if existing_user_email or existing_secondary_email:
-            log.info(f'Rejected creating/updating Email object due to email conflict: {value}')
+            logger.info(f'Rejected creating/updating Email object due to email conflict: {value}')
             raise serializers.ValidationError(f"The email {value} is taken")
 
         return value

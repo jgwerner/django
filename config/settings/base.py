@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/1.10/ref/settings/
 """
 
 import os
-import dj_database_url
 import datetime
 import uuid
 import environ
@@ -33,6 +32,7 @@ APPS_DIR = ROOT_DIR.path('appdj')
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('SECRET_KEY', 'test')
 STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', "test secret key")
+CRYPTO_KEY = os.environ.get('CRYPTO_KEY').encode()
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -57,7 +57,6 @@ INSTALLED_APPS = [
     'social_django',
     'rest_framework_social_oauth2',
     'storages',
-    'django_extensions',
     'cacheops',
     'corsheaders',
     'guardian',
@@ -130,11 +129,15 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'False') == 'True'
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
 
-# Database
-# https://docs.djangoproject.com/en/1.10/ref/settings/#databases
-
 DATABASES = {
-    'default': dj_database_url.config(conn_max_age=600, default='postgres://postgres:@localhost:5432/postgres')
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DATABASE_NAME'),
+        'USER': os.getenv('DATABASE_USER'),
+        'PASSWORD': os.getenv('DATABASE_PASSWORD'),
+        'HOST': os.getenv('DATABASE_HOST'),
+        'PORT': os.getenv('DATABASE_PORT')
+    }
 }
 
 # Channels
@@ -187,10 +190,10 @@ SOCIAL_AUTH_PIPELINE = (
 
 OAUTH2_PROVIDER_APPLICATION_MODEL = 'oauth2_provider.Application'
 
-HTTPS = os.environ.get("TBS_HTTPS", "false").lower() == "true"
+HTTPS = os.environ.get("TLS", "false").lower() == "true"
 LOGIN_URL = '/api-auth/login/'
 LOGIN_REDIRECT_URL = '{scheme}://{host}/auth/token-login'.format(
-    scheme='https' if HTTPS else 'http', host=os.environ.get('TBS_DOMAIN'))
+    scheme='https' if HTTPS else 'http', host=os.environ.get('APP_DOMAIN'))
 LOGOUT_URL = '/api-auth/logout/'
 
 # Password validation
@@ -298,7 +301,7 @@ REST_FRAMEWORK = {
 }
 
 DJOSER = {
-    'DOMAIN': os.getenv("TBS_DOMAIN"),
+    'DOMAIN': os.getenv("APP_DOMAIN"),
     'PASSWORD_RESET_CONFIRM_URL': "auth/password-reset?uid={uid}&token={token}",
     'SERIALIZERS': {'user_create': "appdj.users.serializers.UserSerializer",
                     'user': "appdj.users.serializers.UserSerializer",
@@ -318,7 +321,7 @@ CACHES = {
         'BACKEND': 'django_redis.cache.RedisCache',
         'LOCATION': os.environ.get('REDIS_URL'),
         'OPTIONS': {
-            'SERIALIZER_CLASS': 'utils.UJSONSerializer',
+            'SERIALIZER_CLASS': 'base.utils.UJSONSerializer',
             'PARSER_CLASS': 'redis.connection.HiredisParser',
             'SOCKET_CONNECT_TIMEOUT': 5,
             'SOCKET_TIMEOUT': 5
@@ -417,7 +420,7 @@ SUBSCRIPTION_REQUIRED_URLS = ["server-start"]
 MEDIA_ROOT = "/workspaces/"
 MEDIA_URL = "/media/"
 
-DOCKER_NET = os.environ.get('DOCKER_NET', 'tbs-net')
+DOCKER_NET = os.environ.get('DOCKER_NET', 'illumidesk-net')
 
 MOCK_STRIPE = os.environ.get("MOCK_STRIPE", "false").lower() == "true"
 
@@ -434,7 +437,6 @@ SPAWNER = 'appdj.servers.spawners.docker.DockerSpawner'
 DEPLOYER = 'appdj.servers.spawners.aws_lambda.deployer.LambdaDeployer'
 SCHEDULER = 'appdj.servers.spawners.ecs.JobScheduler'
 JUPYTER_IMAGE = os.environ.get('JUPYTER_IMAGE', 'illumidesk/datascience-notebook')
-PROJECT_DATA_BUCKET = os.environ.get('PROJECT_DATA_BUCKET', 'illumidesk-user-data')
 ECS_CLUSTER = os.environ.get('ECS_CLUSTER', 'default')
 BATCH_COMPUTE_ENV = os.environ.get('BATCH_COMPUTE_ENV')
 BATCH_JOB_QUEUE = os.environ.get('BATCH_JOB_QUEUE')
@@ -455,3 +457,4 @@ USAGE_WARNING_THRESHOLDS = os.environ.get("USAGE_WARNING_THRESHOLDS", "75,90,100
 BILLING_BUCKET_SIZE_GB = os.environ.get("BILLING_BUCKET_SIZE_GB", 5)
 
 BUCKET_COST_USD = os.environ.get("BUCKET_COST_USD", 5)
+PROJECTS_BUCKET = os.environ.get('PROJECTS_BUCKET')

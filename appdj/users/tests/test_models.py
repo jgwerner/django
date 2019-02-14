@@ -8,7 +8,7 @@ from django.test import TestCase
 from django.conf import settings
 from .factories import UserFactory
 from ..models import UserProfile
-from ...utils import create_ssh_key, deactivate_user
+from appdj.base.utils import create_ssh_key, deactivate_user
 
 User = get_user_model()
 

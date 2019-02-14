@@ -1,10 +1,12 @@
 import logging
 import json
 from urllib.parse import quote
+
 from django.http import Http404
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db.models import Q
+
 from rest_framework import viewsets, status, permissions
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, authentication_classes, permission_classes, renderer_classes, parser_classes
@@ -22,14 +24,16 @@ from .models import Project, Collaborator
 from .permissions import ProjectPermission, ProjectChildPermission
 from .utils import (has_copy_permission,
                             perform_project_copy,
-                            check_project_name_exists)
+                            check_project_name_exists,
+                            list_project_root)
 from appdj.servers.utils import get_server_url, create_server
 from appdj.teams.models import Team
 from appdj.teams.permissions import TeamGroupPermission
 
-User = get_user_model()
 
-log = logging.getLogger('projects')
+logger = logging.getLogger(__name__)
+
+User = get_user_model()
 
 
 class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewSet):
@@ -39,17 +43,6 @@ class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewS
     filter_fields = ('private', 'name')
     ordering_fields = ('name',)
     lookup_url_kwarg = 'project'
-
-    def get_queryset(self):
-        filter_name = self.request.query_params.get('name')
-        filter_dict = {}
-        if filter_name:
-            filter_dict = {'name': filter_name}
-        projects = Project.objects.namespace(self.request.namespace).tbs_filter(self.kwargs.get('project'),
-                                                                                **filter_dict)
-        if self.request.user != self.request.namespace.object:
-            projects = projects.filter(Q(private=False) | Q(collaborator__user=self.request.user))
-        return projects
 
     def update(self, request, *args, **kwargs):
         if not validate_uuid(kwargs.get('project', '')):
@@ -78,7 +71,7 @@ def project_copy(request, *args, **kwargs):
     new_project_name = request.data.get('name')
 
     if new_project_name:
-        log.info(f"Project name found in request during project copy. Validating name: {new_project_name}")
+        logger.info(f"Project name found in request during project copy. Validating name: {new_project_name}")
         if check_project_name_exists(new_project_name, request, None):
             log.exception(f"Project {new_project_name} already exists.")
             resp_status = status.HTTP_400_BAD_REQUEST
@@ -92,7 +85,7 @@ def project_copy(request, *args, **kwargs):
                                            request=request,
                                            new_name=new_project_name)
     except Exception as e:
-        log.exception(f"There was a problem attempting to copy project {proj_identifier}.", e)
+        logger.exception(f"There was a problem attempting to copy project {proj_identifier}.", e)
         resp_status = status.HTTP_500_INTERNAL_SERVER_ERROR
         resp_data = {'message': "Internal Server Error when attempting to copy project."}
     else:
@@ -142,15 +135,6 @@ def file_selection(request, *args, **kwargs):
         Q(is_active=True)
     )
 
-    def iterate_dir(directory):
-        for item in directory.iterdir():
-            if item.name.startswith('.'):
-                continue
-            if item.is_dir():
-                yield from iterate_dir(item)
-            else:
-                yield item
-
     projects_context = []
     for project in projects:
         project_root = project.resource_root()
@@ -160,27 +144,29 @@ def file_selection(request, *args, **kwargs):
         if workspace is None:
             workspace = create_server(request.user, project, 'workspace')
         files = []
-        for f in iterate_dir(project_root):
-            path = str(f.relative_to(project_root))
+        for f in list_project_root(project):
+            # Remove project id from path
+            path = '/'.join(f['Key'].split('/')[1:])
             quoted = quote(path, safe='/')
             scheme = 'https' if settings.HTTPS else 'http'
             url = get_server_url(str(project.pk), str(workspace.pk), scheme,
                                  f"/{quoted}", namespace=project.namespace_name)
-            files.append({
-                'path': path,
-                'content_items': json.dumps({
-                    "@context": "http://purl.imsglobal.org/ctx/lti/v1/ContentItem",
-                    "@graph": [{
-                        "@type": "LtiLinkItem",
-                        "@id": url,
-                        "url": url,
-                        "title": f.name,
-                        "text": f.name,
-                        "mediaType": "application/vnd.ims.lti.v1.ltilink",
-                        "placementAdvice": {"presentationDocumentTarget": "frame"}
-                    }]
+            if not f['Key'].startswith('.'):
+                files.append({
+                    'path': path,
+                    'content_items': json.dumps({
+                        "@context": "http://purl.imsglobal.org/ctx/lti/v1/ContentItem",
+                        "@graph": [{
+                            "@type": "LtiLinkItem",
+                            "@id": url,
+                            "url": url,
+                            "title": f['Key'],
+                            "text": f['Key'],
+                            "mediaType": "application/vnd.ims.lti.v1.ltilink",
+                            "placementAdvice": {"presentationDocumentTarget": "frame"}
+                        }]
+                    })
                 })
-            })
         projects_context.append({
             'name': project.name,
             'files': files

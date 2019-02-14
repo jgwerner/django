@@ -31,7 +31,7 @@ class ServerFactory(factory.django.DjangoModelFactory):
     server_size = factory.SubFactory(ServerSizeFactory)
     project = factory.SubFactory(ProjectFactory)
     created_by = factory.SubFactory(UserFactory)
-    image_name = '3blades/server'
+    image_name = 'illumidesk/datascience-notebook'
     is_active = True
     config = {'type': 'proxy'}
 
