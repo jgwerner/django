@@ -1,7 +1,7 @@
 from collections import Iterable
 from django.db.models import QuerySet, Q
 
-from base.utils import validate_uuid
+from .utils import validate_uuid
 
 
 class TBSQuerySetMixin:

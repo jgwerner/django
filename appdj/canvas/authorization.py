@@ -10,7 +10,7 @@ from oauthlib.oauth1 import RequestValidator, SignatureOnlyEndpoint
 from rest_framework import authentication
 
 from appdj.servers.utils import email_to_username
-from canvas.models import CanvasInstance
+from .models import CanvasInstance
 
 User = get_user_model()
 

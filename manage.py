@@ -4,8 +4,7 @@ import sys
 import environ
 from django.conf import settings
 
-if __name__ == "__main__":
-    environ.Env.read_env() # reading .env file if exists
+if __name__ == "__main__":    
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.local")
     
     try:

@@ -114,3 +114,6 @@ vendored/
 
 # tmp folder (for testing and workspaces artifacts)
 tmp/
+
+# local environment variables
+.env

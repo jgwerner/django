@@ -13,7 +13,6 @@ from django.conf import settings
 
 from rest_framework.request import Request
 
-from base.utils import validate_uuid
 from guardian.shortcuts import assign_perm
 from appdj.users.models import User
 from appdj.teams.models import Team

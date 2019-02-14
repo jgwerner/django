@@ -6,6 +6,7 @@ from pathlib import Path
 import shutil
 import ujson
 from uuid import UUID
+import os
 
 from django.http import Http404
 from django.conf import settings

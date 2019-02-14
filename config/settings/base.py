@@ -26,6 +26,11 @@ ROOT_DIR = environ.Path(__file__) - 3
 APPS_DIR = ROOT_DIR.path('appdj')
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 
+# set default values and casting
+env = environ.Env(DEBUG=(bool, False), TLS=(bool, False),)
+
+environ.Env.read_env(os.path.join(ROOT_DIR, '.env')) # reading .env file if exists
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.10/howto/deployment/checklist/
 
@@ -36,7 +41,9 @@ CRYPTO_KEY = os.environ.get('CRYPTO_KEY').encode()
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
+# https://docs.djangoproject.com/en/dev/ref/settings/#debug
+DEBUG = env('DEBUG')  # False if not in os.environ
+
 
 ALLOWED_HOSTS = []
 
@@ -130,14 +137,8 @@ EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'False') == 'True'
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DATABASE_NAME'),
-        'USER': os.getenv('DATABASE_USER'),
-        'PASSWORD': os.getenv('DATABASE_PASSWORD'),
-        'HOST': os.getenv('DATABASE_HOST'),
-        'PORT': os.getenv('DATABASE_PORT')
-    }
+    'default': env.db('DATABASE_URL',
+                      default='postgres://postgres:postgres@db:5432/postgres')
 }
 
 # Channels
@@ -190,7 +191,7 @@ SOCIAL_AUTH_PIPELINE = (
 
 OAUTH2_PROVIDER_APPLICATION_MODEL = 'oauth2_provider.Application'
 
-HTTPS = os.environ.get("TLS", "false").lower() == "true"
+HTTPS = env('TLS')  # False if not in os.environ
 LOGIN_URL = '/api-auth/login/'
 LOGIN_REDIRECT_URL = '{scheme}://{host}/auth/token-login'.format(
     scheme='https' if HTTPS else 'http', host=os.environ.get('APP_DOMAIN'))
@@ -260,6 +261,7 @@ STATICFILES_DIRS = [
 ]
 
 AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
+print('AWS_ACCESS_KEY_ID', AWS_ACCESS_KEY_ID)
 AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
 AWS_QUERYSTRING_AUTH = False
 AWS_DEFAULT_REGION = os.environ.get('AWS_DEFAULT_REGION', 'us-west-2')

@@ -12,7 +12,7 @@ from rest_framework_jwt.utils import jwt_decode_handler
 from appdj.servers.tests.factories import ServerFactory
 from appdj.users.tests.factories import UserFactory
 
-from base.utils import (
+from appdj.base.utils import (
     create_one_time_jwt,
     validate_one_time_token,
     create_server_jwt

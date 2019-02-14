@@ -17,7 +17,7 @@ from celery import shared_task
 from requests.exceptions import HTTPError
 from requests_oauthlib import OAuth1Session
 
-from canvas.models import CanvasInstance
+from appdj.canvas.models import CanvasInstance
 from appdj.projects.models import Project, Collaborator
 from appdj.projects.utils import perform_project_copy
 from .models import Server, Deployment
