@@ -64,7 +64,7 @@ def delete_deployment(deployment):
 
 
 @shared_task()
-def lti(project_pk, workspace_pk, data, path):
+def lti(project_pk, data, path):
     logger.debug(f'[LTI] data: {data}')
     email = data['lis_person_contact_email_primary']
     learner = User.objects.filter(email=email).first()
@@ -78,8 +78,12 @@ def lti(project_pk, workspace_pk, data, path):
         canvas_user_id = data['user_id']
         learner.profile.config['canvas_user_id'] = canvas_user_id
         learner.profile.save()
+    learner_project = learner.projects.filter(
+        Q(config__copied_from=project_pk) |
+        Q(pk=project_pk),
+        is_active=True
+    ).first()
     Collaborator.objects.get_or_create(user=learner, project_id=project_pk)
-    learner_project = learner.projects.filter(config__copied_from=project_pk).first()
     if learner_project is None:
         logger.debug(f"Creating learner project from {project_pk}")
         learner_project = perform_project_copy(learner, str(project_pk))

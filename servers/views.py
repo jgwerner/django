@@ -320,13 +320,9 @@ def lti_redirect(request, *args, **kwargs):
 @renderer_classes([TemplateHTMLRenderer])
 def lti_file_handler(request, *args, **kwargs):
     project = get_object_or_404(Project, kwargs.get('project_project'))
-    workspace = models.Server.objects.filter(pk=kwargs.get('server')).first()
-    if workspace is None:
-        workspace = create_server(request.user, project, 'workspace')
     path = kwargs.get('path', '')
     task = lti.delay(
         project.pk,
-        workspace.pk,
         request.data,
         path
     )
