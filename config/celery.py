@@ -7,7 +7,7 @@ from raven import Client
 from raven.contrib.celery import register_signal, register_logger_signal
 
 # set the default Django settings module for the 'celery' program.
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'appdj.settings.local')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.local')
 
 
 class RavenCelery(Celery):

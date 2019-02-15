@@ -67,7 +67,7 @@ you will need to recreate your super user and fetch static assets:
 
 Update Django settings so that it uses `test` module:
 
-    export DJANGO_SETTINGS_MODULE=appdj.settings.test
+    export DJANGO_SETTINGS_MODULE=config.settings.test
 
 Run tests:
 
@@ -126,7 +126,7 @@ Login:
 
 Update Django settings so that it uses `test` module:
 
-    export DJANGO_SETTINGS_MODULE=appdj.settings.test
+    export DJANGO_SETTINGS_MODULE=config.settings.test
 
 Run tests:
 

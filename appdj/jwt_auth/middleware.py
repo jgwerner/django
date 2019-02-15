@@ -1,6 +1,6 @@
 from urllib.parse import urlparse, parse_qs, urlencode, ParseResult
 from django.conf import settings
-from jwt_auth.utils import create_one_time_jwt
+from .utils import create_one_time_jwt
 
 
 def add_to_url_query(url, name, value):
