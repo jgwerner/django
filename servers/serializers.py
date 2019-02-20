@@ -116,7 +116,7 @@ class ServerSerializer(SearchSerializerMixin, BaseServerSerializer):
             settings.SERVER_ENDPOINT_URLS.get(obj.get_type(), '/')))
 
         if obj.access_token == "":
-            log.info(f"Server {obj.pk} doesn't have an access token. Not appending anything to the endpoint.")
+            logger.info(f"Server {obj.pk} doesn't have an access token. Not appending anything to the endpoint.")
             return base_url
         base_url += f"?token={obj.access_token}"
         return base_url
