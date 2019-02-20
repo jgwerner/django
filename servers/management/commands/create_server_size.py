@@ -10,7 +10,7 @@ class Command(BaseCommand):
     help = "Load ServerSize table with initial data"
 
     def handle(self, *args, **kwargs):
-        log.info("Adding default entries to ServerSize table...")
+        logger.info("Adding default entries to ServerSize table...")
         try:
             for i in SERVER_SIZE:
                 ServerSize.objects.update_or_create(
@@ -22,7 +22,7 @@ class Command(BaseCommand):
                         'active': True
                     }
                 )
-            log.info("ServerSize table data added.")
+            logger.info("ServerSize table data added.")
         except Exception as e:
-            log.exception(e)
+            logger.exception(e)
             raise Exception("Error running ServerSize script.")
