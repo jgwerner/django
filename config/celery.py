@@ -31,7 +31,7 @@ app.autodiscover_tasks()
 
 @task_postrun.connect
 def set_action_state(task_id=None, state=None, **kwargs):
-    from actions.models import Action
+    from appdj.actions.models import Action
     action = Action.objects.filter(pk=task_id).first()
     if action is not None:
         action.state = {
@@ -46,7 +46,7 @@ def set_action_state(task_id=None, state=None, **kwargs):
 def set_action_can_be_canceled(headers=None, **kwargs):
     task_id = headers.get('id')
     if task_id:
-        from actions.models import Action
+        from appdj.actions.models import Action
         action = Action.objects.filter(pk=task_id).first()
         if action is not None:
             action.can_be_cancelled = True
