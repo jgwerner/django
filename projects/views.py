@@ -29,8 +29,7 @@ from projects.models import Project, Collaborator
 from projects.permissions import ProjectPermission, ProjectChildPermission
 from projects.utils import (has_copy_permission,
                             perform_project_copy,
-                            check_project_name_exists,
-                            list_project_root)
+                            check_project_name_exists)
 from servers.utils import get_server_url, create_server
 from teams.models import Team
 from teams.permissions import TeamGroupPermission
@@ -140,6 +139,15 @@ def file_selection(request, *args, **kwargs):
         Q(is_active=True)
     )
 
+    def iterate_dir(directory):
+        for item in directory.iterdir():
+            if item.name.startswith('.'):
+                continue
+            if item.is_dir():
+                yield from iterate_dir(item)
+            else:
+                yield item
+
     projects_context = []
     for project in projects:
         project_root = project.resource_root()
@@ -149,29 +157,27 @@ def file_selection(request, *args, **kwargs):
         if workspace is None:
             workspace = create_server(request.user, project, 'workspace')
         files = []
-        for f in list_project_root(project):
-            # Remove project id from path
-            path = '/'.join(f['Key'].split('/')[1:])
+        for f in iterate_dir(project_root):
+            path = str(f.relative_to(project_root))
             quoted = quote(path, safe='/')
             scheme = 'https' if settings.HTTPS else 'http'
             url = get_server_url(str(project.pk), str(workspace.pk), scheme,
                                  f"/{quoted}", namespace=project.namespace_name)
-            if not f['Key'].startswith('.'):
-                files.append({
-                    'path': path,
-                    'content_items': json.dumps({
-                        "@context": "http://purl.imsglobal.org/ctx/lti/v1/ContentItem",
-                        "@graph": [{
-                            "@type": "LtiLinkItem",
-                            "@id": url,
-                            "url": url,
-                            "title": f['Key'],
-                            "text": f['Key'],
-                            "mediaType": "application/vnd.ims.lti.v1.ltilink",
-                            "placementAdvice": {"presentationDocumentTarget": "frame"}
-                        }]
-                    })
+            files.append({
+                'path': path,
+                'content_items': json.dumps({
+                    "@context": "http://purl.imsglobal.org/ctx/lti/v1/ContentItem",
+                    "@graph": [{
+                        "@type": "LtiLinkItem",
+                        "@id": url,
+                        "url": url,
+                        "title": f['Key'],
+                        "text": f['Key'],
+                        "mediaType": "application/vnd.ims.lti.v1.ltilink",
+                        "placementAdvice": {"presentationDocumentTarget": "frame"}
+                    }]
                 })
+            })
         projects_context.append({
             'name': project.name,
             'files': files

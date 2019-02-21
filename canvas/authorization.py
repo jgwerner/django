@@ -53,7 +53,9 @@ class CanvasAuth(authentication.BaseAuthentication):
             headers=self.normalize_headers(request),
         )
         application = Application.objects.filter(
-            client_id=request.data['oauth_consumer_key']).first()
+            client_id=request.data.get('oauth_consumer_key')).first()
+        if application is None:
+            return None
         canvas_instance = application.canvasinstance_set.first()
         if canvas_instance is None:
             canvas_instance = CanvasInstance.objects.create(

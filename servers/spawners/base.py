@@ -102,7 +102,7 @@ class BaseSpawner(SpawnerInterface):
         return []
 
     def _get_binds(self) -> List[str]:
-        binds = ['{}:{}'.format(self.server.volume_path, settings.SERVER_RESOURCE_DIR)]
+        binds = ['{}:{}:rw'.format(self.server.volume_path, settings.SERVER_RESOURCE_DIR)]
         ssh_path = self._get_ssh_path()
         if ssh_path:
             binds.append('{}:{}/.ssh'.format(ssh_path, settings.SERVER_RESOURCE_DIR))
@@ -131,18 +131,12 @@ class BaseSpawner(SpawnerInterface):
         return [{v: k for k, v in settings.SERVER_PORT_MAPPING.items()}[self.server.get_type()]]
 
     def _get_jupyter_config(self) -> str:
-        iam_secret = Fernet(settings.CRYPTO_KEY).decrypt(self.user.profile.config['iam_secret_access_key'].encode())
         return render_to_string(
             'servers/jupyter_config.py.tmpl',
             {
                 'version': settings.DEFAULT_VERSION,
                 'namespace': self.server.project.namespace_name,
-                'server': self.server,
-                'access_key_id': self.user.profile.config['iam_access_key_id'],
-                'region': settings.AWS_DEFAULT_REGION,
-                'secret_access_key': iam_secret.decode(),
-                'bucket': settings.PROJECTS_BUCKET,
-                'path_prefix': str(self.server.project.pk)
+                'server': self.server
             }
         )
 

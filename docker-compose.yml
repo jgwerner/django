@@ -4,6 +4,8 @@ services:
     build: .
     command: /srv/env/bin/gunicorn --bind 0.0.0.0:80 --reload --workers 1 --log-level=INFO --error-logfile=- --access-logfile=- appdj.wsgi
     env_file: .env
+    volumes:
+      - /workspaces:/workspaces
     depends_on:
       - db
       - cache
@@ -29,6 +31,8 @@ services:
       - "traefik.backend=sockets"
       - "traefik.frontend.priority=2"
       - "traefik.frontend.rule=Path:/sns/{server}/,/{version}/{namespace}/projects/{project}/servers/{server}/status/"
+    volumes:
+      - /workspaces:/workspaces
   channel_worker:
     build: .
     command: /srv/env/bin/python manage.py runworker -v 2
@@ -38,6 +42,8 @@ services:
       - cache
       - broker
     entrypoint: ''
+    volumes:
+      - /workspaces:/workspaces
   celery:
     build: .
     command: /srv/env/bin/celery -A appdj worker -l info --without-heartbeat
@@ -47,6 +53,8 @@ services:
       - cache
       - broker
     entrypoint: ''
+    volumes:
+      - /workspaces:/workspaces
   beat:
     build: .
     command: /srv/env/bin/celery -A appdj beat -l debug
@@ -58,6 +66,8 @@ services:
       - cache
       - broker
     entrypoint: ''
+    volumes:
+      - /workspaces:/workspaces
   db:
     image: postgres:9.6-alpine
     ports:
