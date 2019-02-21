@@ -17,7 +17,9 @@ from servers.models import (ServerSize, Server,
 from projects.models import Project, Collaborator
 from projects.serializers import ProjectSerializer
 from .utils import get_server_url
-log = logging.getLogger('servers')
+
+
+logger = logging.getLogger(__name__)
 
 
 class ServerSizeSerializer(serializers.ModelSerializer):
@@ -131,7 +133,7 @@ class ServerSerializer(SearchSerializerMixin, BaseServerSerializer):
         version = self.context['view'].kwargs.get('version', settings.DEFAULT_VERSION)
         request = self.context['request']
         return get_server_url(str(obj.project.pk), str(obj.pk), scheme, url, request=request, version=version,
-                namespace=obj.namespace_name)
+                              namespace=obj.namespace_name)
 
     @property
     def _is_secure(self):

@@ -1,9 +1,12 @@
 import logging
-from django.core.management import BaseCommand
-from appdj.settings.base import SERVER_SIZE
 
+from django.core.management import BaseCommand
+
+from appdj.settings.base import SERVER_SIZE
 from servers.models import ServerSize
-log = logging.getLogger("servers")
+
+
+logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):

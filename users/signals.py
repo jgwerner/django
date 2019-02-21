@@ -1,9 +1,9 @@
-import boto3
 import logging
 
+import boto3
+from botocore.exceptions import ClientError
 from cryptography.fernet import Fernet
 
-from botocore.exceptions import ClientError
 from django import dispatch
 from django.conf import settings
 from django.contrib.auth import get_user_model

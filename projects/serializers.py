@@ -1,14 +1,16 @@
-from django.contrib.auth import get_user_model
-from django.db.models import Q
 from guardian.shortcuts import assign_perm
 from rest_framework import serializers
 
+from django.contrib.auth import get_user_model
+from django.db.models import Q
+
 from base.serializers import SearchSerializerMixin
 from projects.models import Project, Collaborator
-from .utils import create_ancillary_project_stuff, check_project_name_exists
-from .tasks import clone_git_repo
 from servers.utils import stop_all_servers_for_project
 from servers.models import Server
+from .utils import create_ancillary_project_stuff, check_project_name_exists
+from .tasks import clone_git_repo
+
 
 User = get_user_model()
 

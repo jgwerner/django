@@ -22,7 +22,7 @@ class ActionSerializer(serializers.ModelSerializer):
             'object_id': {'write_only': True, 'required': False},
         }
 
-    def validate(self, data):
+    def validate(self, data): # pylint: disable=arguments-differ
         if 'content_type' in data and 'object_id' in data:
             content_type = data['content_type']
             object_id = data['object_id']

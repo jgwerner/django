@@ -9,7 +9,12 @@ from django.db.models import Q
 
 from rest_framework import viewsets, status, permissions
 from rest_framework.response import Response
-from rest_framework.decorators import api_view, authentication_classes, permission_classes, renderer_classes, parser_classes
+from rest_framework.decorators import (
+    api_view, authentication_classes,
+    permission_classes,
+    renderer_classes,
+    parser_classes
+)
 from rest_framework.generics import CreateAPIView
 from rest_framework.renderers import TemplateHTMLRenderer
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -73,7 +78,7 @@ def project_copy(request, *args, **kwargs):
     if new_project_name:
         logger.info(f"Project name found in request during project copy. Validating name: {new_project_name}")
         if check_project_name_exists(new_project_name, request, None):
-            log.exception(f"Project {new_project_name} already exists.")
+            logger.exception(f"Project {new_project_name} already exists.")
             resp_status = status.HTTP_400_BAD_REQUEST
             resp_data = {'message': f"A project named {new_project_name} already exists."}
             return Response(data=resp_data, status=resp_status)
@@ -85,7 +90,7 @@ def project_copy(request, *args, **kwargs):
                                            request=request,
                                            new_name=new_project_name)
     except Exception as e:
-        logger.exception(f"There was a problem attempting to copy project {proj_identifier}.", e)
+        logger.exception(f"There was a problem attempting to copy project {proj_identifier}, {e}.", e)
         resp_status = status.HTTP_500_INTERNAL_SERVER_ERROR
         resp_data = {'message': "Internal Server Error when attempting to copy project."}
     else:

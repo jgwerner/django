@@ -11,7 +11,7 @@ class NamespaceMixin:
         return super().get_queryset().namespace(self.request.namespace)
 
 
-class RequestUserMixin(object):
+class RequestUserMixin: # pylint: disable=too-few-public-methods
     def _get_request_user(self):
         return self.context['request'].user
 

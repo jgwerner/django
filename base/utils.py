@@ -7,23 +7,23 @@ import shutil
 import ujson
 from uuid import UUID
 
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+
 from django.http import Http404
 from django.conf import settings
 from django.core.validators import RegexValidator
 from django.utils.encoding import force_bytes, force_text
 from django_redis.serializers.base import BaseSerializer
 
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
-
 
 logger = logging.getLogger(__name__)
 
-
 alphanumeric = RegexValidator(r'^[0-9a-zA-Z-]*$', "You can use only alphanumeric characters.")
 
-def copy_model(model):
+
+def copy_model(model): # pylint: disable=inconsistent-return-statements
     if model is None:
         return
     new_object = model.__class__.objects.get(pk=model.pk)
@@ -83,8 +83,9 @@ def get_object_or_404(model, *args, **kwargs):
     return obj
 
 
-def print_and_log(message: str, logger: Logger,
-                  log_level: str="info", output_stream: TextIOWrapper=sys.stdout) -> None:
+def print_and_log(message: str,
+                  log_level: str = "info",
+                  output_stream: TextIOWrapper = sys.stdout) -> None:
     print(message, file=output_stream)
     getattr(logger, log_level)(message)
 

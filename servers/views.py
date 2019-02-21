@@ -275,7 +275,7 @@ class SNSView(views.APIView):
         if sns_message_type_header not in request.META:
             return Response({"message": "OK"})
         payload = json.loads(request.body.decode('utf-8'))
-        logger.debug("SNS payload: %s" % payload)
+        logger.debug("SNS payload: {payload}".format(payload=payload))
         message_type = request.META[sns_message_type_header]
         if message_type == 'SubscriptionConfirmation':
             url = payload.get('SubscribeURL', '')

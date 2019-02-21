@@ -84,7 +84,7 @@ class UserSerializer(SearchSerializerMixin, serializers.ModelSerializer):
 
         except Collaborator.DoesNotExist as e:
             logger.error(f"The getting started project doesn't exist for the Illumidesktemplate user! Cannot "
-                      f"copy it to the user {user}'s account.")
+                         f"copy it to the user {user}'s account.")
             logger.exception(e)
         except Exception as e:
             logger.error("Unkown exception encountered during creation of Getting Started project. Stacktrace: ")

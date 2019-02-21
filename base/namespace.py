@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 
 
-class Namespace(object):
+class Namespace: # pylint: disable=too-few-public-methods
     def __init__(self, name='', typ='', obj=None):
         self.name = name
         self.object = obj

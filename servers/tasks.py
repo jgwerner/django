@@ -105,7 +105,7 @@ def lti(project_pk, data, path):
         logger.debug(f"Starting workspace {workspace.pk}")
         workspace.spawner.start()
         # wait 30 sec for workspace to start
-        for i in range(30):
+        for i in range(30): # pylint: disable=unused-variable
             if workspace.status == workspace.RUNNING:
                 # wait for servers to pick up workspace
                 time.sleep(2)

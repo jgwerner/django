@@ -1,6 +1,7 @@
 from django.dispatch import receiver
-from django.db.models.signals import post_save, pre_save
+from django.db.models.signals import post_save
 from django.conf import settings
+
 from teams.models import Team, Group
 from teams.utils import get_owners_permissions, get_members_permissions
 

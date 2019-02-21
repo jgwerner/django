@@ -1,13 +1,13 @@
 import logging
 import ujson
 
-from django.contrib.auth import get_user_model
-from django.http import HttpRequest, HttpResponse
-from django.utils import timezone
-
 from jwt_auth.serializers import VerifyJSONWebTokenSerializer
 from rest_framework import status
 from rest_framework.views import get_view_name
+
+from django.contrib.auth import get_user_model
+from django.http import HttpRequest, HttpResponse
+from django.utils import timezone
 
 from actions.models import Action
 from triggers.models import Trigger
@@ -33,7 +33,7 @@ def get_user_from_token_header(request):
         return get_user_from_jwt(token)
 
 
-class ActionMiddleware(object):
+class ActionMiddleware(object): # pylint: disable=too-few-public-methods
     def __init__(self, get_response):
         self.get_response = get_response
 

@@ -1,15 +1,16 @@
 import abc
 import os
 import logging
-from cryptography.fernet import Fernet
-from typing import List, Dict
 from pathlib import Path
+from typing import List, Dict
+
+from cryptography.fernet import Fernet
+from raven import Client
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
 from django.template.loader import render_to_string
-from raven import Client
 
 from jwt_auth.utils import create_auth_jwt
 
@@ -94,7 +95,7 @@ class BaseSpawner(SpawnerInterface):
         all_env_vars.update(self.server.env_vars or {})
         # get admin defined env vars
         all_env_vars['TZ'] = self._get_user_timezone()
-        logger.info("Environment variables to create a container:'{}'".format(all_env_vars))
+        logger.info(f"Environment variables to create a container:'{all_env_vars}'")
         return all_env_vars
 
     def _get_devices(self) -> List[str]:

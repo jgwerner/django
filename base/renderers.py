@@ -1,7 +1,7 @@
 from rest_framework import renderers
 
 
-class PlainTextRenderer(renderers.BaseRenderer):
+class PlainTextRenderer(renderers.BaseRenderer): # pylint: disable=arguments-differ
     media_type = 'text/plain'
     format = 'txt'
 

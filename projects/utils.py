@@ -1,13 +1,14 @@
-import boto3
-from botocore.exceptions import ClientError
-from copy import deepcopy
-from distutils.dir_util import copy_tree
 import logging
 import json
 import os
 from pathlib import Path
 import shutil
 from typing import List
+
+import boto3
+from botocore.exceptions import ClientError
+from copy import deepcopy
+from distutils.dir_util import copy_tree
 
 from django.conf import settings
 
@@ -95,7 +96,7 @@ def assign_to_team(team: Team, project: Project) -> None:
     project.save()
 
 
-def create_ancillary_project_stuff(request: Request, project: Project, user: User=None) -> None:
+def create_ancillary_project_stuff(request: Request, project: Project, user: User = None) -> None:
     if user is not None:
         assign_to_user(user, project)
     elif request.namespace.type == 'user':
@@ -159,7 +160,7 @@ def copy_servers(old_project: Project, new_project: Project) -> None:
         logger.info(f"Copied {server.pk}")
 
 
-def perform_project_copy(user: User, project_id: str, request: Request=None, new_name: str=None) -> Project:
+def perform_project_copy(user: User, project_id: str, request: Request = None, new_name: str = None) -> Project:
     logger.info(f"Attempting to copy project {project_id} for user {user}")
     new_proj = None
     proj_to_copy = Project.objects.get(pk=project_id)
@@ -204,7 +205,7 @@ def perform_project_copy(user: User, project_id: str, request: Request=None, new
     return new_proj
 
 
-def create_templates(projects: List[str]=[settings.GETTING_STARTED_PROJECT]):
+def create_templates(projects: List[str] = [settings.GETTING_STARTED_PROJECT]):
     user = User.objects.filter(username="illumidesktemplates").first()
     if user is None:
         user = User.objects.create_superuser(username="illumidesktemplates",
@@ -238,7 +239,7 @@ def create_templates(projects: List[str]=[settings.GETTING_STARTED_PROJECT]):
             shutil.copy(full_path, str(project.resource_root()) + "/")
 
 
-def check_project_name_exists(name: str, request: Request, existing_pk: str=None):
+def check_project_name_exists(name: str, request: Request, existing_pk: str = None):
     qs = Project.objects.namespace(request.namespace).filter(name=name, is_active=True).exclude(pk=existing_pk)
     return qs.exists()
 

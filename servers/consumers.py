@@ -1,10 +1,13 @@
 import logging
-from channels.generic.websockets import JsonWebsocketConsumer
-from base.namespace import Namespace
-from .models import Server
-from projects.models import Project
 
-log = logging.getLogger('servers')
+from channels.generic.websockets import JsonWebsocketConsumer
+
+from base.namespace import Namespace
+from projects.models import Project
+from .models import Server
+
+
+logger = logging.getLogger(__name__)
 
 
 class ServerStatusConsumer(JsonWebsocketConsumer):
