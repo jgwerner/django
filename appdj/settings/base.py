@@ -431,7 +431,6 @@ ECS_CLUSTER = os.environ.get('ECS_CLUSTER', 'default')
 BATCH_COMPUTE_ENV = os.environ.get('BATCH_COMPUTE_ENV')
 BATCH_JOB_QUEUE = os.environ.get('BATCH_JOB_QUEUE')
 REDIRECT_IS_HTTPS = True
-JUPYTERHUB_URL = os.environ.get('JUPYTERHUB_URL')
 
 # Default server memory sizes in MB, implemented in /servers/management/commands/
 SERVER_SIZE = {
