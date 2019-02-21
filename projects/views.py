@@ -171,8 +171,8 @@ def file_selection(request, *args, **kwargs):
                         "@type": "LtiLinkItem",
                         "@id": url,
                         "url": url,
-                        "title": f['Key'],
-                        "text": f['Key'],
+                        "title": f.name,
+                        "text": f.name,
                         "mediaType": "application/vnd.ims.lti.v1.ltilink",
                         "placementAdvice": {"presentationDocumentTarget": "frame"}
                     }]
