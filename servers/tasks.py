@@ -138,12 +138,17 @@ def setup_assignment(workspace, data, path):
     return assignment_id
 
 
-def copy_assignment_file(source, target):
-    s3 = boto3.client('s3')
-    s3.copy({
-        'Bucket': settings.PROJECTS_BUCKET,
-        'Key': source
-    }, settings.PROJECTS_BUCKET, target)
+def copy_assignment_file(source: Path, target: Path):
+    """
+    :param source: Students assignment path
+    :param target: Teachers assignment path
+    """
+    if not source.exists():
+        raise FileNotFoundError(f"[Assignment Copy] Source file {source} does not exists.")
+    if not target.exists():
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.touch()
+    target.write_bytes(source.read_bytes())
 
 
 @shared_task()
@@ -153,11 +158,9 @@ def send_assignment(workspace_pk, assignment_id):
     teacher_project = Project.objects.get(pk=learner_workspace.project.config['copied_from'])
     teacher_workspace = teacher_project.servers.get(is_active=True, config__type='jupyter')
     assignment = next((a for a in learner_workspace.config.get('assignments', []) if a['id'] == assignment_id))
-    teacher = teacher_project.owner
-    assignment_path = Path(str(learner_workspace.project.pk), assignment['path'])
-    teacher_assignment_path = Path('submissions', learner.email, assignment['path'])
-    s3_teacher_assignment_path = Path(str(teacher_project.pk)) / teacher_assignment_path
-    copy_assignment_file(str(assignment_path), str(s3_teacher_assignment_path))
+    assingment_path = learner_workspace.project.resource_root() / assignment['path']
+    teacher_assignment_path = Path('assignments', learner.email, assignment['path'])
+    copy_assignment_file(assingment_path, teacher_project.resource_root() / teacher_assignment_path)
     oauth_app = CanvasInstance.objects.filter(instance_guid=assignment['instance_guid']).first().applications.first()
     oauth_session = OAuth1Session(oauth_app.client_id, client_secret=oauth_app.client_secret)
     scheme = 'https' if settings.HTTPS else 'http'
