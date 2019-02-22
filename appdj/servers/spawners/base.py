@@ -1,15 +1,16 @@
 import abc
 import os
 import logging
-from cryptography.fernet import Fernet
-from typing import List, Dict
 from pathlib import Path
+from typing import List, Dict
+
+from cryptography.fernet import Fernet
+from raven import Client
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
 from django.template.loader import render_to_string
-from raven import Client
 
 from appdj.jwt_auth.utils import create_auth_jwt
 
@@ -94,14 +95,14 @@ class BaseSpawner(SpawnerInterface):
         all_env_vars.update(self.server.env_vars or {})
         # get admin defined env vars
         all_env_vars['TZ'] = self._get_user_timezone()
-        logger.info("Environment variables to create a container:'{}'".format(all_env_vars))
+        logger.info(f"Environment variables to create a container:'{all_env_vars}'")
         return all_env_vars
 
     def _get_devices(self) -> List[str]:
         return []
 
     def _get_binds(self) -> List[str]:
-        binds = ['{}:{}'.format(self.server.volume_path, settings.SERVER_RESOURCE_DIR)]
+        binds = ['{}:{}:rw'.format(self.server.volume_path, settings.SERVER_RESOURCE_DIR)]
         ssh_path = self._get_ssh_path()
         if ssh_path:
             binds.append('{}:{}/.ssh'.format(ssh_path, settings.SERVER_RESOURCE_DIR))
@@ -130,18 +131,12 @@ class BaseSpawner(SpawnerInterface):
         return [{v: k for k, v in settings.SERVER_PORT_MAPPING.items()}[self.server.get_type()]]
 
     def _get_jupyter_config(self) -> str:
-        iam_secret = Fernet(settings.CRYPTO_KEY).decrypt(self.user.profile.config['iam_secret_access_key'].encode())
         return render_to_string(
             'servers/jupyter_config.py.tmpl',
             {
                 'version': settings.DEFAULT_VERSION,
                 'namespace': self.server.project.namespace_name,
-                'server': self.server,
-                'access_key_id': self.user.profile.config['iam_access_key_id'],
-                'region': settings.AWS_DEFAULT_REGION,
-                'secret_access_key': iam_secret.decode(),
-                'bucket': settings.PROJECTS_BUCKET,
-                'path_prefix': str(self.server.project.pk)
+                'server': self.server
             }
         )
 

@@ -1,8 +1,10 @@
 import logging
+
+import docker
+
 from django.conf import settings
 from django.db import models
 from django.urls import reverse
-import docker
 
 from .managers import DockerHostQuerySet
 
@@ -49,6 +51,6 @@ class DockerHost(models.Model):
         try:
             self.client.info()
         except Exception as e:
-            logger.exception("Node status error: {excep}".format(excep=e))
+            logger.exception(f"Node status error: {e}")
             return self.NOT_AVAILABLE
         return self.AVAILABLE

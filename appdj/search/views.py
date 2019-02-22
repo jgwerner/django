@@ -75,7 +75,7 @@ class SearchView(ListAPIView):
             results['results'] = serializer.to_representation(queryset)
         return results
 
-    def _get_model_search_fields(self, model):
+    def _get_model_search_fields(self, model): # pylint disable=no-self-use
         """
         Looks for search fields defined in gin index created on model
         """

@@ -6,7 +6,9 @@ import uuid
 import tempfile
 import zipfile
 from functools import partial
+
 from botocore.exceptions import ClientError
+
 from django.conf import settings
 from django.utils.functional import cached_property
 

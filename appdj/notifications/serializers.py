@@ -23,7 +23,7 @@ class GenericRelatedField(serializers.RelatedField):
             data['content_type'] = 'user'
             data.update(UserSerializer(value).data)
         else:
-            log.error(f"{value} has not been added to the generic related field yet. Fix it.")
+            logger.error(f"{value} has not been added to the generic related field yet. Fix it.")
         return data
 
 

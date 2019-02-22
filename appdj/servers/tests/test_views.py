@@ -136,7 +136,7 @@ class ServerTest(APITestCase):
             with transaction.atomic():
                 response = self.client.post(url, data=data)
         except Exception as e:
-            log.exception(e)
+            logger.exception(e)
             raise e
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data.get('name'), old_server.name)

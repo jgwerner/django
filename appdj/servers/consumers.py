@@ -1,10 +1,11 @@
 import logging
+
 from channels.generic.websockets import JsonWebsocketConsumer
 from appdj.base.namespace import Namespace
-from .models import Server
 from appdj.projects.models import Project
+from .models import Server
 
-log = logging.getLogger('servers')
+logger = logging.getLogger(__name__)
 
 
 class ServerStatusConsumer(JsonWebsocketConsumer):

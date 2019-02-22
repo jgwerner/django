@@ -1,13 +1,13 @@
 import re
 import time
 
-from django.core.cache import cache
-from django.conf import settings
-from django.contrib.auth import get_user_model
-
 from oauth2_provider.models import Application
 from oauthlib.oauth1 import RequestValidator, SignatureOnlyEndpoint
 from rest_framework import authentication
+
+from django.core.cache import cache
+from django.conf import settings
+from django.contrib.auth import get_user_model
 
 from appdj.servers.utils import email_to_username
 from .models import CanvasInstance
@@ -15,7 +15,7 @@ from .models import CanvasInstance
 User = get_user_model()
 
 
-class CanvasValidator(RequestValidator):
+class CanvasValidator(RequestValidator): # pylint: disable=abstract-method
     enforce_ssl = False
 
     def validate_client_key(self, client_key, request):
@@ -53,7 +53,9 @@ class CanvasAuth(authentication.BaseAuthentication):
             headers=self.normalize_headers(request),
         )
         application = Application.objects.filter(
-            client_id=request.data['oauth_consumer_key']).first()
+            client_id=request.data.get('oauth_consumer_key')).first()
+        if application is None:
+            return None
         canvas_instance = application.canvasinstance_set.first()
         if canvas_instance is None:
             canvas_instance = CanvasInstance.objects.create(

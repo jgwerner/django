@@ -5,7 +5,7 @@ from rest_framework_jwt.serializers import JSONWebTokenSerializer, VerificationB
 from appdj.servers.models import Server
 
 
-class JWTSerializer(JSONWebTokenSerializer):
+class JWTSerializer(JSONWebTokenSerializer): # pyltint: disable=abstract-method
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields[self.username_field] = serializers.CharField(write_only=True)

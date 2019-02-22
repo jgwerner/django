@@ -2,8 +2,11 @@ version: '3'
 services:
   api:
     build: .
-    command: /srv/env/bin/gunicorn --bind 0.0.0.0:80 --reload --workers 1 --log-level=INFO --error-logfile=- --access-logfile=- config.wsgi
+    command: /srv/env/bin/gunicorn --bind 0.0.0.0:8080 --reload --workers 1 --log-level=INFO --error-logfile=- --access-logfile=- config.wsgi
     env_file: .env
+    volumes:
+      - /workspaces:/workspaces
+      - .:/srv/app
     depends_on:
       - db
       - cache
@@ -12,6 +15,7 @@ services:
       - TLS=True
     labels:
       - "traefik.enable=true"
+      - "traefik.port=8080"
       - "traefik.backend=api"
       - "traefik.frontend.priority=1"
       - "traefik.frontend.rule=PathPrefix:/"
@@ -31,6 +35,9 @@ services:
       - "traefik.backend=sockets"
       - "traefik.frontend.priority=2"
       - "traefik.frontend.rule=Path:/sns/{server}/,/{version}/{namespace}/projects/{project}/servers/{server}/status/"
+    volumes:
+      - .:/srv/app
+      - /workspaces:/workspaces
   channel_worker:
     build: .
     command: /srv/env/bin/python manage.py runworker -v 2
@@ -40,6 +47,9 @@ services:
       - cache
       - broker
     entrypoint: ''
+    volumes:
+      - .:/srv/app
+      - /workspaces:/workspaces
   celery:
     build: .
     command: /srv/env/bin/celery -A appdj worker -l info --without-heartbeat
@@ -49,6 +59,9 @@ services:
       - cache
       - broker
     entrypoint: ''
+    volumes:
+      - .:/srv/app
+      - /workspaces:/workspaces
   beat:
     build: .
     command: /srv/env/bin/celery -A appdj beat -l debug
@@ -60,6 +73,9 @@ services:
       - cache
       - broker
     entrypoint: ''
+    volumes:
+      - .:/srv/app
+      - /workspaces:/workspaces
   db:
     image: postgres:9.6-alpine
     ports:

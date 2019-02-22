@@ -12,7 +12,7 @@ def add_to_url_query(url, name, value):
     return ParseResult(**parsed).geturl()
 
 
-def add_one_time_token_to_response(user, response):
+def add_one_time_token_to_response(user, response): # pylint: disable=protected-access
     loc = response._headers.get('location')
     if loc and loc[1] == settings.LOGIN_REDIRECT_URL:
         token = create_one_time_jwt(user)
@@ -20,7 +20,7 @@ def add_one_time_token_to_response(user, response):
     return response
 
 
-class OAuthUIMiddleware(object):
+class OAuthUIMiddleware: # pylint: disable=too-few-public-methods
     def __init__(self, get_response):
         self.get_response = get_response
 

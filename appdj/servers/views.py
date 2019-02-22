@@ -277,7 +277,7 @@ class SNSView(views.APIView):
         if sns_message_type_header not in request.META:
             return Response({"message": "OK"})
         payload = json.loads(request.body.decode('utf-8'))
-        logger.debug("SNS payload: %s" % payload)
+        logger.debug("SNS payload: {payload}".format(payload=payload))
         message_type = request.META[sns_message_type_header]
         if message_type == 'SubscriptionConfirmation':
             url = payload.get('SubscribeURL', '')
@@ -322,13 +322,9 @@ def lti_redirect(request, *args, **kwargs):
 @renderer_classes([TemplateHTMLRenderer])
 def lti_file_handler(request, *args, **kwargs):
     project = get_object_or_404(Project, kwargs.get('project_project'))
-    workspace = models.Server.objects.filter(pk=kwargs.get('server')).first()
-    if workspace is None:
-        workspace = create_server(request.user, project, 'workspace')
     path = kwargs.get('path', '')
     task = lti.delay(
         project.pk,
-        workspace.pk,
         request.data,
         path
     )

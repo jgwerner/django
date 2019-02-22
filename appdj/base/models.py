@@ -54,7 +54,7 @@ class TBSQuerySet(TBSQuerySetMixin, QuerySet):
     pass
 
 
-class TBSModelMixin:
+class TBSModelMixin: # pylint: disable=too-few-public-methods
     NATURAL_KEY = 'name'
 
     objects = TBSQuerySet.as_manager()

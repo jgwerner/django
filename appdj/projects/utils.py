@@ -1,16 +1,12 @@
-import boto3
-from botocore.exceptions import ClientError
 from copy import deepcopy
 from distutils.dir_util import copy_tree
 import logging
-import json
 import os
 from pathlib import Path
 import shutil
 from typing import List
 
 from django.conf import settings
-
 from rest_framework.request import Request
 
 from guardian.shortcuts import assign_perm
@@ -20,64 +16,9 @@ from appdj.base.utils import validate_uuid
 from .models import Project, Collaborator
 from appdj.servers.models import Server
 from appdj.jwt_auth.utils import create_server_jwt
-from appdj.users.signals import create_aws_iam_user
 
 
 logger = logging.getLogger(__name__)
-
-
-def assign_s3_user_permissions(project: Project) -> None:
-    """
-    Assign permissions for project S3 bucket
-
-    https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.put_bucket_policy
-    """
-    logger.info("Assign project collaborators permissions to project %s", project.pk)
-    s3 = boto3.client('s3')
-    collaborator_iam_ids = []
-    s3.put_object(
-        Bucket=settings.PROJECTS_BUCKET,
-        Key=f'{project.pk}/.keep',
-        Body=b''
-    )
-    for col in project.collaborators.all():
-        if 'iam_id' not in col.profile.config:
-            create_aws_iam_user(col)
-        collaborator_iam_ids.append(col.profile.config['iam_id'])
-    statements = [
-        {
-            'Sid': f'ObjectPerms-{project.pk}',
-            'Effect': 'Allow',
-            'Principal': {'AWS': collaborator_iam_ids},
-            'Action': ['s3:GetObject', 's3:GetObjectAcl', 's3:DeleteObject', 's3:PutObject', 's3:PutObjectAcl'],
-            'Resource': f"arn:aws:s3:::{settings.PROJECTS_BUCKET}/{project.pk}/*"
-        },
-        {
-            'Sid': f'BucketPerms-{project.pk}',
-            'Effect': 'Allow',
-            'Principal': {'AWS': collaborator_iam_ids},
-            'Action': ['s3:ListBucket'],
-            'Resource': f"arn:aws:s3:::{settings.PROJECTS_BUCKET}",
-            'Condition': {"StringLike": {"s3:prefix": [f"{project.pk}/*"]}}
-        }
-    ]
-    policy = {
-        "Version": "2012-10-17",
-        "Statement": []
-    }
-    try:
-        policy = json.loads(s3.get_bucket_policy(Bucket=settings.PROJECTS_BUCKET)['Policy'])
-    except ClientError:
-        pass
-    sids = {statement['Sid']: i for i, statement in enumerate(policy['Statement'])}
-    for statement in statements:
-        index = sids.get(statement['Sid'])
-        if index:
-            policy['Statement'][index] = statement
-        else:
-            policy['Statement'].append(statement)
-    logger.debug("Project %s policy: %s", project.pk, policy)
-    s3.put_bucket_policy(Bucket=settings.PROJECTS_BUCKET, Policy=json.dumps(policy))
 
 
 def assign_to_user(user: User, project: Project) -> None:
@@ -86,7 +27,6 @@ def assign_to_user(user: User, project: Project) -> None:
     Collaborator.objects.get_or_create(project=project, owner=True, user=user)
     assign_perm('write_project', user, project)
     assign_perm('read_project', user, project)
-    assign_s3_user_permissions(project)
 
 
 def assign_to_team(team: Team, project: Project) -> None:
@@ -94,7 +34,7 @@ def assign_to_team(team: Team, project: Project) -> None:
     project.save()
 
 
-def create_ancillary_project_stuff(request: Request, project: Project, user: User=None) -> None:
+def create_ancillary_project_stuff(request: Request, project: Project, user: User = None) -> None:
     if user is not None:
         assign_to_user(user, project)
     elif request.namespace.type == 'user':
@@ -158,7 +98,7 @@ def copy_servers(old_project: Project, new_project: Project) -> None:
         logger.info(f"Copied {server.pk}")
 
 
-def perform_project_copy(user: User, project_id: str, request: Request=None, new_name: str=None) -> Project:
+def perform_project_copy(user: User, project_id: str, request: Request = None, new_name: str = None) -> Project:
     logger.info(f"Attempting to copy project {project_id} for user {user}")
     new_proj = None
     proj_to_copy = Project.objects.get(pk=project_id)
@@ -196,14 +136,13 @@ def perform_project_copy(user: User, project_id: str, request: Request=None, new
             copy_tree(str(old_resource_root), str(new_proj.resource_root()))
         else:
             logger.info(f"It seems {old_resource_root} does not exist, so there is nothing to copy.")
-        copy_project_bucket(proj_to_copy, new_proj)
 
         copy_servers(proj_to_copy, new_proj)
 
     return new_proj
 
 
-def create_templates(projects: List[str]=[settings.GETTING_STARTED_PROJECT]):
+def create_templates(projects: List[str] = [settings.GETTING_STARTED_PROJECT]):
     user = User.objects.filter(username="illumidesktemplates").first()
     if user is None:
         user = User.objects.create_superuser(username="illumidesktemplates",
@@ -237,7 +176,7 @@ def create_templates(projects: List[str]=[settings.GETTING_STARTED_PROJECT]):
             shutil.copy(full_path, str(project.resource_root()) + "/")
 
 
-def check_project_name_exists(name: str, request: Request, existing_pk: str=None):
+def check_project_name_exists(name: str, request: Request, existing_pk: str = None):
     qs = Project.objects.namespace(request.namespace).filter(name=name, is_active=True).exclude(pk=existing_pk)
     return qs.exists()
 
@@ -253,26 +192,3 @@ def move_roots():
                     project_dir.rename(new_project_path)
                 else:
                     shutil.rmtree(str(project_dir), ignore_errors=True)
-
-
-def list_project_root(project):
-    s3 = boto3.client('s3')
-    try:
-        return s3.list_objects_v2(
-            Bucket=settings.PROJECTS_BUCKET,
-            Prefix=str(project.pk)
-        )['Contents']
-    except ClientError as e:
-        if e.response['Error']['Code'] == 'NoSuchBucket':
-            return []
-
-
-def copy_project_bucket(source_project, destination_project):
-    s3 = boto3.client('s3')
-    for fil in list_project_root(source_project):
-        source = {
-            'Bucket': settings.PROJECTS_BUCKET,
-            'Key': fil['Key']
-        }
-        key = f'{destination_project.pk}/' + '/'.join(fil['Key'].split('/')[1:])
-        s3.copy(source, settings.PROJECTS_BUCKET, key)

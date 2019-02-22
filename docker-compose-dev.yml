@@ -23,6 +23,7 @@ services:
     command: /srv/env/bin/daphne -p 80 -b 0.0.0.0 -v 2 config.asgi:channel_layer
     volumes:
       - .:/srv/app
+      - /var/run/docker.sock:/var/run/docker.sock
     env_file: .env
     depends_on:
       - db
@@ -39,9 +40,10 @@ services:
   channel_worker:
     build: .
     command: /srv/env/bin/python manage.py runworker -v 2
-    env_file: .env
     volumes:
       - .:/srv/app
+      - /var/run/docker.sock:/var/run/docker.sock
+    env_file: .env
     depends_on:
       - db
       - cache
@@ -88,8 +90,8 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
-      - "5000:80"
-      - "8080:8080"
+      - "5001:80"
+      - "8081:8080"
   nginx:
     image: illumidesk/nginx
     command: /nginx/sbin/nginx -p '' -g 'daemon off;'

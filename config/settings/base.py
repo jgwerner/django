@@ -37,7 +37,6 @@ environ.Env.read_env(os.path.join(ROOT_DIR, '.env')) # reading .env file if exis
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('SECRET_KEY', 'test')
 STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', "test secret key")
-CRYPTO_KEY = os.environ.get('CRYPTO_KEY').encode()
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -458,4 +457,3 @@ USAGE_WARNING_THRESHOLDS = os.environ.get("USAGE_WARNING_THRESHOLDS", "75,90,100
 BILLING_BUCKET_SIZE_GB = os.environ.get("BILLING_BUCKET_SIZE_GB", 5)
 
 BUCKET_COST_USD = os.environ.get("BUCKET_COST_USD", 5)
-PROJECTS_BUCKET = os.environ.get('PROJECTS_BUCKET')

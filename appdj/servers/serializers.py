@@ -17,7 +17,9 @@ from .models import (ServerSize, Server,
 from appdj.projects.models import Project, Collaborator
 from appdj.projects.serializers import ProjectSerializer
 from .utils import get_server_url
-log = logging.getLogger('servers')
+
+
+logger = logging.getLogger(__name__)
 
 
 class ServerSizeSerializer(serializers.ModelSerializer):
@@ -116,7 +118,7 @@ class ServerSerializer(SearchSerializerMixin, BaseServerSerializer):
             settings.SERVER_ENDPOINT_URLS.get(obj.get_type(), '/')))
 
         if obj.access_token == "":
-            log.info(f"Server {obj.pk} doesn't have an access token. Not appending anything to the endpoint.")
+            logger.info(f"Server {obj.pk} doesn't have an access token. Not appending anything to the endpoint.")
             return base_url
         base_url += f"?token={obj.access_token}"
         return base_url
@@ -131,7 +133,7 @@ class ServerSerializer(SearchSerializerMixin, BaseServerSerializer):
         version = self.context['view'].kwargs.get('version', settings.DEFAULT_VERSION)
         request = self.context['request']
         return get_server_url(str(obj.project.pk), str(obj.pk), scheme, url, request=request, version=version,
-                namespace=obj.namespace_name)
+                              namespace=obj.namespace_name)
 
     @property
     def _is_secure(self):

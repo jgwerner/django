@@ -52,7 +52,7 @@ class NotificationViewSet(viewsets.GenericViewSet,
 
         if notif_ids:
             logger.info(f"About to update the following notifications: \n{notif_ids}\n"
-                     f"With this data: {request.data}")
+                        f"With this data: {request.data}")
             notifications = self.get_queryset().filter(pk__in=notif_ids)
             notifications.update(**request.data)
             serializer = self.serializer_class(notifications, many=True)
@@ -97,7 +97,7 @@ class NotificationSettingsViewset(viewsets.ModelViewSet):
                                            context={'user': request.user})
         if serializer.is_valid():
             instance = serializer.create(data)
-            log.info(f"Created Notification Settings {instance} for user {request.user}")
+            logger.info(f"Created Notification Settings {instance} for user {request.user}")
             resp_data = self.serializer_class(instance).data
             resp_status = status.HTTP_201_CREATED
         else:

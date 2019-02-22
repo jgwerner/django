@@ -186,7 +186,7 @@ The IllumiDesk/app-backend application interacts with various internal applicati
 | SECRET_KEY | <string> | Secret key used for Django-related security |
 | SENTRY_DSN | <string> | Data Source Name (DSN) for Sentry's error tracking and monitoring service |
 | SERVER_PORT | <integer> | Port number for main application environment |
-| SERVER_RESOURCE_DIR | <string> | Name of relevant project's resource directory |
+| SERVER_RESOURCE_DIR | <string> | Name of relevant project's resource directory. It should be notebooks workdir.|
 | SLACK_KEY | <string> | Slack account ID key |
 | SLACK_SECRET | <string> | Secret access key associated with SLACK_KEY |
 | STATIC_ROOT | <string> | Absolute path to the directory static files should be collected to. |

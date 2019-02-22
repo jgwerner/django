@@ -7,15 +7,15 @@ from django.urls import reverse
 from django.utils import timezone
 from requests import Session, Request
 
-from .utils import SkipJSONEncoder
-
 from appdj.jwt_auth.utils import create_auth_jwt
+
+from .utils import SkipJSONEncoder
 
 
 class ActionQuerySet(models.QuerySet):
     def get_or_create_action(self, filter_kwargs, defaults):
         try:
-            action, created = self.get_or_create(
+            action, created = self.get_or_create( # pylint: disable=unused-variable
                 **filter_kwargs,
                 defaults=defaults
             )
