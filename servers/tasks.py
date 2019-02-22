@@ -78,11 +78,12 @@ def lti(project_pk, data, path):
         canvas_user_id = data['user_id']
         learner.profile.config['canvas_user_id'] = canvas_user_id
         learner.profile.save()
-    learner_project = learner.projects.filter(
-        Q(config__copied_from=project_pk) |
-        Q(pk=project_pk),
-        is_active=True
+    learner_projects = learner.projects.filter(is_active=True)
+    learner_project = learner_projects.filter(
+        config__copied_from=project_pk
     ).first()
+    if learner_project is None:
+        learner_project = learner_projects.filter(pk=project_pk).first()
     Collaborator.objects.get_or_create(user=learner, project_id=project_pk)
     if learner_project is None:
         logger.debug(f"Creating learner project from {project_pk}")
