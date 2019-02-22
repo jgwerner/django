@@ -13,13 +13,8 @@ RUN apk update \
     curl
 
 RUN pip install virtualenv
-
-RUN addgroup -g 1000 -S app && \
-    adduser -u 1000 -S app -G app
-
 RUN mkdir -p /srv/
-RUN chown -R 1000:1000 /srv/
-USER app
+
 WORKDIR /srv/
 RUN virtualenv env --python=python3
 RUN . env/bin/activate; pip install --upgrade setuptools pip wheel
