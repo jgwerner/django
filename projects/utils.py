@@ -1,5 +1,5 @@
+import shutil
 from copy import deepcopy
-from distutils.dir_util import copy_tree
 import logging
 import os
 from pathlib import Path
@@ -43,7 +43,6 @@ def create_ancillary_project_stuff(request: Request, project: Project, user: Use
         assign_to_user(user, project)
     else:
         assign_to_team(request.namespace.object, project)
-    project.resource_root().mkdir(parents=True, exist_ok=True)
 
 
 def has_copy_permission(request=None, user=None, project=None):
@@ -133,8 +132,13 @@ def perform_project_copy(user: User, project_id: str, request: Request = None, n
 
         create_ancillary_project_stuff(request, new_proj, user=user_to_pass)
         if old_resource_root.is_dir():
+            # ignore assignments directory
             logger.info(f"Copying files from the {old_resource_root} to {new_proj.resource_root()}")
-            copy_tree(str(old_resource_root), str(new_proj.resource_root()))
+            shutil.copytree(
+                str(old_resource_root),
+                str(new_proj.resource_root()),
+                ignore=shutil.ignore_patterns('submissions')
+            )
         else:
             logger.info(f"It seems {old_resource_root} does not exist, so there is nothing to copy.")
 

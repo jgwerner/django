@@ -37,6 +37,7 @@ class ProjectSerializer(SearchSerializerMixin, serializers.ModelSerializer):
         project = super().create(validated_data)
         request = self.context['request']
         create_ancillary_project_stuff(request, project)
+        project.resource_root().mkdir(parents=True, exist_ok=True)
         return project
 
 
