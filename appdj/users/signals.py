@@ -18,10 +18,4 @@ def create_user_profile(sender, instance, created, **kwargs):
         UserProfile.objects.get_or_create(user=instance)
 
 
-@receiver(post_save, sender=User)
-def create_user_ssh_key(sender, instance, created, **kwargs):
-    if created:
-        create_ssh_key(instance)
-
-
 user_authenticated = dispatch.Signal(providing_args=['user'])
