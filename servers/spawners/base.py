@@ -73,7 +73,7 @@ class BaseSpawner(SpawnerInterface):
                 cmd.append(f'--type={self.server.get_type()}')
         if self.server.config['type'] in settings.SERVER_COMMANDS:
             cmd.extend([
-                part.format(server=self.server)
+                part.format(server=self.server, version=settings.DEFAULT_VERSION, namespace=self.server.namespace_name)
                 for part in settings.SERVER_COMMANDS[self.server.config['type']].split()
             ])
         if 'command' in self.server.config:
