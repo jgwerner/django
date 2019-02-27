@@ -146,41 +146,6 @@ def perform_project_copy(user: User, project_id: str, request: Request = None, n
 
     return new_proj
 
-
-def create_templates(projects: List[str] = [settings.GETTING_STARTED_PROJECT]):
-    user = User.objects.filter(username="illumidesktemplates").first()
-    if user is None:
-        user = User.objects.create_superuser(username="illumidesktemplates",
-                                             email="templates@illumidesk.com",
-                                             password="FizzBuzz")
-
-    for proj_name in projects:
-        collab = Collaborator.objects.filter(user=user,
-                                             project__name=proj_name,
-                                             owner=True).first()
-        if collab is None:
-            project = Project(name=proj_name,
-                              private=False,
-                              copying_enabled=True)
-            project.save()
-            collab = Collaborator(user=user,
-                                  project=project,
-                                  owner=True)
-            collab.save()
-        else:
-            project = collab.project
-
-        assign_perm("read_project", user, project)
-        assign_perm("write_project", user, project)
-
-        Path(settings.RESOURCE_DIR, str(project.pk)).mkdir(parents=True, exist_ok=True)
-        base_path = f"projects/example_templates/{proj_name}/"
-
-        for filename in os.listdir(base_path):
-            full_path = base_path + filename
-            shutil.copy(full_path, str(project.resource_root()) + "/")
-
-
 def check_project_name_exists(name: str, request: Request, existing_pk: str = None):
     qs = Project.objects.namespace(request.namespace).filter(name=name, is_active=True).exclude(pk=existing_pk)
     return qs.exists()

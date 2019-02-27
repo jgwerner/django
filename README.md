@@ -177,7 +177,6 @@ The IllumiDesk/app-backend application interacts with various internal applicati
 | GITHUB_CLIENT_SECRET | <string> | Secret access key associated with GITHUB_CLIENT_ID |
 | GOOGLE_CLIENT_ID | <string> | Client ID for Google account |
 | GOOGLE_CLIENT_SECRET | <string> | Secret access key associated with GOOGLE_CLIENT_ID |
-| GETTING_STARTED_PROJECT | <string> | Name of "Getting Started" project |
 | MOCK_STRIPE | <boolean> | Enables use of mock connections to Stripe for development purposes |
 | NVIDIA_DOCKER_HOST | <string> | URL for NVIDIA Docker host |
 | RABBITMQ_URL | <string> | URL for RabbitMQ message broker |
