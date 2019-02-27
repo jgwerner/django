@@ -1,0 +1,37 @@
+{
+  "name": "illumidesk",
+  "version": "1.0.0",
+  "description": "IllumiDesk application to manage Jupyter Notebooks with LTI compliant LMS's.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "release": "standard-version"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/illumidesk/app-backend.git"
+  },
+  "keywords": [
+    "jupyter",
+    "lti",
+    "canvas",
+    "lms",
+    "stem",
+    "jupyter",
+    "notebook",
+    "python",
+    "react",
+    "django"
+  ],
+  "author": "IllumiDesk Team",
+  "license": "BSD-3-Clause",
+  "bugs": {
+    "url": "https://github.com/illumidesk/app-backend/issues"
+  },
+  "homepage": "https://github.com/illumidesk/app-backend#readme",
+  "devDependencies": {
+    "standard-version": "^5.0.0"
+  }
+}

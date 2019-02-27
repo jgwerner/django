@@ -1,4 +1,5 @@
 [![![Build Status](https://travis-ci.com/IllumiDesk/app-backend.svg?token=y3jvxynhJQZHELnDYJdy&branch=master)](https://travis-ci.com/IllumiDesk/app-backend)
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
 
 # IllumiDesk Backend Services
 
@@ -207,8 +208,19 @@ Or, just print all of them with `printenv`.
 
 ## Contributing
 
+### General Guidelines
+
 This project enforces the [Contributor Covenant](./CODE_OF_CONDUCT.md). Be kind
 and build a nice open source community with us.
+
+### Commit Messages
+
+This projet adhere's to the [Conventional Commits](https://conventionalcommits.org) standard.
+
+Changelogs are automated with [Standard Version](https://github.com/conventional-changelog/standard-version). Use the release command to
+update the release and the changelog:
+
+    npm run release
 
 ## Copyright and license
 
