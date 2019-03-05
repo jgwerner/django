@@ -1,4 +1,5 @@
 [![![Build Status](https://travis-ci.com/IllumiDesk/app-backend.svg?token=y3jvxynhJQZHELnDYJdy&branch=master)](https://travis-ci.com/IllumiDesk/app-backend)
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
 
 # IllumiDesk Backend Services
 
@@ -177,7 +178,6 @@ The IllumiDesk/app-backend application interacts with various internal applicati
 | GITHUB_CLIENT_SECRET | <string> | Secret access key associated with GITHUB_CLIENT_ID |
 | GOOGLE_CLIENT_ID | <string> | Client ID for Google account |
 | GOOGLE_CLIENT_SECRET | <string> | Secret access key associated with GOOGLE_CLIENT_ID |
-| GETTING_STARTED_PROJECT | <string> | Name of "Getting Started" project |
 | MOCK_STRIPE | <boolean> | Enables use of mock connections to Stripe for development purposes |
 | NVIDIA_DOCKER_HOST | <string> | URL for NVIDIA Docker host |
 | RABBITMQ_URL | <string> | URL for RabbitMQ message broker |
@@ -208,8 +208,19 @@ Or, just print all of them with `printenv`.
 
 ## Contributing
 
+### General Guidelines
+
 This project enforces the [Contributor Covenant](./CODE_OF_CONDUCT.md). Be kind
 and build a nice open source community with us.
+
+### Commit Messages
+
+This projet adhere's to the [Conventional Commits](https://conventionalcommits.org) standard.
+
+Changelogs are automated with [Standard Version](https://github.com/conventional-changelog/standard-version). Use the release command to
+update the release and the changelog:
+
+    npm run release
 
 ## Copyright and license
 

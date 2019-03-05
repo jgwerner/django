@@ -398,8 +398,17 @@ SERVER_TYPES = {"restful", "cron", "proxy", "batch"}
 SERVER_TYPE_MAPPING = {'jupyter': 'proxy', 'rstudio': 'proxy'}
 SERVER_ENDPOINT_URLS = {'restful': '/restful/', 'proxy': '/proxy/'}
 SERVER_COMMANDS = {
-    'jupyter': 'jupyter lab' +
-    ' --NotebookApp.token={server.access_token}',
+    'jupyter': (
+        'jupyter lab'
+        ' --NotebookApp.token={server.access_token}'
+        ' --NotebookApp.allow_root=True'
+        ' --NotebookApp.allow_origin=*'
+        ' --NotebookApp.base_url=/{version}/{namespace}/projects/{server.project.pk}/servers/{server.pk}/endpoint/proxy'
+        ' --NotebookApp.iopub_data_rate_limit=1.0e10'
+        ' --NotebookApp.ip=0.0.0.0'
+        ' --NotebookApp.open_browser=False'
+        ' --NotebookApp.port=8080'
+    ),
     'rstudio': '/init',
 }
 # slack
@@ -449,8 +458,6 @@ SERVER_SIZE = {
     "Medium": 2048,
     "Large": 4096
 }
-
-GETTING_STARTED_PROJECT = os.environ.get("GETTING_STARTED_PROJECT", "GettingStarted")
 
 USAGE_WARNING_THRESHOLDS = os.environ.get("USAGE_WARNING_THRESHOLDS", "75,90,100")
 

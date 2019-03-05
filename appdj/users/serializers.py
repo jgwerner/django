@@ -72,22 +72,6 @@ class UserSerializer(SearchSerializerMixin, serializers.ModelSerializer):
         profile.save()
         Email.objects.create(user=user, address=validated_data['email'])
 
-        try:
-            getting_started_proj = Collaborator.objects.get(user__username="illumidesktemplates",
-                                                            owner=True,
-                                                            project__name=settings.GETTING_STARTED_PROJECT).project
-            perform_project_copy(user=user,
-                                 project_id=str(getting_started_proj.pk),
-                                 request=None)
-
-        except Collaborator.DoesNotExist as e:
-            logger.error(f"The getting started project doesn't exist for the Illumidesktemplate user! Cannot "
-                         f"copy it to the user {user}'s account.")
-            logger.exception(e)
-        except Exception as e:
-            logger.error("Unkown exception encountered during creation of Getting Started project. Stacktrace: ")
-            logger.exception(e)
-
         return user
 
     def update(self, instance, validated_data):

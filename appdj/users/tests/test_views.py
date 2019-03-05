@@ -14,13 +14,12 @@ from django.core import mail
 from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
 
-from .factories import UserFactory, EmailFactory
-from .utils import generate_random_image
 from appdj.base.utils import create_ssh_key
 from appdj.jwt_auth.utils import create_auth_jwt
 from appdj.projects.models import Collaborator
-from appdj.projects.utils import create_templates
-import logging
+from .factories import UserFactory, EmailFactory
+from .utils import generate_random_image
+
 
 logger = logging.getLogger(__name__)
 
@@ -415,23 +414,6 @@ class UserTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         resp_data = json.loads(response.content.decode("utf-8"))
         self.assertEqual(resp_data.get("message"), "Only POST is allowed for this URL.")
-
-    def test_register_copies_getting_started_project(self):
-        create_templates()
-        response = send_register_request(username="getting_started_test")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        collab = Collaborator.objects.filter(project__name=settings.GETTING_STARTED_PROJECT,
-                                             owner=True,
-                                             user__username="getting_started_test").first()
-        self.assertIsNotNone(collab)
-        orig_project = Collaborator.objects.filter(project__name="GettingStarted",
-                                                   user__username="illumidesktemplates").first()
-        project = collab.project
-        self.assertNotEqual(orig_project.pk, project.pk)
-        self.to_remove.append(collab.user.profile.resource_root())
-        template_user = User.objects.filter(username="illumidesktemplates").first()
-        self.assertIsNotNone(template_user)
-        self.to_remove.append(template_user.profile.resource_root())
 
     def test_registration_rejects_duplicate_email(self):
         old_user = UserFactory()
