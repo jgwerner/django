@@ -56,3 +56,17 @@ STRIPE_WEBHOOK_SECRETS = {'stripe_subscription_updated': "foo",
 AUTH_PASSWORD_VALIDATORS = []
 # force to use only http
 HTTPS = False
+
+# force to use localhost from database connection
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'postgres',                      
+        'USER': 'postgres',
+        'PASSWORD': 'postgres',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
+}
+CACHES['default']['LOCATION'] = 'redis://localhost:6379/0'
+CACHEOPS_REDIS = 'redis://localhost:6379/0'
