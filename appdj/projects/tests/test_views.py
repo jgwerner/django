@@ -175,7 +175,7 @@ class ProjectTest(ProjectTestMixin, APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         copied_project = Project.objects.filter(id=str(response.data['id'])).first()
         self.assertIsNotNone(copied_project)
-        self.assertEqual(copied_project.name, to_copy.name + "-1")
+        self.assertEqual(copied_project.name, to_copy.name + "-Copy")
 
     def test_copy_user_project_with_deliberately_duplicate_name_fails(self):
         to_copy = CollaboratorFactory(project__private=False,
@@ -228,13 +228,10 @@ class ProjectTest(ProjectTestMixin, APITestCase):
 
         url = reverse("project-copy", kwargs={'version': settings.DEFAULT_VERSION,
                                               'namespace': self.user.username})
-        data = {'project': str(to_copy.pk)}
+        data = {'project': str(to_copy.pk), 'name': '{0}-9'.format(name)}
         response = self.client.post(url, data=data)
 
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        copied_project = Project.objects.filter(id=str(response.data['id'])).first()
-        self.assertIsNotNone(copied_project)
-        self.assertEqual(copied_project.name, to_copy.name + "-10")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_project_with_different_user(self):
         staff_user = UserFactory(is_staff=True)
