@@ -35,7 +35,7 @@ class LTITest(TestCase):
             'lis_person_contact_email_primary': 'jdoe@example.com',
         }
         workspace_id, assignment_id = lti(
-            str(self.project.pk), '', data, '')
+            str(self.project.pk), data, '')
         self.assertTrue(User.objects.filter(username='jdoe').exists())
         self.assertTrue(Server.objects.filter(pk=workspace_id).exists())
 
@@ -49,7 +49,7 @@ class LTITest(TestCase):
             'lis_person_contact_email_primary': learner.email,
         }
         workspace_id, assignment_id = lti(
-            str(self.project.pk), '', data, '')
+            str(self.project.pk), data, '')
         self.assertTrue(Server.objects.filter(pk=workspace_id).exists())
         workspace = Server.objects.get(pk=workspace_id)
         self.assertEqual(learner.pk, workspace.project.owner.pk)
@@ -65,7 +65,7 @@ class LTITest(TestCase):
         }
         learner_project = perform_project_copy(learner, str(self.project.pk))
         workspace_id, assignment_id = lti(
-            str(self.project.pk), '', data, '')
+            str(self.project.pk), data, '')
         self.assertTrue(Server.objects.filter(pk=workspace_id).exists())
         workspace = Server.objects.get(pk=workspace_id)
         self.assertEqual(learner.pk, workspace.project.owner.pk)
@@ -87,7 +87,7 @@ class LTITest(TestCase):
             is_active=True
         )
         workspace_id, assingment_id = lti(
-            str(self.project.pk), '', data, '')
+            str(self.project.pk), data, '')
         self.assertEqual(workspace_id, str(workspace.pk))
 
 
@@ -111,7 +111,7 @@ class LTITeamsTest(TestCase):
             'user_id': str(uuid.uuid4()),
             'lis_person_contact_email_primary': 'jdoe@example.com',
         }
-        workspace_id, assignment_id = lti(str(self.project.pk), '', data, '')
+        workspace_id, assignment_id = lti(str(self.project.pk), data, '')
         self.assertTrue(User.objects.filter(username='jdoe').exists())
         self.assertTrue(Server.objects.filter(pk=workspace_id).exists())
 
@@ -124,7 +124,7 @@ class LTITeamsTest(TestCase):
             'user_id': canvas_user_id,
             'lis_person_contact_email_primary': learner.email,
         }
-        workspace_id, assignment_id = lti(str(self.project.pk), '', data, '')
+        workspace_id, assignment_id = lti(str(self.project.pk), data, '')
         self.assertTrue(Server.objects.filter(pk=workspace_id).exists())
         workspace = Server.objects.get(pk=workspace_id)
         self.assertEqual(learner.pk, workspace.project.owner.pk)
@@ -142,7 +142,7 @@ class LTITeamsTest(TestCase):
         learner_project = perform_project_copy(learner, str(self.project.pk))
         learner_project.team = None
         learner_project.save()
-        workspace_id, assignment_id = lti(str(self.project.pk), '', data, '')
+        workspace_id, assignment_id = lti(str(self.project.pk), data, '')
         self.assertTrue(Server.objects.filter(pk=workspace_id).exists())
         workspace = Server.objects.get(pk=workspace_id)
         self.assertEqual(learner.pk, workspace.project.owner.pk)
@@ -165,5 +165,5 @@ class LTITeamsTest(TestCase):
             is_active=True
         )
         workspace_id, assingment_id = lti(
-            str(self.project.pk), '', data, '')
+            str(self.project.pk), data, '')
         self.assertEqual(workspace_id, str(workspace.pk))
