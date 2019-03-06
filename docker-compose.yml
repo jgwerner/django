@@ -52,7 +52,7 @@ services:
       - /workspaces:/workspaces
   celery:
     build: .
-    command: /srv/env/bin/celery -A appdj worker -l info --without-heartbeat
+    command: /srv/env/bin/celery -A config.celery worker -l info --without-heartbeat
     env_file: .env
     depends_on:
       - db
@@ -64,7 +64,7 @@ services:
       - /workspaces:/workspaces
   beat:
     build: .
-    command: /srv/env/bin/celery -A appdj beat -l debug
+    command: /srv/env/bin/celery -A config.celery beat -l debug
     volumes:
       - .:/srv/app
     env_file: .env
