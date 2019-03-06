@@ -53,9 +53,14 @@ class UserTest(APITestCase):
 
     def tearDown(self):
         for user_dir in self.to_remove:
-            shutil.rmtree(user_dir)
+            self._cleanup_user_dir(user_dir)
+        
         for img_file in self.image_files:
             os.remove(img_file)
+
+    def _cleanup_user_dir(self, user_dir):
+        if os.path.isdir(str(user_dir)):
+            shutil.rmtree(user_dir)
 
     def test_my_api_key(self):
         url = reverse("temp-token-auth")

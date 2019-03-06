@@ -1,4 +1,5 @@
 import shutil
+import os
 from pathlib import Path
 from django.test import TestCase
 from django.db import transaction
@@ -7,6 +8,8 @@ from django.conf import settings
 from ..management.commands.create_admin import Command
 from .factories import UserFactory
 from ..models import UserProfile
+
+
 User = get_user_model()
 
 
@@ -15,9 +18,9 @@ class CreateAdminCommandTestCase(TestCase):
     def setUp(self):
         self.user = None
 
-    def tearDown(self):
-        if self.user is not None:
-            user_dir = Path(settings.RESOURCE_DIR, self.user.username)
+    def tearDown(self):        
+        user_dir = self.user.profile.resource_root() if self.user is not None else None
+        if user_dir and os.path.isdir(str(user_dir)):
             shutil.rmtree(str(user_dir))
 
     def test_command(self):

@@ -68,5 +68,10 @@ DATABASES = {
         'PORT': '5432',
     }
 }
-CACHES['default']['LOCATION'] = 'redis://localhost:6379/0'
-CACHEOPS_REDIS = 'redis://localhost:6379/0'
+# fixed values for redis/celery
+REDIS_URL = 'redis://localhost:6379/0'
+CACHES['default']['LOCATION'] = REDIS_URL
+CACHEOPS_REDIS = REDIS_URL
+CELERY_RESULT_BACKEND = REDIS_URL
+CELERY_BROKER_URL = 'amqp://'
+CELERY_REDBEAT_REDIS_URL = REDIS_URL

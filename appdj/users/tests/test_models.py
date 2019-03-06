@@ -17,10 +17,11 @@ class UserProfileTestCase(TestCase):
     def setUp(self):
         self.user = UserFactory()
         create_ssh_key(self.user)
-        self.user_dir = Path(settings.RESOURCE_DIR, self.user.username)
+        self.user_dir = self.user.profile.resource_root()
 
     def tearDown(self):
-        shutil.rmtree(str(self.user_dir))
+        if os.path.isdir(str(self.user_dir)):
+            shutil.rmtree(str(self.user_dir))
 
     def test_ssh_public_key(self):
         ssh_path = Path(settings.RESOURCE_DIR, self.user.username,
