@@ -54,3 +54,5 @@ RUN touch logs/error.log
 EXPOSE 80
 EXPOSE 443
 COPY nginx.conf /nginx/conf
+
+CMD ["/nginx/sbin/nginx", "-g", "daemon off;"]

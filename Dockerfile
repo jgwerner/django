@@ -14,7 +14,6 @@ RUN apk update \
 
 RUN pip install virtualenv
 RUN mkdir -p /srv/
-
 WORKDIR /srv/
 RUN virtualenv env --python=python3
 RUN . env/bin/activate; pip install --upgrade setuptools pip wheel
@@ -27,6 +26,10 @@ ADD requirements/ /srv/app/requirements
 RUN . ../env/bin/activate; pip install -r requirements/dev.txt
 
 ADD . /srv/app
+
+RUN touch /srv/app/celerybeat.pid
+RUN chown -R 1000:1000 /srv/
+USER app
 
 ENTRYPOINT ["/srv/app/docker-entrypoint.sh"]
 

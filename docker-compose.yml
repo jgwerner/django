@@ -10,7 +10,6 @@ services:
     depends_on:
       - db
       - cache
-      - broker
     environment:
       - TLS=True
     labels:
@@ -26,7 +25,6 @@ services:
     depends_on:
       - db
       - cache
-      - broker
     ports:
       - "9000:80"
     entrypoint: ''
@@ -45,7 +43,6 @@ services:
     depends_on:
       - db
       - cache
-      - broker
     entrypoint: ''
     volumes:
       - .:/srv/app
@@ -57,7 +54,6 @@ services:
     depends_on:
       - db
       - cache
-      - broker
     entrypoint: ''
     volumes:
       - .:/srv/app
@@ -71,7 +67,6 @@ services:
     depends_on:
       - db
       - cache
-      - broker
     entrypoint: ''
     volumes:
       - .:/srv/app
@@ -80,10 +75,6 @@ services:
     image: postgres:9.6-alpine
     ports:
       - "5432:5432"
-  broker:
-    image: rabbitmq:alpine
-    ports:
-      - "5672:5672"
   cache:
     image: redis:alpine
     ports:

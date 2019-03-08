@@ -369,7 +369,7 @@ CELERY_SEND_EVENTS = False  # Will not create celeryev.* queues
 CELERY_EVENT_QUEUE_EXPIRES = 60  # Will delete all celeryev. queues without consumers after 1 minute.
 CELERY_WORKER_CONCURENCY = 50
 CELERY_WORKER_PREFETCH_MULTIPLYER = 1
-CELERY_BROKER_URL = os.environ.get('RABBITMQ_URL')
+CELERY_BROKER_URL = os.environ.get('REDIS_URL')
 CELERY_REDBEAT_REDIS_URL = os.environ.get('REDIS_URL')
 CELERY_BEAT_SCHEDULER = 'redbeat:RedBeatScheduler'
 CELERY_BEAT_MAX_LOOP_INTERVAL = 60
@@ -419,7 +419,7 @@ SOCIAL_AUTH_SLACK_SECRET = os.environ.get('SLACK_SECRET')
 # CORS requests
 CORS_ORIGIN_ALLOW_ALL = True
 
-LOGGING = TBS_LOGGING
+#LOGGING = TBS_LOGGING
 
 # A list of url *names* that require a subscription to access.
 SUBSCRIPTION_REQUIRED_URLS = ["server-start"]
