@@ -23,7 +23,7 @@ class Team(TimeStampedModel):
 
     name = models.CharField(max_length=80, validators=[alphanumeric], unique=True)
     description = models.TextField(blank=True)
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='teams_created')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='teams_created', on_delete=models.CASCADE)
     website = models.URLField(blank=True)
     location = models.CharField(max_length=100, blank=True)
     avatar_url = models.CharField(max_length=100, blank=True, null=True)
@@ -55,9 +55,9 @@ class Group(MP_Node):
     NATURAL_KEY = 'name'
 
     name = models.CharField(max_length=80, validators=[alphanumeric])
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='groups_created')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='groups_created', on_delete=models.CASCADE)
     permissions = models.ManyToManyField('auth.Permission', blank=True, related_name='team_groups')
-    team = models.ForeignKey(Team, related_name='groups')
+    team = models.ForeignKey(Team, related_name='groups', on_delete=models.CASCADE)
     created = models.DateTimeField(default=timezone.now)
     modified = models.DateTimeField(auto_now=True)
     private = models.BooleanField(default=True)

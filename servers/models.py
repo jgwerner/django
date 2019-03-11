@@ -24,11 +24,11 @@ class ServerModelAbstract(models.Model):
     NATURAL_KEY = "name"
 
     name = models.CharField(max_length=50)
-    project = models.ForeignKey('projects.Project', related_name='%(class)ss')
-    config = JSONField(default={})
+    project = models.ForeignKey('projects.Project', related_name='%(class)ss', on_delete=models.CASCADE)
+    config = JSONField(default=dict)
     is_active = models.BooleanField(default=True)
     access_token = models.TextField(blank=True)
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='%(class)ss')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='%(class)ss', on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
 
     objects = TBSQuerySet.as_manager()
@@ -90,13 +90,13 @@ class Server(ServerModelAbstract):
     private_ip = models.CharField(max_length=19)
     public_ip = models.CharField(max_length=19)
     container_id = models.CharField(max_length=100, blank=True)
-    server_size = models.ForeignKey('ServerSize')
-    env_vars = HStoreField(default={})
+    server_size = models.ForeignKey('ServerSize', on_delete=models.CASCADE)
+    env_vars = HStoreField(default=dict)
     startup_script = models.CharField(max_length=50, blank=True)
     auto_restart = models.BooleanField(default=False)
     connected = models.ManyToManyField('self', blank=True, related_name='servers')
     image_name = models.CharField(max_length=100, blank=True)
-    host = models.ForeignKey('infrastructure.DockerHost', related_name='servers', null=True, blank=True)
+    host = models.ForeignKey('infrastructure.DockerHost', related_name='servers', null=True, blank=True, on_delete=models.SET_NULL)
     last_start = models.DateTimeField(null=True)
 
     class Meta(ServerModelAbstract.Meta):
@@ -203,7 +203,7 @@ class ServerSize(models.Model):
 
 
 class ServerRunStatistics(models.Model):
-    server = models.ForeignKey(Server, null=True)
+    server = models.ForeignKey(Server, null=True, on_delete=models.SET_NULL)
     start = models.DateTimeField(blank=True, null=True)
     stop = models.DateTimeField(blank=True, null=True)
     exit_code = models.IntegerField(blank=True, null=True)
@@ -218,8 +218,8 @@ class ServerRunStatistics(models.Model):
     server_size_memory = models.IntegerField(null=True)
     server_size_is_metered = models.NullBooleanField()
     server_size_is_gpu = models.NullBooleanField()
-    owner = models.ForeignKey(User, null=True)
-    project = models.ForeignKey("projects.Project", null=True)
+    owner = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
+    project = models.ForeignKey("projects.Project", null=True, on_delete=models.SET_NULL)
 
     objects = TBSQuerySet.as_manager()
 
@@ -228,7 +228,7 @@ class ServerStatistics(models.Model):
     start = models.DateTimeField(blank=True, null=True)
     stop = models.DateTimeField(blank=True, null=True)
     size = models.BigIntegerField(blank=True, null=True)
-    server = models.ForeignKey(Server, null=True)
+    server = models.ForeignKey(Server, null=True, on_delete=models.SET_NULL)
 
     objects = TBSQuerySet.as_manager()
 

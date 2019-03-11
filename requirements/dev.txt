@@ -1,7 +1,7 @@
 -r base.txt
 factory-boy==2.8.1
 fakeredis==0.8.2
-django-debug-toolbar==1.6
+django-debug-toolbar==1.11
 coverage==4.4.1
 pylint
 pylint-django

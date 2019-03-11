@@ -22,7 +22,7 @@ class DockerHost(models.Model):
     name = models.CharField(max_length=100)
     ip = models.GenericIPAddressField()
     port = models.IntegerField(default=2375)
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='nodes')
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='nodes', on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
 
     objects = DockerHostQuerySet.as_manager()

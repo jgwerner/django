@@ -44,10 +44,10 @@ class Action(models.Model):
     )
 
     path = models.TextField(blank=True)
-    payload = JSONField(default={})
+    payload = JSONField(default=dict)
     action = models.CharField(max_length=100, db_index=True)
     method = models.CharField(max_length=7)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='actions', null=True, blank=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='actions', null=True, blank=True, on_delete=models.SET_NULL)
     user_agent = models.CharField(max_length=255)
     start_date = models.DateTimeField(default=timezone.now)
     end_date = models.DateTimeField(blank=True, null=True)
@@ -59,7 +59,7 @@ class Action(models.Model):
     can_be_cancelled = models.BooleanField(default=False)
     can_be_retried = models.BooleanField(default=False)
     is_user_action = models.BooleanField(default=True)
-    headers = JSONField(default={}, encoder=SkipJSONEncoder)
+    headers = JSONField(default=dict, encoder=SkipJSONEncoder)
 
     objects = ActionQuerySet.as_manager()
 
