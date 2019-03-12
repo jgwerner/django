@@ -25,9 +25,9 @@ class Trigger(models.Model):
     NATURAL_KEY = 'name'
 
     name = models.CharField(max_length=50, blank=True)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='triggers')
-    cause = models.ForeignKey('actions.Action', related_name='cause_triggers', blank=True, null=True)
-    effect = models.ForeignKey('actions.Action', related_name='effect_triggers', blank=True, null=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='triggers', on_delete=models.CASCADE)
+    cause = models.ForeignKey('actions.Action', related_name='cause_triggers', blank=True, null=True, on_delete=models.SET_NULL)
+    effect = models.ForeignKey('actions.Action', related_name='effect_triggers', blank=True, null=True, on_delete=models.SET_NULL)
     schedule = models.CharField(max_length=20, blank=True, help_text='Cron schedule')
     webhook = JSONField(default=defaultdict(str))
 

@@ -17,19 +17,19 @@ class NotificationType(models.Model):
 
 
 class Notification(models.Model):
-    user = models.ForeignKey(User, blank=False, related_name='notifications')
+    user = models.ForeignKey(User, blank=False, related_name='notifications', on_delete=models.CASCADE)
     read = models.BooleanField(default=False)
 
     # Who/what did it
-    actor_content_type = models.ForeignKey(ContentType, related_name='notify_actor')
+    actor_content_type = models.ForeignKey(ContentType, related_name='notify_actor', on_delete=models.CASCADE)
     actor_object_id = models.UUIDField()
     actor = GenericForeignKey('actor_content_type', 'actor_object_id')
 
     # What they did
-    type = models.ForeignKey(NotificationType)
+    type = models.ForeignKey(NotificationType, on_delete=models.CASCADE)
 
     # Who/what they did it to
-    target_content_type = models.ForeignKey(ContentType, related_name='notify_target', blank=True, null=True)
+    target_content_type = models.ForeignKey(ContentType, related_name='notify_target', blank=True, null=True, on_delete=models.CASCADE)
     target_object_id = models.UUIDField(blank=True, null=True)
     target = GenericForeignKey('target_content_type', 'target_object_id')
 
@@ -58,13 +58,13 @@ class Notification(models.Model):
 
 
 class NotificationSettings(models.Model):
-    user = models.ForeignKey(User)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     entity = models.CharField(max_length=50)
 
-    object_content_type = models.ForeignKey(ContentType, null=True)
+    object_content_type = models.ForeignKey(ContentType, null=True, on_delete=models.CASCADE)
     object_id = models.UUIDField(null=True)
     object = GenericForeignKey('object_content_type', 'object_id')
 
     enabled = models.BooleanField(default=True)
     emails_enabled = models.BooleanField(default=True)
-    email_address = models.ForeignKey(Email, null=True)
+    email_address = models.ForeignKey(Email, null=True, on_delete=models.CASCADE)

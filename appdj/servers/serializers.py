@@ -81,6 +81,7 @@ class ServerSerializer(SearchSerializerMixin, BaseServerSerializer):
     def create(self, validated_data):
         default_permissions = [perm[0] for perm in Server._meta.permissions]
         permissions = validated_data.pop('permissions', default_permissions)
+        connected = validated_data.pop('connected', [])
         server_size = (validated_data.pop('server_size', None) or
                        ServerSize.objects.order_by('created_at').first())
         project_pk = self.context['view'].kwargs['project_project']
@@ -95,6 +96,8 @@ class ServerSerializer(SearchSerializerMixin, BaseServerSerializer):
                                          server_size=server_size,
                                          access_token=create_server_jwt(user, str(pk)),
                                          **validated_data)
+        if connected:
+            instance.connected.set(connected)
         for permission in permissions:
             assign_perm(permission, user, instance)
         return instance

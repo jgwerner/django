@@ -1,4 +1,5 @@
 import logging
+import uuid
 from pathlib import Path
 
 from django.contrib.auth.validators import UnicodeUsernameValidator
@@ -42,6 +43,8 @@ class User(AbstractUser):
         )
 
     def save(self, *args, **kwargs):
+        if self.id is None:
+            self.id = uuid.uuid4()
         username = self.username
         existing_user = User.objects.filter(username=username,
                                             is_active=True).first()
@@ -49,7 +52,7 @@ class User(AbstractUser):
             logger.info(f"Rejected creating/updating user: {self.pk} due to username conflict.")
             raise IntegrityError(f"A user with the username {username} already exists.")
         else:
-            super(User, self).save(*args, **kwargs)
+            super().save(*args, **kwargs)
 
     def get_absolute_url(self, version):
         return reverse('user-detail', kwargs={'version': version, 'user': str(self.pk)})
@@ -61,7 +64,7 @@ def user_directory_path(instance, filename):
 
 
 class UserProfile(models.Model):
-    user = models.OneToOneField(User, primary_key=True, related_name='profile')
+    user = models.OneToOneField(User, primary_key=True, related_name='profile', on_delete=models.CASCADE)
     avatar_url = models.CharField(max_length=100, blank=True, null=True)
     avatar = models.ImageField(upload_to=user_directory_path, null=True, blank=True)
     bio = models.CharField(max_length=400, blank=True, null=True)
@@ -74,7 +77,7 @@ class UserProfile(models.Model):
     last_login_ip = models.CharField(max_length=20, blank=True, null=True)
     login_count = models.IntegerField(blank=True, null=True)
     timezone = models.CharField(db_column='Timezone', max_length=20, blank=True, null=True)
-    config = JSONField(default={}, blank=True)
+    config = JSONField(default=dict, blank=True)
 
     def resource_root(self):
         return Path(settings.RESOURCE_DIR, self.user.username)
@@ -88,7 +91,7 @@ class UserProfile(models.Model):
 
 class Email(models.Model):
     address = models.CharField(max_length=255)
-    user = models.ForeignKey(User, related_name='emails', null=True)
+    user = models.ForeignKey(User, related_name='emails', null=True, on_delete=models.SET_NULL)
     public = models.BooleanField(default=False)
     unsubscribed = models.BooleanField(default=True)
 

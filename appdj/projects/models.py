@@ -26,10 +26,10 @@ class Project(models.Model):
     last_updated = models.DateTimeField(auto_now=True)
     collaborators = models.ManyToManyField(settings.AUTH_USER_MODEL, through='Collaborator', related_name='projects')
     integrations = models.ManyToManyField(UserSocialAuth, related_name='projects')
-    team = models.ForeignKey('teams.Team', blank=True, null=True, related_name='projects')
+    team = models.ForeignKey('teams.Team', blank=True, null=True, related_name='projects', on_delete=models.CASCADE)
     copying_enabled = models.BooleanField(default=True)
     is_active = models.BooleanField(default=True)
-    config = JSONField(default={})
+    config = JSONField(default=dict)
 
     objects = ProjectQuerySet.as_manager()
 
