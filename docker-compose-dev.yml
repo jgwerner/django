@@ -2,7 +2,7 @@ version: '3'
 services:
   api:
     build: .
-    command: /srv/env/bin/gunicorn --bind 0.0.0.0:80 --reload --workers 1 --log-level=DEBUG --error-logfile=- --access-logfile=- config.wsgi
+    command: /srv/env/bin/gunicorn --bind 0.0.0.0:8080 --reload --workers 1 --log-level=DEBUG --error-logfile=- --access-logfile=- config.wsgi
     volumes:
       - .:/srv/app
       - /var/run/docker.sock:/var/run/docker.sock      
@@ -16,6 +16,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.backend=api"
+      - "traefik.port=8080"
       - "traefik.frontend.priority=1"
       - "traefik.frontend.rule=PathPrefix:/"
   channels:

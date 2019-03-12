@@ -13,6 +13,10 @@ RUN apk update \
     curl
 
 RUN pip install virtualenv
+
+RUN addgroup -g 1000 -S app && \
+    adduser -u 1000 -S app -G app
+
 RUN mkdir -p /srv/
 WORKDIR /srv/
 RUN virtualenv env --python=python3
