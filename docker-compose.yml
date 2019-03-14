@@ -2,7 +2,7 @@ version: '3'
 services:
   api:
     build: .
-    command: /srv/env/bin/gunicorn --bind 0.0.0.0:8080 --reload --workers 1 --log-level=INFO --error-logfile=- --access-logfile=- appdj.wsgi
+    command: /srv/env/bin/gunicorn --bind 0.0.0.0:8080 --reload --workers 1 --log-level=INFO --error-logfile=- --access-logfile=- config.wsgi
     env_file: .env
     volumes:
       - /workspaces:/workspaces
@@ -10,6 +10,8 @@ services:
     depends_on:
       - db
       - cache
+    environment:
+      - TLS=True
     labels:
       - "traefik.enable=true"
       - "traefik.port=8080"
@@ -18,7 +20,7 @@ services:
       - "traefik.frontend.rule=PathPrefix:/"
   channels:
     build: .
-    command: /srv/env/bin/daphne -p 80 -b 0.0.0.0 -v 2 appdj.asgi:channel_layer
+    command: /srv/env/bin/daphne -p 80 -b 0.0.0.0 -v 2 config.asgi:channel_layer
     env_file: .env
     depends_on:
       - db
@@ -47,7 +49,7 @@ services:
       - /workspaces:/workspaces
   celery:
     build: .
-    command: /srv/env/bin/celery -A appdj worker -l info --without-heartbeat
+    command: /srv/env/bin/celery -A config.celery worker -l info --without-heartbeat
     env_file: .env
     depends_on:
       - db
@@ -58,7 +60,7 @@ services:
       - /workspaces:/workspaces
   beat:
     build: .
-    command: /srv/env/bin/celery -A appdj beat -l debug
+    command: /srv/env/bin/celery -A config.celery beat -l debug
     volumes:
       - .:/srv/app
     env_file: .env

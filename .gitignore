@@ -11,8 +11,9 @@ __pycache__/
 # Retry
 *.retry
 
-# PyCharm
+# IDES like PyCharm or VSCode
 *.idea
+.vscode/
 
 # Distribution / packaging
 env/
@@ -76,9 +77,6 @@ target/
 # celery beat schedule file
 celerybeat-schedule
 
-# dotenv
-.env
-
 # virtualenv
 .venv/
 venv/
@@ -113,3 +111,11 @@ celerybeat.pid
 # lambda func
 stats.zip
 vendored/
+
+# tmp folder (for testing and workspaces artifacts)
+tmp/
+
+# local environment variables
+.env
+# ignore workspaces folder that is used locally when launch notebooks to save its files
+workspaces/

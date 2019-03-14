@@ -2,27 +2,30 @@ version: '3'
 services:
   api:
     build: .
-    command: /srv/env/bin/gunicorn --bind 0.0.0.0:80 --reload --workers 1 --log-level=DEBUG --error-logfile=- --access-logfile=- appdj.wsgi
+    command: /srv/env/bin/gunicorn --bind 0.0.0.0:8080 --reload --workers 1 --log-level=DEBUG --error-logfile=- --access-logfile=- config.wsgi
     volumes:
       - .:/srv/app
-      - /var/run/docker.sock:/var/run/docker.sock
-    env_file: env
+      - /var/run/docker.sock:/var/run/docker.sock      
     depends_on:
       - db
       - cache
       - broker
+    environment:
+      - TLS=False
+    env_file: .env
     labels:
       - "traefik.enable=true"
       - "traefik.backend=api"
+      - "traefik.port=8080"
       - "traefik.frontend.priority=1"
       - "traefik.frontend.rule=PathPrefix:/"
   channels:
     build: .
-    command: /srv/env/bin/daphne -p 80 -b 0.0.0.0 -v 2 appdj.asgi:channel_layer
+    command: /srv/env/bin/daphne -p 80 -b 0.0.0.0 -v 2 config.asgi:channel_layer
     volumes:
       - .:/srv/app
       - /var/run/docker.sock:/var/run/docker.sock
-    env_file: env
+    env_file: .env
     depends_on:
       - db
       - cache
@@ -41,7 +44,7 @@ services:
     volumes:
       - .:/srv/app
       - /var/run/docker.sock:/var/run/docker.sock
-    env_file: env
+    env_file: .env
     depends_on:
       - db
       - cache
@@ -49,11 +52,11 @@ services:
     entrypoint: ''
   celery:
     build: .
-    command: /srv/env/bin/celery -A appdj worker -l info --without-heartbeat
+    command: /srv/env/bin/celery -A config.celery worker -l info --without-heartbeat
     volumes:
       - .:/srv/app
       - /var/run/docker.sock:/var/run/docker.sock
-    env_file: env
+    env_file: .env
     depends_on:
       - db
       - cache
@@ -61,15 +64,15 @@ services:
     entrypoint: ''
   beat:
     build: .
-    command: /srv/env/bin/celery -A appdj beat -l debug
+    command: /srv/env/bin/celery -A config.celery beat -l debug
     volumes:
       - .:/srv/app
       - /var/run/docker.sock:/var/run/docker.sock
-    env_file: env
     depends_on:
       - db
       - cache
       - broker
+    env_file: .env
     entrypoint: ''
   db:
     image: postgres:9.6-alpine
@@ -89,7 +92,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "5001:80"
-      - "8081:8080"
+      - "8080:8080"
   nginx:
     image: illumidesk/nginx
     command: /nginx/sbin/nginx -p '' -g 'daemon off;'
@@ -98,7 +101,10 @@ services:
       - "traefik.backend=nginx"
       - "traefik.nginx.frontend.rule=PathPrefix:/media"
     volumes:
-      - /workspaces:/workspaces
+      - workspaces:/workspaces
+
+volumes:
+  workspaces:
 
 networks:
   default:

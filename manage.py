@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 import os
 import sys
+import environ
+from django.conf import settings
 
-if __name__ == "__main__":
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "appdj.settings")
+if __name__ == "__main__":    
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.local")
+    
     try:
         from django.core.management import execute_from_command_line
     except ImportError:
@@ -19,4 +22,5 @@ if __name__ == "__main__":
                 "forget to activate a virtual environment?"
             )
         raise
+    sys.path.append(settings.APPS_DIR)    
     execute_from_command_line(sys.argv)

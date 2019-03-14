@@ -48,3 +48,4 @@ raven==6.9.0
 celery-redbeat==0.11.1
 django-treebeard==4.3
 asgi-redis==1.4.3
+django-environ==0.4.5
