@@ -2,7 +2,6 @@ from django.conf import settings
 from django.db import models
 
 
-
 class CanvasInstance(models.Model):
     instance_guid = models.CharField(max_length=100, blank=False)
     name = models.CharField(max_length=100, blank=True)

@@ -1,5 +1,4 @@
 import logging
-import uuid
 from pathlib import Path
 
 from django.contrib.auth.validators import UnicodeUsernameValidator
@@ -43,8 +42,6 @@ class User(AbstractUser):
         )
 
     def save(self, *args, **kwargs):
-        if self.id is None:
-            self.id = uuid.uuid4()
         username = self.username
         existing_user = User.objects.filter(username=username,
                                             is_active=True).first()

@@ -21,6 +21,10 @@ class TriggerQuerySet(TBSQuerySet):
         return self.filter(user=user)
 
 
+def webhook_default():
+    return defaultdict(str)
+
+
 class Trigger(models.Model):
     NATURAL_KEY = 'name'
 
@@ -29,7 +33,7 @@ class Trigger(models.Model):
     cause = models.ForeignKey('actions.Action', related_name='cause_triggers', blank=True, null=True, on_delete=models.SET_NULL)
     effect = models.ForeignKey('actions.Action', related_name='effect_triggers', blank=True, null=True, on_delete=models.SET_NULL)
     schedule = models.CharField(max_length=20, blank=True, help_text='Cron schedule')
-    webhook = JSONField(default=defaultdict(str))
+    webhook = JSONField(default=webhook_default)
 
     objects = TriggerQuerySet.as_manager()
 

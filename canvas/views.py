@@ -2,13 +2,12 @@ from django.conf import settings
 from django.urls import reverse
 from django.http import HttpResponseRedirect
 from django.contrib.sites.shortcuts import get_current_site
-from rest_framework import views, viewsets
+from rest_framework import views
 from rest_framework.response import Response
 from rest_framework.parsers import FormParser
 from oauth2_provider.models import get_application_model
 
 from .authorization import CanvasAuth
-from .serializers import ApplicationSerializer
 from .renderer import CanvasRenderer
 
 Application = get_application_model()
@@ -128,11 +127,3 @@ class Auth(views.APIView):
 
     def post(self, request, **kwargs):
         return HttpResponseRedirect(settings.LOGIN_REDIRECT_URL)
-
-
-class ApplicationViewSet(viewsets.ModelViewSet):
-    queryset = Application.objects.all()
-    serializer_class = ApplicationSerializer
-
-    def get_queryset(self):
-        return super().get_queryset().filter(user=self.request.user)

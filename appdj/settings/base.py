@@ -14,7 +14,6 @@ import os
 import datetime
 import uuid
 from appdj.settings import BASE_DIR
-from appdj.settings.tbslog import TBS_LOGGING
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 
 # Quick-start development settings - unsuitable for production
@@ -55,6 +54,7 @@ INSTALLED_APPS = [
     'django_ses',
     'treebeard',
 
+    'oauth2',
     'base',
     'notifications',
     'users',
@@ -181,6 +181,7 @@ SOCIAL_AUTH_PIPELINE = (
 OAUTH2_PROVIDER_APPLICATION_MODEL = 'oauth2_provider.Application'
 OAUTH2_PROVIDER_REFRESH_TOKEN_MODEL = 'oauth2_provider.RefreshToken'
 OAUTH2_PROVIDER_ACCESS_TOKEN_MODEL = 'oauth2_provider.AccessToken'
+OAUTH2_PROVIDER_GRANT_MODEL = 'oauth2_provider.Grant'
 
 HTTPS = os.environ.get("TLS", "false").lower() == "true"
 LOGIN_URL = '/api-auth/login/'
@@ -410,8 +411,6 @@ SOCIAL_AUTH_SLACK_SECRET = os.environ.get('SLACK_SECRET')
 
 # CORS requests
 CORS_ORIGIN_ALLOW_ALL = True
-
-#LOGGING = TBS_LOGGING
 
 # A list of url *names* that require a subscription to access.
 SUBSCRIPTION_REQUIRED_URLS = ["server-start"]

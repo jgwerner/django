@@ -26,7 +26,8 @@ from users import views as user_views
 from triggers import views as trigger_views
 from teams import views as team_views
 from search.views import SearchView
-from canvas.views import CanvasXML, Auth, ApplicationViewSet
+from canvas.views import CanvasXML, Auth
+from oauth2.views import ApplicationViewSet
 
 router = routers.SimpleRouter()
 

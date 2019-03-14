@@ -4,11 +4,14 @@
 
 debug = false
 logLevel = "ERROR"
-defaultEntryPoints = ["http"]
+defaultEntryPoints = ["http", "https"]
 
 [entryPoints]
     [entryPoints.http]
     address = ":80"
+    [entryPoints.https]
+    address = ":443"
+        [entryPoints.https.tls]
 
 # use default stdout. this allows for using any log driver to pipe logs
 # to a third party service.
@@ -41,19 +44,3 @@ domain = "localhost"
 exposedbydefault = true
 
 watch = true
-
-################################################################
-# File configuration backend
-################################################################
-[file]
-
-[backends]
-  [backends.userspace]
-    [backends.userspace.servers.manager_1]
-    url = "http://192.168.8.100:5000"
-
-[frontends]
-  [frontends.userspace]
-  backend = "userspace"
-    [frontends.userspace.routes.server]
-    rule = "PathPrefix:/{version}/{namespace}/projects/{project}/servers/{server}/endpoint"
