@@ -83,6 +83,7 @@ INSTALLED_APPS = [
     'appdj.search.apps.SearchConfig',
     'appdj.teams.apps.TeamsConfig',
     'appdj.canvas.apps.CanvasConfig',
+]
 
 MIDDLEWARE = [
     'appdj.jwt_auth.middleware.OAuthUIMiddleware',

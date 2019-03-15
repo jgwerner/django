@@ -49,7 +49,7 @@ from .tasks import (
 )
 from .permissions import ServerChildPermission, ServerActionPermission
 from . import serializers, models
-from .utils import get_server_usage, get_server_url, create_server
+from .utils import get_server_usage, get_server_url
 
 
 logger = logging.getLogger(__name__)
@@ -72,7 +72,7 @@ class ServerViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
         serializer = serializers.ServerStatusSerializer(servers, many=True)
         return Response(serializer.data)
 
-    def perform_destroy(self, instance):        
+    def perform_destroy(self, instance):
         print('self.request.action', str(self.request.action))
         print('self.request.action.pk', self.request.action.pk)
         terminate_server.apply_async(
