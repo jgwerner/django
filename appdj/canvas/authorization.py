@@ -60,7 +60,7 @@ class CanvasAuth(authentication.BaseAuthentication):
         if canvas_instance is None:
             canvas_instance, _ = CanvasInstance.objects.get_or_create(
                 instance_guid=request.data['tool_consumer_instance_guid'],
-                defaults=dict(name=request.data['tool_consumer_instance_name'])
+                defaults=dict(name=request.data.get('tool_consumer_instance_name', ''))
             )
             canvas_instance.applications.add(application)
         if valid and application is not None:
