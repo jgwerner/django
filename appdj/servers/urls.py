@@ -33,8 +33,6 @@ server_router.register(r'triggers', trigger_views.ServerActionViewSet)
 urlpatterns = [
     url(r'^(?P<namespace>[\w-]+)/', include(server_router.urls)),
     url(r'^servers/', include(servers_router.urls)),
-    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server_server>[^/.]+)/internal/(?P<service>[^/.]+)/$', # noqa
-        servers_views.server_internal_details, name="server_internal"),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/api-key/$',
         servers_views.server_key, name='server-api-key'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/api-key/reset/$',
