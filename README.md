@@ -1,4 +1,4 @@
-[![![Build Status](https://travis-ci.com/IllumiDesk/app-backend.svg?token=y3jvxynhJQZHELnDYJdy&branch=master)](https://travis-ci.com/IllumiDesk/app-backend)
+[![Build Status](https://travis-ci.com/IllumiDesk/app-backend.svg?token=y3jvxynhJQZHELnDYJdy&branch=master)](https://travis-ci.com/IllumiDesk/app-backend)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
 
 # IllumiDesk Backend Services

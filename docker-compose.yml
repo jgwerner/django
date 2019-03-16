@@ -72,7 +72,7 @@ services:
       - .:/srv/app
       - /workspaces:/workspaces
   db:
-    image: postgres:9.6-alpine
+    image: postgres:10.6-alpine
     ports:
       - "5432:5432"
   cache:

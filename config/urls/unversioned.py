@@ -26,7 +26,8 @@ from appdj.users import views as user_views
 from appdj.triggers import views as trigger_views
 from appdj.teams import views as team_views
 from appdj.search.views import SearchView
-from appdj.canvas.views import CanvasXML, Auth, ApplicationViewSet
+from appdj.canvas.views import CanvasXML, Auth
+from appdj.oauth2.views import ApplicationViewSet
 
 router = routers.SimpleRouter()
 
