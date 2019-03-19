@@ -3,14 +3,12 @@ import time
 import uuid
 from pathlib import Path
 
-import boto3
-
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
 from django.urls import reverse
-from django.db.models import Q
 from django.template.loader import render_to_string
+from oauth2_provider.models import AccessToken
 
 from celery import shared_task
 
@@ -106,7 +104,7 @@ def lti(project_pk, data, path):
         logger.debug(f"Starting workspace {workspace.pk}")
         workspace.spawner.start()
         # wait 30 sec for workspace to start
-        for i in range(30): # pylint: disable=unused-variable
+        for i in range(30):  # pylint: disable=unused-variable
             if workspace.status == workspace.RUNNING:
                 # wait for servers to pick up workspace
                 time.sleep(2)
@@ -162,7 +160,8 @@ def send_assignment(workspace_pk, assignment_id):
     assingment_path = learner_workspace.project.resource_root() / assignment['path']
     teacher_assignment_path = Path('submissions', learner.email, assignment['path'])
     copy_assignment_file(assingment_path, teacher_project.resource_root() / teacher_assignment_path)
-    oauth_app = CanvasInstance.objects.filter(instance_guid=assignment['instance_guid']).first().applications.first()
+    canvas_apps = CanvasInstance.objects.get(instance_guid=assignment['instance_guid']).applications.values_list('id', flat=True)
+    oauth_app = learner.profile.applications.filter(id__in=canvas_apps).first()
     oauth_session = OAuth1Session(oauth_app.client_id, client_secret=oauth_app.client_secret)
     scheme = 'https' if settings.HTTPS else 'http'
     namespace = teacher_project.namespace_name
