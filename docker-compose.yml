@@ -6,7 +6,6 @@ services:
     env_file: .env
     volumes:
       - /workspaces:/workspaces
-      - .:/srv/app
     depends_on:
       - db
       - cache
@@ -34,7 +33,6 @@ services:
       - "traefik.frontend.priority=2"
       - "traefik.frontend.rule=Path:/sns/{server}/,/{version}/{namespace}/projects/{project}/servers/{server}/status/"
     volumes:
-      - .:/srv/app
       - /workspaces:/workspaces
   channel_worker:
     build: .
@@ -45,7 +43,6 @@ services:
       - cache
     entrypoint: ''
     volumes:
-      - .:/srv/app
       - /workspaces:/workspaces
   celery:
     build: .
@@ -56,20 +53,16 @@ services:
       - cache
     entrypoint: ''
     volumes:
-      - .:/srv/app
       - /workspaces:/workspaces
   beat:
     build: .
     command: /srv/env/bin/celery -A config.celery beat -l debug
-    volumes:
-      - .:/srv/app
     env_file: .env
     depends_on:
       - db
       - cache
     entrypoint: ''
     volumes:
-      - .:/srv/app
       - /workspaces:/workspaces
   db:
     image: postgres:10.6-alpine
