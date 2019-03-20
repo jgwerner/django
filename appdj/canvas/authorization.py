@@ -56,13 +56,11 @@ class CanvasAuth(authentication.BaseAuthentication):
             client_id=request.data.get('oauth_consumer_key')).first()
         if application is None:
             return None
-        canvas_instance = application.canvasinstance_set.first()
-        if canvas_instance is None:
-            canvas_instance, _ = CanvasInstance.objects.get_or_create(
-                instance_guid=request.data['tool_consumer_instance_guid'],
-                defaults=dict(name=request.data.get('tool_consumer_instance_name', ''))
-            )
-            canvas_instance.applications.add(application)
+        canvas_instance, _ = CanvasInstance.objects.get_or_create(
+            instance_guid=request.data['tool_consumer_instance_guid'],
+            defaults=dict(name=request.data.get('tool_consumer_instance_name', ''))
+        )
+        canvas_instance.applications.add(application)
         if valid and application is not None:
             email = request.data['lis_person_contact_email_primary']
             user = User.objects.filter(email=email).first()
@@ -71,6 +69,7 @@ class CanvasAuth(authentication.BaseAuthentication):
                     username=email_to_username(email),
                     email=email
                 )
+            user.profile.applications.add(application)
             if 'canvas_user_id' not in user.profile.config:
                 user.profile.config['canvas_user_id'] = request.data['user_id']
                 user.profile.save()

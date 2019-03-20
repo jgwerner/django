@@ -75,6 +75,7 @@ class UserProfile(models.Model):
     login_count = models.IntegerField(blank=True, null=True)
     timezone = models.CharField(db_column='Timezone', max_length=20, blank=True, null=True)
     config = JSONField(default=dict, blank=True)
+    applications = models.ManyToManyField(settings.OAUTH2_PROVIDER_APPLICATION_MODEL, related_name='users')
 
     def resource_root(self):
         return Path(settings.RESOURCE_DIR, self.user.username)

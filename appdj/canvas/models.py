@@ -3,7 +3,7 @@ from django.db import models
 
 
 class CanvasInstance(models.Model):
-    instance_guid = models.CharField(max_length=100, blank=False)
+    instance_guid = models.CharField(max_length=100, blank=False, unique=True)
     name = models.CharField(max_length=100, blank=True)
     applications = models.ManyToManyField(settings.OAUTH2_PROVIDER_APPLICATION_MODEL)
 
