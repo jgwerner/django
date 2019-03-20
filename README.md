@@ -26,14 +26,15 @@ We maintain an `docker-compose.yml` file to launch our working `app-backend` sta
 
 ### Launch Stack
 
-Establish your environment variables. The `env` file included in this repo includes a sensible set of
-defaults which should work to launch a basic version of the application:
+Establish your environment variables. The `env` file included in this repo includes a sensible set of defaults which should work to launch a basic version of the application:
 
     cp env.compose .env
 
 Use the following command to launch the full stack with docker compose (-d for detached mode):
 
     docker-compose -f docker-compose-dev.yml up -d
+
+> `docker-compose-dev.yml` mounts files from the host to allow for updating files on the host and having those reflected in the container's file system. Use `docker-compose.yml` for more stable environments. `docker-compose-test.yml` builds images with `Dockerfile.Test` and is used to run integration and unit tests.
 
 > `docker-compose up -d` should check for latest image and pull newer image if one exists, but it may be necessary to pull images explicitly using `docker pull illumidesk/<image-name>`.
 
