@@ -1,14 +1,11 @@
-from unittest.mock import patch
 from django.conf import settings
 from django.urls import reverse
-from django.test import TestCase, Client, override_settings
 from rest_framework import status
-from rest_framework.test import APITransactionTestCase, APITestCase
+from rest_framework.test import APITransactionTestCase
 
-from appdj.users.tests.factories import UserFactory, EmailFactory
+from appdj.users.tests.factories import UserFactory
 from appdj.projects.tests.factories import ProjectFactory
 from appdj.servers.tests.factories import ServerFactory, ServerSizeFactory
-from appdj.jwt_auth.utils import create_auth_jwt
 
 from .factories import TeamFactory
 from ..models import Team, Group
@@ -108,33 +105,6 @@ class TeamTest(APITransactionTestCase):
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         data['name'] = 'Test2'
         resp = self.client.post(server_url, data=data)
-        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
-
-    def test_team_group_permission_for_ssh_tunnel(self):
-        team, cli = self._create_base_permission_test()
-        project = ProjectFactory()
-        server = ServerFactory(project=project)
-        tunnel_url = reverse(
-            'sshtunnel-list',
-            kwargs={
-                'version': settings.DEFAULT_VERSION,
-                'namespace': team.name,
-                'project_project': str(project.pk),
-                'server_server': str(server.pk)
-            }
-        )
-        data = dict(
-            name='Test',
-            host='localhost',
-            local_port=1234,
-            remote_port=1234,
-            endpoint='localhost:1234',
-            username='test'
-        )
-        resp = cli.post(tunnel_url, data=data)
-        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
-        data['name'] = 'Test2'
-        resp = self.client.post(tunnel_url, data=data)
         self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_create_group(self):

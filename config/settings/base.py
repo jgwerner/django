@@ -76,9 +76,7 @@ INSTALLED_APPS = [
     'appdj.users.apps.UsersConfig',
     'appdj.projects.apps.ProjectsConfig',
     'appdj.servers.apps.ServersConfig',
-    'appdj.actions.apps.ActionsConfig',
     'appdj.infrastructure.apps.InfrastructureConfig',
-    'appdj.triggers.apps.TriggersConfig',
     'appdj.jwt_auth.apps.JwtAuthConfig',
     'appdj.search.apps.SearchConfig',
     'appdj.teams.apps.TeamsConfig',
@@ -93,7 +91,6 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'appdj.actions.middleware.ActionMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.contrib.sites.middleware.CurrentSiteMiddleware',
     'appdj.base.middleware.NamespaceMiddleware',
@@ -396,10 +393,10 @@ MIGRATION_MODULES = {
 
 # Server settings
 SERVER_RESOURCE_DIR = os.environ.get("SERVER_RESOURCE_DIR", "/resources")
-SERVER_PORT_MAPPING = {'8080': "proxy", '6006': 'restful'}
-SERVER_TYPES = {"restful", "cron", "proxy", "batch"}
-SERVER_TYPE_MAPPING = {'jupyter': 'proxy', 'rstudio': 'proxy'}
-SERVER_ENDPOINT_URLS = {'restful': '/restful/', 'proxy': '/proxy/'}
+SERVER_PORT_MAPPING = {'8080': "proxy"}
+SERVER_TYPES = {"proxy"}
+SERVER_TYPE_MAPPING = {'jupyter': 'proxy'}
+SERVER_ENDPOINT_URLS = {'proxy': '/proxy/'}
 SERVER_COMMANDS = {
     'jupyter': (
         'jupyter lab'
@@ -412,7 +409,6 @@ SERVER_COMMANDS = {
         ' --NotebookApp.open_browser=False'
         ' --NotebookApp.port=8080'
     ),
-    'rstudio': '/init',
 }
 # slack
 

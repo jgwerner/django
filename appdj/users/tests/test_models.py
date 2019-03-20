@@ -6,9 +6,9 @@ from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.conf import settings
+
+from appdj.base.utils import deactivate_user
 from .factories import UserFactory
-from ..models import UserProfile
-from appdj.base.utils import create_ssh_key, deactivate_user
 
 User = get_user_model()
 
@@ -16,20 +16,11 @@ User = get_user_model()
 class UserProfileTestCase(TestCase):
     def setUp(self):
         self.user = UserFactory()
-        create_ssh_key(self.user)
         self.user_dir = self.user.profile.resource_root()
 
     def tearDown(self):
         if os.path.isdir(str(self.user_dir)):
             shutil.rmtree(str(self.user_dir))
-
-    def test_ssh_public_key(self):
-        ssh_path = Path(settings.RESOURCE_DIR, self.user.username,
-                        ".ssh", "id_rsa.pub")
-        user_profile = UserProfile.objects.filter(user=self.user).first()
-        with open(str(ssh_path), "r") as ssh_file:
-            contents = ssh_file.read()
-            self.assertEqual(user_profile.ssh_public_key(), contents)
 
     def test_duplicate_user_is_rejected(self):
         user = UserFactory(is_active=True)
@@ -39,7 +30,6 @@ class UserProfileTestCase(TestCase):
 class UserTestCase(TestCase):
     def setUp(self):
         self.user = UserFactory()
-        create_ssh_key(self.user)
         self.user_dir = Path(settings.RESOURCE_DIR, self.user.username)
 
     def tearDown(self):

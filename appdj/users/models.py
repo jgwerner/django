@@ -80,12 +80,6 @@ class UserProfile(models.Model):
     def resource_root(self):
         return Path(settings.RESOURCE_DIR, self.user.username)
 
-    def ssh_public_key(self):
-        key_path = self.resource_root().joinpath('.ssh', 'id_rsa.pub')
-        if key_path.exists():
-            return key_path.read_text()
-        return ''
-
 
 class Email(models.Model):
     address = models.CharField(max_length=255)

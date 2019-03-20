@@ -103,19 +103,10 @@ class BaseSpawner(SpawnerInterface):
 
     def _get_binds(self) -> List[str]:
         binds = ['{}:{}:rw'.format(self.server.volume_path, settings.SERVER_RESOURCE_DIR)]
-        ssh_path = self._get_ssh_path()
-        if ssh_path:
-            binds.append('{}:{}/.ssh'.format(ssh_path, settings.SERVER_RESOURCE_DIR))
         if self.server.startup_script:
             binds.append('{}:/start.sh'.format(
                 str(Path(self.server.volume_path).joinpath(self.server.startup_script))))
         return binds
-
-    def _get_ssh_path(self) -> str:
-        ssh_path = os.path.abspath(os.path.join(self.server.volume_path, '..', '.ssh'))
-        if os.path.exists(ssh_path):
-            return str(ssh_path)
-        return ''
 
     def _get_user_timezone(self) -> str:
         tz = 'UTC'

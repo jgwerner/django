@@ -81,9 +81,6 @@ class DockerSpawner(TraefikMixin, BaseSpawner):
         tar_stream = BytesIO()
         tar = tarfile.TarFile.xzopen(name="server.tar.xz", fileobj=tar_stream, mode="w")
         tar.add(self.server.volume_path, arcname=settings.SERVER_RESOURCE_DIR)
-        ssh_path = self._get_ssh_path()
-        if ssh_path:
-            tar.add(ssh_path, arcname=settings.SERVER_RESOURCE_DIR)
         tar.close()
         tar_stream.seek(0)
         return tar_stream

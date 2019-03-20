@@ -14,9 +14,7 @@ from django.core import mail
 from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
 
-from appdj.base.utils import create_ssh_key
 from appdj.jwt_auth.utils import create_auth_jwt
-from appdj.projects.models import Collaborator
 from .factories import UserFactory, EmailFactory
 from .utils import generate_random_image
 
@@ -104,9 +102,6 @@ class UserTest(APITestCase):
 
     def test_user_delete_by_admin(self):
         user = UserFactory()
-        # For whatever reason, create_ssh_key doesnt seem to be called by the Factory here.
-        # It doesn't matter, we just need the directory to exist.
-        create_ssh_key(user)
         url = reverse('user-detail', kwargs={'user': str(user.pk),
                                              'version': settings.DEFAULT_VERSION})
         response = self.admin_client.delete(url)
@@ -114,9 +109,6 @@ class UserTest(APITestCase):
 
     def test_user_delete_by_admin_with_username(self):
         user = UserFactory()
-        # For whatever reason, create_ssh_key doesnt seem to be called by the Factory here.
-        # It doesn't matter, we just need the directory to exist.
-        create_ssh_key(user)
         url = reverse('user-detail', kwargs={'user': user.username,
                                              'version': settings.DEFAULT_VERSION})
         response = self.admin_client.delete(url)
@@ -257,7 +249,6 @@ class UserTest(APITestCase):
 
     def test_user_delete_allows_new_user_with_same_username(self):
         user = UserFactory()
-        create_ssh_key(user)
 
         username = user.username
         url = reverse('user-detail', kwargs={'user': str(user.pk),
@@ -286,7 +277,6 @@ class UserTest(APITestCase):
 
     def test_user_delete_allows_new_user_with_same_username_with_username(self):
         user = UserFactory()
-        create_ssh_key(user)
 
         username = user.username
         url = reverse('user-detail', kwargs={'user': user.username,

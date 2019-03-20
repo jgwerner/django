@@ -23,15 +23,12 @@ from rest_framework_nested import routers
 from appdj.projects import views as project_views
 from appdj.servers import views as servers_views
 from appdj.users import views as user_views
-from appdj.triggers import views as trigger_views
 from appdj.teams import views as team_views
 from appdj.search.views import SearchView
 from appdj.canvas.views import CanvasXML, Auth
 from appdj.oauth2.views import ApplicationViewSet
 
 router = routers.SimpleRouter()
-
-router.register(r'triggers', trigger_views.TriggerViewSet)
 
 user_router = routers.SimpleRouter()
 user_router.register(r'profiles', user_views.UserViewSet)
@@ -42,15 +39,10 @@ router.register(r'projects', project_views.ProjectViewSet)
 project_router = routers.NestedSimpleRouter(router, r'projects', lookup='project')
 project_router.register(r'collaborators', project_views.CollaboratorViewSet)
 project_router.register(r'servers', servers_views.ServerViewSet)
-project_router.register(r'deployments', servers_views.DeploymentViewSet)
 server_router = routers.NestedSimpleRouter(project_router, r'servers', lookup='server')
-server_router.register(r'ssh-tunnels', servers_views.SshTunnelViewSet)
 server_router.register(r'run-stats', servers_views.ServerRunStatisticsViewSet)
 server_router.register(r'stats', servers_views.ServerStatisticsViewSet)
-server_router.register(r'triggers', trigger_views.ServerActionViewSet)
 
-
-router.register(r'service/(?P<server>[^/.]+)/trigger', trigger_views.ServerActionViewSet)
 
 teams_router = routers.SimpleRouter()
 teams_router.register(r'teams', team_views.TeamViewSet)
@@ -77,13 +69,6 @@ urlpatterns = [
     url(r'^me/$', user_views.me, name="me"),
     url(r'^projects/lti/select/$', project_views.file_selection, name='project-file-select'),
     url(r'^(?P<namespace>[\w-]+)/search/$', SearchView.as_view(), name='search'),
-    url(r'^actions/', include('appdj.actions.urls')),
-    url(r'^(?P<namespace>[\w-]+)/triggers/send-slack-message/$', trigger_views.SlackMessageView.as_view(),
-        name='send-slack-message'),
-    url(r'^(?P<namespace>[\w-]+)/triggers/(?P<trigger>[\w-]+)/start/$', trigger_views.start,
-        name='trigger-start'),
-    url(r'^(?P<namespace>[\w-]+)/triggers/(?P<trigger>[\w-]+)/stop/$', trigger_views.stop,
-        name='trigger-stop'),
     url(r'^(?P<namespace>[\w-]+)/projects/git-clone/$', project_views.CloneGitProject.as_view(), name='git-clone'),
     url(r'^(?P<namespace>[\w-]+)/projects/project-copy-check/$',
         project_views.project_copy_check, name='project-copy-check'),
@@ -92,17 +77,12 @@ urlpatterns = [
     url(r'^(?P<namespace>[\w-]+)/', include(project_router.urls)),
     url(r'^(?P<namespace>[\w-]+)/', include(server_router.urls)),
     url(r'^users/', include(user_router.urls)),
-    url(r'^users/(?P<user_pk>[\w-]+)/ssh-key/$', user_views.ssh_key, name='ssh_key'),
-    url(r'^users/(?P<user_pk>[\w-]+)/ssh-key/reset/$', user_views.reset_ssh_key,
-        name='reset_ssh_key'),
     url(r'^users/(?P<user_pk>[\w-]+)/api-key/$', user_views.api_key, name='api_key'),
     url(r'^users/(?P<user_pk>[\w-]+)/avatar/$', user_views.avatar, name='avatar'),
     url(r'^me/', include(my_teams_router.urls)),
     url(r'^me/', include(my_teams_sub_router.urls)),
     url(r'^', include(teams_router.urls)),
     url(r'^', include(teams_sub_router.urls)),
-    url(r'^(?P<namespace>[\w-]+)/service/(?P<server>[^/.]+)/trigger/(?P<pk>[^/.]+)/call/$',
-        trigger_views.call_trigger, name='server-trigger-call'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/lti/assignment/(?P<assignment_id>\d+)/$',
         servers_views.submit_assignment, name='assignment'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/start/$',
@@ -119,8 +99,6 @@ urlpatterns = [
         servers_views.VerifyJSONWebTokenServer.as_view(), name='server-api-key-verify'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/auth/$',
         servers_views.check_token, name='server-auth'),
-    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/deployments/(?P<deployment>[^/.]+)/deploy/$',
-        servers_views.deploy_deployment, name='deploy'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/endpoint/proxy/lab/tree/(?P<path>.*?/?\w+(?:\.\w+)+)$',
         servers_views.lti_redirect, name='lti-redirect'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/(?P<path>.*?/?\w+(?:\.\w+)+)$',

@@ -3,8 +3,8 @@ from .base import *
 
 SECRET_KEY = 'test'
 
-RESOURCE_DIR = 'tmp/illumidesk'
-MEDIA_ROOT = "tmp/illumidesk"
+RESOURCE_DIR = '/tmp/illumidesk'
+MEDIA_ROOT = "/tmp/illumidesk"
 
 
 PASSWORD_HASHERS = (
@@ -36,12 +36,6 @@ CELERY_CACHE_BACKEND = 'memory'
 #]
 ANONYMOUS_USER_NAME = None
 
-HAYSTACK_CONNECTIONS = {
-    "default": {
-        'ENGINE': 'haystack.backends.simple_backend.SimpleEngine',
-    }
-}
-
 ENABLE_BILLING = False
 SPAWNER = 'appdj.servers.spawners.dummy.DummySpawner'
 AWS_JOBS_ROLE="arn:aws:iam::123456789012:role/JobsRole"
@@ -61,15 +55,15 @@ HTTPS = False
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',                      
+        'NAME': 'postgres',
         'USER': 'postgres',
         'PASSWORD': 'postgres',
-        'HOST': 'localhost',
+        'HOST': 'db',
         'PORT': '5432',
     }
 }
 # fixed values for redis/celery
-REDIS_URL = 'redis://localhost:6379/0'
+REDIS_URL = os.environ.get('REDIS_URL')
 CACHES['default']['LOCATION'] = REDIS_URL
 CACHEOPS_REDIS = REDIS_URL
 CELERY_RESULT_BACKEND = REDIS_URL

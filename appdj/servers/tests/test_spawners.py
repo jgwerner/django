@@ -92,9 +92,6 @@ class TestDockerSpawnerForModel(TransactionTestCase):
             ],
             'restart_policy': None
         }
-        ssh_path = self.spawner._get_ssh_path()
-        if ssh_path:
-            expected['binds'].append('{}:{}/.ssh'.format(ssh_path, settings.SERVER_RESOURCE_DIR))
         
         self.assertDictEqual(expected, self.spawner._get_host_config())
 
@@ -131,15 +128,6 @@ class TestDockerSpawnerForModel(TransactionTestCase):
 
     def test_stop(self):
         self.spawner.stop()
-
-    def test_get_ssh_path(self):
-        expected_ssh_path = os.path.abspath(os.path.join(self.server.volume_path, '..', '.ssh'))
-        try:
-            os.makedirs(expected_ssh_path)
-        except OSError:
-            pass
-        ssh_path = self.spawner._get_ssh_path()
-        self.assertEqual(ssh_path, expected_ssh_path)
 
     def test_compare_container_env(self):
         container = {

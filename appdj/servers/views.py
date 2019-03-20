@@ -42,8 +42,6 @@ from .tasks import (
     start_server,
     stop_server,
     terminate_server,
-    deploy,
-    delete_deployment,
     lti,
     send_assignment
 )
@@ -73,11 +71,8 @@ class ServerViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def perform_destroy(self, instance):
-        print('self.request.action', str(self.request.action))
-        print('self.request.action.pk', self.request.action.pk)
         terminate_server.apply_async(
-            args=[instance.pk],
-            task_id=str(self.request.action.pk)
+            args=[instance.pk]
         )
         instance.is_active = False
         instance.save()
@@ -105,8 +100,7 @@ class ServerViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
 @api_view(['post'])
 @permission_classes([IsAuthenticated, ServerActionPermission, TeamGroupPermission])
 def start(request, version, *args, **kwargs):
-    task_started = start_server.apply_async(args=[kwargs.get("server")],
-                                            task_id=str(request.action.pk))
+    task_started = start_server.apply_async(args=[kwargs.get("server")])
     if task_started:
         resp_status = status.HTTP_201_CREATED
     else:
@@ -119,8 +113,7 @@ def start(request, version, *args, **kwargs):
 @permission_classes([IsAuthenticated, ServerActionPermission, TeamGroupPermission])
 def stop(request, *args, **kwargs):
     stop_server.apply_async(
-        args=[kwargs.get('server')],
-        task_id=str(request.action.pk)
+        args=[kwargs.get('server')]
     )
     return Response(status=status.HTTP_201_CREATED)
 
@@ -129,8 +122,7 @@ def stop(request, *args, **kwargs):
 @permission_classes([IsAuthenticated, ServerActionPermission, TeamGroupPermission])
 def terminate(request, *args, **kwargs):
     terminate_server.apply_async(
-        args=[kwargs.get('server')],
-        task_id=str(request.action.pk)
+        args=[kwargs.get('server')]
     )
     return Response(status=status.HTTP_201_CREATED)
 
@@ -193,19 +185,6 @@ class ServerStatisticsViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-class SshTunnelViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
-    queryset = models.SshTunnel.objects.all()
-    serializer_class = serializers.SshTunnelSerializer
-    permission_classes = (IsAuthenticated, ServerChildPermission, TeamGroupPermission)
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        server = models.Server.objects.tbs_filter(kwargs.get('server_server')).first()
-        serializer.save(server=server)
-        return Response(status=status.HTTP_201_CREATED, data=serializer.data)
-
-
 class ServerSizeViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
     queryset = models.ServerSize.objects.all()
     serializer_class = serializers.ServerSizeSerializer
@@ -225,48 +204,6 @@ def check_token(request, version, project_project, server):
         token = auth_header.split()[1]
         return Response() if token == server.access_token else Response(status=status.HTTP_401_UNAUTHORIZED)
     return Response(status=status.HTTP_401_UNAUTHORIZED)
-
-
-class DeploymentViewSet(LookupByMultipleFields, viewsets.ModelViewSet):
-    queryset = models.Deployment.objects.all()
-    serializer_class = serializers.DeploymentSerializer
-    permission_classes = (IsAuthenticated, ProjectChildPermission, TeamGroupPermission)
-    filter_fields = ("name",)
-    lookup_url_kwarg = 'deployment'
-
-    def perform_destroy(self, instance):
-        delete_deployment.apply_async(
-            args=[instance.pk],
-            task_id=str(self.request.action.pk)
-        )
-        instance.is_active = False
-        instance.save()
-
-
-@api_view(['POST'])
-def deploy_deployment(request, **kwargs):
-    deployment = get_object_or_404(models.Deployment, kwargs.get('deployment'))
-    deploy.delay(deployment.pk)
-    return Response({'message': 'OK'})
-
-
-@api_view(['POST'])
-@permission_classes((AllowAny,))
-def deployment_auth(request):
-    serializer = serializers.DeploymentAuthSerializer(data=request.data)
-    if not serializer.is_valid():
-        return Response(serializer.errors, status.HTTP_401_UNAUTHORIZED)
-    deployment = models.Deployment.objects.only('access_token').filter(
-        is_active=True, config__resource_id=serializer.validated_data['resource_id']).first()
-    if deployment is None:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-    data = {'user_id': str(deployment.project.owner.pk)}
-    logger.info(deployment.access_token)
-    logger.info(serializer.validated_data['token'])
-    if deployment.access_token != serializer.validated_data['token']:
-        data['token'] = "Token is invalid"
-        return Response(data, status.HTTP_401_UNAUTHORIZED)
-    return Response(data)
 
 
 class SNSView(views.APIView):
@@ -310,7 +247,7 @@ def lti_redirect(request, *args, **kwargs):
         workspace.is_active = True
         workspace.config = {"type": "jupyter"}
         workspace.save()
-        start_server.apply_async(args=[kwargs.get("server")], task_id=str(request.action.pk))
+        start_server.apply_async(args=[kwargs.get("server")])
     time.sleep(5)
     return redirect(request.get_full_path())
 
