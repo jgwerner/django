@@ -8,15 +8,14 @@ from guardian.shortcuts import assign_perm
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .factories import CollaboratorFactory
 from appdj.servers.models import Server
 from appdj.servers.tests.factories import ServerFactory
 from appdj.users.tests.factories import UserFactory
+from .factories import CollaboratorFactory
 from ..models import Project, Collaborator
-from appdj.jwt_auth.utils import create_auth_jwt
 
 
-class ProjectTestMixin(object):
+class ProjectTestMixin:
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

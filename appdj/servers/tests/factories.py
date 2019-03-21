@@ -65,19 +65,6 @@ class ServerStatisticsFactory(factory.django.DjangoModelFactory):
     size = 0
 
 
-class SSHTunnelFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = models.SshTunnel
-
-    name = factory.Faker('name')
-    host = factory.Faker('domain_name')
-    local_port = factory.Faker('pyint')
-    endpoint = factory.Faker('domain_name')
-    remote_port = factory.Faker('pyint')
-    username = factory.Faker('user_name')
-    server = factory.SubFactory(ServerFactory)
-
-
 class RuntimeFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = models.Runtime
@@ -91,15 +78,3 @@ class FrameworkFactory(factory.django.DjangoModelFactory):
 
     name = 'Tensorflow'
     version = '1.4'
-
-
-class DeploymentFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = models.Deployment
-
-    name = factory.Sequence(lambda n: f'deployment_{n}')
-    project = factory.SubFactory(ProjectFactory)
-    created_by = factory.SubFactory(UserFactory)
-    is_active = True
-    framework = factory.SubFactory(FrameworkFactory)
-    runtime = factory.SubFactory(RuntimeFactory)
