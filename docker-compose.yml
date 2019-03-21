@@ -6,9 +6,6 @@ services:
     env_file: .env
     volumes:
       - /workspaces:/workspaces
-    depends_on:
-      - db
-      - cache
     environment:
       - TLS=True
     labels:
@@ -21,9 +18,6 @@ services:
     build: .
     command: /srv/env/bin/daphne -p 80 -b 0.0.0.0 -v 2 config.asgi:channel_layer
     env_file: .env
-    depends_on:
-      - db
-      - cache
     ports:
       - "9000:80"
     entrypoint: ''
@@ -38,9 +32,6 @@ services:
     build: .
     command: /srv/env/bin/python manage.py runworker -v 2
     env_file: .env
-    depends_on:
-      - db
-      - cache
     entrypoint: ''
     volumes:
       - /workspaces:/workspaces
@@ -48,9 +39,6 @@ services:
     build: .
     command: /srv/env/bin/celery -A config.celery worker -l info --without-heartbeat
     env_file: .env
-    depends_on:
-      - db
-      - cache
     entrypoint: ''
     volumes:
       - /workspaces:/workspaces
@@ -58,20 +46,9 @@ services:
     build: .
     command: /srv/env/bin/celery -A config.celery beat -l debug
     env_file: .env
-    depends_on:
-      - db
-      - cache
     entrypoint: ''
     volumes:
       - /workspaces:/workspaces
-  db:
-    image: postgres:9.6-alpine
-    ports:
-      - "5432:5432"
-  cache:
-    image: redis:alpine
-    ports:
-      - "6379:6379"
   server:
     image: illumidesk/traefik
     volumes:
