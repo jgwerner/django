@@ -18,17 +18,14 @@ Including another URLconf
 from django.conf.urls import url, include
 from rest_framework_nested import routers
 from appdj.projects.urls import project_router
-from appdj.triggers import views as trigger_views
 from . import views as servers_views
 
 servers_router = routers.SimpleRouter()
 servers_router.register("options/server-size", servers_views.ServerSizeViewSet)
 
 server_router = routers.NestedSimpleRouter(project_router, r'servers', lookup='server')
-server_router.register(r'ssh-tunnels', servers_views.SshTunnelViewSet)
 server_router.register(r'run-stats', servers_views.ServerRunStatisticsViewSet)
 server_router.register(r'stats', servers_views.ServerStatisticsViewSet)
-server_router.register(r'triggers', trigger_views.ServerActionViewSet)
 
 urlpatterns = [
     url(r'^(?P<namespace>[\w-]+)/', include(server_router.urls)),

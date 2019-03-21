@@ -22,17 +22,21 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from appdj.base.views import NamespaceMixin, LookupByMultipleFields
 from appdj.base.utils import validate_uuid
 from appdj.canvas.authorization import CanvasAuth
-from .serializers import (ProjectSerializer,
-                                  CollaboratorSerializer,
-                                  CloneGitProjectSerializer)
-from .models import Project, Collaborator
-from .permissions import ProjectPermission, ProjectChildPermission
-from .utils import (has_copy_permission,
-                            perform_project_copy,
-                            check_project_name_exists)
+from .serializers import (
+    ProjectSerializer,
+    CollaboratorSerializer,
+    CloneGitProjectSerializer
+)
 from appdj.servers.utils import get_server_url, create_server
 from appdj.teams.models import Team
 from appdj.teams.permissions import TeamGroupPermission
+from .models import Project, Collaborator
+from .permissions import ProjectPermission, ProjectChildPermission
+from .utils import (
+    has_copy_permission,
+    perform_project_copy,
+    check_project_name_exists
+)
 
 
 logger = logging.getLogger(__name__)

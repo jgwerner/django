@@ -1,13 +1,13 @@
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import Permission
 from appdj.projects.models import Project
-from appdj.servers.models import Server, SshTunnel
+from appdj.servers.models import Server
 
 from .models import Group
 
 
 def get_base_permissions():
-    models = [Project, Server, SshTunnel]
+    models = [Project, Server]
     content_types = ContentType.objects.get_for_models(*models).values()
     permissions = []
     for model in models:
@@ -22,7 +22,7 @@ def get_members_permissions():
 
 
 def get_owners_permissions():
-    models = [Project, Server, SshTunnel, Group]
+    models = [Project, Server, Group]
     content_types = ContentType.objects.get_for_models(*models).values()
     permissions = []
     for model in models:

@@ -25,8 +25,6 @@ user_router.register(r'integrations', user_views.IntegrationViewSet)
 
 urlpatterns = [
     url(r'^users/', include(user_router.urls)),
-    url(r'^users/(?P<user_pk>[\w-]+)/ssh-key/$', user_views.ssh_key, name='ssh_key'),
-    url(r'^users/(?P<user_pk>[\w-]+)/ssh-key/reset/$', user_views.reset_ssh_key, name='reset_ssh_key'),
     url(r'^users/(?P<user_pk>[\w-]+)/api-key/$', user_views.api_key, name='api_key'),
     url(r'^users/(?P<user_pk>[\w-]+)/avatar/$', user_views.avatar, name='avatar')
 ]

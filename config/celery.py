@@ -1,8 +1,6 @@
 import os
 
 from celery import Celery
-from celery.signals import task_postrun, after_task_publish
-from celery.states import SUCCESS, FAILURE
 from raven import Client
 from raven.contrib.celery import register_signal, register_logger_signal
 
@@ -27,27 +25,3 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 
 # Load task modules from all registered Django app configs.
 app.autodiscover_tasks()
-
-
-@task_postrun.connect
-def set_action_state(task_id=None, state=None, **kwargs):
-    from appdj.actions.models import Action
-    action = Action.objects.filter(pk=task_id).first()
-    if action is not None:
-        action.state = {
-            SUCCESS: Action.SUCCESS,
-            FAILURE: Action.FAILED
-        }[state]
-        action.can_be_cancelled = False
-        action.save()
-
-
-@after_task_publish.connect
-def set_action_can_be_canceled(headers=None, **kwargs):
-    task_id = headers.get('id')
-    if task_id:
-        from appdj.actions.models import Action
-        action = Action.objects.filter(pk=task_id).first()
-        if action is not None:
-            action.can_be_cancelled = True
-            action.save()

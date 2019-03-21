@@ -9,9 +9,6 @@ services:
     depends_on:
       - db
       - cache
-      - broker
-    environment:
-      - TLS=False
     env_file: .env
     labels:
       - "traefik.enable=true"
@@ -29,9 +26,8 @@ services:
     depends_on:
       - db
       - cache
-      - broker
     ports:
-      - "9000:80"
+      - "9000:8080"
     entrypoint: ''
     labels:
       - "traefik.enable=true"
@@ -49,7 +45,6 @@ services:
     depends_on:
       - db
       - cache
-      - broker
     entrypoint: ''
   celery:
     build: .
@@ -61,7 +56,6 @@ services:
     depends_on:
       - db
       - cache
-      - broker
     entrypoint: ''
   beat:
     build: .
@@ -72,7 +66,6 @@ services:
     depends_on:
       - db
       - cache
-      - broker
     env_file: .env
     entrypoint: ''
   db:

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Server, ServerSize, Framework, Runtime, Deployment, SshTunnel
+from .models import Server, ServerSize, Framework, Runtime
 
 
 @admin.register(Server)
@@ -25,14 +25,3 @@ class FrameworkAdmin(admin.ModelAdmin):
 @admin.register(Runtime)
 class RuntimeAdmin(admin.ModelAdmin):
     pass
-
-
-@admin.register(Deployment)
-class DeploymentAdmin(admin.ModelAdmin):
-    pass
-
-
-@admin.register(SshTunnel)
-class SshTunnelAdmin(admin.ModelAdmin):
-    list_display = ('name', 'host', 'local_port', 'endpoint', 'remote_port', 'username', 'server')
-    list_filter = ('server',)

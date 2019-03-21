@@ -7,7 +7,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         # use domain and port to format the site config
         host = os.environ.get('APP_DOMAIN')
-        port = os.environ.get('APP_PORT')
+        port = os.environ.get('TBS_PORT')
         if port != '80':
             host = f'{host}:{port}'
         site = Site.objects.first()

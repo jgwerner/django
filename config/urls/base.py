@@ -5,7 +5,6 @@ from django.contrib import admin
 from django.conf.urls.static import static
 from djoser import views as djoser_views
 
-from oauth2_provider import views as oauth2_views
 from appdj.jwt_auth import views as jwt_views
 from appdj.base.views import tbs_status
 from appdj.users import views as users_views
@@ -21,7 +20,6 @@ urlpatterns = [
     url(r'^auth/jwt-token-verify/$', jwt_views.VerifyJSONWebToken.as_view(), name='verify-jwt'),
     url(r'^auth/register/$', djoser_views.UserCreateView.as_view(), name='register'),
     url(r'^auth/activate/$', djoser_views.ActivationView.as_view(), name='activate'),
-    url(r'^auth/deployment/?$', servers_views.deployment_auth, name="deployment-auth"),
     url(r'^auth/password/reset/$', djoser_views.PasswordResetView.as_view(), name="password-reset"),
     url(r'^auth/', include('rest_framework_social_oauth2.urls')),
     url(r'^auth/password/reset/confirm/$', djoser_views.PasswordResetConfirmView.as_view(),

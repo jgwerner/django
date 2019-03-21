@@ -12,12 +12,9 @@ from guardian.shortcuts import get_perms
 
 from appdj.base.models import TBSQuerySet
 from appdj.users.models import User
-from .spawners import get_spawner_class, get_deployer_class, get_scheduler_class
-from .spawners.ecs import BatchScheduler
+from .spawners import get_spawner_class
 
-Scheduler = get_scheduler_class()
 Spawner = get_spawner_class()
-Deployer = get_deployer_class()
 
 
 class ServerModelAbstract(models.Model):
@@ -106,10 +103,6 @@ class Server(ServerModelAbstract):
 
     @property
     def spawner(self):
-        if self.config['type'] == 'cron':
-            return Scheduler(self)
-        if self.config['type'] == 'batch':
-            return BatchScheduler(self)
         return Spawner(self)
 
     @property
@@ -163,17 +156,6 @@ class Framework(models.Model):
 
     def __str__(self):
         return f"{self.name} {self.version}"
-
-
-class Deployment(ServerModelAbstract):
-    framework = models.ForeignKey(Framework, related_name='deployments', on_delete=models.SET_NULL,
-                                  blank=True, null=True)
-    runtime = models.ForeignKey(Runtime, related_name='deployments', on_delete=models.PROTECT)
-
-    @property
-    def status(self):
-        deployer = Deployer(self)
-        return deployer.status()
 
 
 class ServerSize(models.Model):
@@ -231,24 +213,3 @@ class ServerStatistics(models.Model):
     server = models.ForeignKey(Server, null=True, on_delete=models.SET_NULL)
 
     objects = TBSQuerySet.as_manager()
-
-
-class SshTunnel(models.Model):
-    NATURAL_KEY = 'name'
-
-    name = models.CharField(max_length=50)
-    host = models.CharField(max_length=50)
-    local_port = models.IntegerField()
-    endpoint = models.CharField(max_length=50)
-    remote_port = models.IntegerField()
-    username = models.CharField(max_length=32)
-    server = models.ForeignKey(Server, models.CASCADE)
-
-    objects = TBSQuerySet.as_manager()
-
-    class Meta:
-        unique_together = (('name', 'server'),)
-        permissions = (
-            ('write_ssh_tunnel', "Write ssh tunnel"),
-            ('read_ssh_tunnel', "Read ssh tunnel"),
-        )

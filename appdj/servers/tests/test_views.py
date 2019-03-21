@@ -13,15 +13,14 @@ from rest_framework.test import APITestCase
 
 from appdj.jwt_auth.utils import create_auth_jwt
 from appdj.projects.tests.factories import CollaboratorFactory, ProjectFactory
-from ..models import Server, SshTunnel, ServerRunStatistics
 from appdj.users.tests.factories import UserFactory
-from ..models import Deployment
-from .factories import (ServerSizeFactory,
-                                     ServerStatisticsFactory,
-                                     ServerRunStatisticsFactory,
-                                     ServerFactory,
-                                     RuntimeFactory,
-                                     FrameworkFactory)
+from ..models import Server, ServerRunStatistics
+from .factories import (
+    ServerSizeFactory,
+    ServerStatisticsFactory,
+    ServerRunStatisticsFactory,
+    ServerFactory
+)
 
 
 class ServerTest(APITestCase):
@@ -288,26 +287,6 @@ class ServerTest(APITestCase):
         resp = self.client.post(url, data)
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_ssh_tunnel_create(self):
-        server = ServerFactory(project=self.project)
-        self.url_kwargs['server_server'] = server.pk
-        url = reverse("sshtunnel-list", kwargs=self.url_kwargs)
-        data = {"name": "MyTunnel",
-                "host": "localhost",
-                "local_port": 8888,
-                "remote_port": 80,
-                "endpoint": "endpoint.example.com",
-                "username": "foo"}
-
-        response = self.client.post(url, data=data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        ssh_tunnel = SshTunnel.objects.filter(pk=response.data['id']).first()
-        self.assertIsNotNone(ssh_tunnel)
-
-        for key in data:
-            obj_value = getattr(ssh_tunnel, key)
-            self.assertEqual(obj_value, data[key])
-
 
 class ServerTestWithName(APITestCase):
     maxDiff = None
@@ -498,26 +477,6 @@ class ServerTestWithName(APITestCase):
         data = {"token": server.access_token}
         resp = self.client.post(url, data)
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_ssh_tunnel_create(self):
-        server = ServerFactory(project=self.project)
-        self.url_kwargs['server_server'] = server.name
-        url = reverse("sshtunnel-list", kwargs=self.url_kwargs)
-        data = {"name": "MyTunnel",
-                "host": "localhost",
-                "local_port": 8888,
-                "remote_port": 80,
-                "endpoint": "endpoint.example.com",
-                "username": "foo"}
-
-        response = self.client.post(url, data=data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        ssh_tunnel = SshTunnel.objects.filter(pk=response.data['id']).first()
-        self.assertIsNotNone(ssh_tunnel)
-
-        for key in data:
-            obj_value = getattr(ssh_tunnel, key)
-            self.assertEqual(obj_value, data[key])
 
 
 class ServerRunStatisticsTestCase(APITestCase):
@@ -745,48 +704,6 @@ class ServerSizeTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
-class DeploymentTest(APITestCase):
-    def setUp(self):
-        collaborator = CollaboratorFactory()
-        self.user = collaborator.user
-        self.project = collaborator.project
-        self.client.force_authenticate(user=self.user)
-
-    def test_create_deployment_using_runtime_and_fw_names(self):
-        runtime = RuntimeFactory()
-        framework = FrameworkFactory()
-        url = reverse("deployment-list", kwargs={'version': settings.DEFAULT_VERSION,
-                                                 'namespace': self.user.username,
-                                                 'project_project': self.project.name})
-        data = {'name': "Deployment",
-                'runtime': runtime.name,
-                'framework': framework.name,
-                'config': {}}
-        response = self.client.post(url, data=data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        deployment = Deployment.objects.get(pk=response.data['id'])
-        self.assertEqual(deployment.project, self.project)
-
-    def test_create_deployment_for_project_duplicate(self):
-        proj = CollaboratorFactory(project__name=self.project.name).project
-        self.client.force_authenticate(user=proj.owner)
-
-        runtime = RuntimeFactory()
-        framework = FrameworkFactory()
-
-        url = reverse("deployment-list", kwargs={'version': settings.DEFAULT_VERSION,
-                                                 'namespace': proj.owner.username,
-                                                 'project_project': proj.name})
-        data = {'name': "Deployment",
-                'runtime': str(runtime.pk),
-                'framework': str(framework.pk),
-                'config': {}}
-        response = self.client.post(url, data=data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        deployment = Deployment.objects.get(pk=response.data['id'])
-        self.assertEqual(deployment.project, proj)
-
-
 class LTITest(APITestCase):
     def setUp(self):
         col = CollaboratorFactory()
@@ -814,7 +731,7 @@ class LTITest(APITestCase):
         with patch('celery.result.AsyncResult.get') as get_result:
             get_result.return_value = (str(self.server.pk), None)
             task_resp = self.client.get(resp.data['task_url'])
-            
+
         self.assertEqual(task_resp.status_code, status.HTTP_200_OK)
         self.assertIn('url', task_resp.data)
         self.assertIn(path, task_resp.data['url'])

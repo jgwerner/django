@@ -11,20 +11,21 @@ from rest_framework.generics import CreateAPIView
 from rest_framework.mixins import ListModelMixin
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from social_django.models import UserSocialAuth
 
 from appdj.base.permissions import PostAdminOnly
 from appdj.base.views import LookupByMultipleFields
-from appdj.base.utils import create_ssh_key, deactivate_user
+from appdj.base.utils import deactivate_user
 
 from appdj.base.utils import get_object_or_404
+from appdj.jwt_auth.utils import create_auth_jwt
 from .filters import UserSearchFilter
 from .models import Email
-from .serializers import (UserSerializer,
-                               EmailSerializer,
-                               IntegrationSerializer)
-from appdj.jwt_auth.utils import create_auth_jwt
-from social_django.models import UserSocialAuth
-
+from .serializers import (
+    UserSerializer,
+    EmailSerializer,
+    IntegrationSerializer
+)
 
 
 logger = logging.getLogger(__name__)
@@ -157,19 +158,6 @@ def me(request, version):
 def my_api_key(request, **kwargs):
     token = create_auth_jwt(request.user)
     return Response(data={'token': token})
-
-
-@api_view(['GET'])
-def ssh_key(request, version, user_pk):
-    user = get_object_or_404(User, user_pk)
-    return Response(data={'key': user.profile.ssh_public_key()})
-
-
-@api_view(['POST'])
-def reset_ssh_key(request, version, user_pk):
-    user = get_object_or_404(User, user_pk)
-    create_ssh_key(user)
-    return Response(data={'key': user.profile.ssh_public_key()})
 
 
 @api_view(['GET'])

@@ -8,7 +8,6 @@ from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
 from django.urls import reverse
 from django.template.loader import render_to_string
-from oauth2_provider.models import AccessToken
 
 from celery import shared_task
 
@@ -18,15 +17,14 @@ from requests_oauthlib import OAuth1Session
 from appdj.canvas.models import CanvasInstance
 from appdj.projects.models import Project, Collaborator
 from appdj.projects.utils import perform_project_copy
-from .models import Server, Deployment
-from .spawners import get_spawner_class, get_deployer_class
+from .models import Server
+from .spawners import get_spawner_class
 from .utils import create_server, server_action, email_to_username
 
 
 logger = logging.getLogger(__name__)
 
 Spawner = get_spawner_class()
-Deployer = get_deployer_class()
 User = get_user_model()
 
 
@@ -43,22 +41,6 @@ def stop_server(server):
 @shared_task()
 def terminate_server(server):
     server_action('terminate', server)
-
-
-def deployment_action(action, deployment):
-    deployment = Deployment.objects.tbs_get(deployment)
-    deployer = Deployer(deployment)
-    getattr(deployer, action)()
-
-
-@shared_task()
-def deploy(deployment):
-    deployment_action('deploy', deployment)
-
-
-@shared_task()
-def delete_deployment(deployment):
-    deployment_action('delete', deployment)
 
 
 @shared_task()

@@ -5,17 +5,15 @@ from rest_framework import serializers
 from guardian.shortcuts import assign_perm, remove_perm
 
 from appdj.base.serializers import SearchSerializerMixin
-from appdj.base.utils import validate_uuid
 from appdj.jwt_auth.utils import create_server_jwt
-from .models import (ServerSize, Server,
-                            ServerRunStatistics,
-                            ServerStatistics,
-                            SshTunnel,
-                            Deployment,
-                            Runtime,
-                            Framework)
-from appdj.projects.models import Project, Collaborator
+from appdj.projects.models import Project
 from appdj.projects.serializers import ProjectSerializer
+from .models import (
+    ServerSize,
+    Server,
+    ServerRunStatistics,
+    ServerStatistics
+)
 from .utils import get_server_url
 
 
@@ -200,52 +198,3 @@ class ServerStatisticsAggregatedSerializer(serializers.Serializer):
     server_time = serializers.DurationField()
     start = serializers.DateTimeField()
     stop = serializers.DateTimeField()
-
-
-class SshTunnelSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SshTunnel
-        fields = ('id', 'name', 'host', 'local_port', 'remote_port', 'endpoint', 'username', 'server')
-        read_only_fields = ('server',)
-
-
-class DeploymentSerializer(serializers.ModelSerializer):
-    created_by = serializers.PrimaryKeyRelatedField(read_only=True, default=serializers.CurrentUserDefault())
-    runtime = serializers.CharField()
-    framework = serializers.CharField()
-
-    class Meta:
-        model = Deployment
-        fields = ('id', 'name', 'project', 'created_at', 'created_by', 'config', 'status', 'runtime', 'framework')
-        read_only_fields = ('project', 'created_at', 'created_by')
-
-    def create(self, validated_data):
-        pk = uuid.uuid4()
-        user = self.context['request'].user
-
-        runtime = Runtime.objects.tbs_get(validated_data.pop("runtime"))
-        framework = Framework.objects.tbs_get(validated_data.pop("framework"))
-
-        instance = Deployment(pk=pk,
-                              runtime=runtime,
-                              framework=framework,
-                              **validated_data)
-        project_pk = self.context['view'].kwargs.get('project_project')
-        namespace = self.context['request'].namespace
-        if validate_uuid(project_pk):
-            project = Project.objects.tbs_get(project_pk)
-        elif namespace.type == 'user':
-            project = Collaborator.objects.filter(user=namespace.object,
-                                                  project__name=project_pk,
-                                                  owner=True).first().project
-        else:
-            project = Project.objects.filter(project__name=project_pk, team=namespace.object).first()
-        instance.project = project
-        instance.access_token = create_server_jwt(user, str(pk))
-        instance.save()
-        return instance
-
-
-class DeploymentAuthSerializer(serializers.Serializer):
-    token = serializers.CharField()
-    resource_id = serializers.CharField()
