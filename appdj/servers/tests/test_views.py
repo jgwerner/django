@@ -14,13 +14,12 @@ from rest_framework.test import APITestCase
 from appdj.jwt_auth.utils import create_auth_jwt
 from appdj.projects.tests.factories import CollaboratorFactory, ProjectFactory
 from appdj.users.tests.factories import UserFactory
+from ..models import Server, ServerRunStatistics
 from .factories import (
     ServerSizeFactory,
     ServerStatisticsFactory,
     ServerRunStatisticsFactory,
-    ServerFactory,
-    RuntimeFactory,
-    FrameworkFactory
+    ServerFactory
 )
 
 
