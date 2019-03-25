@@ -25,11 +25,11 @@ class Project(models.Model):
     private = models.BooleanField(default=True)
     last_updated = models.DateTimeField(auto_now=True)
     collaborators = models.ManyToManyField(settings.AUTH_USER_MODEL, through='Collaborator', related_name='projects')
-    integrations = models.ManyToManyField(UserSocialAuth, related_name='projects')
+    integrations = models.ManyToManyField(UserSocialAuth, related_name='projects', blank=True)
     team = models.ForeignKey('teams.Team', blank=True, null=True, related_name='projects', on_delete=models.CASCADE)
     copying_enabled = models.BooleanField(default=True)
     is_active = models.BooleanField(default=True)
-    config = JSONField(default=dict)
+    config = JSONField(default=dict, blank=True)
 
     objects = ProjectQuerySet.as_manager()
 
@@ -62,10 +62,18 @@ class Project(models.Model):
 
     @property
     def owner(self):
-        return self.team if self.team else self.collaborator_set.filter(owner=True).first().user
+        if self.team:
+            return self.team
+        colab = self.collaborator_set.filter(owner=True).first()
+        if colab:
+            return colab.user
+        return None
 
     def get_owner_name(self):
-        return getattr(self.owner, self.owner.NATURAL_KEY)
+        owner = self.owner
+        if owner is None:
+            return None
+        return getattr(owner, owner.NATURAL_KEY)
 
     def resource_root(self):
         return Path(settings.RESOURCE_DIR, str(self.pk))
