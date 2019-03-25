@@ -1,10 +1,7 @@
 import shutil
 from copy import deepcopy
 import logging
-import os
 from pathlib import Path
-import shutil
-from typing import List
 
 from django.conf import settings
 from rest_framework.request import Request
@@ -13,9 +10,9 @@ from guardian.shortcuts import assign_perm
 from appdj.users.models import User
 from appdj.teams.models import Team
 from appdj.base.utils import validate_uuid
-from .models import Project, Collaborator
 from appdj.servers.models import Server
 from appdj.jwt_auth.utils import create_server_jwt
+from .models import Project, Collaborator
 
 
 logger = logging.getLogger(__name__)
@@ -144,6 +141,7 @@ def perform_project_copy(user: User, project_id: str, request: Request = None, n
         copy_servers(proj_to_copy, new_proj)
 
     return new_proj
+
 
 def check_project_name_exists(name: str, request: Request, existing_pk: str = None):
     qs = Project.objects.namespace(request.namespace).filter(name=name, is_active=True).exclude(pk=existing_pk)

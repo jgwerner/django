@@ -22,14 +22,14 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from appdj.base.views import NamespaceMixin, LookupByMultipleFields
 from appdj.base.utils import validate_uuid
 from appdj.canvas.authorization import CanvasAuth
+from appdj.servers.utils import get_server_url, create_server
+from appdj.teams.models import Team
+from appdj.teams.permissions import TeamGroupPermission
 from .serializers import (
     ProjectSerializer,
     CollaboratorSerializer,
     CloneGitProjectSerializer
 )
-from appdj.servers.utils import get_server_url, create_server
-from appdj.teams.models import Team
-from appdj.teams.permissions import TeamGroupPermission
 from .models import Project, Collaborator
 from .permissions import ProjectPermission, ProjectChildPermission
 from .utils import (
@@ -51,6 +51,10 @@ class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewS
     filter_fields = ('private', 'name')
     ordering_fields = ('name',)
     lookup_url_kwarg = 'project'
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs.filter(Q(private=False) | Q(collaborator__user=self.request.user)).distinct()
 
     def update(self, request, *args, **kwargs):
         if not validate_uuid(kwargs.get('project', '')):

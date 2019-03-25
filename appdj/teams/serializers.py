@@ -26,11 +26,13 @@ class GroupSerializer(serializers.ModelSerializer):
         team_kwarg = self.context['view'].kwargs.get('team_team')
         team = Team.objects.tbs_get(team_kwarg)
         parent = validated_data.pop('get_parent', None)
+        permissions = validated_data.pop('permissions')
         if parent:
             parent_group = Group.objects.get(pk=parent)
             instance = parent_group.add_child(team=team, **validated_data)
         else:
             instance = Group.add_root(team=team, **validated_data)
+        instance.permissions.set(permissions)
         return instance
 
 

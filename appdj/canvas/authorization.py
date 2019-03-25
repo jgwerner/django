@@ -15,7 +15,7 @@ from .models import CanvasInstance
 User = get_user_model()
 
 
-class CanvasValidator(RequestValidator): # pylint: disable=abstract-method
+class CanvasValidator(RequestValidator):  # pylint: disable=abstract-method
     enforce_ssl = False
 
     def validate_client_key(self, client_key, request):
@@ -44,9 +44,11 @@ class CanvasValidator(RequestValidator): # pylint: disable=abstract-method
 
 class CanvasAuth(authentication.BaseAuthentication):
     def authenticate(self, request):
+        if 'oauth_consumer_key' not in request.data:
+            return None
         endpoint = SignatureOnlyEndpoint(CanvasValidator())
         uri = request.build_absolute_uri()
-        valid, r = endpoint.validate_request(
+        valid, _ = endpoint.validate_request(
             uri.replace('http', 'https') if settings.HTTPS else uri,
             http_method=request.method,
             body=request.body.decode(),
@@ -76,7 +78,8 @@ class CanvasAuth(authentication.BaseAuthentication):
             return (user, None)
         return None
 
-    def normalize_headers(self, request):
+    @staticmethod
+    def normalize_headers(request):
         regex = re.compile(r'^(HTTP_.+|CONTENT_TYPE|CONTENT_LENGTH)$')
 
         def normalize_header_name(name):
