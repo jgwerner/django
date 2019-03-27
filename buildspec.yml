@@ -1,0 +1,15 @@
+version: 0.2
+
+run-as: sudo
+
+phases:
+  pre_build:
+    commands:
+      - bash scripts/before_install.sh
+
+  build:
+    - set -e
+    - make build-all
+
+  post_build:
+    - bash scripts/after_success.sh
