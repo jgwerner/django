@@ -8,8 +8,10 @@ phases:
       - bash scripts/before_install.sh
 
   build:
-    - set -e
-    - make build-all
+    commands:
+      - set -e
+      - make build-all
 
   post_build:
-    - bash scripts/after_success.sh
+    commands:
+      - bash scripts/after_success.sh
