@@ -9,7 +9,7 @@ class OwnerFilter(admin.SimpleListFilter):
     parameter_name = "owner"
 
     def lookups(self, request, model_admin):
-        owners = Collaborator.objects.filter(owner=True).values_list('user_id', 'user__username')
+        owners = Collaborator.objects.filter(owner=True).values_list('user_id', 'user__username').distinct()
         lookups = (
             ('none', 'None'),
             *owners
