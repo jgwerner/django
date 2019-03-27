@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/IllumiDesk/app-backend.svg?token=y3jvxynhJQZHELnDYJdy&branch=master)](https://travis-ci.com/IllumiDesk/app-backend)
+![Build Status](venv/lib/python3.6/site-packages/IPython/core/tests/2x2.pnghttps://codebuild.us-east-1.amazonaws.com/badges?uuid=eyJlbmNyeXB0ZWREYXRhIjoiY3pDUXAzSE9sNjMyMzl4cWpTUmVINHgvbFlkUmt0TVpldm9MdUt4c1l3K09RVGdFRzNnVFNKUzl2ZkxNajdINXBnL3dnSFNTclBzVnFFak5hK0x2Rnp3PSIsIml2UGFyYW1ldGVyU3BlYyI6ImhkVjBPOW1TcnlVZnVRdkgiLCJtYXRlcmlhbFNldFNlcmlhbCI6MX0%3D&branch=master)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
 
 # IllumiDesk Backend Services
