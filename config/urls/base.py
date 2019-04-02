@@ -3,7 +3,9 @@ from django.conf import settings
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.contrib import admin
 from django.conf.urls.static import static
+
 from djoser import views as djoser_views
+from rest_framework.documentation import include_docs_urls
 
 from appdj.jwt_auth import views as jwt_views
 from appdj.base.views import tbs_status
@@ -13,6 +15,7 @@ from .unversioned import urlpatterns as unversioned_urls
 
 
 urlpatterns = [
+    url(r'^docs/', include_docs_urls(title='IllumiDesk API', public=False)),
     url(r'^sns/$', servers_views.SNSView.as_view(), name='sns'),
     url(r'^auth/jwt-token-auth/$', jwt_views.ObtainJSONWebToken.as_view(), name='obtain-jwt'),
     url(r'^auth/temp-token-auth/$', users_views.my_api_key, name='temp-token-auth'),
