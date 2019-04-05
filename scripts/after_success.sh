@@ -26,8 +26,6 @@ tag_and_push () {
 }
 
 main () {
-  # linting errors shouldn't make travis fail
-  set +e
   echo "Log into DockerHub..."
   docker_login
   echo "Build and push images..."

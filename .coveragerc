@@ -1,14 +1,11 @@
 [run]
-parallel = true
-concurrency = multiprocessing
-# source = "."
+source = "source = "/srv/env/bin/."
 omit = ../*migrations*
        ../*tests*
        */venv/*
        */virtualenv/*
-       */google_compute_engine/*
        logs/*
-       sitecustomize.py
        manage.py
-       api_tests/*
-       dev_docs/
+       config/wsgi.py
+       */apps.py
+       */commands/*

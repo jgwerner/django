@@ -1,15 +1,20 @@
-version: '3'
+version: '3.5'
+x-django: &django
+  build:
+    context: .
+    dockerfile: Dockerfile.dev
+  image: illumidesk/app-backend:dev
+  volumes:
+    - .:/srv/app
+    - /workspaces:/workspaces
+  env_file: env.compose.dev
+  depends_on:
+    - cache
+    - db
 services:
   api:
-    build: .
+    <<: *django
     command: /srv/env/bin/gunicorn --bind 0.0.0.0:8080 --reload --workers 1 --log-level=DEBUG --error-logfile=- --access-logfile=- config.wsgi
-    volumes:
-      - .:/srv/app
-      - /workspaces:/workspaces
-    depends_on:
-      - db
-      - cache
-    env_file: .env
     labels:
       - "traefik.enable=true"
       - "traefik.backend=api"
@@ -17,18 +22,11 @@ services:
       - "traefik.frontend.priority=1"
       - "traefik.frontend.rule=PathPrefix:/"
   channels:
-    build: .
+    <<: *django
     command: /srv/env/bin/daphne -p 8080 -b 0.0.0.0 -v 2 config.asgi:channel_layer
-    volumes:
-      - .:/srv/app
-      - /workspaces:/workspaces
-    env_file: .env
-    depends_on:
-      - db
-      - cache
-    ports:
-      - "9000:8080"
     entrypoint: ''
+    ports:
+      - "8080"
     labels:
       - "traefik.enable=true"
       - "traefik.backend=sockets"
@@ -36,37 +34,16 @@ services:
       - "traefik.frontend.priority=2"
       - "traefik.frontend.rule=Path:/sns/{server}/,/{version}/{namespace}/projects/{project}/servers/{server}/status/"
   channel_worker:
-    build: .
+    <<: *django
     command: /srv/env/bin/python manage.py runworker -v 2
-    volumes:
-      - .:/srv/app
-      - /workspaces:/workspaces
-    env_file: .env
-    depends_on:
-      - db
-      - cache
     entrypoint: ''
   celery:
-    build: .
+    <<: *django
     command: /srv/env/bin/celery -A config.celery worker -l info --without-heartbeat
-    volumes:
-      - .:/srv/app
-      - /workspaces:/workspaces
-    env_file: .env
-    depends_on:
-      - db
-      - cache
     entrypoint: ''
   beat:
-    build: .
+    <<: *django
     command: /srv/env/bin/celery -A config.celery beat -l debug
-    volumes:
-      - .:/srv/app
-      - /workspaces:/workspaces
-    depends_on:
-      - db
-      - cache
-    env_file: .env
     entrypoint: ''
   db:
     image: postgres:9.6-alpine
@@ -77,14 +54,18 @@ services:
     ports:
       - "6379:6379"
   server:
-    image: illumidesk/traefik
+    build:
+      context: reverse-proxies/traefik/.
+    image: illumidesk/traefik:dev
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "5001:80"
       - "8080:8080"
   nginx:
-    image: illumidesk/nginx
+    build:
+      context: reverse-proxies/nginx/.
+    image: illumidesk/nginx:dev
     command: /nginx/sbin/nginx -p '' -g 'daemon off;'
     labels:
       - "traefik.enable=true"

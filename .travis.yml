@@ -13,11 +13,16 @@ branches:
     - production
 
 before_install:
+  - echo "before install step"
   - bash scripts/before_install.sh
 
+install:
+  - echo "install step"
+  - bash scripts/install.sh
+
 script:
-  - set -e
-  - make build-all
+  - echo "script step"
+  - bash scripts/script.sh
 
 after_success:
   - bash scripts/after_success.sh
