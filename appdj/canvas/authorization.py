@@ -51,7 +51,7 @@ class CanvasAuth(authentication.BaseAuthentication):
         valid, _ = endpoint.validate_request(
             uri.replace('http', 'https') if settings.HTTPS else uri,
             http_method=request.method,
-            body=request.body.decode(),
+            body=request.data,
             headers=self.normalize_headers(request),
         )
         application = Application.objects.filter(

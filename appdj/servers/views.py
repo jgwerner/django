@@ -279,7 +279,7 @@ def lti_file_handler(request, *args, **kwargs):
 @api_view(['get'])
 def lti_ready(request, *args, **kwargs):
     workspace_id, assignment_id = AsyncResult(kwargs.get('task_id')).get()
-    logger.debug("[lti_ready], %s, %s", workspace_id, assignment_id)
+    logger.info("[lti_ready], %s, %s", workspace_id, assignment_id)
     workspace = models.Server.objects.filter(pk=workspace_id).first()
     if workspace is None:
         return Response({'error': 'No workspace created'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

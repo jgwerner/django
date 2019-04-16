@@ -1,3 +1,5 @@
+{% load i18n %}
+{% get_current_language as LANGUAGE_CODE %}
 <?xml version = "1.0" encoding = "UTF-8"?>
 <imsx_POXEnvelopeRequest xmlns="http://www.imsglobal.org/services/ltiv1p1/xsd/imsoms_v1p0">
     <imsx_POXHeader>
@@ -13,6 +15,10 @@
                     <sourcedId>{{ source_did }}</sourcedId>
                 </sourcedGUID>
                 <result>
+                    {% if grade %}<resultTotalScore>
+            			<language>{{ LANGUAGE_CODE }}</language>
+            			<textString>{{ grade }}</textString>
+          			</resultTotalScore>{% endif %}
                     <resultData>
                         <ltiLaunchUrl>{{ url }}</ltiLaunchUrl>
                     </resultData>

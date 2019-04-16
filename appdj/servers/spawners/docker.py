@@ -1,6 +1,5 @@
 import logging
 import tarfile
-import time
 from io import BytesIO
 
 from django.conf import settings
@@ -16,17 +15,18 @@ logger = logging.getLogger("servers")
 
 
 class DockerSpawner(TraefikMixin, BaseSpawner):
-    def __init__(self, server, client=None):
+    def __init__(self, server, client=None, cmd=None, container_name=None):
         super().__init__(server)
         self.client = client or (server.host.client if server.host else docker.from_env())
         self.container_id = ''
-        self.cmd = None
+        self.container_name = container_name or self.server.container_name
+        self.cmd = cmd
         self.entry_point = None
         self.restart = None
         self.network_name = 'project_{}_network'.format(self.server.project.pk)
 
     def start(self) -> None:
-        self.cmd = self._get_cmd()
+        self.cmd = self._get_cmd() if self.cmd is None else self.cmd
         if not self._is_network_exists():
             self._create_network()
         # get the container by container_name (if exists)
@@ -34,32 +34,10 @@ class DockerSpawner(TraefikMixin, BaseSpawner):
             self._create_container()
 
         try:
-            self.client.api.start(self.server.container_name)
+            self.client.api.start(self.container_name)
         except APIError as e:
             logger.error(e.response.content)
             raise
-        if self.server.config['type'] == 'jupyter':
-            tar_stream = BytesIO()
-            tar = tarfile.TarFile.xzopen(
-                name='config.tar.xz',
-                fileobj=tar_stream, mode="w"
-            )
-            jupyter_config = self._get_jupyter_config()
-            logger.debug("Jupyter config: %s", jupyter_config)
-            tarinfo = tarfile.TarInfo(name="jupyter_notebook_config.py")
-            tarinfo.size = len(jupyter_config)
-            tarinfo.mtime = time.time()
-            tar.addfile(
-                tarinfo,
-                BytesIO(jupyter_config.encode('utf-8'))
-            )
-            tar.close()
-            tar_stream.seek(0)
-            self.client.api.put_archive(
-                container=self.server.container_name,
-                path='/etc/jupyter/',
-                data=tar_stream,
-            )
         self.server.last_start = timezone.now()
 
     def _get_host_config(self):
@@ -96,7 +74,7 @@ class DockerSpawner(TraefikMixin, BaseSpawner):
         self.container_id = docker_resp['Id']
         self.server.container_id = self.container_id
         self.server.save()
-        logger.info("Container created '{}', id:{}".format(self.server.container_name, self.container_id))
+        logger.info("Container created '%s', id:%s", self.server.container_name, self.container_id)
 
     def _create_container_config(self):
 
@@ -106,7 +84,7 @@ class DockerSpawner(TraefikMixin, BaseSpawner):
             image=self.server.image_name,
             command=self.cmd,
             environment=self._get_env(),
-            name=self.server.container_name,
+            name=self.container_name,
             host_config=self.client.api.create_host_config(**self._get_host_config()),
             labels=self._get_traefik_labels(),
             cpu_shares=0,
@@ -126,24 +104,24 @@ class DockerSpawner(TraefikMixin, BaseSpawner):
         })
 
     def _get_container(self): # noqa
-        logger.info("Getting container '%s'", self.server.container_name)
+        logger.info("Getting container '%s'", self.container_name)
         self.container_id = ''
         container = None
         try:
-            container = self.client.api.inspect_container(self.server.container_name)
+            container = self.client.api.inspect_container(self.container_name)
             self.container_id = container['Id']
-            logger.info("Found existing container to the name: '%s'" % self.server.container_name)
+            logger.info("Found existing container to the name: '%s'" % self.container_name)
         except APIError as e:
             if e.response.status_code == 404:
-                logger.info("Container '%s' is gone", self.server.container_name)
+                logger.info("Container '%s' is gone", self.container_name)
             elif e.response.status_code == 500:
-                logger.info("Container '%s' is on unhealthy node", self.server.container_name)
+                logger.info("Container '%s' is on unhealthy node", self.container_name)
             else:
                 raise
         if container is not None:
             if not self._compare_container_env(container):
                 try:
-                    self.client.api.remove_container(self.server.container_name)
+                    self.client.api.remove_container(self.container_name)
                 except APIError as e:
                     if e.response.status_code == 404:
                         pass
@@ -159,11 +137,11 @@ class DockerSpawner(TraefikMixin, BaseSpawner):
 
         try:
             # if the container has a state, then it exists
-            self.client.api.remove_container(self.server.container_name, force=True)
+            self.client.api.remove_container(self.container_name, force=True)
         except APIError as e:
             if e.response.status_code == 404:
                 logger.info("Container '%s' does not exist. It will be removed from db",
-                            self.server.container_name)
+                            self.container_name)
         except:
             logger.info("Unexpected error trying to terminate a server")
             raise
@@ -171,7 +149,7 @@ class DockerSpawner(TraefikMixin, BaseSpawner):
     def stop(self) -> None:
         # try to stop the container by docker client
         try:
-            self.client.api.stop(self.server.container_name)
+            self.client.api.stop(self.container_name)
         except APIError as de:
             if de.response.status_code != 404:
                 raise
@@ -181,7 +159,7 @@ class DockerSpawner(TraefikMixin, BaseSpawner):
 
     def status(self):
         try:
-            result = self.client.api.inspect_container(self.server.container_name)
+            result = self.client.api.inspect_container(self.container_name)
         except APIError as e:
             if e.response.status_code == 404:
                 return self.server.STOPPED

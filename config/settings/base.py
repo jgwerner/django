@@ -399,7 +399,7 @@ SERVER_TYPE_MAPPING = {'jupyter': 'proxy'}
 SERVER_ENDPOINT_URLS = {'proxy': '/proxy/'}
 SERVER_COMMANDS = {
     'jupyter': (
-        'jupyter lab'
+        'jupyter notebook'
         ' --NotebookApp.token={server.access_token}'
         ' --NotebookApp.allow_root=True'
         ' --NotebookApp.allow_origin=*'
@@ -461,3 +461,19 @@ USAGE_WARNING_THRESHOLDS = os.environ.get("USAGE_WARNING_THRESHOLDS", "75,90,100
 BILLING_BUCKET_SIZE_GB = os.environ.get("BILLING_BUCKET_SIZE_GB", 5)
 
 BUCKET_COST_USD = os.environ.get("BUCKET_COST_USD", 5)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        '': {
+            'handlers': ['console'],
+            'level': os.getenv('LOGLEVEL', 'DEBUG'),
+        },
+    },
+}

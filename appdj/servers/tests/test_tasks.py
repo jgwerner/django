@@ -27,6 +27,7 @@ class LTITest(TestCase):
             project__private=False
         )
         self.project = col.project
+        self.project.resource_root().mkdir(parents=True, exist_ok=True)
         self.user = col.user
 
     def test_lti_copy(self):
@@ -43,7 +44,7 @@ class LTITest(TestCase):
         canvas_user_id = str(uuid.uuid4())
         learner = UserFactory()
         learner.profile.config = {'canvas_user_id': canvas_user_id}
-        learner.save()
+        learner.profile.save()
         data = {
             'user_id': canvas_user_id,
             'lis_person_contact_email_primary': learner.email,
@@ -58,7 +59,7 @@ class LTITest(TestCase):
         canvas_user_id = str(uuid.uuid4())
         learner = UserFactory()
         learner.profile.config = {'canvas_user_id': canvas_user_id}
-        learner.save()
+        learner.profile.save()
         data = {
             'user_id': canvas_user_id,
             'lis_person_contact_email_primary': learner.email,
@@ -75,7 +76,7 @@ class LTITest(TestCase):
         canvas_user_id = str(uuid.uuid4())
         learner = UserFactory()
         learner.profile.config = {'canvas_user_id': canvas_user_id}
-        learner.save()
+        learner.profile.save()
         data = {
             'user_id': canvas_user_id,
             'lis_person_contact_email_primary': learner.email,
@@ -105,6 +106,7 @@ class LTITeamsTest(TestCase):
         self.group = GroupFactory(name='owners', team=self.team)
         self.user.team_groups.add(self.group)
         self.project = ProjectFactory(team=self.team, private=False)
+        self.project.resource_root().mkdir(parents=True, exist_ok=True)
 
     def test_lti_copy(self):
         data = {
@@ -119,7 +121,7 @@ class LTITeamsTest(TestCase):
         canvas_user_id = str(uuid.uuid4())
         learner = UserFactory()
         learner.profile.config = {'canvas_user_id': canvas_user_id}
-        learner.save()
+        learner.profile.save()
         data = {
             'user_id': canvas_user_id,
             'lis_person_contact_email_primary': learner.email,
@@ -133,7 +135,7 @@ class LTITeamsTest(TestCase):
         canvas_user_id = str(uuid.uuid4())
         learner = UserFactory()
         learner.profile.config = {'canvas_user_id': canvas_user_id}
-        learner.save()
+        learner.profile.save()
         data = {
             'user_id': canvas_user_id,
             'lis_person_contact_email_primary': learner.email,
@@ -152,7 +154,7 @@ class LTITeamsTest(TestCase):
         canvas_user_id = str(uuid.uuid4())
         learner = UserFactory()
         learner.profile.config = {'canvas_user_id': canvas_user_id}
-        learner.save()
+        learner.profile.save()
         data = {
             'user_id': canvas_user_id,
             'lis_person_contact_email_primary': learner.email,
