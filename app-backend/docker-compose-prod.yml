@@ -1,0 +1,66 @@
+version: '3.5'
+x-django: &django
+  build:
+    context: .
+    dockerfile: Dockerfile
+  image: illumidesk/app-backend:latest
+  volumes:
+    - /workspaces:/workspaces
+  env_file: .env
+services:
+  api:
+    <<: *django
+    command: /srv/env/bin/gunicorn --bind 0.0.0.0:8080 --reload --workers 1 --log-level=INFO --error-logfile=- --access-logfile=- config.wsgi
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=api"
+      - "traefik.port=8080"
+      - "traefik.frontend.priority=1"
+      - "traefik.frontend.rule=PathPrefix:/"
+  channels:
+    <<: *django
+    command: /srv/env/bin/daphne -p 8080 -b 0.0.0.0 -v 2 config.asgi:channel_layer
+    entrypoint: ''
+    ports:
+      - "8080"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=sockets"
+      - "traefik.port=8080"
+      - "traefik.frontend.priority=2"
+      - "traefik.frontend.rule=Path:/sns/{server}/,/{version}/{namespace}/projects/{project}/servers/{server}/status/"
+  channel_worker:
+    <<: *django
+    command: /srv/env/bin/python manage.py runworker -v 2
+    entrypoint: ''
+  celery:
+    <<: *django
+    command: /srv/env/bin/celery -A config.celery worker -l info --without-heartbeat
+    entrypoint: ''
+  beat:
+    <<: *django
+    command: /srv/env/bin/celery -A config.celery beat -l info
+    entrypoint: ''
+  server:
+    build:
+      context: ../reverse-proxies/traefik/.
+    image: illumidesk/traefik:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "5001:80"
+      - "8080:8080"
+  nginx:
+    build:
+      context: ../reverse-proxies/nginx/.
+    image: illumidesk/nginx:latest
+    command: /nginx/sbin/nginx -p '' -g 'daemon off;'
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=nginx"
+      - "traefik.nginx.frontend.rule=PathPrefix:/media"
+
+networks:
+  default:
+    external:
+      name: illumidesk-net

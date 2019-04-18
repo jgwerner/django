@@ -44,3 +44,13 @@ domain = "localhost"
 exposedbydefault = true
 
 watch = true
+
+################################################################
+# ECS configuration backend
+################################################################
+
+[ecs]
+watch = true
+region = "us-east-1"
+clusters = ["default","illumidesk","illumidesk-dev","illumidesk-prod"]
+autoDiscoverClusters = true
