@@ -7,11 +7,11 @@ create_docker_network () {
 }
 
 docker_compose_build_dev () {
-  docker-compose -f $DOCKER_COMPOSE_DEV build
+  docker-compose -f app-backend/$DOCKER_COMPOSE_DEV build
 }
 
 make_build_proxies () {
-  make "TAG=dev" build-all
+  make "TAG=dev" build-all-proxies
 }
 
 install_aws_cli () {
@@ -19,12 +19,18 @@ install_aws_cli () {
   pip install awscli
 }
 
-install_ecs_deploy () {
-  # lock it in to commit from Aug 8 2018
-  curl https://raw.githubusercontent.com/silinternational/ecs-deploy/304051316ba576b1e0025c09a4a673f842885ba6/ecs-deploy | \
-    sudo tee /usr/bin/ecs-deploy
-  sudo chown travis:travis /usr/bin/ecs-deploy
-  sudo chmod +x /usr/bin/ecs-deploy
+install_packer () {
+  curl -fSL "https://releases.hashicorp.com/packer/${PACKER_VERSION}/packer_${PACKER_VERSION}_linux_amd64.zip" -o packer.zip
+  sudo unzip packer.zip -d /opt/packer
+  sudo ln -s /opt/packer/packer /usr/bin/packer
+  rm -f packer.zip
+}
+
+install_terraform () {
+  curl -fSL "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip" -o terraform.zip
+  sudo unzip terraform.zip -d /opt/terraform
+  sudo ln -s /opt/terraform/terraform /usr/bin/terraform
+  rm -f terraform.zip
 }
 
 main () {
@@ -35,8 +41,8 @@ main () {
   make_build_proxies
   echo "Install aws cli ..."
   install_aws_cli
-  echo "Install ecs-deploy ..."
-  install_ecs_deploy
+  echo "Install Terraform"
+  install_terraform
 }
 
 main

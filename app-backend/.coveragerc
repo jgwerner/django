@@ -1,0 +1,11 @@
+[run]
+source = "source = "/srv/env/bin/."
+omit = ../*migrations*
+       ../*tests*
+       */venv/*
+       */virtualenv/*
+       logs/*
+       manage.py
+       config/wsgi.py
+       */apps.py
+       */commands/*
