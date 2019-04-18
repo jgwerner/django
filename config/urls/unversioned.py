@@ -24,7 +24,6 @@ from appdj.projects import views as project_views
 from appdj.servers import views as servers_views
 from appdj.users import views as user_views
 from appdj.teams import views as team_views
-from appdj.search.views import SearchView
 from appdj.canvas.views import CanvasXML, Auth
 from appdj.oauth2.views import ApplicationViewSet
 
@@ -68,7 +67,6 @@ urlpatterns = [
         servers_views.lti_ready, name='lti-task'),
     url(r'^me/$', user_views.me, name="me"),
     url(r'^projects/lti/select/$', project_views.file_selection, name='project-file-select'),
-    url(r'^(?P<namespace>[\w-]+)/search/$', SearchView.as_view(), name='search'),
     url(r'^(?P<namespace>[\w-]+)/projects/git-clone/$', project_views.CloneGitProject.as_view(), name='git-clone'),
     url(r'^(?P<namespace>[\w-]+)/projects/project-copy-check/$',
         project_views.project_copy_check, name='project-copy-check'),

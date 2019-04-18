@@ -78,7 +78,6 @@ INSTALLED_APPS = [
     'appdj.servers.apps.ServersConfig',
     'appdj.infrastructure.apps.InfrastructureConfig',
     'appdj.jwt_auth.apps.JwtAuthConfig',
-    'appdj.search.apps.SearchConfig',
     'appdj.teams.apps.TeamsConfig',
     'appdj.canvas.apps.CanvasConfig',
 ]
