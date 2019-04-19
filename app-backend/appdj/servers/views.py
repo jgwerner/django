@@ -29,6 +29,7 @@ from rest_framework_jwt.settings import api_settings
 
 from appdj.base.views import LookupByMultipleFields
 from appdj.base.permissions import IsAdminUser
+from appdj.base.parser import PlainTextParser
 from appdj.base.utils import get_object_or_404, validate_uuid
 from appdj.canvas.authorization import CanvasAuth
 from appdj.projects.permissions import ProjectChildPermission
@@ -208,6 +209,7 @@ def check_token(request, version, project_project, server):
 
 class SNSView(views.APIView):
     permission_classes = (AllowAny,)
+    parser_classes = (PlainTextParser,)
 
     def post(self, request):
         sns_message_type_header = 'HTTP_X_AMZ_SNS_MESSAGE_TYPE'

@@ -38,16 +38,4 @@ STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
-RAVEN_CONFIG = {
-    'dsn': os.getenv("SENTRY_DSN"),
-    # If you are using git, you can also automatically configure the
-    # release based on the git info.
-    'release': raven.fetch_git_sha(os.path.dirname(os.pardir)),
-}
-
 SPAWNER = 'appdj.servers.spawners.ecs.ECSSpawner'
-
-STRIPE_WEBHOOK_SECRETS = {'stripe_subscription_updated': "whsec_RSx9LWemXIP0SDRKTmUEMbaVxZNAc8f1",
-                          'stripe_invoice_payment_failed': "whsec_7tD4DpkmWA8ZGhnikmxPwoB1jgSpB8p5",
-                          'stripe_invoice_payment_success': "whsec_FCczHHQ28wJUdmLif60Ri7F9enPldE4z",
-                          'stripe_invoice_created': "whsec_KZJB6p8BgK90XDRIHKLWtcELHiLf3Liz"}
