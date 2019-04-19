@@ -44,6 +44,8 @@ class CanvasValidator(RequestValidator):  # pylint: disable=abstract-method
 
 class CanvasAuth(authentication.BaseAuthentication):
     def authenticate(self, request):
+        if not isinstance(request.data, dict):
+            return None
         if 'oauth_consumer_key' not in request.data:
             return None
         endpoint = SignatureOnlyEndpoint(CanvasValidator())

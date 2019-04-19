@@ -38,11 +38,10 @@ STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
+SPAWNER = 'appdj.servers.spawners.ecs.ECSSpawner'
+
+
 RAVEN_CONFIG = {
     'dsn': os.getenv("SENTRY_DSN"),
-    # If you are using git, you can also automatically configure the
-    # release based on the git info.
     'release': raven.fetch_git_sha(os.path.dirname(os.pardir)),
 }
-
-SPAWNER = 'appdj.servers.spawners.ecs.ECSSpawner'
