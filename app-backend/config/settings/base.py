@@ -35,7 +35,6 @@ environ.Env.read_env(os.path.join(ROOT_DIR, '.env')) # reading .env file if exis
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('SECRET_KEY', 'test')
-STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', "test secret key")
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -427,14 +426,10 @@ MEDIA_URL = "/media/"
 
 DOCKER_NET = os.environ.get('DOCKER_NET', 'illumidesk-net')
 
-MOCK_STRIPE = os.environ.get("MOCK_STRIPE", "false").lower() == "true"
-
 # KB * KB = MB -> 15 MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024 * int(os.getenv("MAX_FILE_UPLOAD_SIZE", 15))
 
 SILENCED_SYSTEM_CHECKS = ["auth.W004"]
-
-DEFAULT_STRIPE_PLAN_ID = os.getenv("DEFAULT_STRIPE_PLAN_ID", "threeblades-free-plan")
 
 NVIDIA_DOCKER_HOST = os.environ.get('NVIDIA_DOCKER_HOST')
 
