@@ -24,7 +24,7 @@ from rest_framework.decorators import (
 from rest_framework.response import Response
 from rest_framework.renderers import TemplateHTMLRenderer
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework_jwt.settings import api_settings
 
 from appdj.base.views import LookupByMultipleFields
@@ -209,7 +209,7 @@ def check_token(request, version, project_project, server):
 
 class SNSView(views.APIView):
     permission_classes = (AllowAny,)
-    parser_classes = (PlainTextParser,)
+    parser_classes = (PlainTextParser, JSONParser)
 
     def post(self, request):
         sns_message_type_header = 'HTTP_X_AMZ_SNS_MESSAGE_TYPE'
