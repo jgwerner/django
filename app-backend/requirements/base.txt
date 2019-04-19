@@ -37,7 +37,6 @@ slackclient==1.2.1
 django-cors-headers==2.5.0
 django-guardian==1.5.0
 Pillow==5.2.0
-stripe==1.55.2
 djoser==1.5.1
 django-ses==0.8.6
 google-compute-engine==2.8.3
