@@ -67,10 +67,12 @@ services:
       context: ../reverse-proxies/nginx/.
     image: illumidesk/nginx:latest
     command: /nginx/sbin/nginx -p '' -g 'daemon off;'
+    volumes:
+      - ./static:/srv/app/static
     labels:
       - "traefik.enable=true"
       - "traefik.backend=nginx"
-      - "traefik.nginx.frontend.rule=PathPrefix:/media"
+      - "traefik.nginx.frontend.rule=PathPrefix:/media,/static"
 
 networks:
   default:
