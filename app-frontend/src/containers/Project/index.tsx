@@ -27,7 +27,7 @@ interface ProjectMapDispatchToProps {
 type ProjectProps = ProjectMapStateToProps & ProjectMapDispatchToProps & RouteComponentProps<ProjectRouterProps>
 
 const AsyncWorkspaces = Loadable({
-  loader: () => import('./Workspaces'),
+  loader: () => import('./ProjectWorkspaces'),
   loading: () => <div />
 })
 const AsyncSettings = Loadable({
