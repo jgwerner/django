@@ -22,7 +22,7 @@ from rest_framework.decorators import (
     parser_classes
 )
 from rest_framework.response import Response
-from rest_framework.renderers import TemplateHTMLRenderer
+from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework_jwt.settings import api_settings
@@ -257,8 +257,8 @@ def lti_redirect(request, *args, **kwargs):
 @api_view(['post'])
 @authentication_classes([CanvasAuth])
 @permission_classes([])
-@parser_classes([MultiPartParser, FormParser])
-@renderer_classes([TemplateHTMLRenderer])
+@parser_classes([MultiPartParser, FormParser, JSONParser])
+@renderer_classes([TemplateHTMLRenderer, JSONRenderer])
 def lti_file_handler(request, *args, **kwargs):
     project = get_object_or_404(Project, kwargs.get('project_project'))
     path = kwargs.get('path', '')
@@ -274,7 +274,7 @@ def lti_file_handler(request, *args, **kwargs):
         'path': path
     })
     access_token = create_auth_jwt(request.user)
-    return Response({'task_url': task_url, 'access_token': access_token},
+    return Response({'task_id': task.id, 'task_url': task_url, 'access_token': access_token},
                     template_name='servers/lti_file_handler.html')
 
 
