@@ -4,7 +4,7 @@ import {
   PROJECT_DETAILS_SUCCESS,
   PROJECT_DETAILS_FAILURE
 } from './actions'
-import workspaces, { WorkspacesStoreState } from './Workspaces/reducer'
+import workspaces, { WorkspacesStoreState } from './ProjectWorkspaces/reducer'
 import settings, { SettingsStoreState } from './Settings/reducer'
 
 export interface DetailsStoreState {
