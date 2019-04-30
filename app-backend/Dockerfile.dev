@@ -37,4 +37,4 @@ USER app
 
 ENTRYPOINT ["/srv/app/docker-entrypoint.sh"]
 
-EXPOSE 80
+EXPOSE 8080

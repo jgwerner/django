@@ -3,6 +3,8 @@ import logging
 import json
 import requests
 
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from celery.result import AsyncResult
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -22,7 +24,7 @@ from rest_framework.decorators import (
     parser_classes
 )
 from rest_framework.response import Response
-from rest_framework.renderers import TemplateHTMLRenderer
+from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework_jwt.settings import api_settings
@@ -38,7 +40,6 @@ from appdj.jwt_auth.views import JWTApiView
 from appdj.jwt_auth.serializers import VerifyJSONWebTokenServerSerializer
 from appdj.jwt_auth.utils import create_server_jwt, create_auth_jwt
 from appdj.teams.permissions import TeamGroupPermission
-from .consumers import ServerStatusConsumer
 from .tasks import (
     start_server,
     stop_server,
@@ -232,7 +233,11 @@ class SNSView(views.APIView):
             message = json.loads(payload['Message'])
             server_id = message['detail']['overrides']['containerOverrides'][0]['name']
             if models.Server.objects.filter(is_active=True, pk=server_id).exists():
-                ServerStatusConsumer.update_status(server_id, message['detail']['desiredStatus'])
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    f"statuses_{server_id}",
+                    {'type': 'status_update', 'status': message['detail']['desiredStatus'].title()}
+                )
         return Response({"message": "OK"})
 
 
@@ -257,8 +262,8 @@ def lti_redirect(request, *args, **kwargs):
 @api_view(['post'])
 @authentication_classes([CanvasAuth])
 @permission_classes([])
-@parser_classes([MultiPartParser, FormParser])
-@renderer_classes([TemplateHTMLRenderer])
+@parser_classes([MultiPartParser, FormParser, JSONParser])
+@renderer_classes([TemplateHTMLRenderer, JSONRenderer])
 def lti_file_handler(request, *args, **kwargs):
     project = get_object_or_404(Project, kwargs.get('project_project'))
     path = kwargs.get('path', '')
@@ -274,7 +279,7 @@ def lti_file_handler(request, *args, **kwargs):
         'path': path
     })
     access_token = create_auth_jwt(request.user)
-    return Response({'task_url': task_url, 'access_token': access_token},
+    return Response({'task_id': task.id, 'task_url': task_url, 'access_token': access_token},
                     template_name='servers/lti_file_handler.html')
 
 

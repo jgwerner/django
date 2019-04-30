@@ -1,28 +1,22 @@
 import logging
 
-from channels.generic.websockets import JsonWebsocketConsumer
-from appdj.base.namespace import Namespace
-from appdj.projects.models import Project
-from .models import Server
+from asgiref.sync import async_to_sync
+from channels.generic.websocket import JsonWebsocketConsumer
 
 logger = logging.getLogger(__name__)
 
 
 class ServerStatusConsumer(JsonWebsocketConsumer):
-    group_prefix = 'statuses'
 
-    def connection_groups(self, **kwargs):
-        namespace_arg = kwargs.get('namespace')
-        server_arg = kwargs.get('server')
-        project_arg = kwargs.get('project')
-        namespace = Namespace.from_name(namespace_arg)
-        project = Project.objects.namespace(namespace).tbs_filter(project_arg).first()
-        try:
-            server = Server.objects.filter(project=project).tbs_get(server_arg)
-        except Server.DoesNotExist:
-            self.close()
-        return [f'{self.group_prefix}_{server.pk}']
+    def connect(self):
+        server_id = self.scope['url_route']['kwargs']['server']
+        async_to_sync(self.channel_layer.group_add)(f"statuses_{server_id}", self.channel_name)
+        super().connect()
 
-    @classmethod
-    def update_status(cls, server_id: str, status: str):
-        cls.group_send(f'{cls.group_prefix}_{server_id}', {"status": status.title()})
+    def disconnect(self):
+        server_id = self.scope['url_route']['kwargs']['server']
+        async_to_sync(self.channel_layer.group_discard)(f"statuses_{server_id}", self.channel_name)
+        super().connect()
+
+    def status_update(self, event):
+        self.send_json(event)

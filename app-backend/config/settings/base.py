@@ -137,14 +137,15 @@ DATABASES = {
 
 # Channels
 
+ASGI_APPLICATION = "config.routing.application"
+
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "asgi_redis.RedisChannelLayer",
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
             "hosts": [os.environ.get('REDIS_URL')],
             "symmetric_encryption_keys": [SECRET_KEY],
         },
-        "ROUTING": "config.routing.routing",
     }
 }
 

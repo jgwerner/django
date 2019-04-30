@@ -43,16 +43,35 @@ def create_project(l):
 def create_server(l):
     data = {'name': fake.pystr()}
     project = l.client.post(f'/v1/{ADMIN_USERNAME}/projects/', json=data, verify=False).json()
-    data = {'name': fake.pystr(), 'config': {'type': 'jupyter'}, 'image': 'illumidesk/datascience-notebook'}
+    data = {'name': fake.pystr(), 'config': {'type': 'jupyter'}, 'image_name': 'illumidesk/datascience-notebook'}
     l.client.post(f'/v1/{ADMIN_USERNAME}/projects/{project["id"]}/servers/', json=data, verify=False)
 
 
 def start_server(l):
     data = {'name': fake.pystr()}
     project = l.client.post(f'/v1/{ADMIN_USERNAME}/projects/', json=data, verify=False).json()
-    data = {'name': fake.pystr(), 'config': {'type': 'jupyter'}, 'image': 'illumidesk/datascience-notebook'}
+    data = {'name': fake.pystr(), 'config': {'type': 'jupyter'}, 'image_name': 'illumidesk/datascience-notebook'}
     server = l.client.post(f'/v1/{ADMIN_USERNAME}/projects/{project["id"]}/servers/', json=data, verify=False).json()
     l.client.post(f'/v1/{ADMIN_USERNAME}/projects/{project["id"]}/servers/{server["id"]}/start/', {}, verify=False)
+
+
+def start_server_lti(l):
+    data = {'name': fake.pystr()}
+    project = l.client.post(f'/v1/{ADMIN_USERNAME}/projects/', json=data, verify=False).json()
+    data = {'name': fake.pystr(), 'config': {'type': 'jupyter'}, 'image_name': 'illumidesk/datascience-notebook'}
+    server = l.client.post(f'/v1/{ADMIN_USERNAME}/projects/{project["id"]}/servers/', json=data, verify=False).json()
+    data = {
+        'tool_consumer_instance_guid': str(uuid.uuid4()),
+        'lis_person_contact_email_primary': fake.company_email(),
+        'user_id': str(uuid.uuid4()),
+    }
+    task = l.client.post(
+        f'/v1/{ADMIN_USERNAME}/projects/{project["id"]}/servers/{server["id"]}/Untitled.ipynb',
+        json=data,
+        verify=False,
+        headers={'Accept': 'application/json'}
+    ).json()
+    l.client.get(f'/v1/{ADMIN_USERNAME}/lti/{task["task_id"]}/Untitled.ipynb', verify=False)
 
 
 def auth(l):
@@ -77,11 +96,16 @@ class JWTAuth(AuthBase):
 
 
 class LTITask(TaskSet):
-    tasks = {auth: 1, create_project: 2, create_server: 3, start_server: 3}
+    tasks = {start_server_lti: 1}
 
     def on_start(self):
-       token = login(self)
-       self.client.auth = JWTAuth(token)
+        token = login(self)
+        self.client.auth = JWTAuth(token)
+        data = {'name': fake.pystr()}
+        project = self.client.post(f'/v1/{ADMIN_USERNAME}/projects/', json=data, verify=False).json()
+        data = {'name': fake.pystr(), 'config': {'type': 'jupyter'}, 'image_name': 'illumidesk/datascience-notebook'}
+        server = self.client.post(f'/v1/{ADMIN_USERNAME}/projects/{project["id"]}/servers/', json=data, verify=False).json()
+        self.client.post(f'/v1/{ADMIN_USERNAME}/projects/{project["id"]}/servers/{server["id"]}/start/', {}, verify=False)
 
     def on_stop(self):
         self.client.auth = None
