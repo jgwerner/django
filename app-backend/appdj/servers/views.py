@@ -3,6 +3,8 @@ import logging
 import json
 import requests
 
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from celery.result import AsyncResult
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -38,7 +40,6 @@ from appdj.jwt_auth.views import JWTApiView
 from appdj.jwt_auth.serializers import VerifyJSONWebTokenServerSerializer
 from appdj.jwt_auth.utils import create_server_jwt, create_auth_jwt
 from appdj.teams.permissions import TeamGroupPermission
-from .consumers import ServerStatusConsumer
 from .tasks import (
     start_server,
     stop_server,
@@ -232,7 +233,11 @@ class SNSView(views.APIView):
             message = json.loads(payload['Message'])
             server_id = message['detail']['overrides']['containerOverrides'][0]['name']
             if models.Server.objects.filter(is_active=True, pk=server_id).exists():
-                ServerStatusConsumer.update_status(server_id, message['detail']['desiredStatus'])
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    f"statuses_{server_id}",
+                    {'type': 'status_update', 'status': message['detail']['desiredStatus'].title()}
+                )
         return Response({"message": "OK"})
 
 

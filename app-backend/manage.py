@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os
 import sys
+import daphne.server
 from django.conf import settings
 
 if __name__ == "__main__":    
