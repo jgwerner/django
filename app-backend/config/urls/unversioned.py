@@ -84,6 +84,8 @@ urlpatterns = [
     url(r'^', include(teams_sub_router.urls)),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/lti/assignment/(?P<assignment_id>\d+)/$',
         servers_views.submit_assignment, name='assignment'),
+    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/lti/assignment/(?P<assignment_id>\d+)/reset/$',
+        servers_views.reset_assignment_file, name='reset-assignment'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/start/$',
         servers_views.start, name='server-start'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/stop/$',

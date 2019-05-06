@@ -4,6 +4,7 @@ import json
 import requests
 
 from asgiref.sync import async_to_sync
+from pathlib import Path
 from channels.layers import get_channel_layer
 from celery.result import AsyncResult
 from django.conf import settings
@@ -36,6 +37,7 @@ from appdj.base.utils import get_object_or_404, validate_uuid
 from appdj.canvas.authorization import CanvasAuth
 from appdj.projects.permissions import ProjectChildPermission
 from appdj.projects.models import Project
+from appdj.projects.utils import copy_assignment
 from appdj.jwt_auth.views import JWTApiView
 from appdj.jwt_auth.serializers import VerifyJSONWebTokenServerSerializer
 from appdj.jwt_auth.utils import create_server_jwt, create_auth_jwt
@@ -309,4 +311,19 @@ def submit_assignment(request, *args, **kwargs):
     if assignment_id is None:
         return Response({'message': 'No assignment id'}, status=status.HTTP_400_BAD_REQUEST)
     send_assignment.delay(str(workspace.pk), assignment_id)
+    return Response({'message': 'OK'})
+
+
+@api_view(['post'])
+@authentication_classes([])
+@permission_classes([])
+def reset_assignment_file(request, *args, **kwargs):
+    workspace = get_object_or_404(models.Server, kwargs.get('server'))
+    learner = workspace.project.owner
+    assignment_id = kwargs.get('assignment_id')
+    if assignment_id is None:
+        return Response({'message': 'No assignment id'}, status=status.HTTP_400_BAD_REQUEST)
+    teacher_project = Project.objects.get(pk=workspace.project.config['copied_from'])
+    assignment = next((a for a in workspace.config.get('assignments', []) if a['id'] == assignment_id))
+    copy_assignment(Path('release', assignment['path']), teacher_project, workspace.project)
     return Response({'message': 'OK'})

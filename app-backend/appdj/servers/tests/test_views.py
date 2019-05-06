@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from pathlib import Path
 from unittest.mock import patch
 from guardian.shortcuts import assign_perm
 
@@ -13,6 +14,7 @@ from rest_framework.test import APITestCase
 
 from appdj.jwt_auth.utils import create_auth_jwt
 from appdj.projects.tests.factories import CollaboratorFactory, ProjectFactory
+from appdj.projects.utils import copy_assignment
 from appdj.users.tests.factories import UserFactory
 from ..models import Server, ServerRunStatistics
 from .factories import (
@@ -93,7 +95,7 @@ class ServerTest(APITestCase):
             response.data['endpoint'],
             ('{scheme}://example.com/{version}/{namespace}/projects/{project_id}'
              '/servers/{server_id}/endpoint/proxy/?token={server_token}').format(
-                scheme = 'https' if settings.HTTPS else 'http',
+                scheme='https' if settings.HTTPS else 'http',
                 version=settings.DEFAULT_VERSION,
                 namespace=self.user.username,
                 project_id=self.project.pk,
@@ -287,6 +289,29 @@ class ServerTest(APITestCase):
         resp = self.client.post(url, data)
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_reset_assignment_file(self):
+        teacher_server = ServerFactory(project=self.project)
+        learner_col = CollaboratorFactory(project__config={'copied_from': str(teacher_server.project.pk)})
+        learner_server = ServerFactory(project=learner_col.project, config={'assignments': [{'id': '123', 'path': 'test/test.ipynb'}], 'type': 'jupyter'})
+        assignment_path = 'test/test.ipynb'
+        teacher_assignment_path = teacher_server.project.resource_root() / 'release' / assignment_path
+        teacher_assignment_path.parent.mkdir(parents=True, exist_ok=True)
+        teacher_assignment_path.write_bytes(b'123')
+        copy_assignment(Path('release', assignment_path), teacher_server.project, learner_server.project)
+        learner_file = learner_server.project.resource_root() / assignment_path
+        learner_file.write_bytes(b'456')
+        kwargs = {
+            'namespace': learner_col.user.username,
+            'project_project': str(learner_server.project.pk),
+            'server': (learner_server.pk),
+            'assignment_id': '123',
+            **self.url_kwargs
+        }
+        url = reverse('reset-assignment', kwargs=kwargs)
+        resp = self.client.post(url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(teacher_assignment_path.read_bytes(), learner_file.read_bytes())
+
 
 class ServerTestWithName(APITestCase):
     maxDiff = None
@@ -332,7 +357,7 @@ class ServerTestWithName(APITestCase):
             response.data['endpoint'],
             ('{scheme}://example.com/{version}/{namespace}/projects/{project_id}'
              '/servers/{server_id}/endpoint/proxy/?token={server_token}').format(
-                scheme = 'https' if settings.HTTPS else 'http',
+                scheme='https' if settings.HTTPS else 'http',
                 version=settings.DEFAULT_VERSION,
                 namespace=self.user.username,
                 project_id=self.project.pk,
