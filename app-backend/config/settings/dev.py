@@ -18,7 +18,6 @@ REST_FRAMEWORK['DEFAULT_PARSER_CLASSES'] = (
 
 INSTALLED_APPS.extend([
     'django_extensions',
-    'debug_toolbar',
     'rest_framework_swagger',
     'raven.contrib.django.raven_compat',
 ])
@@ -27,10 +26,6 @@ GRAPH_MODELS = {
   'all_applications': True,
   'group_models': True,
 }
-
-MIDDLEWARE.extend([
-    'debug_toolbar.middleware.DebugToolbarMiddleware'
-])
 
 INTERNAL_IPS = ['127.0.0.1']
 
