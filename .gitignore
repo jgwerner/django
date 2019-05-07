@@ -103,8 +103,17 @@ resources/
 static/
 logs/
 
-# npm node modules
+# npm/yarn/node modules
 node_modules/
+/.pnp
+.pnp.js
+*.bundle.*
+lib/
+test/build/*
+node_modules/
+npm-debug.lognpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 celerybeat.pid
 
@@ -116,7 +125,7 @@ vendored/
 tmp/
 
 # local environment variables
-.env
+.env*
 # ignore workspaces folder that is used locally when launch notebooks to save its files
 workspaces/
 
