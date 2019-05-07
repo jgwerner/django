@@ -15,31 +15,31 @@ matrix:
       python:
         - "3.6"
       before_install:
-        - echo "before install step"
         - bash scripts/before_install.sh
-
       install:
-        - echo "install step"
         - bash scripts/install.sh
-
       script:
-        - echo "script step"
         - bash scripts/script.sh
-
       after_success:
         - bash scripts/after_success.sh
+
+    - language: python
+      python:
+        - "3.6"
+      install:
+        - bash workspaces/scripts/install.sh
+      script:
+        - bash workspaces/scripts/script.sh
+      after_success:
+        - bash workspaces/scripts/after_success.sh
 
     - language: node_js
       node_js:
         - lts/*
       before_install:
-        - echo "before install step"
         - bash jupyter-lti/scripts/before_install.sh
-
       install:
-        - echo "install step"
         - bash jupyter-lti/scripts/install.sh
-
       deploy:
         provider: npm
         email: $NPM_EMAIL

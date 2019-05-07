@@ -126,8 +126,6 @@ tmp/
 
 # local environment variables
 .env*
-# ignore workspaces folder that is used locally when launch notebooks to save its files
-workspaces/
 
 # Local .terraform directories
 scripts/terraform/.terraform

@@ -1,0 +1,6 @@
+docker
+requests
+pytest
+nbconvert
+nbval
+runner
