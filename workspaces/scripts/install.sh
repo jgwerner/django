@@ -1,7 +1,7 @@
 #!/bin/bash
 
 build_dev_workspaces () {
-    cd $HOME/build/IllumiDesk/app-backend/workspaces/
+    cd $HOME/build/IllumiDesk/illumidesk/workspaces/
     make dev-env
     pip install -U pytest
 }

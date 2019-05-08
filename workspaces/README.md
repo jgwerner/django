@@ -10,6 +10,16 @@ Read more about these workspaces in our [docs](https://docs.illumidesk.com)
 
     make help
 
+## Build/Test Notes
+
+By default all Dockerfiles set the Jupyter LTI extension to latest using `@illumidesk/jupyter-lti@latest`. To set a custom version for the Jupyter LTI extension for a docker image build set it with `DARGS`:
+
+    DARGS="JUPYTER_LTI_VERSION=@1.2.4" make test/minimal-notebook
+
+You may not need to build all images to run basic Jupyter Notebook tests. In these cases use the `TEST_ONLY_BUILD` to only build the `illumidesk/minimal-notebook` image:
+
+    make build-test-all DARGS="--build-arg TEST_ONLY_BUILD=1"
+
 # Env Vars
 
 Environment variables used to build and push images to docker registry:

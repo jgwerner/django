@@ -1,6 +1,6 @@
 {
   "name": "@illumidesk/jupyter-lti",
-  "version": "1.2.0",
+  "version": "1.2.4",
   "description": "JupyterLab LTI extension for the Canvas LMS.",
   "keywords": [
     "lti",
@@ -9,9 +9,9 @@
     "jupyterlab",
     "jupyterlab-extension"
   ],
-  "homepage": "https://github.com/illumidesk/app-backend",
+  "homepage": "https://github.com/illumidesk/illumidesk",
   "bugs": {
-    "url": "https://github.com/illumidesk/app-backend/issues"
+    "url": "https://github.com/illumidesk/illumidesk/issues"
   },
   "license": "BSD-3-Clause",
   "author": "IllumiDesk Team",
@@ -23,7 +23,7 @@
   "types": "src/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/illumidesk/jupyter-lti.git"
+    "url": "https://github.com/illumidesk/illumidesk.git"
   },
   "scripts": {
     "build": "tsc src/index.ts",

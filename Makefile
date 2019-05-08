@@ -1,10 +1,4 @@
-.PHONY: help \
-        build-proxy \
-		build-all-proxies \
-		build-app-backend \
-		push-proxy \
-		push-all-proxies \
-		push-app-backend
+.PHONY: help
 
 # Terraform settings.
 SRC = $(wildcard *.tf ./*/*.tf)
@@ -16,7 +10,9 @@ modules = $(shell ls -1 ./*.tf ./*/*.tf | xargs -I % dirname %)
 # as an env var before running any commands.
 TAG?=latest
 SHELL:=bash
-
+AWS_ACCOUNT?=$(AWS_ACCOUNT)
+AWS_REGION?=$(AWS_REGION)
+OWNER?=$(ACCOUNT)
 APP-BACKEND_IMAGE:=app-backend
 ALL_PROXY_IMAGES:=nginx \
         traefik
@@ -39,20 +35,20 @@ help:
 
 build-proxy/%: DARGS?=
 build-proxy/%: ## Build and tag a reverse-proxy image
-	docker build $(DARGS) --rm --force-rm -t $(ACCOUNT)/$(notdir $@):$(TAG) ./reverse-proxies/$(notdir $@)
+	docker build $(DARGS) --rm --force-rm -t $(AWS_ACCOUNT).dkr.ecr.$(AWS_REGION).amazonaws.com/$(OWNER)/$(notdir $@):$(TAG) ./reverse-proxies/$(notdir $@)
 
 build-all-proxies: $(foreach I,$(ALL_PROXY_IMAGES), build-proxy/$(I) ) ## Build all reverse-proxy images
 
 push-proxy/%: ## Push a reverse-proxy image to the registry
-	docker push $(ACCOUNT)/$(notdir $@):$(TAG)
+	docker push $(AWS_ACCOUNT).dkr.ecr.$(AWS_REGION).amazonaws.com/$(OWNER)/$(notdir $@):$(TAG)
 
 push-all-proxies: $(foreach I,$(ALL_PROXY_IMAGES), push-proxy/$(I) ) ## Push all reverse-proxy images
 
 build-app-backend/%: DARGS?=
-build-app-backend/%: ## Build and tag a app-backend
-	docker build $(DARGS) --rm --force-rm -t $(ACCOUNT)/$(notdir $@):$(TAG) ./$(notdir $@)
-
-build-app-backend: $(foreach I,$(APP-BACKEND_IMAGE), build-app-backend/$(I) ) ## Build app-backend images
+build-app-backend/%: ## Build and tag app-backend
+	docker build $(DARGS) --rm --force-rm -t $(AWS_ACCOUNT).dkr.ecr.$(AWS_REGION).amazonaws.com/$(OWNER)/$(notdir $@):$(TAG) ./$(notdir $@)
+build-all-backends: $(foreach I,$(APP-BACKEND_IMAGE), build-app-backend/$(I) ) ## Build app-backend images
 
 push-app-backend/%: ## Push an image to the registry
-	docker push $(ACCOUNT)/$(notdir $@):$(TAG)
+	docker push $(AWS_ACCOUNT).dkr.ecr.$(AWS_REGION).amazonaws.com/$(OWNER)/$(notdir $@):$(TAG)
+push-all-backends: $(foreach I,$(APP-BACKEND_IMAGE), push-app-backend/$(I) ) ## Build app-backend images

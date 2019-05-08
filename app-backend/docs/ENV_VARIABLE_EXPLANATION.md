@@ -1,6 +1,6 @@
 ### Environment Variables Explanation
 
-The IllumiDesk/app-backend application interacts with various internal applications and external, third-party services. The following descriptions should help to understand the most important of these variables:
+The IllumiDesk `app-backend` application interacts with various internal applications and external, third-party services. The following descriptions should help to understand the most important of these variables:
 
 | Variable  |  Type | Note  |
 |---|---|---|

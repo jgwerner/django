@@ -1,6 +1,6 @@
 # Copyright (c) Jupyter Development Team.
 # Distributed under the terms of the Modified BSD License.
-# Copyright (c) IllumiDesk.
+# Copyright (c) IllumiDesk Team.
 # Distributed under the terms of the Modified BSD License.
 import os
 
@@ -37,7 +37,6 @@ def image_name():
 class TrackedContainer(object):
     """Wrapper that collects docker container configuration and delays
     container creation/execution.
-
     Parameters
     ----------
     docker_client: docker.DockerClient
@@ -57,16 +56,13 @@ class TrackedContainer(object):
         """Runs a docker container using the preconfigured image name
         and a mix of the preconfigured container options and those passed
         to this method.
-
         Keeps track of the docker.Container instance spawned to kill it
         later.
-
         Parameters
         ----------
         **kwargs: dict, optional
             Keyword arguments to pass to docker.DockerClient.containers.run
             extending and/or overriding key/value pairs passed to the constructor
-
         Returns
         -------
         docker.Container
@@ -87,7 +83,6 @@ class TrackedContainer(object):
 def container(docker_client, image_name):
     """Notebook container with initial configuration appropriate for testing
     (e.g., HTTP port exposed to the host for HTTP calls).
-
     Yields the container instance and kills it when the caller is done with it.
     """
     container = TrackedContainer(

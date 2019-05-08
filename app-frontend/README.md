@@ -1,7 +1,6 @@
 # IllumiDesk Web UI
 
-[![codecov](https://codecov.io/gh/IllumiDesk/app-backend/branch/master/graph/badge.svg?token=hYg2cWoCkZ)](https://codecov.io/gh/IllumiDesk/app-backend)
-[![Build Status](https://travis-ci.com/IllumiDesk/app-backend.svg?token=y3jvxynhJQZHELnDYJdy&branch=master)](https://travis-ci.com/IllumiDesk/app-backend)
+![Build Status](https://travis-ci.com/IllumiDesk/illumidesk.svg?token=y3jvxynhJQZHELnDYJdy&branch=master)](https://travis-ci.com/IllumiDesk/illumidesk)
 
 An API-agnostic frontend for IllumiDesk in ReactJs.
 
@@ -12,9 +11,9 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 Clone repo and install dependencies:
 
 ```
-git clone https://github.com/illumidesk/app-backend/
-cd app-backend
-cd frontend
+git clone https://github.com/illumidesk/illumidesk/
+cd illumidesk
+cd app-frontend
 npm install
 ```
 

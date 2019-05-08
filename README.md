@@ -1,5 +1,4 @@
-[![codecov](https://codecov.io/gh/IllumiDesk/app-backend/branch/master/graph/badge.svg?token=hYg2cWoCkZ)](https://codecov.io/gh/IllumiDesk/app-backend)
-[![Build Status](https://travis-ci.com/IllumiDesk/app-backend.svg?token=y3jvxynhJQZHELnDYJdy&branch=master)](https://travis-ci.com/IllumiDesk/app-backend)
+[![Build Status](https://travis-ci.com/IllumiDesk/illumidesk.svg?token=y3jvxynhJQZHELnDYJdy&branch=master)](https://travis-ci.com/IllumiDesk/illumidesk)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
 
 # IllumiDesk Backend Services
@@ -18,7 +17,7 @@
 
 We maintain `docker-compose-*.yml` files to launch our working `app-backend` stack. Launching the full stack may be necessary to support integration testing, such as creating new user workspaces. Services include (in alphabetical order):
 
-- [API](https://hub.docker.com/r/illumidesk/app-backend): RESTful API based on Django and Django Rest Framework (DRF)
+- [API](./app-backend): RESTful API based on Django and Django Rest Framework (DRF)
 - [Postgres](https://hub.docker.com/_/postgres/)
 - [Redis](https://hub.docker.com/_/redis/)
 - [Traefik](https://hub.docker.com/_/traefik)
@@ -134,9 +133,7 @@ Run tests:
 
 ### Environment Variables
 
-The IllumiDesk/app-backend application interacts with various internal applications and external, third-party services. The following descriptions should help to understand the most important of these variables:
-
-The IllumiDesk/app-backend application interacts with various internal applications and external, third-party services. The following descriptions should help to understand the most important of these variables:
+The IllumiDesk `app-backend` application interacts with various internal applications and external, third-party services. The following descriptions should help to understand the most important of these variables:
 
 | Variable  |  Type | Note  |
 |---|---|---|

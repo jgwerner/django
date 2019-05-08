@@ -5,10 +5,14 @@
 
 # set up base image arg
 ARG BASE_IMAGE=jupyter/datascience-notebook
-ARG JUPYTER_LTI_VERSION=latest
 FROM $BASE_IMAGE
 
 LABEL maintainer="IllumiDesk <hello@illumidesk.com>"
+
+ARG JUPYTER_LTI_VERSION=@illumidesk/jupyter-lti@latest
+
+# set explicitly just in case
+USER $NB_UID
 
 # Create a Python 2.x environment 
 RUN conda create --quiet --yes -p $CONDA_DIR/envs/python2 python=2.7 \
@@ -26,6 +30,16 @@ RUN $CONDA_DIR/envs/python2/bin/python -m ipykernel install && \
 
 USER $NB_UID
 
+# install jupyter-lti extension
+RUN jupyter labextension install $JUPYTER_LTI_VERSION
+
+# Install nbgrader
+RUN conda install -c conda-forge \
+    nbgrader && \
+    conda clean -tipsy && \
+    fix-permissions $CONDA_DIR && \
+    fix-permissions /home/$NB_USER
+
 # Install Tensorflow for Python3
 RUN conda install --quiet --yes \
     'tensorflow=1.12*' \
@@ -40,13 +54,11 @@ RUN npm install -g ijavascript
 RUN ijsinstall
 
 # Xeus Cling
-RUN conda install -c conda-forge xeus-cling nbgrader && \
+RUN conda install -c conda-forge \
+    xeus-cling && \
     conda clean -tipsy && \
     fix-permissions $CONDA_DIR && \
     fix-permissions /home/$NB_USER
-
-# install jupyter-lti extension
-RUN jupyter labextension install @illumidesk/jupyter-lti@$JUPYTER_LTI_VERSION
 
 # copy/install as root, then fix permissions for $NB_USER
 USER root

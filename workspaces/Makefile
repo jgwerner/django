@@ -1,16 +1,16 @@
 .PHONY: help
 # Docker image name and tag. Build assumes ACCOUNT is set
 # as an env var before running any commands.
+AWS_ACCOUNT?=$(AWS_ACCOUNT)
+AWS_REGION?=$(AWS_REGION)
 OWNER?=$(ACCOUNT)
 IMAGE?=$(DOCKER_IMAGE)
 NAMESPACE:=$(OWNER)/$(DOCKER_IMAGE)
-TAG?=latest
+TAG:=latest
 SHELL:=bash
 
-ALL_STACKS:=minimal-notebook \
+ALL_IMAGES:=minimal-notebook \
         datascience-notebook
-
-ALL_IMAGES:=$(ALL_STACKS)
 
 help:
 # http://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
@@ -26,13 +26,13 @@ help:
 
 build/%: DARGS?=
 build/%: ## Build and tag a stack
-	docker build $(DARGS) --rm --force-rm -t $(OWNER)/$(notdir $@):$(TAG) ./$(notdir $@)
+	docker build $(DARGS) --rm --force-rm -t $(AWS_ACCOUNT).dkr.ecr.$(AWS_REGION).amazonaws.com/$(OWNER)/$(notdir $@):$(TAG) ./$(notdir $@)
 
 build-all: $(foreach I,$(ALL_IMAGES), build/$(I) ) ## Build all stacks
 build-test-all: $(foreach I,$(ALL_IMAGES),build/$(I) test/$(I) ) ## build and test all stacks
 
 test/%: ## run tests against a stack
-	@TEST_IMAGE="$(OWNER)/$(notdir $@)" py.test --nbval test
+	@TEST_IMAGE="$(AWS_ACCOUNT).dkr.ecr.$(AWS_REGION).amazonaws.com/$(OWNER)/$(notdir $@)" py.test --nbval test
 test-all: $(foreach I,$(ALL_IMAGES), test/$(I) ) ## test all stacks
 
 dev/%: ARGS?=
@@ -44,7 +44,8 @@ dev/%: ## Make a container from a tagged image
 dev-env: ## Install libraries required to run containers and tests
 	pip install -r requirements-dev.txt
 
-push/%: ## Push an image to the registry
-	docker push $(OWNER)/$(notdir $@):$(TAG)
+push/%: DARGS?=
+push/%: ## Build and tag a stack
+	docker push $(DARGS) $(AWS_ACCOUNT).dkr.ecr.$(AWS_REGION).amazonaws.com/$(OWNER)/$(notdir $@):$(TAG)
 
-push-all: $(foreach I,$(ALL_IMAGES), push/$(I) ) ## Push all stacks
+push-all: $(foreach I,$(ALL_IMAGES), push/$(I) ) ## Build all stacks
