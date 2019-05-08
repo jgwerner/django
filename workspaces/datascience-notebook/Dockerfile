@@ -40,7 +40,7 @@ RUN npm install -g ijavascript
 RUN ijsinstall
 
 # Xeus Cling
-RUN conda install -c conda-forge xeus-cling && \
+RUN conda install -c conda-forge xeus-cling nbgrader && \
     conda clean -tipsy && \
     fix-permissions $CONDA_DIR && \
     fix-permissions /home/$NB_USER
