@@ -1,65 +1,64 @@
 {
-    "name": "@illumidesk/jupyter-lti",
-    "version": "1.2.0",
-    "description": "JupyterLab LTI extension for the Canvas LMS.",
-    "keywords": [
-      "lti",
-      "canvas lms",
-      "jupyter",
-      "jupyterlab",
-      "jupyterlab-extension"
-    ],
-    "homepage": "https://github.com/illumidesk/app-backend",
-    "bugs": {
-      "url": "https://github.com/illumidesk/app-backend/issues"
-    },
-    "license": "BSD-3-Clause",
-    "author": "IllumiDesk Team",
-    "files": [
-      "lib/**/*.{d.ts,eot,gif,html,jpg,js,js.map,json,png,svg,woff2,ttf}",
-      "style/*.*"
-    ],
-    "main": "lib/index.js",
-    "types": "lib/index.d.ts",
-    "repository": {
-      "type": "git",
-      "url": "https://github.com/illumidesk/jupyter-lti.git"
-    },
-    "scripts": {
-      "build": "tsc",
-      "clean": "rimraf lib",
-      "precommit": "lint-staged",
-      "prepare": "npm run clean && npm run build",
-      "watch": "tsc -w"
-    },
-    "dependencies": {
-      "@jupyterlab/application": "^0.19.1",
-      "@jupyterlab/apputils": "^0.19.1",
-      "@jupyterlab/notebook": "^0.19.2",
-      "@phosphor/coreutils": "^1.3.0",
-      "@phosphor/messaging": "^1.2.2",
-      "@phosphor/widgets": "^1.6.0",
-      "moment": "^2.23.0"
-    },
-    "devDependencies": {
-      "husky": "^0.14.3",
-      "lint-staged": "^7.2.0",
-      "prettier": "^1.13.7",
-      "style-loader": "~0.13.2",
-      "tslint": "^5.10.0",
-      "tslint-config-prettier": "^1.13.0",
-      "tslint-plugin-prettier": "^1.3.0",
-      "typescript": "~3.1.0",
-      "webpack": "~2.7.0"
-    },
-    "lint-staged": {
-      "**/*{.ts,.tsx,.css,.json,.md}": [
-        "prettier --write",
-        "git add"
-      ]
-    },
-    "jupyterlab": {
-      "extension": true
-    }
+  "name": "@illumidesk/jupyter-lti",
+  "version": "1.2.0",
+  "description": "JupyterLab LTI extension for the Canvas LMS.",
+  "keywords": [
+    "lti",
+    "canvas lms",
+    "jupyter",
+    "jupyterlab",
+    "jupyterlab-extension"
+  ],
+  "homepage": "https://github.com/illumidesk/app-backend",
+  "bugs": {
+    "url": "https://github.com/illumidesk/app-backend/issues"
+  },
+  "license": "BSD-3-Clause",
+  "author": "IllumiDesk Team",
+  "files": [
+    "lib/**/*.{d.ts,eot,gif,html,jpg,js,js.map,json,png,svg,woff2,ttf}",
+    "style/*.*"
+  ],
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/illumidesk/jupyter-lti.git"
+  },
+  "scripts": {
+    "build": "tsc src/index.ts",
+    "clean": "rimraf lib",
+    "precommit": "lint-staged",
+    "prepare": "npm run clean && npm run build",
+    "watch": "tsc -w"
+  },
+  "dependencies": {
+    "@jupyterlab/application": "^0.19.1",
+    "@jupyterlab/apputils": "^0.19.1",
+    "@jupyterlab/notebook": "^0.19.2",
+    "@phosphor/coreutils": "^1.3.0",
+    "@phosphor/messaging": "^1.2.2",
+    "@phosphor/widgets": "^1.6.0",
+    "moment": "^2.23.0"
+  },
+  "devDependencies": {
+    "husky": "^0.14.3",
+    "lint-staged": "^7.2.0",
+    "prettier": "^1.13.7",
+    "style-loader": "~0.13.2",
+    "tslint": "^5.10.0",
+    "tslint-config-prettier": "^1.13.0",
+    "tslint-plugin-prettier": "^1.3.0",
+    "typescript": "~3.1.0",
+    "webpack": "~2.7.0"
+  },
+  "lint-staged": {
+    "**/*{.ts,.tsx,.css,.json,.md}": [
+      "prettier --write",
+      "git add"
+    ]
+  },
+  "jupyterlab": {
+    "extension": true
   }
-  
+}
