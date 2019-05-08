@@ -20,6 +20,11 @@ RUN jupyter labextension install @illumidesk/jupyter-lti@JUPYTER_LTI_VERSION
 # copy/install as root, then fix permissions for $NB_USER
 USER root
 
+RUN conda install -c conda-forge nbgrader && \
+    conda clean -tipsy && \
+    fix-permissions $CONDA_DIR && \
+    fix-permissions /home/$NB_USER
+
 COPY jupyter_notebook_config.py /etc/jupyter/
 COPY env_test.ipynb $HOME/
 RUN fix-permissions /etc/jupyter/
