@@ -365,13 +365,19 @@ class ProjectTest(ProjectTestMixin, APITestCase):
     def test_project_delete(self):
         collaborator = CollaboratorFactory(user=self.user)
         project = collaborator.project
+        resource_root = project.resource_root()
+        resource_root.mkdir(parents=True)
+        (resource_root / 'test.py').touch()
+        self.assertTrue(resource_root.is_dir())
         assign_perm('write_project', self.user, project)
         url = reverse('project-detail', kwargs={'namespace': self.user.username,
                                                 'project': project.pk,
                                                 'version': settings.DEFAULT_VERSION})
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertIsNone(Project.objects.filter(pk=project.pk, is_active=True).first())
+        project = Project.objects.filter(pk=project.pk, is_active=False).first()
+        self.assertIsNotNone(project)
+        self.assertFalse(project.resource_root().is_dir())
 
     def test_non_owner_cannot_delete_project(self):
         owner_collab = CollaboratorFactory()

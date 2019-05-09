@@ -1,5 +1,6 @@
 import logging
 import json
+import shutil
 from urllib.parse import quote
 
 from django.http import Http404
@@ -73,6 +74,8 @@ class ProjectViewSet(LookupByMultipleFields, NamespaceMixin, viewsets.ModelViewS
 
         instance.is_active = False
         instance.save()
+        if instance.resource_root().is_dir():
+            shutil.rmtree(instance.resource_root())
         return Response(data={"message": "Project deleted."},
                         status=status.HTTP_204_NO_CONTENT)
 
@@ -83,9 +86,9 @@ def project_copy(request, *args, **kwargs):
     new_project_name = request.data.get('name')
 
     if new_project_name:
-        logger.info(f"Project name found in request during project copy. Validating name: {new_project_name}")
+        logger.info("Project name found in request during project copy. Validating name: %s", new_project_name)
         if check_project_name_exists(new_project_name, request, None):
-            logger.exception(f"Project {new_project_name} already exists.")
+            logger.exception("Project %s already exists.", new_project_name)
             resp_status = status.HTTP_400_BAD_REQUEST
             resp_data = {'message': f"A project named {new_project_name} already exists."}
             return Response(data=resp_data, status=resp_status)
