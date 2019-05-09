@@ -1,11 +1,11 @@
+from io import StringIO
 from rest_framework.renderers import BaseRenderer
 
 from django.utils.xmlutils import SimplerXMLGenerator
-from django.utils.six.moves import StringIO
 from django.utils.encoding import smart_text
 
 
-class CanvasRenderer(BaseRenderer): # pylint: disable=too-few-public-methods
+class CanvasRenderer(BaseRenderer):  # pylint: disable=too-few-public-methods
     media_type = 'application/xml'
     format = 'xml'
     charset = 'utf-8'
@@ -54,9 +54,9 @@ class CanvasRenderer(BaseRenderer): # pylint: disable=too-few-public-methods
                 self._to_xml(xml, item)
 
         elif isinstance(data, dict):
-            xml.startElement(data['name'], data.get('kwargs', {}))
-            self._to_xml(xml, data['value'])
-            xml.endElement(data['name'])
+            xml.startElement(data.get('name', ''), data.get('kwargs', {}))
+            self._to_xml(xml, data.get('value', ''))
+            xml.endElement(data.get('name', ''))
 
         elif data is None:
             # Don't output any value
