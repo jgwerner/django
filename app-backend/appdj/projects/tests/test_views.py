@@ -371,7 +371,7 @@ class ProjectTest(ProjectTestMixin, APITestCase):
         self.assertTrue(resource_root.is_dir())
         assign_perm('write_project', self.user, project)
         url = reverse('project-detail', kwargs={'namespace': self.user.username,
-                                                'project': str(project.pk),
+                                                'project': project.pk,
                                                 'version': settings.DEFAULT_VERSION})
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
