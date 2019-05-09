@@ -1,4 +1,4 @@
-FROM ubuntu:16.04 AS build
+FROM ubuntu:18.04 AS build
 
 LABEL IllumiDesk <contact@illumidesk.com>
 
