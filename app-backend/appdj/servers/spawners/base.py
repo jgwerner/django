@@ -1,11 +1,7 @@
 import abc
-import os
 import logging
 from pathlib import Path
 from typing import List, Dict
-
-from cryptography.fernet import Fernet
-from raven import Client
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -15,8 +11,6 @@ from django.template.loader import render_to_string
 from appdj.jwt_auth.utils import create_auth_jwt
 
 User = get_user_model()
-
-raven_client = Client(os.environ.get("SENTRY_DSN"))
 
 logger = logging.getLogger("servers")
 

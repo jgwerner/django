@@ -1,21 +1,16 @@
 import os
+import sentry_sdk
+from sentry_sdk.integrations.celery import CeleryIntegration
+
 
 from celery import Celery
-from raven import Client
-from raven.contrib.celery import register_signal, register_logger_signal
 
 # set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.local')
 
+sentry_sdk.init(os.getenv("SENTRY_DSN"), integrations=[CeleryIntegration()])
 
-class RavenCelery(Celery):
-    def on_configure(self):
-        client = Client(os.environ.get('SENTRY_DSN'))
-        register_logger_signal(client)
-        register_signal(client)
-
-
-app = RavenCelery('appdj')
+app = Celery('appdj')
 
 # Using a string here means the worker don't have to serialize
 # the configuration object to child processes.

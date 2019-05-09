@@ -1,4 +1,5 @@
-import raven
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
 from .base import *
 
 DEBUG = True
@@ -19,7 +20,6 @@ REST_FRAMEWORK['DEFAULT_PARSER_CLASSES'] = (
 INSTALLED_APPS.extend([
     'django_extensions',
     'rest_framework_swagger',
-    'raven.contrib.django.raven_compat',
 ])
 
 GRAPH_MODELS = {
@@ -35,8 +35,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 SPAWNER = 'appdj.servers.spawners.ecs.ECSSpawner'
 
-
-RAVEN_CONFIG = {
-    'dsn': os.getenv("SENTRY_DSN"),
-    'release': raven.fetch_git_sha(os.path.dirname(os.pardir)),
-}
+sentry_sdk.init(
+    dsn=os.getenv('SENTRY_DSN'),
+    integrations=[DjangoIntegration()]
+)
