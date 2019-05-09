@@ -88,7 +88,7 @@ class TestDockerSpawnerForModel(TransactionTestCase):
             ],
             'restart_policy': None
         }
-        
+
         self.assertDictEqual(expected, self.spawner._get_host_config())
 
     def test_create_container(self):
@@ -242,7 +242,7 @@ class ECSSpawnerTestCase(TestCase):
         task_arn = 'abc'
         self.server.config['task_arn'] = task_arn
         self.server.save()
-        describe_params = dict(tasks=[task_arn])
+        describe_params = dict(tasks=[task_arn], cluster=settings.ECS_CLUSTER)
         describe_response = dict(tasks=[dict(lastStatus='Error')])
         self.stubber.add_response('describe_tasks', describe_response, describe_params)
         self.stubber.activate()
@@ -252,7 +252,7 @@ class ECSSpawnerTestCase(TestCase):
         task_arn = 'abc'
         self.server.config['task_arn'] = task_arn
         self.server.save()
-        describe_params = dict(tasks=[task_arn])
+        describe_params = dict(tasks=[task_arn], cluster=settings.ECS_CLUSTER)
         describe_response = dict(tasks=[])
         self.stubber.add_response('describe_tasks', describe_response, describe_params)
         self.stubber.activate()

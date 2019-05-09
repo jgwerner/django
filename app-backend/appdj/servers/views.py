@@ -1,10 +1,10 @@
 import time
 import logging
 import json
+from pathlib import Path
 import requests
 
 from asgiref.sync import async_to_sync
-from pathlib import Path
 from channels.layers import get_channel_layer
 from celery.result import AsyncResult
 from django.conf import settings
@@ -218,8 +218,8 @@ class SNSView(views.APIView):
         sns_message_type_header = 'HTTP_X_AMZ_SNS_MESSAGE_TYPE'
         if sns_message_type_header not in request.META:
             return Response({"message": "OK"})
-        payload = json.loads(request.body.decode('utf-8'))
-        logger.debug("SNS payload: {payload}".format(payload=payload))
+        payload = request.data
+        logger.debug("SNS payload: %s", payload)
         message_type = request.META[sns_message_type_header]
         if message_type == 'SubscriptionConfirmation':
             url = payload.get('SubscribeURL', '')
