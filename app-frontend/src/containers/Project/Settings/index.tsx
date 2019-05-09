@@ -1,5 +1,11 @@
 import React from 'react'
-import { withRouter, Switch, Route, Redirect, RouteComponentProps } from 'react-router-dom'
+import {
+  withRouter,
+  Switch,
+  Route,
+  Redirect,
+  RouteComponentProps
+} from 'react-router-dom'
 import Loadable from 'react-loadable'
 import {
   VerticalNavLayout,
@@ -9,7 +15,7 @@ import {
 } from '../../../components/VerticalNav'
 
 interface SettingsRouterProps {
-  url: string,
+  url: string
   path: string
 }
 
@@ -46,9 +52,7 @@ const Settings = (props: SettingsProps) => {
         <Switch>
           <Route
             path={`${match.path}/details`}
-            render={() => (
-              <AsyncProjectDetails />
-            )}
+            render={() => <AsyncProjectDetails />}
             exact
           />
           <Route

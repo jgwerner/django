@@ -20,6 +20,6 @@ const ProjectStyles = styled(Card)`
   border: 1px solid ${theme.colors.gray2};
 `
 
-export const Project = props => (
+export const Project = (props: any) => (
   <ProjectStyles type="contentPartial" pt={4} {...props} />
 )

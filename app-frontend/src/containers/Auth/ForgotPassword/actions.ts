@@ -1,6 +1,6 @@
 import history from '../../../utils/history'
 import ForgotPasswordAPI from './api'
-import { Dispatch } from 'redux';
+import { Dispatch } from 'redux'
 
 export const RESET_PASSWORD_REQUEST = 'RESET_PASSWORD_REQUEST'
 export type RESET_PASSWORD_REQUEST = typeof RESET_PASSWORD_REQUEST
@@ -19,20 +19,24 @@ export type CONFIRM_PASSWORD_SUCCESS = typeof CONFIRM_PASSWORD_SUCCESS
 export const CONFIRM_PASSWORD_FAILURE = 'CONFIRM_PASSWORD_FAILURE'
 export type CONFIRM_PASSWORD_FAILURE = typeof CONFIRM_PASSWORD_FAILURE
 
-
 export interface ResetPasswordActions {
-  type: RESET_PASSWORD_REQUEST | RESET_PASSWORD_SUCCESS | RESET_PASSWORD_FAILURE,
-  response?: any,
+  type: RESET_PASSWORD_REQUEST | RESET_PASSWORD_SUCCESS | RESET_PASSWORD_FAILURE
+  response?: any
   error?: any
 }
 
 export interface ResetPasswordConfirmActions {
-  type: CONFIRM_PASSWORD_REQUEST | CONFIRM_PASSWORD_SUCCESS | CONFIRM_PASSWORD_FAILURE,
-  response?: any,
+  type:
+    | CONFIRM_PASSWORD_REQUEST
+    | CONFIRM_PASSWORD_SUCCESS
+    | CONFIRM_PASSWORD_FAILURE
+  response?: any
   error?: any
 }
 
-export const resetPassword = (values: any) => (dispatch: Dispatch<ResetPasswordActions>) => {
+export const resetPassword = (values: any) => (
+  dispatch: Dispatch<ResetPasswordActions>
+) => {
   function request(): ResetPasswordActions {
     return {
       type: RESET_PASSWORD_REQUEST
@@ -64,7 +68,9 @@ export const resetPassword = (values: any) => (dispatch: Dispatch<ResetPasswordA
   )
 }
 
-export const resetPasswordConfirm = (params: any, values: any) => (dispatch: Dispatch<ResetPasswordConfirmActions>) => {
+export const resetPasswordConfirm = (params: any, values: any) => (
+  dispatch: Dispatch<ResetPasswordConfirmActions>
+) => {
   function request(): ResetPasswordConfirmActions {
     return {
       type: CONFIRM_PASSWORD_REQUEST

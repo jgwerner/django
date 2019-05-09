@@ -23,7 +23,32 @@ const colors = {
   link: '#5c7f00',
   blueLight: '#fafbff',
   textLight: '#acb2bf',
-  borderMedium: '#D6DFE5'
+  borderMedium: '#D6DFE5',
+
+  textError: '#E12D39',
+
+  infoText: '#105789',
+  infoIcon: '#3E8DC0',
+  unfoButton: '#59A2D0',
+  infoAlertBorder: '#73B4DA',
+  infoAlertBackground: '#C9E1EE',
+
+  successText: '#0E7326',
+  successButton: '#1D923B',
+  successIcon: '#2DA74C',
+  successAlertBorder: '#68DB8B',
+  successAlertBackground: '#A5F3BE',
+  successBadge: '#D0F9DE',
+
+  dangerButton: '#B1091F',
+  dangerIcon: '#E12D39',
+  dangerAlertBorder: '#F86B6F',
+  dangerAlertBackground: '#F2D2CD',
+
+  warningText: '#9B7527',
+  warningAlertBorder: '#DABA84',
+  WarningAlertBackground: '#EFE0CE',
+  warningIcon: '#EFE0CE'
 }
 
 const contentPadding = '50px'

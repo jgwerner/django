@@ -1,11 +1,18 @@
 import styled from 'styled-components/macro'
-import { color, space, textAlign, ColorProps, SpaceProps, TextAlignProps } from 'styled-system'
+import {
+  color,
+  space,
+  textAlign,
+  ColorProps,
+  SpaceProps,
+  TextAlignProps
+} from 'styled-system'
 import theme from 'utils/theme'
 
 interface HeadingProps extends ColorProps, SpaceProps, TextAlignProps {
-  size?: string,
-  bold?: boolean,
-  medium?: boolean,
+  size?: string
+  bold?: boolean
+  medium?: boolean
   sub?: boolean
 }
 
@@ -52,10 +59,9 @@ const medium = (props: HeadingProps) =>
 
 const sub = (props: HeadingProps) =>
   props.sub
-    ? {
-        // textTransform: 'uppercase',
-        fontSize: `${theme.fontSizes[2]}px`
-      }
+    ? `text-transform: uppercase;
+      font-size: ${theme.fontSizes[2]}px;
+      `
     : null
 
 const Heading = styled.div<HeadingProps>(

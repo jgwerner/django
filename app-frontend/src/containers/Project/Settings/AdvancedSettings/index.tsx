@@ -3,29 +3,29 @@ import { bindActionCreators, Dispatch } from 'redux'
 import { connect } from 'react-redux'
 import { withRouter, Route, RouteComponentProps } from 'react-router-dom'
 import Loadable from 'react-loadable'
-import Heading from '../../../../components/atoms/Heading'
-import Text from '../../../../components/atoms/Text'
-import Flex from '../../../../components/atoms/Flex'
-import Button from '../../../../components/atoms/Button'
-import history from '../../../../utils/history'
-import {getProject} from '../../actions'
+import Heading from 'components/atoms/Heading'
+import Text from 'components/atoms/Text'
+import Flex from 'components/atoms/Flex'
+import Button from 'components/atoms/Button'
+import history from 'utils/history'
+import { getProject } from '../../actions'
 
 interface AdvancedSettingsRouteProps {
-  userName: string,
+  userName: string
   projectName: string
 }
 
-
 interface AdvancedSettingsMapStateToProps {
-  projectDetails: any,
+  projectDetails: any
 }
 
 interface AdvancedSettingsMapDispatchToProps {
   getProject: (userName: string, projectName: string) => void
 }
 
-type AdvancedSettingsProps = AdvancedSettingsMapStateToProps & AdvancedSettingsMapDispatchToProps & RouteComponentProps<AdvancedSettingsRouteProps>
-
+type AdvancedSettingsProps = AdvancedSettingsMapStateToProps &
+  AdvancedSettingsMapDispatchToProps &
+  RouteComponentProps<AdvancedSettingsRouteProps>
 
 const AsyncChangeVisibility = Loadable({
   loader: () => import('./ChangeVisibility'),
@@ -37,7 +37,9 @@ const AsyncDeleteConfirm = Loadable({
   loading: () => <div />
 })
 
-const AdvancedSettings = class extends React.PureComponent<AdvancedSettingsProps> {
+const AdvancedSettings = class extends React.PureComponent<
+  AdvancedSettingsProps
+> {
   componentDidUpdate(prev: any) {
     const { match, projectDetails, getProject } = this.props
     if (prev.projectDetails.private !== projectDetails.private)

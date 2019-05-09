@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { getToken } from '../../../utils/auth'
+import { getToken } from 'utils/auth'
 
 class WorkspacesAPI {
   getServerSizes = () => {
@@ -54,6 +54,34 @@ class WorkspacesAPI {
     }
     return axios
       .post(URL, '', { headers })
+      .then(response => response.data)
+      .catch(error => error)
+  }
+
+  getServerStatus = (username: string, projectID: string) => {
+    const URL = `${
+      process.env.REACT_APP_API_URL
+    }v1/${username}/projects/${projectID}/servers/statuses/`
+    const headers = {
+      Accept: 'application/json',
+      Authorization: getToken()
+    }
+    return axios
+      .get(URL, { headers })
+      .then(response => console.log('get status', response.data))
+      .catch(error => error)
+  }
+
+  deleteServer = (username: string, projectID: string, workspaceID: string) => {
+    const URL = `${
+      process.env.REACT_APP_API_URL
+    }v1/${username}/projects/${projectID}/servers/${workspaceID}`
+    const headers = {
+      Accept: 'application/json',
+      Authorization: getToken()
+    }
+    return axios
+      .delete(URL, { headers })
       .then(response => response.data)
       .catch(error => error)
   }

@@ -6,21 +6,23 @@ import Modal from '../../../../components/Modal'
 import Text from '../../../../components/atoms/Text'
 import Button from '../../../../components/atoms/Button'
 import { deleteProject, DeleteProjectActions } from '../actions'
-import { StoreState } from '../../../../utils/store';
+import { StoreState } from '../../../../utils/store'
 
 interface DeleteConfirmRouteProps {
   userName: string
 }
 
 interface DeleteConfirmMapStateToProps {
-  projectDetails: any,
+  projectDetails: any
 }
 
 interface DeleteConfirmMapDispatchToProps {
   deleteProject: (userName: string, id: string) => void
 }
 
-type DeleteConfirmProps = DeleteConfirmMapStateToProps & DeleteConfirmMapDispatchToProps & RouteComponentProps<DeleteConfirmRouteProps>
+type DeleteConfirmProps = DeleteConfirmMapStateToProps &
+  DeleteConfirmMapDispatchToProps &
+  RouteComponentProps<DeleteConfirmRouteProps>
 
 const DeleteConfirm = (props: DeleteConfirmProps) => {
   const { match, projectDetails, deleteProject } = props
@@ -54,11 +56,10 @@ const mapStateToProps = (state: StoreState) => ({
 const mapDispatchToProps = (dispatch: Dispatch<DeleteProjectActions>) =>
   bindActionCreators(
     {
-    deleteProject
+      deleteProject
     },
     dispatch
   )
-
 
 export default withRouter(
   connect(

@@ -1,6 +1,6 @@
 import history from '../../../utils/history'
 import UpdateProjectAPI from './api'
-import { Dispatch } from 'redux';
+import { Dispatch } from 'redux'
 
 export const UPDATE_PROJECT_REQUEST = 'UPDATE_PROJECT_REQUEST'
 export type UPDATE_PROJECT_REQUEST = typeof UPDATE_PROJECT_REQUEST
@@ -30,26 +30,32 @@ export type SEARCH_RESULTS_SUCCESS = typeof SEARCH_RESULTS_SUCCESS
 export const SEARCH_RESULTS_FAILURE = 'GET_SEARCH_RESULTS_FAILURE'
 export type SEARCH_RESULTS_FAILURE = typeof SEARCH_RESULTS_FAILURE
 
-
 export interface UpdateProjectActions {
-  type: UPDATE_PROJECT_REQUEST | UPDATE_PROJECT_SUCCESS | UPDATE_PROJECT_FAILURE,
-  data?: any,
+  type: UPDATE_PROJECT_REQUEST | UPDATE_PROJECT_SUCCESS | UPDATE_PROJECT_FAILURE
+  data?: any
   error?: any
 }
 
 export interface ChangeVisibilityActions {
-  type: CHANGE_VISIBILITY_REQUEST | CHANGE_VISIBILITY_SUCCESS | CHANGE_VISIBILITY_FAILURE,
-  data?: any,
+  type:
+    | CHANGE_VISIBILITY_REQUEST
+    | CHANGE_VISIBILITY_SUCCESS
+    | CHANGE_VISIBILITY_FAILURE
+  data?: any
   error?: any
 }
 
 export interface DeleteProjectActions {
-  type: DELETE_PROJECT_REQUEST | DELETE_PROJECT_SUCCESS | DELETE_PROJECT_FAILURE,
-  data?: any,
+  type: DELETE_PROJECT_REQUEST | DELETE_PROJECT_SUCCESS | DELETE_PROJECT_FAILURE
+  data?: any
   error?: any
 }
 
-export const updateProject = (username: string, projectID:string, values: any) => (dispatch: Dispatch<UpdateProjectActions>) => {
+export const updateProject = (
+  username: string,
+  projectID: string,
+  values: any
+) => (dispatch: Dispatch<UpdateProjectActions>) => {
   function request(): UpdateProjectActions {
     return {
       type: UPDATE_PROJECT_REQUEST
@@ -117,7 +123,9 @@ export const changeVisibility = (
   )
 }
 
-export const deleteProject = (username: string, projectName: string) => (dispatch: Dispatch<DeleteProjectActions>) => {
+export const deleteProject = (username: string, projectName: string) => (
+  dispatch: Dispatch<DeleteProjectActions>
+) => {
   function request(): DeleteProjectActions {
     return {
       type: DELETE_PROJECT_REQUEST

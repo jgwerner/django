@@ -11,22 +11,27 @@ import {
   START_SERVER_FAILURE,
   STOP_SERVER_REQUEST,
   STOP_SERVER_SUCCESS,
-  STOP_SERVER_FAILURE
+  STOP_SERVER_FAILURE,
+  DELETE_SERVER_REQUEST,
+  DELETE_SERVER_SUCCESS,
+  DELETE_SERVER_FAILURE
 } from './actions'
-import add, { AddWorkspaceStoreState } from './AddWorkspace/reducer';
-
-
+import add, { AddWorkspaceStoreState } from './AddWorkspace/reducer'
 
 interface GetWorkspacesStoreState {
-  serverSizes: any,
-  workspaces: any,
+  serverSizes: any
+  workspaces: any
   serverRunning: boolean
+  deleteServerSuccess: boolean
+  deleteServerError: boolean
 }
 
 const initialState = {
   serverSizes: [],
   workspaces: [],
-  serverRunning: false
+  serverRunning: false,
+  deleteServerSuccess: false,
+  deleteServerError: false
 }
 
 const servers = (state = initialState, action: AnyAction) => {
@@ -49,7 +54,6 @@ const servers = (state = initialState, action: AnyAction) => {
         ...state
       }
     case GET_WORKSPACES_SUCCESS:
-    console.log('get ws success', action.data)
       return {
         ...state,
         workspaces: action.data
@@ -86,13 +90,29 @@ const servers = (state = initialState, action: AnyAction) => {
       return {
         ...state
       }
+    case DELETE_SERVER_REQUEST:
+      return {
+        ...state,
+        deleteServerSuccess: false,
+        deleteServerError: false
+      }
+    case DELETE_SERVER_SUCCESS:
+      return {
+        ...state,
+        deleteServerSuccess: true
+      }
+    case DELETE_SERVER_FAILURE:
+      return {
+        ...state,
+        deleteServerError: true
+      }
     default:
       return state
   }
 }
 
 export interface WorkspacesStoreState {
-  servers: GetWorkspacesStoreState,
+  servers: GetWorkspacesStoreState
   add: AddWorkspaceStoreState
 }
 

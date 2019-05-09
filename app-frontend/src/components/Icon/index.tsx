@@ -1,8 +1,7 @@
 import React from 'react'
-import PropTypes from 'prop-types'
 import styled from 'styled-components/macro'
 
-export const ICONS = {
+export const ICONS: any = {
   add: {
     viewBox: '0 0 491.86 491.86',
     Inner: () => (
@@ -706,7 +705,7 @@ const Svg = styled.svg`
   vertical-align: middle;
 `
 
-const Icon = ({ type, size, ...rest }) => {
+const Icon = ({ type, size, ...rest }: any) => {
   const Inner = ICONS[type].Inner
   return (
     <Svg
@@ -723,11 +722,6 @@ const Icon = ({ type, size, ...rest }) => {
 
 Icon.defaultProps = {
   size: '1em'
-}
-
-Icon.propTypes = {
-  type: PropTypes.oneOf(Object.keys(ICONS)).isRequired,
-  size: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
 }
 
 export default Icon

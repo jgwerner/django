@@ -1,45 +1,50 @@
 import React from 'react'
 import { bindActionCreators, Dispatch } from 'redux'
 import { connect } from 'react-redux'
-import Heading from '../../../components/atoms/Heading'
-import Text from '../../../components/atoms/Text'
-import Container, { ContainerProps } from '../../../components/atoms/Container'
-import Flex from '../../../components/atoms/Flex'
-import Divider from '../../../components/atoms/Divider'
-import Icon from '../../../components/Icon'
-import { deleteApp, getApps} from './actions'
-import { StoreState } from '../../../utils/store';
-import { Expand, Details, ToggleButton, DeleteButton } from '../../../components/AppDetails'
+import Heading from 'components/atoms/Heading'
+import Text, { TextSpan } from 'components/atoms/Text'
+import Container, { ContainerProps } from 'components/atoms/Container'
+import Flex from 'components/atoms/Flex'
+import Divider from 'components/atoms/Divider'
+import Icon from 'components/Icon'
+import { deleteApp, getApps } from './actions'
+import { StoreState } from 'utils/store'
+import {
+  Expand,
+  Details,
+  ToggleButton,
+  DeleteButtonWrapper,
+  DeleteButton,
+  ToolTip
+} from 'components/AppDetails'
 
 interface AppState {
   open: boolean
 }
 
 interface AppProps {
-  username: string,
-  name: string,
-  id: string,
-  clientID: string,
-  clientSecret: string,
+  username: string
+  name: string
+  id: string
+  clientID: string
+  clientSecret: string
   deleteApp: (username: string, id: string) => void
 }
 
 interface AppListMapStateToProps {
-  username: string,
-  apps: any,
-  appsFetched: boolean,
-  newApp: boolean,
+  username: string
+  apps: any
+  appsFetched: boolean
+  newApp: boolean
   appDeleted: boolean
 }
 
 interface AppListMapDispatchToProps {
-  deleteApp: (username: string, id: string) => void,
-  getApps: (username: string) => void,
-
+  deleteApp: (username: string, id: string) => void
+  getApps: (username: string) => void
 }
 
 type AppListProps = AppListMapStateToProps & AppListMapDispatchToProps
-
 
 interface ExpandProps extends ContainerProps {
   show?: boolean
@@ -60,7 +65,7 @@ const App = class extends React.PureComponent<AppProps, AppState> {
     return (
       <Container>
         <Flex m={3}>
-          <Text.Span fontSize={5}>{name}</Text.Span>
+          <TextSpan fontSize={5}>{name}</TextSpan>
           <ToggleButton mx={2} onClick={handleClick}>
             <Icon size="10" type={state.open ? 'arrowUp' : 'arrowDown'} />
           </ToggleButton>
@@ -91,15 +96,15 @@ const App = class extends React.PureComponent<AppProps, AppState> {
             </Details>
           </Container>
           <Divider />
-          <DeleteButton
-            mx={3}
-            mb={3}
-            color="danger"
-            textAlign="end"
-            onClick={() => deleteApp(username, id)}
-          >
-            <Icon size="25" type="delete" />
-          </DeleteButton>
+          <DeleteButtonWrapper mx={3} mb={3} color="danger" textAlign="end">
+            <ToolTip>Delete App</ToolTip>
+            <DeleteButton
+              variation="icon"
+              onClick={() => deleteApp(username, id)}
+            >
+              <Icon size="25" type="delete" />
+            </DeleteButton>
+          </DeleteButtonWrapper>
         </Expand>
       </Container>
     )
@@ -120,7 +125,7 @@ const AppList = class extends React.PureComponent<AppListProps> {
   }
 
   render() {
-    const { apps, appsFetched, deleteApp , username} = this.props
+    const { apps, appsFetched, deleteApp, username } = this.props
     return (
       <React.Fragment>
         {!appsFetched ? (
@@ -163,9 +168,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     dispatch
   )
 
-export default
-  connect(
-    mapStateToProps,
-    mapDispatchToProps
-  )(AppList)
-
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(AppList)

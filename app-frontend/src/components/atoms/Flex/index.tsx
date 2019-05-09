@@ -12,17 +12,18 @@ import {
   AlignItemsProps,
   JustifyContentProps,
   FlexWrapProps,
-  FlexDirectionProps
+  FlexDirectionProps,
+  ColorProps
 } from 'styled-system'
 
-export interface FlexProps extends   SpaceProps,
-WidthProps,
-AlignItemsProps,
-JustifyContentProps,
-FlexWrapProps,
-FlexDirectionProps {
-
-}
+export interface FlexProps
+  extends SpaceProps,
+    WidthProps,
+    AlignItemsProps,
+    JustifyContentProps,
+    FlexWrapProps,
+    FlexDirectionProps,
+    ColorProps {}
 
 const Flex = styled.div<FlexProps>`
   display: flex;

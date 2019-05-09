@@ -1,7 +1,7 @@
 import styled from 'styled-components/macro'
-import { space, SpaceProps } from 'styled-system'
+import { space, width, SpaceProps, WidthProps } from 'styled-system'
 
-interface ImageProps extends SpaceProps {}
+export interface ImageProps extends SpaceProps, WidthProps {}
 
 const Image = styled.img<ImageProps>(
   {
@@ -9,7 +9,8 @@ const Image = styled.img<ImageProps>(
     maxWidth: '100%',
     height: 'auto'
   },
-  space
+  space,
+  width
 )
 
 Image.displayName = 'Image'

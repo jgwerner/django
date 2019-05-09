@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 class ForgotPasswordAPI {
-  resetPassword = (values: {username: string, password: string} ) => {
+  resetPassword = (values: { username: string; password: string }) => {
     const URL = `${process.env.REACT_APP_API_URL}auth/password/reset/`
     const body = {
       username: values.username,
@@ -16,7 +16,10 @@ class ForgotPasswordAPI {
       })
   }
 
-  resetPasswordConfirm = (params: {uid: string, token: string}, values: {password: string}) => {
+  resetPasswordConfirm = (
+    params: { uid: string; token: string },
+    values: { password: string }
+  ) => {
     const URL = `${process.env.REACT_APP_API_URL}auth/password/reset/confirm/`
     const body = {
       uid: params.uid,

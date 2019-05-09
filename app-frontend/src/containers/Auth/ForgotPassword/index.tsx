@@ -1,32 +1,39 @@
 import React from 'react'
 import { bindActionCreators, Dispatch } from 'redux'
-import { Switch, Route, Redirect, withRouter, RouteComponentProps } from 'react-router-dom'
+import {
+  Switch,
+  Route,
+  Redirect,
+  withRouter,
+  RouteComponentProps
+} from 'react-router-dom'
 import { connect } from 'react-redux'
 import { getFormValues } from 'redux-form'
 import Loadable from 'react-loadable'
 import Container from 'components/atoms/Container'
 import Heading from 'components/atoms/Heading'
 import Link from 'components/atoms/Link'
-import {resetPassword, resetPasswordConfirm } from './actions'
+import { resetPassword, resetPasswordConfirm } from './actions'
 import { StoreState } from 'utils/store'
 
 interface ForgotPasswordRouteProps {
-  path: string,
+  path: string
   url: string
 }
 
 interface ForgotPasswordMapStateToProps {
-  requestValues: any,
-  confirmValues: any,
+  requestValues: any
+  confirmValues: any
 }
 
 interface ForgotPasswordMapDispatchToProps {
-  resetPassword: (requestValues: any) => void,
+  resetPassword: (requestValues: any) => void
   resetPasswordConfirm: (confirmValues: any) => void
 }
 
-type ForgotPasswordProps = ForgotPasswordMapStateToProps & ForgotPasswordMapDispatchToProps & RouteComponentProps<ForgotPasswordRouteProps>
-
+type ForgotPasswordProps = ForgotPasswordMapStateToProps &
+  ForgotPasswordMapDispatchToProps &
+  RouteComponentProps<ForgotPasswordRouteProps>
 
 const AsyncRequest = Loadable({
   loader: () => import('./RequestForm'),
@@ -79,7 +86,9 @@ const ForgotPassword = (props: ForgotPasswordProps) => {
   )
 }
 
-const mapDispatchToProps = (dispatch: Dispatch): ForgotPasswordMapDispatchToProps =>
+const mapDispatchToProps = (
+  dispatch: Dispatch
+): ForgotPasswordMapDispatchToProps =>
   bindActionCreators(
     {
       resetPassword,

@@ -4,11 +4,10 @@ import { NavLink } from 'react-router-dom'
 import theme from '../../utils/theme'
 import Icon from '../../components/Icon'
 
-
-
 export const VerticalNavLayout = styled.div`
   display: flex;
-  margin-top: ${(props: {project?: boolean}) => (props.project ? theme.contentPadding : '')};
+  margin-top: ${(props: { project?: boolean }) =>
+    props.project ? theme.contentPadding : ''};
   width: 100%;
 `
 export const VerticalNavLayoutMenu = styled.div`

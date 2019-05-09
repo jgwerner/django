@@ -6,15 +6,16 @@ import {
   LOGOUT
 } from './actions'
 import projects, { ProjectListProps } from './ProjectList/reducer'
+import addProject, { AddProjectProps } from './AddProject/reducer'
 
 export interface UserStoreState {
-  accountID: string,
-  username: string,
-  firstName: string,
-  lastName: string,
-  email: string,
-  profleInfo: any,
-  profileInfoFetched: boolean,
+  accountID: string
+  username: string
+  firstName: string
+  lastName: string
+  email: string
+  profleInfo: any
+  profileInfoFetched: boolean
 }
 
 const initialState = {
@@ -58,13 +59,15 @@ const user = (state = initialState, action: AnyAction) => {
 }
 
 export interface HomeStoreState {
-  user: UserStoreState,
+  user: UserStoreState
   projects: ProjectListProps
+  addProject: AddProjectProps
 }
 
 const homeReducer = combineReducers({
   user,
-  projects
+  projects,
+  addProject
 })
 
 export default homeReducer

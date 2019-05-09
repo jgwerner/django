@@ -1,7 +1,23 @@
 import styled from 'styled-components/macro'
-import { width, space, borders, textAlign, verticalAlign, WidthProps, SpaceProps, BordersProps, TextAlignProps, VerticalAlignProps } from 'styled-system'
+import {
+  width,
+  space,
+  borders,
+  textAlign,
+  verticalAlign,
+  WidthProps,
+  SpaceProps,
+  BordersProps,
+  TextAlignProps,
+  VerticalAlignProps
+} from 'styled-system'
 
-interface TableProps extends WidthProps, SpaceProps, BordersProps, TextAlignProps, VerticalAlignProps {
+interface TableProps
+  extends WidthProps,
+    SpaceProps,
+    BordersProps,
+    TextAlignProps,
+    VerticalAlignProps {
   striped?: boolean
 }
 
@@ -51,7 +67,6 @@ const striped = (props: TableProps) =>
     : null
 
 export const TableRow = styled.tr<TableProps>(striped, space)
-
 
 Table.displayName = 'Table'
 

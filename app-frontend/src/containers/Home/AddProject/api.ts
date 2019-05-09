@@ -2,7 +2,10 @@ import axios from 'axios'
 import { getToken } from '../../../utils/auth'
 
 class AddProjectAPI {
-  addProject = (username: string, values: {name: string, description: string, private: string}) => {
+  addProject = (
+    username: string,
+    values: { name: string; description: string; private: string }
+  ) => {
     const URL = `${process.env.REACT_APP_API_URL}v1/${username}/projects/`
     const headers = {
       Accept: 'application/json',
@@ -16,7 +19,9 @@ class AddProjectAPI {
     return axios
       .post(URL, body, { headers })
       .then(response => response.data)
-      .catch(error => error)
+      .catch(error => {
+        throw error
+      })
   }
 }
 

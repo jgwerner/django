@@ -1,11 +1,16 @@
-import { LOGIN_REQUEST, LOGIN_SUCCESS, LOGIN_FAILURE } from './actions'
-import { AnyAction } from 'redux';
+import {
+  LOGIN_REQUEST,
+  LOGIN_SUCCESS,
+  LOGIN_FAILURE,
+  CLOSE_ERROR
+} from './actions'
+import { AnyAction } from 'redux'
 
 export interface LoginStoreState {
-  accountID: string,
-  token: string,
-  loggingIn: boolean,
-  loginError: boolean,
+  accountID: string
+  token: string
+  loggingIn: boolean
+  loginError: boolean
   errorMessage: string
 }
 
@@ -36,7 +41,12 @@ const login = (state = initialState, action: AnyAction) => {
         ...state,
         loggingIn: false,
         loginError: true,
-        errorMessage: action.error
+        errorMessage: action.error.data.non_field_errors[0]
+      }
+    case CLOSE_ERROR:
+      return {
+        ...state,
+        loginError: false
       }
     default:
       return state

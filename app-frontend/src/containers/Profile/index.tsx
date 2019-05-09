@@ -10,7 +10,7 @@ import { TabbedNav, TabbedNavLink } from '../../components/TabbedNav'
 import Container from '../../components/atoms/Container'
 
 interface ProfileRouteProps {
-  userName: string,
+  userName: string
   url: string
 }
 

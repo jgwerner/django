@@ -26,4 +26,4 @@ export const TabbedNavLink = styled(NavLink).attrs({
   }
 `
 
-export const TabbedNav = props => <TabbedNavGroup {...props} />
+export const TabbedNav = (props: any) => <TabbedNavGroup {...props} />

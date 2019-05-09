@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { getToken } from '../../../utils/auth'
+import { getToken } from 'utils/auth'
 
 class ProjectListAPI {
   getProjectList = (username: string) => {
@@ -11,7 +11,9 @@ class ProjectListAPI {
     return axios
       .get(URL, { headers })
       .then(response => response.data)
-      .catch(error => error)
+      .catch(error => {
+        throw error
+      })
   }
 }
 

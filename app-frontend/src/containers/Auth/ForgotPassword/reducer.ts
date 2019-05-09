@@ -6,12 +6,12 @@ import {
   CONFIRM_PASSWORD_SUCCESS,
   CONFIRM_PASSWORD_FAILURE
 } from './actions'
-import { AnyAction } from 'redux';
+import { AnyAction } from 'redux'
 
 export interface PasswordStoreState {
-  resetPasswordRequest: boolean,
-  confirmPasswordRequest: boolean,
-  confirmPasswordSuccess: boolean,
+  resetPasswordRequest: boolean
+  confirmPasswordRequest: boolean
+  confirmPasswordSuccess: boolean
   confirmPasswordErrorMsg: any
 }
 

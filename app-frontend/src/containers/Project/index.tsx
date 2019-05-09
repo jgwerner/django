@@ -1,30 +1,38 @@
 import React from 'react'
 import { bindActionCreators, Dispatch } from 'redux'
 import { connect } from 'react-redux'
-import { withRouter, Switch, Route, Redirect, RouteComponentProps } from 'react-router-dom'
+import {
+  withRouter,
+  Switch,
+  Route,
+  Redirect,
+  RouteComponentProps
+} from 'react-router-dom'
 import Loadable from 'react-loadable'
 import { TabbedNav, TabbedNavLink } from '../../components/TabbedNav'
 import { ContentTop } from '../../components/AuthenticatedLayout/Content'
 import Container from '../../components/atoms/Container'
 import Breadcrumbs from './Breadcrumbs'
-import {getProject} from './actions'
-import { StoreState } from '../../utils/store';
+import { getProject } from './actions'
+import { StoreState } from '../../utils/store'
 
 interface ProjectRouterProps {
-  userName: string,
+  userName: string
   projectName: string
 }
 
 interface ProjectMapStateToProps {
-  projectDetails: any,
+  projectDetails: any
   projectFetched: boolean
 }
 
 interface ProjectMapDispatchToProps {
-  getProject: (userName: string, projectName: string) => void,
+  getProject: (userName: string, projectName: string) => void
 }
 
-type ProjectProps = ProjectMapStateToProps & ProjectMapDispatchToProps & RouteComponentProps<ProjectRouterProps>
+type ProjectProps = ProjectMapStateToProps &
+  ProjectMapDispatchToProps &
+  RouteComponentProps<ProjectRouterProps>
 
 const AsyncWorkspaces = Loadable({
   loader: () => import('./ProjectWorkspaces'),
@@ -63,9 +71,7 @@ const Project = class extends React.PureComponent<ProjectProps> {
             <Switch>
               <Route
                 path={`${match.path}/workspaces`}
-                render={() => (
-                  <AsyncWorkspaces/>
-                )}
+                render={() => <AsyncWorkspaces />}
               />
               <Route
                 path={`${match.path}/settings`}
@@ -83,18 +89,18 @@ const Project = class extends React.PureComponent<ProjectProps> {
   }
 }
 
-const mapStateToProps = (state: StoreState ) => ({
+const mapStateToProps = (state: StoreState) => ({
   projectDetails: state.project.details.projectDetails,
   projectFetched: state.project.details.projectFetched
 })
 
 const mapDispatchToProps = (dispatch: Dispatch) =>
-bindActionCreators(
-  {
-  getProject
-},
-dispatch
-)
+  bindActionCreators(
+    {
+      getProject
+    },
+    dispatch
+  )
 
 export default withRouter(
   connect(

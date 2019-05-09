@@ -11,18 +11,20 @@ import Container from 'components/atoms/Container'
 import Button from 'components/atoms/Button'
 import Loadable from 'react-loadable'
 import Link from 'components/atoms/Link'
-import { getUserInfo} from './actions'
+import { getUserInfo } from './actions'
 import { StoreState } from 'utils/store'
 
 interface HomeMapStateToProps {
-  profileInfoFetched: boolean,
+  profileInfoFetched: boolean
 }
 
 interface HomeMapDispatchToProps {
-  getUserInfo: () => void,
+  getUserInfo: () => void
 }
 
-type HomeProps = HomeMapStateToProps & HomeMapDispatchToProps & RouteComponentProps
+type HomeProps = HomeMapStateToProps &
+  HomeMapDispatchToProps &
+  RouteComponentProps
 
 const AsyncAddProject = Loadable({
   loader: () => import('./AddProject'),
@@ -45,7 +47,7 @@ const Home = class extends React.PureComponent<HomeProps> {
   render() {
     const { profileInfoFetched } = this.props
     return (
-      <Container margin="auto" width='100%'>
+      <Container margin="auto" width="100%">
         {!profileInfoFetched ? (
           <Container />
         ) : (
@@ -61,10 +63,7 @@ const Home = class extends React.PureComponent<HomeProps> {
               </ContentTopAction>
             </ContentTop>
             <AsyncProjectList />
-            <Route
-              path="/projects/new"
-              render={() => <AsyncAddProject />}
-            />
+            <Route path="/projects/new" render={() => <AsyncAddProject />} />
           </Container>
         )}
       </Container>

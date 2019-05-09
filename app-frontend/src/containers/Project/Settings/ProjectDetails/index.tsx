@@ -6,23 +6,24 @@ import { getFormValues } from 'redux-form'
 import Heading from '../../../../components/atoms/Heading'
 import ProjectDetailsForm from './Form'
 import { updateProject, UpdateProjectActions } from '../actions'
-import { StoreState } from '../../../../utils/store';
+import { StoreState } from '../../../../utils/store'
 
 interface ProjectDetailsRouteProps {
-  userName: string,
+  userName: string
 }
 
 interface ProjectDetailsMapStateToProps {
-  values: object,
-  projectDetails: any,
+  values: object
+  projectDetails: any
 }
 
 interface ProjectDetailsMapDispatchToProps {
   updateProject: (userName: string, id: string, values: object) => void
 }
 
-type ProjectDetailsProps = ProjectDetailsMapStateToProps & ProjectDetailsMapDispatchToProps & RouteComponentProps<ProjectDetailsRouteProps>
-
+type ProjectDetailsProps = ProjectDetailsMapStateToProps &
+  ProjectDetailsMapDispatchToProps &
+  RouteComponentProps<ProjectDetailsRouteProps>
 
 const ProjectDetails = (props: ProjectDetailsProps) => {
   const { match, values, projectDetails, updateProject } = props
@@ -54,7 +55,7 @@ const mapDispatchToProps = (dispatch: Dispatch<UpdateProjectActions>) =>
     },
     dispatch
   )
-  
+
 export default withRouter(
   connect(
     mapStateToProps,

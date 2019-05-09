@@ -1,8 +1,9 @@
 const TOKEN_KEY = 'illumidesk_token'
 const TOKEN_TYPE_KEY = 'illumidesk_token_type'
 
-const getItem = (key:string) => () => window.localStorage.getItem(key)
-const setItem = (key: string) => (value: string) => window.localStorage.setItem(key, value)
+const getItem = (key: string) => () => window.localStorage.getItem(key)
+const setItem = (key: string) => (value: string) =>
+  window.localStorage.setItem(key, value)
 const removeItem = (key: string) => () => window.localStorage.removeItem(key)
 
 const getAuthToken: any = () => {
@@ -11,7 +12,7 @@ const getAuthToken: any = () => {
   if (!token) return
   return `${tokenType} ${token}`
 }
-const setAuthToken = (token:string, type:string) => {
+const setAuthToken = (token: string, type: string) => {
   setItem(TOKEN_KEY)(token)
   setItem(TOKEN_TYPE_KEY)(type)
 }
@@ -20,7 +21,7 @@ const removeAuthToken = () => {
   removeItem(TOKEN_TYPE_KEY)()
 }
 
-export function login(token:string, type:string) {
+export function login(token: string, type: string) {
   setAuthToken(token, type)
 }
 

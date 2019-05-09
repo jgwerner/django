@@ -9,18 +9,23 @@ import {
 } from '../../../components/Form'
 
 interface RequestFormProps {
-  input?: string,
-  label?: string,
-  type?: string,
-  meta?: any,
-  touched?: boolean,
-  error?: string,
+  input?: string
+  label?: string
+  type?: string
+  meta?: any
+  touched?: boolean
+  error?: string
 }
 
 const required = (value: string) =>
   value || typeof value === 'string' ? undefined : 'Required'
 
-const renderField = ({ input, label, type, meta: { touched, error } }: RequestFormProps) => (
+const renderField = ({
+  input,
+  label,
+  type,
+  meta: { touched, error }
+}: RequestFormProps) => (
   <FormField>
     <FormInput {...input} type={type} placeholder={label} />
     {touched && (error && <FormError>{error}</FormError>)}

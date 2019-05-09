@@ -7,32 +7,36 @@ import {
   FieldLabel,
   FormError,
   FormButton
-} from '../../../components/Form'
-import Flex from '../../../components/atoms/Flex'
-import Container from '../../../components/atoms/Container'
+} from 'components/Form'
+import Flex from 'components/atoms/Flex'
+import Container from 'components/atoms/Container'
 
 interface RenderFieldProps {
-  input: string,
-  label: string,
-  type: string,
-  meta: any,
-  touched: boolean,
-  error: string,
+  input: string
+  label: string
+  type: string
+  meta: any
+  touched: boolean
+  error: string
   initialValues: any
 }
 
-interface UpdateProfileFormProps extends InjectedFormProps {
-}
+interface UpdateProfileFormProps extends InjectedFormProps {}
 
-
-const required = (value: string) => (value ? undefined : 'An email address is required')
+const required = (value: string) =>
+  value ? undefined : 'An email address is required'
 
 const email = (value: string) =>
   value && !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(value)
     ? 'Invalid email address'
     : undefined
 
-const renderField = ({ input, label, type, meta: { touched, error } }: RenderFieldProps) => (
+const renderField = ({
+  input,
+  label,
+  type,
+  meta: { touched, error }
+}: RenderFieldProps) => (
   <FormField>
     <Flex>
       <FieldLabel py={0} width={1 / 3}>

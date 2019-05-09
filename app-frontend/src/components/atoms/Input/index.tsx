@@ -1,10 +1,15 @@
 import styled from 'styled-components'
-import { space, width, fontSize, SpaceProps, WidthProps, FontSizeProps } from 'styled-system'
-import theme from '../../../utils/theme'
+import {
+  space,
+  width,
+  fontSize,
+  SpaceProps,
+  WidthProps,
+  FontSizeProps
+} from 'styled-system'
+import theme from 'utils/theme'
 
-interface InputProps extends SpaceProps, WidthProps, FontSizeProps {
-
-}
+export interface InputProps extends SpaceProps, WidthProps, FontSizeProps {}
 
 const Input = styled.input<InputProps>(
   {

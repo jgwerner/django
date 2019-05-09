@@ -12,9 +12,9 @@ import {
 } from './actions'
 
 export interface OAuth2StoreState {
-  apps: any,
-  appsFetched: boolean,
-  newApp: boolean,
+  apps: any
+  appsFetched: boolean
+  newApp: boolean
   appDeleted: boolean
 }
 

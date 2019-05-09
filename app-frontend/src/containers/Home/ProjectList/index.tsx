@@ -7,21 +7,30 @@ import Icon from 'components/Icon'
 import Heading from 'components/atoms/Heading'
 import Text from 'components/atoms/Text'
 import Link from 'components/atoms/Link'
-import {getProjectList} from './actions'
+import { getProjectList } from './actions'
 import { StoreState } from 'utils/store'
-
 
 interface ProjectsListMapStateToProps {
   projectsFetched: boolean
-  username: string,
+  username: string
   projects: any
 }
 
 interface ProjectsListMapDispatchToProps {
-  getProjectList: (username: string) => void,
+  getProjectList: (username: string) => void
 }
 
-type ProjectsListProps = ProjectsListMapStateToProps & ProjectsListMapDispatchToProps
+interface ProjectProps {
+  id: string
+  private: string
+  owner: string
+  name: string
+  description: string
+  last_updated: string
+}
+
+type ProjectsListProps = ProjectsListMapStateToProps &
+  ProjectsListMapDispatchToProps
 
 const ProjectList = class extends React.Component<ProjectsListProps> {
   componentDidMount() {
@@ -37,14 +46,14 @@ const ProjectList = class extends React.Component<ProjectsListProps> {
           <Projects />
         ) : (
           <Projects>
-            {projects.map((project: any) => (
+            {projects.map((project: ProjectProps) => (
               <Project key={project.id}>
                 {project.private ? (
                   <Icon size="25" type="private" />
                 ) : (
                   <Icon size="25" type="public" />
                 )}
-                <Text mt={2} color="gray7">
+                <Text mt={2} color="gray7" caps bold>
                   {project.owner}
                 </Text>
                 <Heading size="h4">
@@ -81,9 +90,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     dispatch
   )
 
-export default 
-  connect(
-    mapStateToProps,
-    mapDispatchToProps
-  )(ProjectList)
-
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(ProjectList)

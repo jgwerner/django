@@ -9,24 +9,26 @@ import Container from '../../../components/atoms/Container'
 import Text from '../../../components/atoms/Text'
 import Heading from '../../../components/atoms/Heading'
 import { getServerSizes } from './actions'
-import { StoreState } from '../../../utils/store';
+import { StoreState } from '../../../utils/store'
 
 interface NoWorkspacesRouteProps {
-  url: string,
-  userName: string,
+  url: string
+  userName: string
   projectName: string
 }
 
 interface NoWorkspacesMapStateToProps {
-  projectDetails: any,
+  projectDetails: any
   serverSizes: any
 }
 
 interface NoWorkspacesMapDispatchToProps {
-  getServerSizes: () => void,
+  getServerSizes: () => void
 }
 
-type NoWorkspacesProps = NoWorkspacesMapStateToProps & NoWorkspacesMapDispatchToProps & RouteComponentProps<NoWorkspacesRouteProps>
+type NoWorkspacesProps = NoWorkspacesMapStateToProps &
+  NoWorkspacesMapDispatchToProps &
+  RouteComponentProps<NoWorkspacesRouteProps>
 
 const AsyncAddWorkspace = Loadable({
   loader: () => import('./AddWorkspace'),

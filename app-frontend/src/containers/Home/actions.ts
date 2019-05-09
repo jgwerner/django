@@ -1,6 +1,6 @@
 import history from '../../utils/history'
 import HomeAPI from './api'
-import { Dispatch } from 'redux';
+import { Dispatch } from 'redux'
 
 export const USER_INFO_REQUEST = 'USER_INFO_REQUEST'
 export type USER_INFO_REQUEST = typeof USER_INFO_REQUEST
@@ -15,8 +15,8 @@ export const LOGOUT = 'LOGOUT'
 export type LOGOUT = typeof LOGOUT
 
 export interface HomeActions {
-  type: USER_INFO_REQUEST | USER_INFO_SUCCESS | USER_INFO_FAILURE,
-  data?: any,
+  type: USER_INFO_REQUEST | USER_INFO_SUCCESS | USER_INFO_FAILURE
+  data?: any
   error?: any
 }
 

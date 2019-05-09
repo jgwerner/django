@@ -3,7 +3,7 @@ import login, { LoginStoreState } from './Login/reducer'
 import password, { PasswordStoreState } from './ForgotPassword/reducer'
 
 export interface AuthStoreState {
-  login: LoginStoreState,
+  login: LoginStoreState
   password: PasswordStoreState
 }
 

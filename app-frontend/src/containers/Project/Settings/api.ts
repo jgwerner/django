@@ -2,7 +2,11 @@ import axios from 'axios'
 import { getToken } from '../../../utils/auth'
 
 class UpdateProjectAPI {
-  updateDetails = (username: string, projectID: string, values: {name: string, description: string}) => {
+  updateDetails = (
+    username: string,
+    projectID: string,
+    values: { name: string; description: string }
+  ) => {
     const URL = `${
       process.env.REACT_APP_API_URL
     }v1/${username}/projects/${projectID}/`
@@ -20,7 +24,11 @@ class UpdateProjectAPI {
       .catch(error => error)
   }
 
-  changeVisibility = (username: string, projectName: string, visibility: string) => {
+  changeVisibility = (
+    username: string,
+    projectName: string,
+    visibility: string
+  ) => {
     const URL = `${
       process.env.REACT_APP_API_URL
     }v1/${username}/projects/${projectName}/`

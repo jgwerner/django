@@ -1,6 +1,6 @@
 import React from 'react'
 import styled from 'styled-components/macro'
-import { space, textAlign } from 'styled-system'
+import { space, textAlign, SpaceProps, TextAlignProps } from 'styled-system'
 import Text from 'components/atoms/Text'
 import Container from 'components/atoms/Container'
 import Icon from 'components/Icon'
@@ -8,7 +8,14 @@ import theme from 'utils/theme'
 import Heading from 'components/atoms/Heading'
 import history from 'utils/history'
 
-export const ModalHeader = styled.div`
+interface ModalProps extends SpaceProps, TextAlignProps {
+  children?: JSX.Element | JSX.Element[] | string
+  onClick?: () => void
+  header?: string
+  body?: JSX.Element | JSX.Element[] | string
+}
+
+export const ModalHeader = styled.div<ModalProps>`
   border: 1px solid ${theme.colors.borderMedium};
   box-sizing: border-box;
   border-radius: 4.8px 4.8px 0px 0px;
@@ -65,16 +72,17 @@ const CloseButton = styled(Icon)`
     cursor: pointer;
   }
 `
+export const Overlay = (props: ModalProps) => <BG {...props} />
 
-export const Overlay = props => <BG {...props} />
-
-export const ModalCard = props => (
+export const ModalCard = (props: ModalProps) => (
   <ModalContainer mx="auto" bg="white" width={1 / 3} {...props} />
 )
 
-export const ModalContent = props => <Text fontWeight={600} p={4} {...props} />
+export const ModalContent = (props: any) => (
+  <Text fontWeight={600} p={4} {...props} />
+)
 
-export default class Modal extends React.PureComponent {
+export default class Modal extends React.PureComponent<ModalProps> {
   handleClick = () => history.goBack()
 
   render() {
@@ -84,7 +92,7 @@ export default class Modal extends React.PureComponent {
         <Overlay onClick={handleClick} />
         <ModalCard {...props}>
           <ModalHeader {...props} p={3}>
-            <ModalTitle size="h5" my="0">
+            <ModalTitle size="h3" my="0">
               {props.header}
             </ModalTitle>
             <CloseButton size="25" type="close" onClick={handleClick} />

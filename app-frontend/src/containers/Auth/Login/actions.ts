@@ -10,10 +10,16 @@ export type LOGIN_SUCCESS = typeof LOGIN_SUCCESS
 export const LOGIN_FAILURE = 'LOGIN_FAILURE'
 export type LOGIN_FAILURE = typeof LOGIN_FAILURE
 
+export const CLOSE_ERROR = 'CLOSE_ERROR'
+export type CLOSE_ERROR = typeof CLOSE_ERROR
+
 export interface LoginActions {
-  type: LOGIN_REQUEST | LOGIN_SUCCESS | LOGIN_FAILURE,
-  data?: any,
+  type: LOGIN_REQUEST | LOGIN_SUCCESS | LOGIN_FAILURE
+  data?: any
   error?: any
+}
+export interface CloseErrorAction {
+  type: CLOSE_ERROR
 }
 
 export const login = (values: any) => (dispatch: Dispatch<LoginActions>) => {
@@ -44,7 +50,13 @@ export const login = (values: any) => (dispatch: Dispatch<LoginActions>) => {
       history.push('/')
     },
     error => {
-      dispatch(failure(error))
+      dispatch(failure(error.response))
     }
   )
+}
+
+export const closeError = () => (dispatch: Dispatch) => {
+  dispatch({
+    type: CLOSE_ERROR
+  })
 }

@@ -1,5 +1,5 @@
 import { combineReducers } from 'redux'
-import account from './Account/reducer'
+import account, { AccountSettingsStoreState } from './Account/reducer'
 import oauth2, { OAuth2StoreState } from './OAuth2/reducer'
 
 const settingsReducer = combineReducers({
@@ -9,6 +9,7 @@ const settingsReducer = combineReducers({
 
 export interface SettingsStoreState {
   oauth2: OAuth2StoreState
+  account: AccountSettingsStoreState
 }
 
 export default settingsReducer

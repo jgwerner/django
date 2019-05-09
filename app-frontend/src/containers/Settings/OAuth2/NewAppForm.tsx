@@ -7,16 +7,15 @@ import {
   FieldLabel,
   FormError,
   FormButton
-} from '../../../components/Form'
-
+} from 'components/Form'
 
 interface RenderFieldProps {
-  input: string,
-  label: string,
-  type: string,
-  meta: any,
-  touched: boolean,
-  error: string,
+  input: string
+  label: string
+  type: string
+  meta: any
+  touched: boolean
+  error: string
   initialValues: any
 }
 
@@ -25,7 +24,12 @@ const required = (value: string) =>
     ? undefined
     : 'You must name your application'
 
-const renderField = ({ input, label, type, meta: { touched, error } }: RenderFieldProps) => (
+const renderField = ({
+  input,
+  label,
+  type,
+  meta: { touched, error }
+}: RenderFieldProps) => (
   <FormField>
     <FieldLabel>{label}</FieldLabel>
     <FormInput {...input} type={type} placeholder={label} />

@@ -1,15 +1,21 @@
 import React from 'react'
 import styled from 'styled-components/macro'
-import Container from 'components/atoms/Container'
-import Flex from 'components/atoms/Flex'
+import Container, { ContainerProps } from 'components/atoms/Container'
+import Flex, { FlexProps } from 'components/atoms/Flex'
 import theme from 'utils/theme'
 
-export const ContentWrapper = styled(Container)`
+interface ContentProps {
+  children?: JSX.Element | JSX.Element[] | string
+}
+
+type PanelProps = FlexProps & ContentProps
+
+export const ContentWrapper = styled(Container)<ContainerProps>`
   position: relative;
   width: 75%;
   top: 50px;
 `
-export const ContentPanel = styled(Flex)`
+export const ContentPanel = styled(Flex)<PanelProps>`
   padding: ${theme.contentPadding};
   border: 1px solid ${theme.colors.gray2};
   position: relative;
@@ -30,7 +36,7 @@ export const ContentTopAction = styled(Container)`
   padding-bottom: 10px;
 `
 
-const Content = props => (
+const Content = (props: ContentProps) => (
   <ContentWrapper>
     <ContentPanel
       bg="white"

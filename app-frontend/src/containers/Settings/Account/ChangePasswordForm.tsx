@@ -7,17 +7,17 @@ import {
   FieldLabel,
   FormError,
   FormButton
-} from '../../../components/Form'
-import Flex from '../../../components/atoms/Flex'
-import Container from '../../../components/atoms/Container'
+} from 'components/Form'
+import Flex from 'components/atoms/Flex'
+import Container from 'components/atoms/Container'
 
 interface RenderFieldProps {
-  input: string,
-  label: string,
-  type: string,
-  meta: any,
-  touched: boolean,
-  error: string,
+  input: string
+  label: string
+  type: string
+  meta: any
+  touched: boolean
+  error: string
   initialValues: any
 }
 
@@ -34,7 +34,12 @@ const minLength = (value: string) =>
 const matchPassword = (value: string, allValues: any) =>
   value !== allValues.password ? 'Passwords do not match' : undefined
 
-const renderField = ({ input, label, type, meta: { touched, error } }: RenderFieldProps) => (
+const renderField = ({
+  input,
+  label,
+  type,
+  meta: { touched, error }
+}: RenderFieldProps) => (
   <FormField>
     <Flex>
       <FieldLabel py={0} width={1 / 2}>
@@ -72,7 +77,6 @@ const ChangePasswordForm = (props: ChangePasswordFormProps) => {
     </Form>
   )
 }
-
 
 export default reduxForm({
   form: 'changePassword'

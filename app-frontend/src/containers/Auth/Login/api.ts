@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 class LoginAPI {
-  login = (values: {username: string, password: string}) => {
+  login = (values: { username: string; password: string }) => {
     const URL = `${process.env.REACT_APP_API_URL}auth/jwt-token-auth/`
     const body = {
       username: values.username,

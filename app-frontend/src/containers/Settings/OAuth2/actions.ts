@@ -1,5 +1,5 @@
 import OAuth2API from './api'
-import { Dispatch } from 'redux';
+import { Dispatch } from 'redux'
 
 export const GET_APPS_REQUEST = 'GET_APPS_REQUEST'
 export type GET_APPS_REQUEST = typeof GET_APPS_REQUEST
@@ -23,26 +23,28 @@ export const DELETE_APP_FAILURE = 'DELETE_APP_FAILURE'
 export type DELETE_APP_FAILURE = typeof DELETE_APP_FAILURE
 
 export interface GetAppsActions {
-  type: GET_APPS_REQUEST | GET_APPS_SUCCESS | GET_APPS_FAILURE,
-  data?: any,
+  type: GET_APPS_REQUEST | GET_APPS_SUCCESS | GET_APPS_FAILURE
+  data?: any
   error?: any
 }
 
 export interface NewAppActions {
-  type: NEW_APP_REQUEST | NEW_APP_SUCCESS | NEW_APP_FAILURE,
-  data?: any,
+  type: NEW_APP_REQUEST | NEW_APP_SUCCESS | NEW_APP_FAILURE
+  data?: any
   error?: any
 }
 
 export interface DeleteAppActions {
-  type: DELETE_APP_REQUEST | DELETE_APP_SUCCESS | DELETE_APP_FAILURE,
-  data?: any,
+  type: DELETE_APP_REQUEST | DELETE_APP_SUCCESS | DELETE_APP_FAILURE
+  data?: any
   error?: any
 }
 
 export type OAuth2Actions = GetAppsActions & NewAppActions & DeleteAppActions
 
-export const getApps = (username: string) => (dispatch: Dispatch<GetAppsActions>) => {
+export const getApps = (username: string) => (
+  dispatch: Dispatch<GetAppsActions>
+) => {
   function request(): GetAppsActions {
     return {
       type: GET_APPS_REQUEST
@@ -71,7 +73,9 @@ export const getApps = (username: string) => (dispatch: Dispatch<GetAppsActions>
   )
 }
 
-export const createApp = (username: string, appName:string) => (dispatch: Dispatch<NewAppActions>) => {
+export const createApp = (username: string, appName: string) => (
+  dispatch: Dispatch<NewAppActions>
+) => {
   function request(): NewAppActions {
     return {
       type: NEW_APP_REQUEST
@@ -100,7 +104,9 @@ export const createApp = (username: string, appName:string) => (dispatch: Dispat
   )
 }
 
-export const deleteApp = (username:string, appID: string) => (dispatch: Dispatch<DeleteAppActions>) => {
+export const deleteApp = (username: string, appID: string) => (
+  dispatch: Dispatch<DeleteAppActions>
+) => {
   function request(): DeleteAppActions {
     return {
       type: DELETE_APP_REQUEST

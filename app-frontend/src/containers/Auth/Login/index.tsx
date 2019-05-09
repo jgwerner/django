@@ -2,19 +2,18 @@ import React from 'react'
 import { bindActionCreators, Dispatch } from 'redux'
 import { connect } from 'react-redux'
 import { getFormValues } from 'redux-form'
-import Container from '../../../components/atoms/Container'
-import Heading from '../../../components/atoms/Heading'
-import Link from '../../../components/atoms/Link'
-import Divider from '../../../components/atoms/Divider'
-import Text from '../../../components/atoms/Text'
-import theme from '../../../utils/theme'
+import Container from 'components/atoms/Container'
+import Heading from 'components/atoms/Heading'
+import Link from 'components/atoms/Link'
+import Divider from 'components/atoms/Divider'
+import Text from 'components/atoms/Text'
+import theme from 'utils/theme'
 import LoginForm from './Form'
 import { login, LoginActions } from './actions'
-// import * as LoginActions from './actions'
-import { StoreState } from '../../../utils/store';
+import { StoreState } from 'utils/store'
 
 interface LoginMapStateToProps {
-  loggingIn: boolean,
+  loggingIn: boolean
   values: any
 }
 
@@ -61,13 +60,13 @@ const Login = (props: LoginProps) => {
 const mapDispatchToProps = (dispatch: Dispatch<LoginActions>) =>
   bindActionCreators(
     {
-     login
+      login
     },
     dispatch
   )
 
 const mapStateToProps = (state: StoreState) => ({
-  values: getFormValues('login')(state),
+  values: getFormValues('login')(state)
 })
 
 export default connect(

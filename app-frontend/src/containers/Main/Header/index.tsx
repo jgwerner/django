@@ -11,20 +11,20 @@ import {
   DropdownWrapper
 } from '../../../components/AuthenticatedLayout/Header'
 import Logo from '../../../components/Logo'
-import {logout} from '../../../containers/Home/actions'
+import { logout } from '../../../containers/Home/actions'
 import history from '../../../utils/history'
 import theme from '../../../utils/theme'
-import Dropdown, {DropdownItem} from '../../../components/Dropdown'
+import Dropdown, { DropdownItem } from '../../../components/Dropdown'
 import Flex from '../../../components/atoms/Flex'
 import Link from '../../../components/atoms/Link'
-import { StoreState } from '../../../utils/store';
+import { StoreState } from '../../../utils/store'
 
 interface DropdownToggleState {
   open: boolean
 }
 
 interface HeaderMapStateToProps {
-  username: string,
+  username: string
 }
 
 interface HeaderMapDispatchToProps {
@@ -33,10 +33,12 @@ interface HeaderMapDispatchToProps {
 
 type HeaderProps = HeaderMapStateToProps & HeaderMapDispatchToProps
 
-
 const toggleOpen = (state: DropdownToggleState) => ({ open: !state.open })
 
-class DropdownToggle extends React.PureComponent<HeaderProps, DropdownToggleState> {
+class DropdownToggle extends React.PureComponent<
+  HeaderProps,
+  DropdownToggleState
+> {
   state = {
     open: false
   }
@@ -99,12 +101,12 @@ const mapStateToProps = (state: StoreState) => ({
 })
 
 const mapDispatchToProps = (dispatch: Dispatch) =>
-bindActionCreators(
-{
-  logout
-},
-dispatch
-)
+  bindActionCreators(
+    {
+      logout
+    },
+    dispatch
+  )
 
 export default connect(
   mapStateToProps,

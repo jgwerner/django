@@ -3,28 +3,38 @@ import { withRouter, RouteComponentProps } from 'react-router-dom'
 import { connect } from 'react-redux'
 import { bindActionCreators, Dispatch } from 'redux'
 import Loadable from 'react-loadable'
-import {getWorkspaces, GetWorkspacesActions} from './actions'
-import {getProject, ProjectDetailsActions} from '../actions'
+import { getWorkspaces, GetWorkspacesActions } from './actions'
+import { getProject, ProjectDetailsActions } from '../actions'
 import { StoreState } from 'utils/store'
+import WorkspacesAPI from './api'
+import Button from 'components/atoms/Button'
 
 interface WorkspacesRouteProps {
-  userName: string,
+  userName: string
   projectName: string
   url: string
 }
 
 interface WorkspacesMapStateToProps {
-  projectDetails:any,
-  newWorkspace: boolean,
+  projectDetails: any
+  newWorkspace: boolean
   workspaces: any
 }
 
 interface WorkspacesMapDispatchToProps {
-  getProject: (userName: string, projectName: string) => (dispatch: Dispatch<ProjectDetailsActions>) => void,
-  getWorkspaces: (userName: string, id: string) => (dispatch: Dispatch<GetWorkspacesActions>) => void,
+  getProject: (
+    userName: string,
+    projectName: string
+  ) => (dispatch: Dispatch<ProjectDetailsActions>) => void
+  getWorkspaces: (
+    userName: string,
+    id: string
+  ) => (dispatch: Dispatch<GetWorkspacesActions>) => void
 }
 
-type WorkspacesProps = WorkspacesMapDispatchToProps & WorkspacesMapStateToProps & RouteComponentProps<WorkspacesRouteProps>
+type WorkspacesProps = WorkspacesMapDispatchToProps &
+  WorkspacesMapStateToProps &
+  RouteComponentProps<WorkspacesRouteProps>
 
 const AsyncNoWorkspaces = Loadable({
   loader: () => import('./NoWorkspaces'),
@@ -65,6 +75,16 @@ class Workspaces extends React.Component<WorkspacesProps> {
     const { projectDetails, workspaces, match } = this.props
     return (
       <Fragment>
+        <Button
+          onClick={() =>
+            WorkspacesAPI.getServerStatus(
+              match.params.userName,
+              projectDetails.id
+            )
+          }
+        >
+          status
+        </Button>
         {projectDetails.name === match.params.projectName ? (
           <Fragment>
             {workspaces.length === 0 ? (
@@ -83,24 +103,24 @@ class Workspaces extends React.Component<WorkspacesProps> {
   }
 }
 
-const mapStateToProps = ({ project }:StoreState):WorkspacesMapStateToProps => ({
+const mapStateToProps = ({
+  project
+}: StoreState): WorkspacesMapStateToProps => ({
   workspaces: project.workspaces.servers.workspaces,
   newWorkspace: project.workspaces.add.newWorkspace,
-  projectDetails: project.details.projectDetails,
+  projectDetails: project.details.projectDetails
 })
 
-const mapDispatchToProps = (dispatch: Dispatch):WorkspacesMapDispatchToProps =>
+const mapDispatchToProps = (dispatch: Dispatch): WorkspacesMapDispatchToProps =>
   bindActionCreators(
     {
-    getProject,
-    getWorkspaces
+      getProject,
+      getWorkspaces
     },
     dispatch
   )
 
-
-export default
-  connect(
-    mapStateToProps,
-    mapDispatchToProps
-  )(withRouter(Workspaces))
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(withRouter(Workspaces))

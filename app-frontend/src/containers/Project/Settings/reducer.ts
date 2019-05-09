@@ -12,10 +12,10 @@ import {
   CHANGE_VISIBILITY_SUCCESS,
   CHANGE_VISIBILITY_FAILURE
 } from './actions'
-import { AnyAction } from 'redux';
+import { AnyAction } from 'redux'
 
 export interface SettingsStoreState {
-  projectDetails: any,
+  projectDetails: any
   results: any
 }
 

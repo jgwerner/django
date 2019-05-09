@@ -1,20 +1,27 @@
 import styled from 'styled-components'
-import { space, width, borderRadius, SpaceProps, WidthProps, BorderRadiusProps } from 'styled-system'
+import {
+  space,
+  width,
+  borderRadius,
+  SpaceProps,
+  WidthProps,
+  BorderRadiusProps
+} from 'styled-system'
 import { darken } from 'polished'
-import theme from '../../../utils/theme'
+import theme from 'utils/theme'
 
 interface ButtonProps extends SpaceProps, WidthProps, BorderRadiusProps {
-  variation?: string,
-  size?: string,
-  fontSize?: string,
-  height?: string,
-  minWidth?: string,
-  color?: string,
-  backgroundColor?: string,
-  borderColor?: string,
-  cursor?: string,
-  opacity?: string,
-  outline?: string,
+  variation?: string
+  size?: string
+  fontSize?: string
+  height?: string
+  minWidth?: string
+  color?: string
+  backgroundColor?: string
+  borderColor?: string
+  cursor?: string
+  opacity?: string
+  outline?: string
 }
 
 const size = (props: ButtonProps) => {
@@ -26,7 +33,7 @@ const size = (props: ButtonProps) => {
       }
     case 'standard':
       return {
-       fontSize: '14px',
+        fontSize: '14px',
         height: '36px',
         minWidth: '100px'
       }
@@ -39,7 +46,8 @@ const size = (props: ButtonProps) => {
     case 'icon':
       return {
         fontSize: '12px',
-        height: '30px'
+        height: '30px',
+        maxWidth: 'fit-content'
       }
     default:
       return {}
@@ -79,6 +87,14 @@ const variation = (props: ButtonProps) => {
           backgroundColor: darken(0.1, `${theme.colors.danger}`)
         }
       }
+    case 'icon': {
+      return {
+        background: 'none',
+        border: 'none',
+        verticalAlign: 'middle',
+        color: 'inherit'
+      }
+    }
     default:
       return {}
   }
@@ -87,9 +103,9 @@ const variation = (props: ButtonProps) => {
 const Button = styled.button<ButtonProps>`
   {
     cursor: pointer;
-    '&:disabled': {
+    &:disabled {
       cursor: default;
-      opacity: '0.35'
+      opacity: 0.35;
     }
     outline: none;
   }

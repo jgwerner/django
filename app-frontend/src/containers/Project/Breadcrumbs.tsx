@@ -12,11 +12,11 @@ const Slash = styled.span`
 `
 
 interface BreadcrumbsProps {
-  userName: string,
+  userName: string
   projectName: string
 }
 
-const Breadcrumbs = (props : BreadcrumbsProps) => {
+const Breadcrumbs = (props: BreadcrumbsProps) => {
   const { userName, projectName } = props
   return (
     <Container mb={theme.contentPadding}>
@@ -30,6 +30,5 @@ const Breadcrumbs = (props : BreadcrumbsProps) => {
     </Container>
   )
 }
-
 
 export default Breadcrumbs

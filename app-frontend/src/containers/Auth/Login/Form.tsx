@@ -8,15 +8,15 @@ import {
   FormError,
   FormButton
 } from '../../../components/Form'
-import { StoreState } from '../../../utils/store';
+import { StoreState } from '../../../utils/store'
 
 interface RenderFieldProps {
-  input?: string,
-  label?: string,
-  type?: string,
-  meta?: any,
-  touched?: boolean,
-  error?: string,
+  input?: string
+  label?: string
+  type?: string
+  meta?: any
+  touched?: boolean
+  error?: string
 }
 
 interface LoginFormProps extends InjectedFormProps {
@@ -26,7 +26,12 @@ interface LoginFormProps extends InjectedFormProps {
 const required = (value: string) =>
   value || typeof value === 'string' ? undefined : 'Required'
 
-const renderField = ({ input, label, type, meta: { touched, error } }: RenderFieldProps) => (
+const renderField = ({
+  input,
+  label,
+  type,
+  meta: { touched, error }
+}: RenderFieldProps) => (
   <FormField>
     <FormInput {...input} type={type} placeholder={label} />
     {touched && (error && <FormError>{error}</FormError>)}
@@ -51,7 +56,7 @@ const LoginForm = (props: LoginFormProps) => {
         type="password"
         validate={required}
       />
-      <FormButton type="submit" width='100%' disabled={invalid}>
+      <FormButton type="submit" width="100%" disabled={invalid}>
         {loggingIn ? '...' : 'Sign in'}
       </FormButton>
     </Form>
@@ -62,9 +67,11 @@ const mapStateToProps = (state: StoreState) => ({
   loggingIn: state.auth.login.loggingIn
 })
 
-
 const LoginFormEx = reduxForm({
   form: 'login'
 })(LoginForm)
 
-export default connect(mapStateToProps, null)(LoginFormEx)
+export default connect(
+  mapStateToProps,
+  null
+)(LoginFormEx)

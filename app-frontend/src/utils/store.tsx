@@ -1,4 +1,10 @@
-import { createStore, applyMiddleware, compose, combineReducers, AnyAction } from 'redux'
+import {
+  createStore,
+  applyMiddleware,
+  compose,
+  combineReducers,
+  AnyAction
+} from 'redux'
 import { connectRouter, routerMiddleware } from 'connected-react-router'
 import thunk from 'redux-thunk'
 import { persistStore, persistReducer } from 'redux-persist'
@@ -6,9 +12,13 @@ import storage from 'redux-persist/lib/storage'
 import { reducer as reduxFormReducer } from 'redux-form'
 import AuthReducer, { AuthStoreState } from '../containers/Auth/reducer'
 import HomeReducer, { HomeStoreState } from '../containers/Home/reducer'
-import ProjectReducer, { ProjectStoreState } from '../containers/Project/reducer'
+import ProjectReducer, {
+  ProjectStoreState
+} from '../containers/Project/reducer'
 import { LOGOUT } from '../containers/Home/actions'
-import SettingsReducer, {SettingsStoreState} from '../containers/Settings/reducer'
+import SettingsReducer, {
+  SettingsStoreState
+} from '../containers/Settings/reducer'
 import history from './history'
 
 const initialState = {}
@@ -20,9 +30,9 @@ const persistConfig = {
 }
 
 export interface StoreState {
-  home: HomeStoreState,
-  project: ProjectStoreState,
-  auth: AuthStoreState,
+  home: HomeStoreState
+  project: ProjectStoreState
+  auth: AuthStoreState
   settings: SettingsStoreState
 }
 
@@ -43,9 +53,7 @@ const rootReducer = (state: any, action: AnyAction) => {
   return appReducer(state, action)
 }
 
-const composedEnhancers = compose(
-  applyMiddleware(...middleware),
-)
+const composedEnhancers = compose(applyMiddleware(...middleware))
 
 const persistedReducer = persistReducer(persistConfig, rootReducer)
 

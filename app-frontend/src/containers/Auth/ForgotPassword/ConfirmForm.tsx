@@ -9,12 +9,12 @@ import {
 } from '../../../components/Form'
 
 interface ConfirmFormProps {
-  input?: string,
-  label?: string,
-  type?: string,
-  meta?: any,
-  touched?: boolean,
-  error?: string,
+  input?: string
+  label?: string
+  type?: string
+  meta?: any
+  touched?: boolean
+  error?: string
 }
 
 const required = (value: string) =>
@@ -24,7 +24,12 @@ const minLength = (value: string) =>
 const matchPassword = (value: string, allValues: any) =>
   value !== allValues.password ? 'Passwords do not match' : undefined
 
-const renderField = ({ input, label, type, meta: { touched, error } }: ConfirmFormProps) => (
+const renderField = ({
+  input,
+  label,
+  type,
+  meta: { touched, error }
+}: ConfirmFormProps) => (
   <div>
     <FormField>
       <FormInput {...input} type={type} placeholder={label} />

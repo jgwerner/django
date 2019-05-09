@@ -8,7 +8,7 @@ import workspaces, { WorkspacesStoreState } from './ProjectWorkspaces/reducer'
 import settings, { SettingsStoreState } from './Settings/reducer'
 
 export interface DetailsStoreState {
-  projectDetails: any,
+  projectDetails: any
   projectFetched: boolean
 }
 
@@ -40,8 +40,8 @@ const details = (state = initialState, action: AnyAction) => {
 }
 
 export interface ProjectStoreState {
-  details: DetailsStoreState,
-  workspaces: WorkspacesStoreState,
+  details: DetailsStoreState
+  workspaces: WorkspacesStoreState
   settings: SettingsStoreState
 }
 

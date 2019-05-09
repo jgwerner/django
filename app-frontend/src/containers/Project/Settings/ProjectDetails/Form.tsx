@@ -11,17 +11,18 @@ import {
 } from '../../../../components/Form'
 
 interface ProjectDetailsFormProps {
-  input: string,
-  label: string,
-  type: string,
-  placeholder?: string,
-  meta: any,
-  touched: boolean,
-  error: string,
+  input: string
+  label: string
+  type: string
+  placeholder?: string
+  meta: any
+  touched: boolean
+  error: string
   initialValues: any
 }
 
-const required = (value: string) => (value ? undefined : 'This field cannot be blank')
+const required = (value: string) =>
+  value ? undefined : 'This field cannot be blank'
 
 const renderField = ({
   input,
@@ -37,7 +38,12 @@ const renderField = ({
   </FormField>
 )
 
-const renderTextArea = ({ input, label, type, meta: { touched, error } }: ProjectDetailsFormProps) => (
+const renderTextArea = ({
+  input,
+  label,
+  type,
+  meta: { touched, error }
+}: ProjectDetailsFormProps) => (
   <FormField>
     <FieldLabel>{label}</FieldLabel>
     <FormTextArea {...input} type={type} placeholder={label} />
@@ -45,7 +51,10 @@ const renderTextArea = ({ input, label, type, meta: { touched, error } }: Projec
   </FormField>
 )
 
-const ProjectDetailsForm = (props: InjectedFormProps, enableReinitialize: boolean) => {
+const ProjectDetailsForm = (
+  props: InjectedFormProps,
+  enableReinitialize: boolean
+) => {
   const { handleSubmit, invalid } = props
   return (
     <React.Fragment>

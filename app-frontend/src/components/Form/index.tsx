@@ -1,16 +1,22 @@
 import React from 'react'
-import PropTypes from 'prop-types'
 import styled from 'styled-components/macro'
-import { space, fontSize, width, SpaceProps, FontSizeProps, WidthProps } from 'styled-system'
-import Text from '../../components/atoms/Text'
-import Input from '../../components/atoms/Input'
-import Container from '../../components/atoms/Container'
-import Button from '../atoms/Button'
-import theme from '../../utils/theme'
-
+import {
+  space,
+  fontSize,
+  width,
+  SpaceProps,
+  FontSizeProps,
+  WidthProps
+} from 'styled-system'
+import Text from 'components/atoms/Text'
+import Input from 'components/atoms/Input'
+import Container from 'components/atoms/Container'
+import Button from 'components/atoms/Button'
+import theme from 'utils/theme'
 
 interface FormProps extends SpaceProps, FontSizeProps, WidthProps {
   label?: string
+  children?: JSX.Element | JSX.Element[] | string
 }
 
 const StyledTextArea = styled.textarea<FormProps>(
@@ -45,7 +51,8 @@ const StyledButton = styled(Button)`
 const StyledInput = styled(Input)<FormProps>`
   ${width}
 `
-const StyledLabel = styled(Text)<FormProps>`
+
+const StyledLabel = styled(Text)`
   ${space}
   ${width}
 `
@@ -54,13 +61,16 @@ export const Form = styled.form<FormProps>`
   ${space}
   ${width}
 `
-export const FormField = (props: any) => <Container p={[1, 2]} {...props} />
 
-export const FieldLabel = (props: any) => (
+export const FormField = (props: FormProps) => (
+  <Container p={[1, 2]} {...props} />
+)
+
+export const FieldLabel = (props: FormProps) => (
   <StyledLabel
     width={[1, 1, 1]}
     fontSize={4}
-    fontWeight={600}
+    bold
     textAlign="left"
     py={3}
     {...props}
@@ -83,11 +93,7 @@ export const FormRadio = (props: any) => {
   )
 }
 
-FormRadio.propTypes = {
-  label: PropTypes.string.isRequired
-}
-
-export const FormError = (props: any) => (
+export const FormError = (props: FormProps) => (
   <Text m={2} ml={0} color="red" pl={3} textAlign="justify" {...props} />
 )
 

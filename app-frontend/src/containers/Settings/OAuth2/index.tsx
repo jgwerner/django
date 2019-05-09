@@ -2,24 +2,23 @@ import React from 'react'
 import { connect } from 'react-redux'
 import { bindActionCreators, Dispatch } from 'redux'
 import { getFormValues } from 'redux-form'
-import Container from '../../../components/atoms/Container'
-import Heading from '../../../components/atoms/Heading'
-import Divider from '../../../components/atoms/Divider'
+import Container from 'components/atoms/Container'
+import Heading from 'components/atoms/Heading'
+import Divider from 'components/atoms/Divider'
 import Loadable from 'react-loadable'
 import { createApp } from './actions'
-import { StoreState } from '../../../utils/store';
+import { StoreState } from 'utils/store'
 
 interface OAuth2MapStateToProps {
-  username: string,
-  values: any,
+  username: string
+  values: any
 }
 
 interface OAuth2MapDispatchToProps {
   createApp: (username: string, values: any) => void
 }
 
-type OAuth2Props = OAuth2MapStateToProps & OAuth2MapDispatchToProps 
-
+type OAuth2Props = OAuth2MapStateToProps & OAuth2MapDispatchToProps
 
 const AsyncNewApp = Loadable({
   loader: () => import('./NewAppForm'),
@@ -58,9 +57,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     dispatch
   )
 
-export default 
-  connect(
-    mapStateToProps,
-    mapDispatchToProps
-  )(OAuth2)
-
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(OAuth2)

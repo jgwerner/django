@@ -2,7 +2,7 @@ import React from 'react'
 import { Route, Redirect, RouteProps } from 'react-router-dom'
 import { isLoggedIn } from './auth'
 
-export interface PrivateRouteProps extends RouteProps  {
+export interface PrivateRouteProps extends RouteProps {
   component: React.ComponentType<any>
 }
 

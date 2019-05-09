@@ -3,16 +3,16 @@ import { color, ColorProps } from 'styled-system'
 import theme from '../../utils/theme'
 
 export interface DropdownProps extends ColorProps {
-  show: boolean,
+  show: boolean
 }
 
 export interface ListItemProps {
-  show: boolean,
+  show: boolean
   bg: string
 }
 
 const Dropdown = styled.div<DropdownProps>`
-  display: ${(props => props.show ? 'inline' : 'none')};
+  display: ${props => (props.show ? 'inline' : 'none')};
   position: absolute;
   z-index: 3;
   right: 0;

@@ -3,10 +3,10 @@ import {
   PROJECT_LIST_SUCCESS,
   PROJECT_LIST_FAILURE
 } from './actions'
-import { AnyAction } from 'redux';
+import { AnyAction } from 'redux'
 
 export interface ProjectListProps {
-  projects: any,
+  projects: any
   projectsFetched: boolean
 }
 

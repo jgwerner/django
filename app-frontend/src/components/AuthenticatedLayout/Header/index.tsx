@@ -1,20 +1,20 @@
 import React from 'react'
 import styled from 'styled-components/macro'
-import Container from 'components/atoms/Container'
-import Flex from 'components/atoms/Flex'
+import Container, { ContainerProps } from 'components/atoms/Container'
+import Flex, { FlexProps } from 'components/atoms/Flex'
 import theme from 'utils/theme'
 
-const HeaderWrapper = styled(Container)`
+const HeaderWrapper = styled(Container)<ContainerProps>`
   position: fixed;
   z-index: 1;
   height: 60px;
   box-shadow: 0 1px 3px ${theme.colors.gray1};
 `
 
-const HeaderContent = styled(Flex)`
+const HeaderContent = styled(Flex)<FlexProps>`
   height: 100%;
 `
-const HeaderItems = styled(Flex)`
+const HeaderItems = styled(Flex)<FlexProps>`
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -41,7 +41,7 @@ export const DropdownWrapper = styled.div`
   }
 `
 
-const DownArrowSvg = props => (
+const DownArrowSvg = (props: any) => (
   <svg width="8" height="6" xmlns="http://www.w3.org/2000/svg" {...props}>
     <path
       fill="currentColor"
@@ -54,7 +54,11 @@ export const DownArrow = styled(DownArrowSvg)`
   color: ${theme.colors.gray7};
 `
 
-export const Header = props => (
+interface HProps {
+  children: JSX.Element | JSX.Element[] | string
+}
+
+export const Header = (props: HProps) => (
   <HeaderWrapper width="100%" bg="white" {...props}>
     <HeaderContent mx="auto" my="0px" width={7.5 / 10} {...props}>
       <HeaderItems {...props} />

@@ -1,20 +1,25 @@
 import React from 'react'
-import { withRouter, Switch, Route, Redirect, RouteComponentProps } from 'react-router-dom'
+import {
+  withRouter,
+  Switch,
+  Route,
+  Redirect,
+  RouteComponentProps
+} from 'react-router-dom'
 import Loadable from 'react-loadable'
 import {
   VerticalNavLayout,
   VerticalNavLayoutMenu,
   VerticalNavLayoutContent,
   VerticalNavMenu
-} from '../../components/VerticalNav'
+} from 'components/VerticalNav'
 
 interface SettingsRouterProps {
-  url: string,
+  url: string
   path: string
 }
 
-type SettingsProps =  RouteComponentProps<SettingsRouterProps>
-
+type SettingsProps = RouteComponentProps<SettingsRouterProps>
 
 const AsyncAccountSettings = Loadable({
   loader: () => import('./Account'),

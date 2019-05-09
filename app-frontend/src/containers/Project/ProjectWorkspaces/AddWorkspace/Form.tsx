@@ -10,12 +10,12 @@ import {
 } from '../../../../components/Form'
 
 interface AddWorkspaceFormProps {
-  input: string,
-  label: string,
-  type: string,
-  placeholder?: string,
-  meta: any,
-  touched: boolean,
+  input: string
+  label: string
+  type: string
+  placeholder?: string
+  meta: any
+  touched: boolean
   error: string
 }
 
@@ -24,7 +24,12 @@ const required = (value: string) =>
     ? undefined
     : 'A workspace name is required'
 
-const renderField = ({ input, label, type, meta: { touched, error } }: AddWorkspaceFormProps) => (
+const renderField = ({
+  input,
+  label,
+  type,
+  meta: { touched, error }
+}: AddWorkspaceFormProps) => (
   <FormField>
     <FieldLabel>{label}</FieldLabel>
     <FormInput {...input} type={type} placeholder={label} />

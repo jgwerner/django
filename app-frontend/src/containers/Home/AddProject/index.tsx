@@ -2,13 +2,13 @@ import React from 'react'
 import { connect } from 'react-redux'
 import { bindActionCreators, Dispatch } from 'redux'
 import { getFormValues } from 'redux-form'
-import Modal from '../../../components/Modal'
+import Modal from 'components/Modal'
 import AddProjectForm from './Form'
 import { addProject } from './actions'
-import { StoreState } from '../../../utils/store';
+import { StoreState } from 'utils/store'
 
 interface AddProjectMapStateToProps {
-  username: string,
+  username: string
   values: any
 }
 
@@ -43,8 +43,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     dispatch
   )
 
-export default
-  connect(
-    mapStateToProps,
-    mapDispatchToProps
-  )(AddProject)
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(AddProject)

@@ -6,21 +6,23 @@ import Modal from '../../../../components/Modal'
 import Text from '../../../../components/atoms/Text'
 import Button from '../../../../components/atoms/Button'
 import { changeVisibility, ChangeVisibilityActions } from '../actions'
-import { StoreState } from '../../../../utils/store';
+import { StoreState } from '../../../../utils/store'
 
 interface ChangeVisibilityRouteProps {
   userName: string
 }
 
 interface ChangeVisibilityMapStateToProps {
-  projectDetails: any,
+  projectDetails: any
 }
 
 interface ChangeVisibilityMapDispatchToProps {
-  changeVisibility: (userName: string, id: string,  priv: boolean) => void
+  changeVisibility: (userName: string, id: string, priv: boolean) => void
 }
 
-type ChangeVisibilityProps = ChangeVisibilityMapStateToProps & ChangeVisibilityMapDispatchToProps & RouteComponentProps<ChangeVisibilityRouteProps>
+type ChangeVisibilityProps = ChangeVisibilityMapStateToProps &
+  ChangeVisibilityMapDispatchToProps &
+  RouteComponentProps<ChangeVisibilityRouteProps>
 
 const ChangeVisibility = (props: ChangeVisibilityProps) => {
   const { match, projectDetails, changeVisibility } = props
