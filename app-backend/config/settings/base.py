@@ -156,8 +156,8 @@ AUTHENTICATION_BACKENDS = (
     'social_core.backends.slack.SlackOAuth2',
     'rest_framework_social_oauth2.backends.DjangoOAuth2',
     'appdj.users.backends.ActiveUserBackend',
-    'guardian.backends.ObjectPermissionBackend',
     'django.contrib.auth.backends.ModelBackend',
+    'guardian.backends.ObjectPermissionBackend',
 )
 
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.environ.get('GOOGLE_CLIENT_ID', '')

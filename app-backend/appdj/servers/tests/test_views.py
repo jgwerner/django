@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
 from guardian.shortcuts import assign_perm
@@ -12,6 +12,7 @@ from django.test import override_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from appdj.canvas.tests.factories import CanvasInstanceFactory
 from appdj.jwt_auth.utils import create_auth_jwt
 from appdj.projects.tests.factories import CollaboratorFactory, ProjectFactory
 from appdj.projects.utils import copy_assignment
@@ -311,6 +312,38 @@ class ServerTest(APITestCase):
         resp = self.client.post(url)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(teacher_assignment_path.read_bytes(), learner_file.read_bytes())
+
+    def test_usage_report_for_staff_user(self):
+        user = UserFactory(is_staff=True)
+        col = CollaboratorFactory(user=user, owner=True)
+        server = ServerFactory(project=col.project, created_by=user)
+        end = timezone.now()
+        start = end - timedelta(hours=5)
+        ServerRunStatisticsFactory(start=start, stop=end, server=server, project=col.project, owner=user)
+        canvas_instance = CanvasInstanceFactory()
+        canvas_instance.users.add(user)
+        url = reverse('usage-records', kwargs={'version': 'v1'})
+        self.client.force_authenticate(user)
+        resp = self.client.get(url, format='json')
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data[0]['user'], user.username)
+
+    def test_usage_report_for_canvas_instance_admin(self):
+        col = CollaboratorFactory()
+        server = ServerFactory(project=col.project)
+        end = timezone.now()
+        start = end - timedelta(hours=5)
+        ServerRunStatisticsFactory(start=start, stop=end, server=server)
+        canvas_instance = CanvasInstanceFactory()
+        canvas_instance.users.add(col.user)
+        url = reverse('organisation-usage-records', kwargs={'version': 'v1', 'org': canvas_instance.name})
+        self.client.force_authenticate(col.user)
+        resp = self.client.get(url, format='json')
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+        assign_perm('is_admin', col.user, canvas_instance)
+        resp = self.client.get(url, format='json')
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data[0]['user'], col.user.username)
 
 
 class ServerTestWithName(APITestCase):

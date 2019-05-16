@@ -1,6 +1,7 @@
 import time
 import logging
 import json
+from datetime import datetime
 from pathlib import Path
 import requests
 
@@ -10,7 +11,7 @@ from celery.result import AsyncResult
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.http import Http404
-from django.db.models import Sum, Max, F
+from django.db.models import Sum, Max, F, Count, fields
 from django.db.models.functions import Coalesce, Now
 from django.urls import reverse
 from django.shortcuts import redirect
@@ -29,14 +30,16 @@ from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework_jwt.settings import api_settings
+from rest_framework_csv.renderers import CSVRenderer
 
 from appdj.base.views import LookupByMultipleFields
 from appdj.base.permissions import IsAdminUser
 from appdj.base.parser import PlainTextParser
 from appdj.base.utils import get_object_or_404, validate_uuid
 from appdj.canvas.authorization import CanvasAuth
+from appdj.canvas.models import CanvasInstance
 from appdj.projects.permissions import ProjectChildPermission
-from appdj.projects.models import Project
+from appdj.projects.models import Project, Collaborator
 from appdj.projects.utils import copy_assignment
 from appdj.jwt_auth.views import JWTApiView
 from appdj.jwt_auth.serializers import VerifyJSONWebTokenServerSerializer
@@ -222,24 +225,51 @@ class SNSView(views.APIView):
         logger.debug("SNS payload: %s", payload)
         message_type = request.META[sns_message_type_header]
         if message_type == 'SubscriptionConfirmation':
-            url = payload.get('SubscribeURL', '')
-            resp = requests.get(url)
-            if resp.status_code != 200:
-                logger.error("SNS verification failed.", extra={
-                    'verification_response': resp.content,
-                    'sns_payload': self.request.body
-                })
-                return Response({}, status=400)
-            return Response({"message": "OK"})
+            return self.handle_subscription_confirmation(payload)
         if message_type == 'Notification':
-            message = json.loads(payload['Message'])
-            server_id = message['detail']['overrides']['containerOverrides'][0]['name']
-            if models.Server.objects.filter(is_active=True, pk=server_id).exists():
-                channel_layer = get_channel_layer()
-                async_to_sync(channel_layer.group_send)(
-                    f"statuses_{server_id}",
-                    {'type': 'status_update', 'status': message['detail']['desiredStatus'].title()}
+            return self.handle_notification(payload)
+        return Response({"message": "OK"})
+
+
+    def handle_subscription_confirmation(self, payload):
+        url = payload.get('SubscribeURL', '')
+        resp = requests.get(url)
+        if resp.status_code != 200:
+            logger.error("SNS verification failed.", extra={
+                'verification_response': resp.content,
+                'sns_payload': self.request.body
+            })
+            return Response({}, status=400)
+        return Response({"message": "OK"})
+
+    def handle_notification(self, payload):
+        detail = json.loads(payload['Message'])['detail']
+        server_id = detail['overrides']['containerOverrides'][0]['name']
+        server = models.Server.objects.filter(is_active=True, pk=server_id).first()
+        if server is not None:
+            status = detail['lastStatus'].title()
+            if status == models.Server.RUNNING:
+                models.ServerRunStatistics.objects.create(
+                    container_id=detail['taskArn'],
+                    server=server,
+                    start=datetime.fromtimestamp(detail['startedAt']),
+                    project=server.project,
+                    owner=server.project.owner,
                 )
+            if status == models.Server.STOPPED:
+                run_stats, _ = models.ServerRunStatistics.objects.get_or_create(
+                    container_id=detail['taskArn'],
+                    server=server,
+                    project=server.project,
+                    start=datetime.fromtimestamp(detail['startedAt']),
+                )
+                run_stats.stop = datetime.fromtimestamp(detail['stoppedAt'])
+                run_stats.save()
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f"statuses_{server_id}",
+                {'type': 'status_update', 'status': status}
+            )
         return Response({"message": "OK"})
 
 
@@ -319,7 +349,6 @@ def submit_assignment(request, *args, **kwargs):
 @permission_classes([])
 def reset_assignment_file(request, *args, **kwargs):
     workspace = get_object_or_404(models.Server, kwargs.get('server'))
-    learner = workspace.project.owner
     assignment_id = kwargs.get('assignment_id')
     if assignment_id is None:
         return Response({'message': 'No assignment id'}, status=status.HTTP_400_BAD_REQUEST)
@@ -327,3 +356,26 @@ def reset_assignment_file(request, *args, **kwargs):
     assignment = next((a for a in workspace.config.get('assignments', []) if a['id'] == assignment_id))
     copy_assignment(Path('release', assignment['path']), teacher_project, workspace.project)
     return Response({'message': 'OK'})
+
+
+@api_view(['get'])
+@renderer_classes([CSVRenderer, JSONRenderer])
+def usage_report(request, version, org=None):
+    if org is None and not request.user.is_staff:
+        return Response({"message": "Bad request"}, status=400)
+    usage = Sum(
+        F('project__servers__serverrunstatistics__stop') - F('project__servers__serverrunstatistics__start'),
+        output_field=fields.DurationField()
+    )
+    qs = Collaborator.objects.filter(owner=True).annotate(
+        servers=Count('project__servers', distinct=True),
+        usage=usage
+    )
+    if org is not None:
+        canvas_instance = CanvasInstance.objects.filter(name=org, users=request.user).first()
+        if canvas_instance is not None and request.user.has_perm('is_admin', canvas_instance):
+            qs = qs.filter(user__in=canvas_instance.users.all())
+        else:
+            return Response({"message": "Forbidden"}, status=403)
+    serializer = serializers.UsageRecordsSerializer(qs, many=True)
+    return Response(serializer.data)

@@ -191,6 +191,7 @@ class ServerRunStatistics(models.Model):
     exit_code = models.IntegerField(blank=True, null=True)
     size = models.BigIntegerField(blank=True, null=True)
     stacktrace = models.TextField(blank=True)
+    container_id = models.TextField(blank=True)
 
     # This next group of fields are used primarily for the purpose of billing.
     # They are not normalized for the sake of performance.

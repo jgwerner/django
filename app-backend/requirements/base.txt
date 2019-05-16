@@ -46,3 +46,4 @@ celery-redbeat==0.11.1
 django-treebeard==4.3
 django-environ==0.4.5
 channels_redis==2.4.0
+djangorestframework-csv==2.1.0

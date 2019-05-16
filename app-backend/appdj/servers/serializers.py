@@ -198,3 +198,9 @@ class ServerStatisticsAggregatedSerializer(serializers.Serializer):
     server_time = serializers.DurationField()
     start = serializers.DateTimeField()
     stop = serializers.DateTimeField()
+
+
+class UsageRecordsSerializer(serializers.Serializer):
+    servers = serializers.IntegerField()
+    usage = serializers.DurationField()
+    user = serializers.UUIDField()
