@@ -31,18 +31,18 @@ class SNSTestCase(APITestCase):
                 },
                 'taskArn': '123',
                 'lastStatus': 'RUNNING',
-                'startedAt': timezone.now().timestamp(),
+                'startedAt': timezone.now().isoformat(),
             }
         }
         url = reverse('sns')
         headers = {'HTTP_X_AMZ_SNS_MESSAGE_TYPE': 'Notification'}
-        resp = self.client.post(url, {'Message': json.dumps(data)}, **headers)
+        resp = self.client.post(url, json.dumps({'Message': json.dumps(data)}), **headers)
         self.assertEqual(resp.status_code, 200)
         run_stats = ServerRunStatistics.objects.filter(container_id=data['detail']['taskArn']).first()
         self.assertIsNotNone(run_stats)
-        self.assertEqual(run_stats.start.timestamp(), data['detail']['startedAt'])
-        data['detail']['stoppedAt'] = timezone.now().timestamp()
+        self.assertEqual(run_stats.start.isoformat(), data['detail']['startedAt'])
+        data['detail']['stoppedAt'] = timezone.now().isoformat()
         data['detail']['lastStatus'] = 'STOPPED'
-        resp = self.client.post(url, {'Message': json.dumps(data)}, **headers)
+        resp = self.client.post(url, json.dumps({'Message': json.dumps(data)}), **headers)
         run_stats.refresh_from_db()
-        self.assertEqual(run_stats.stop.timestamp(), data['detail']['stoppedAt'])
+        self.assertEqual(run_stats.stop.isoformat(), data['detail']['stoppedAt'])

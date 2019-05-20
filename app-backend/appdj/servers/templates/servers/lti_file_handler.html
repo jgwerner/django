@@ -56,7 +56,11 @@
             }).then(function(response) {
               return response.json();
             }).then(function(data) {
-              window.location = data.url;
+                if (!!data.url) {
+                    window.location = data.url;
+                } else {
+                    setTimeout(redirect, 5000);
+                }
             }).catch(function(error) {
                 setTimeout(redirect, 5000);
             });

@@ -1,10 +1,10 @@
 import time
 import logging
 import json
-from datetime import datetime
 from pathlib import Path
 import requests
 
+from dateutil.parser import parse
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from celery.result import AsyncResult
@@ -230,7 +230,6 @@ class SNSView(views.APIView):
             return self.handle_notification(payload)
         return Response({"message": "OK"})
 
-
     def handle_subscription_confirmation(self, payload):
         url = payload.get('SubscribeURL', '')
         resp = requests.get(url)
@@ -243,7 +242,8 @@ class SNSView(views.APIView):
         return Response({"message": "OK"})
 
     def handle_notification(self, payload):
-        detail = json.loads(payload['Message'])['detail']
+        message = json.loads(payload)
+        detail = json.loads(message['Message'])['detail']
         server_id = detail['overrides']['containerOverrides'][0]['name']
         server = models.Server.objects.filter(is_active=True, pk=server_id).first()
         if server is not None:
@@ -252,7 +252,7 @@ class SNSView(views.APIView):
                 models.ServerRunStatistics.objects.create(
                     container_id=detail['taskArn'],
                     server=server,
-                    start=datetime.fromtimestamp(detail['startedAt']),
+                    start=parse(detail['startedAt']),
                     project=server.project,
                     owner=server.project.owner,
                 )
@@ -261,9 +261,9 @@ class SNSView(views.APIView):
                     container_id=detail['taskArn'],
                     server=server,
                     project=server.project,
-                    start=datetime.fromtimestamp(detail['startedAt']),
+                    start=parse(detail['startedAt']),
                 )
-                run_stats.stop = datetime.fromtimestamp(detail['stoppedAt'])
+                run_stats.stop = parse(detail['stoppedAt'])
                 run_stats.save()
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
@@ -317,7 +317,10 @@ def lti_file_handler(request, *args, **kwargs):
 
 @api_view(['get'])
 def lti_ready(request, *args, **kwargs):
-    workspace_id, assignment_id = AsyncResult(kwargs.get('task_id')).get()
+    task = AsyncResult(kwargs.get('task_id'))
+    if not task.ready():
+        return Response({"message": "wait"}, 200)
+    workspace_id, assignment_id = task.get()
     logger.info("[lti_ready], %s, %s", workspace_id, assignment_id)
     workspace = models.Server.objects.filter(pk=workspace_id).first()
     if workspace is None:
