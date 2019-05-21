@@ -14,6 +14,7 @@ from django.http import Http404
 from django.db.models import Sum, Max, F, Count, fields
 from django.db.models.functions import Coalesce, Now
 from django.urls import reverse
+from django.utils import timezone
 from django.shortcuts import redirect
 
 from rest_framework import status, viewsets, views
@@ -231,6 +232,7 @@ class SNSView(views.APIView):
         return Response({"message": "OK"})
 
     def handle_subscription_confirmation(self, payload):
+        payload = json.loads(payload)
         url = payload.get('SubscribeURL', '')
         resp = requests.get(url)
         if resp.status_code != 200:
@@ -247,12 +249,12 @@ class SNSView(views.APIView):
         server_id = detail['overrides']['containerOverrides'][0]['name']
         server = models.Server.objects.filter(is_active=True, pk=server_id).first()
         if server is not None:
-            status = detail['lastStatus'].title()
+            status = detail['desiredStatus'].title()
             if status == models.Server.RUNNING:
                 models.ServerRunStatistics.objects.create(
                     container_id=detail['taskArn'],
                     server=server,
-                    start=parse(detail['startedAt']),
+                    start=timezone.now(),
                     project=server.project,
                     owner=server.project.owner,
                 )
@@ -261,9 +263,8 @@ class SNSView(views.APIView):
                     container_id=detail['taskArn'],
                     server=server,
                     project=server.project,
-                    start=parse(detail['startedAt']),
                 )
-                run_stats.stop = parse(detail['stoppedAt'])
+                run_stats.stop = timezone.now()
                 run_stats.save()
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(

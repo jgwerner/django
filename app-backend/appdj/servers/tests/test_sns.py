@@ -11,7 +11,7 @@ from ..models import ServerRunStatistics
 class SNSTestCase(APITestCase):
     def test_sns_confirmation(self):
         sns_subscribe_url = "http://test.test"
-        data = {'SubscribeURL': sns_subscribe_url}
+        data = json.dumps({'SubscribeURL': sns_subscribe_url})
         url = reverse('sns')
         with requests_mock.mock() as m:
             m.get(sns_subscribe_url)
@@ -30,8 +30,7 @@ class SNSTestCase(APITestCase):
                     ]
                 },
                 'taskArn': '123',
-                'lastStatus': 'RUNNING',
-                'startedAt': timezone.now().isoformat(),
+                'desiredStatus': 'RUNNING',
             }
         }
         url = reverse('sns')
@@ -40,9 +39,6 @@ class SNSTestCase(APITestCase):
         self.assertEqual(resp.status_code, 200)
         run_stats = ServerRunStatistics.objects.filter(container_id=data['detail']['taskArn']).first()
         self.assertIsNotNone(run_stats)
-        self.assertEqual(run_stats.start.isoformat(), data['detail']['startedAt'])
-        data['detail']['stoppedAt'] = timezone.now().isoformat()
-        data['detail']['lastStatus'] = 'STOPPED'
+        data['detail']['desiredStatus'] = 'STOPPED'
         resp = self.client.post(url, json.dumps({'Message': json.dumps(data)}), **headers)
         run_stats.refresh_from_db()
-        self.assertEqual(run_stats.stop.isoformat(), data['detail']['stoppedAt'])
