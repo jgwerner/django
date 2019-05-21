@@ -322,6 +322,7 @@ class ServerTest(APITestCase):
         ServerRunStatisticsFactory(start=start, stop=end, server=server, project=col.project, owner=user)
         canvas_instance = CanvasInstanceFactory()
         canvas_instance.users.add(user)
+        canvas_instance.save()
         url = reverse('usage-records', kwargs={'version': 'v1'})
         self.client.force_authenticate(user)
         resp = self.client.get(url, format='json')

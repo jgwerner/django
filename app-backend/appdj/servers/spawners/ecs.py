@@ -25,7 +25,7 @@ class ECSSpawner(BaseSpawner):
             logger.info("Registering task definition")
             self.server.config['task_definition_arn'] = self._register_task_definition()
         resp = self.client.run_task(
-            cluster=settings.ECS_CLUSTER,
+            cluster=self.server.cluster,
             taskDefinition=self.server.config['task_definition_arn'],
         )
         self.server.config['task_arn'] = resp['tasks'][0]['taskArn']
@@ -33,7 +33,7 @@ class ECSSpawner(BaseSpawner):
 
     def stop(self) -> None:
         self.client.stop_task(
-            cluster=settings.ECS_CLUSTER,
+            cluster=self.server.cluster,
             task=self.server.config['task_arn'],
             reason='User request'
         )
@@ -48,7 +48,7 @@ class ECSSpawner(BaseSpawner):
         if 'task_arn' not in self.server.config:
             return self.server.STOPPED
         try:
-            resp = self.client.describe_tasks(tasks=[self.server.config['task_arn']], cluster=settings.ECS_CLUSTER)
+            resp = self.client.describe_tasks(tasks=[self.server.config['task_arn']], cluster=self.server.cluster)
         except Exception as e:
             logger.exception("Error getting server status")
             return self.server.ERROR

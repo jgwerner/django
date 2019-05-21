@@ -12,6 +12,7 @@ from guardian.shortcuts import get_perms
 
 from appdj.base.models import TBSQuerySet
 from appdj.users.models import User
+from appdj.canvas.models import CanvasInstance
 from .spawners import get_spawner_class
 
 Spawner = get_spawner_class()
@@ -66,6 +67,16 @@ class ServerModelAbstract(models.Model):
     def permissions(self):
         server_perms = dict(Server._meta.permissions)
         return [perm for perm in get_perms(self.created_by, self) if perm in server_perms]
+
+    @property
+    def cluster(self):
+        canvas = CanvasInstance.objects.filter(users=self.created_by).first()
+        if canvas:
+            cluster = canvas.clusters.first()
+            if cluster:
+                return cluster.name
+        return settings.ECS_CLUSTER
+        
 
 
 class Server(ServerModelAbstract):
