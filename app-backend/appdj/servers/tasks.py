@@ -188,6 +188,8 @@ def server_stats(server_id, status, task_arn, ecs=None):
     if len(resp['tasks']) < 1:
         return
     task = resp['tasks'][0]
+    if 'startedAt' not in task:
+        return
     if status == Server.RUNNING:
         ServerRunStatistics.objects.create(
             container_id=task_arn,
