@@ -5,7 +5,6 @@ from django.utils import timezone
 from rest_framework.test import APITestCase
 from appdj.projects.tests.factories import CollaboratorFactory
 from .factories import ServerFactory
-from ..models import ServerRunStatistics
 
 
 class SNSTestCase(APITestCase):
@@ -37,8 +36,3 @@ class SNSTestCase(APITestCase):
         headers = {'HTTP_X_AMZ_SNS_MESSAGE_TYPE': 'Notification'}
         resp = self.client.post(url, json.dumps({'Message': json.dumps(data)}), **headers)
         self.assertEqual(resp.status_code, 200)
-        run_stats = ServerRunStatistics.objects.filter(container_id=data['detail']['taskArn']).first()
-        self.assertIsNotNone(run_stats)
-        data['detail']['desiredStatus'] = 'STOPPED'
-        resp = self.client.post(url, json.dumps({'Message': json.dumps(data)}), **headers)
-        run_stats.refresh_from_db()

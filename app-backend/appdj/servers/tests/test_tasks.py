@@ -1,14 +1,18 @@
 import uuid
 from unittest import TestCase
+from datetime import timedelta
+import botocore.session
+from botocore.stub import Stubber
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 
 from appdj.projects.utils import perform_project_copy
 from appdj.projects.tests.factories import CollaboratorFactory, ProjectFactory
 from appdj.teams.tests.factories import TeamFactory, GroupFactory
 from appdj.users.tests.factories import UserFactory
 from .factories import ServerFactory
-from ..models import Server, ServerSize
-from ..tasks import lti
+from ..models import Server, ServerSize, ServerRunStatistics
+from ..tasks import lti, server_stats
 
 User = get_user_model()
 
@@ -169,3 +173,30 @@ class LTITeamsTest(TestCase):
         workspace_id, assingment_id = lti(
             str(self.project.pk), data, '')
         self.assertEqual(workspace_id, str(workspace.pk))
+
+
+class TestTasks(TestCase):
+    def setUp(self):
+        self.server = ServerFactory()
+        self.ecs = botocore.session.get_session().create_client('ecs')
+        self.stubber = Stubber(self.ecs)
+
+    def test_server_stats(self):
+        expected_params = {'cluster': self.server.cluster, 'tasks': ['123']}
+        task_started = timezone.now() - timedelta(hours=5)
+        task_stopped = timezone.now()
+        response = {'tasks': [{'startedAt': task_started}]}
+        self.stubber.add_response('describe_tasks', response, expected_params)
+        self.stubber.activate()
+        status = self.server.RUNNING
+        server_stats(self.server.id, status, '123', self.ecs)
+        run_stats = ServerRunStatistics.objects.filter(server=self.server).first()
+        self.assertIsNotNone(run_stats)
+        self.assertEqual(run_stats.start, task_started)
+        status = self.server.STOPPED
+        response = {'tasks': [{'startedAt': task_started, 'stoppedAt': task_stopped}]}
+        self.stubber.add_response('describe_tasks', response, expected_params)
+        self.stubber.activate()
+        server_stats(self.server.id, status, '123', self.ecs)
+        run_stats.refresh_from_db()
+        self.assertEqual(run_stats.stop, task_stopped)

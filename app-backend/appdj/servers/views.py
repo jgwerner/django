@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 import requests
 
-from dateutil.parser import parse
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from celery.result import AsyncResult
@@ -51,7 +50,8 @@ from .tasks import (
     stop_server,
     terminate_server,
     lti,
-    send_assignment
+    send_assignment,
+    server_stats
 )
 from .permissions import ServerChildPermission, ServerActionPermission
 from . import serializers, models
@@ -250,27 +250,12 @@ class SNSView(views.APIView):
         server = models.Server.objects.filter(is_active=True, pk=server_id).first()
         if server is not None:
             status = detail['desiredStatus'].title()
-            if status == models.Server.RUNNING:
-                models.ServerRunStatistics.objects.create(
-                    container_id=detail['taskArn'],
-                    server=server,
-                    start=timezone.now(),
-                    project=server.project,
-                    owner=server.project.owner,
-                )
-            if status == models.Server.STOPPED:
-                run_stats, _ = models.ServerRunStatistics.objects.get_or_create(
-                    container_id=detail['taskArn'],
-                    server=server,
-                    project=server.project,
-                )
-                run_stats.stop = timezone.now()
-                run_stats.save()
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
                 f"statuses_{server_id}",
                 {'type': 'status_update', 'status': status}
             )
+            server_stats.delay(server_id, status, detail['taskArn'])
         return Response({"message": "OK"})
 
 

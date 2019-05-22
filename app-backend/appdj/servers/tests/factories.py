@@ -14,7 +14,7 @@ class ServerSizeFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = models.ServerSize
 
-    name = factory.Sequence(lambda n: 'resource_{}'.format(n))
+    name = factory.Faker('pystr')
     cpu = random.randint(1, 9)
     memory = fuzzy.FuzzyChoice([512, 1024, 2048, 4096])
     active = True

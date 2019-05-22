@@ -313,6 +313,9 @@ class ServerTest(APITestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(teacher_assignment_path.read_bytes(), learner_file.read_bytes())
 
+
+class TestUsageReport(APITestCase):
+
     def test_usage_report_for_staff_user(self):
         user = UserFactory(is_staff=True)
         col = CollaboratorFactory(user=user, owner=True)

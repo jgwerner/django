@@ -3,6 +3,7 @@ import time
 import uuid
 from pathlib import Path
 
+import boto3
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
@@ -17,7 +18,7 @@ from requests_oauthlib import OAuth1Session
 from appdj.canvas.models import CanvasInstance
 from appdj.projects.models import Project, Collaborator
 from appdj.projects.utils import perform_project_copy
-from .models import Server
+from .models import Server, ServerRunStatistics
 from .spawners import get_spawner_class
 from .utils import create_server, server_action, email_to_username
 
@@ -174,3 +175,33 @@ def send_assignment(workspace_pk, assignment_id):
                                           headers={'Content-Type': 'application/xml'})
             response.raise_for_status()
     logger.debug(f"[Send assignment] LTI Response: {response.__dict__}")
+
+
+@shared_task()
+def server_stats(server_id, status, task_arn, ecs=None):
+    server = Server.objects.select_related('project').get(id=server_id)
+    ecs = ecs or boto3.client('ecs')
+    resp = ecs.describe_tasks(
+        cluster=server.cluster,
+        tasks=[task_arn]
+    )
+    if len(resp['tasks']) < 1:
+        return
+    task = resp['tasks'][0]
+    if status == Server.RUNNING:
+        ServerRunStatistics.objects.create(
+            container_id=task_arn,
+            server=server,
+            start=task['startedAt'],
+            project=server.project,
+            owner=server.project.owner
+        )
+    if status == Server.STOPPED:
+        run_stats, _ = ServerRunStatistics.objects.get_or_create(
+            container_id=task_arn,
+            server=server,
+            project=server.project,
+            start=task['startedAt'],
+        )
+        run_stats.stop = task['stoppedAt']
+        run_stats.save()
