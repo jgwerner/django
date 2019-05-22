@@ -13,10 +13,10 @@ class ServerStatusConsumer(JsonWebsocketConsumer):
         async_to_sync(self.channel_layer.group_add)(f"statuses_{server_id}", self.channel_name)
         super().connect()
 
-    def disconnect(self):
+    def disconnect(self, code):
         server_id = self.scope['url_route']['kwargs']['server']
         async_to_sync(self.channel_layer.group_discard)(f"statuses_{server_id}", self.channel_name)
-        super().connect()
+        super().disconnect()
 
     def status_update(self, event):
         self.send_json(event)
