@@ -21,7 +21,8 @@ const details = (state = initialState, action: AnyAction) => {
   switch (action.type) {
     case PROJECT_DETAILS_REQUEST:
       return {
-        ...state
+        ...state,
+        projectFetched: false
       }
 
     case PROJECT_DETAILS_SUCCESS:

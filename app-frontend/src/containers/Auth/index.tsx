@@ -37,6 +37,11 @@ const AsyncForgotPassword = Loadable({
   loading: () => <div />
 })
 
+const AsyncTokenLogin = Loadable({
+  loader: () => import('./Login/TokenLogin'),
+  loading: () => <div />
+})
+
 const Auth = (props: AuthProps) => {
   // const handleBanner = () => {
   //   closeError()
@@ -69,6 +74,10 @@ const Auth = (props: AuthProps) => {
           <Route
             path={`${match.path}/password`}
             component={AsyncForgotPassword}
+          />
+          <Route
+            path={`${match.path}/token-login`}
+            component={AsyncTokenLogin}
           />
         </Switch>
       </Card>

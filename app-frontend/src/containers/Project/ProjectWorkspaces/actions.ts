@@ -36,6 +36,9 @@ export type DELETE_SERVER_SUCCESS = typeof DELETE_SERVER_SUCCESS
 export const DELETE_SERVER_FAILURE = 'DELETE_SERVER_FAILURE'
 export type DELETE_SERVER_FAILURE = typeof DELETE_SERVER_FAILURE
 
+export const UPDATE_STATUS = 'UPDATE_STATUS'
+export type UPDATE_STATUS = typeof UPDATE_STATUS
+
 export interface GetSizesActions {
   type: GET_SIZES_REQUEST | GET_SIZES_SUCCESS | GET_SIZES_FAILURE
   data?: any
@@ -64,6 +67,11 @@ export interface DeleteServerActions {
   type: DELETE_SERVER_REQUEST | DELETE_SERVER_SUCCESS | DELETE_SERVER_FAILURE
   data?: any
   error?: any
+}
+
+export interface UpdateStatusAction {
+  type: UPDATE_STATUS
+  data?: any
 }
 
 export const getServerSizes = () => (dispatch: Dispatch<GetSizesActions>) => {
@@ -223,4 +231,13 @@ export const deleteServer = (
       dispatch(failure(error))
     }
   )
+}
+
+export const updateStatus = (data: any) => (
+  dispatch: Dispatch<UpdateStatusAction>
+) => {
+  dispatch({
+    type: UPDATE_STATUS,
+    data
+  })
 }

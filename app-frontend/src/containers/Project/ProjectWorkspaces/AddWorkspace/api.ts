@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { getToken } from '../../../../utils/auth'
+import { getToken } from 'utils/auth'
 
 class AddWorkspaceAPI {
   addWorkspace = (
@@ -20,7 +20,7 @@ class AddWorkspaceAPI {
       config: {
         type: 'jupyter'
       },
-      image_name: 'illumidesk/datascience-notebook:latest',
+      image_name: process.env.REACT_APP_JUPYTER_IMG,
       name: values.name
     }
     return axios

@@ -6,8 +6,6 @@ import Loadable from 'react-loadable'
 import { getWorkspaces, GetWorkspacesActions } from './actions'
 import { getProject, ProjectDetailsActions } from '../actions'
 import { StoreState } from 'utils/store'
-import WorkspacesAPI from './api'
-import Button from 'components/atoms/Button'
 
 interface WorkspacesRouteProps {
   userName: string
@@ -48,25 +46,15 @@ const AsyncWorkspaceTable = Loadable({
 
 class Workspaces extends React.Component<WorkspacesProps> {
   componentDidMount() {
-    const { match, getProject } = this.props
-    getProject(match.params.userName, match.params.projectName)
+    const { match, getWorkspaces, projectDetails } = this.props
+    getWorkspaces(match.params.userName, projectDetails.id)
   }
 
   componentDidUpdate(prev: any) {
-    const {
-      match,
-      projectDetails,
-      getWorkspaces,
-      newWorkspace,
-      workspaces
-    } = this.props
+    const { match, projectDetails, getWorkspaces, newWorkspace } = this.props
     if (prev.projectDetails.id !== projectDetails.id) {
       getWorkspaces(match.params.userName, projectDetails.id)
-    }
-    if (prev.newWorkspace !== newWorkspace) {
-      getWorkspaces(match.params.userName, projectDetails.id)
-    }
-    if (workspaces.status !== prev.workspaces.status) {
+    } else if (prev.newWorkspace !== newWorkspace) {
       getWorkspaces(match.params.userName, projectDetails.id)
     }
   }
@@ -75,16 +63,6 @@ class Workspaces extends React.Component<WorkspacesProps> {
     const { projectDetails, workspaces, match } = this.props
     return (
       <Fragment>
-        <Button
-          onClick={() =>
-            WorkspacesAPI.getServerStatus(
-              match.params.userName,
-              projectDetails.id
-            )
-          }
-        >
-          status
-        </Button>
         {projectDetails.name === match.params.projectName ? (
           <Fragment>
             {workspaces.length === 0 ? (
@@ -92,7 +70,13 @@ class Workspaces extends React.Component<WorkspacesProps> {
                 <AsyncNoWorkspaces />
               </Fragment>
             ) : (
-              <AsyncWorkspaceTable />
+              <Fragment>
+                {workspaces[0].project === projectDetails.id ? (
+                  <AsyncWorkspaceTable statusURL={workspaces[0].status_url} />
+                ) : (
+                  <Fragment />
+                )}
+              </Fragment>
             )}
           </Fragment>
         ) : (

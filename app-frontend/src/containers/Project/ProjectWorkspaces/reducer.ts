@@ -14,7 +14,8 @@ import {
   STOP_SERVER_FAILURE,
   DELETE_SERVER_REQUEST,
   DELETE_SERVER_SUCCESS,
-  DELETE_SERVER_FAILURE
+  DELETE_SERVER_FAILURE,
+  UPDATE_STATUS
 } from './actions'
 import add, { AddWorkspaceStoreState } from './AddWorkspace/reducer'
 
@@ -24,6 +25,7 @@ interface GetWorkspacesStoreState {
   serverRunning: boolean
   deleteServerSuccess: boolean
   deleteServerError: boolean
+  serverStatus: string
 }
 
 const initialState = {
@@ -31,7 +33,8 @@ const initialState = {
   workspaces: [],
   serverRunning: false,
   deleteServerSuccess: false,
-  deleteServerError: false
+  deleteServerError: false,
+  serverStatus: ''
 }
 
 const servers = (state = initialState, action: AnyAction) => {
@@ -105,6 +108,13 @@ const servers = (state = initialState, action: AnyAction) => {
       return {
         ...state,
         deleteServerError: true
+      }
+    case UPDATE_STATUS:
+      let currentWorkspace = { ...(state.workspaces as any)[0] }
+      if (currentWorkspace) currentWorkspace.status = action.data
+      return {
+        ...state,
+        workspaces: [currentWorkspace]
       }
     default:
       return state

@@ -3,14 +3,20 @@ import {
   space,
   width,
   borderRadius,
+  color,
   SpaceProps,
   WidthProps,
-  BorderRadiusProps
+  BorderRadiusProps,
+  ColorProps
 } from 'styled-system'
 import { darken } from 'polished'
 import theme from 'utils/theme'
 
-interface ButtonProps extends SpaceProps, WidthProps, BorderRadiusProps {
+interface ButtonProps
+  extends SpaceProps,
+    WidthProps,
+    BorderRadiusProps,
+    ColorProps {
   variation?: string
   size?: string
   fontSize?: string
@@ -45,8 +51,8 @@ const size = (props: ButtonProps) => {
       }
     case 'icon':
       return {
-        fontSize: '12px',
-        height: '30px',
+        fontSize: '16px',
+        height: '36px',
         maxWidth: 'fit-content'
       }
     default:
@@ -89,9 +95,17 @@ const variation = (props: ButtonProps) => {
       }
     case 'icon': {
       return {
+        maxWidth: 'fit-content',
         background: 'none',
         border: 'none',
         verticalAlign: 'middle',
+        color: 'inherit'
+      }
+    }
+    case 'borderless': {
+      return {
+        background: 'none',
+        border: 'none',
         color: 'inherit'
       }
     }
@@ -114,6 +128,7 @@ const Button = styled.button<ButtonProps>`
   ${size}
   ${variation}
   ${borderRadius}
+  ${color}
 `
 
 Button.displayName = 'Button'

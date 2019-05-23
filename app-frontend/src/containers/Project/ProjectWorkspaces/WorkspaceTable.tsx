@@ -5,8 +5,16 @@ import { bindActionCreators, Dispatch } from 'redux'
 import Table, { TableRow, TableHeader, TableData } from 'components/Table'
 import Button from 'components/atoms/Button'
 import Flex from 'components/atoms/Flex'
-import { getWorkspaces, startServer, stopServer, deleteServer } from './actions'
+import {
+  getWorkspaces,
+  startServer,
+  stopServer,
+  deleteServer,
+  updateStatus
+} from './actions'
 import { StoreState } from 'utils/store'
+import Icon from 'components/Icon'
+import theme from 'utils/theme'
 
 interface WorkspaceTableRouteProps {
   userName: string
@@ -19,6 +27,9 @@ interface WorkspaceTableMapStateToProps {
   username: string
   workspaces: any
   deleteServerSuccess: boolean
+  newWorkspace: boolean
+  serverStatus: string
+  statusURL: string
 }
 
 interface WorkspaceTableMapDispatchToProps {
@@ -26,6 +37,7 @@ interface WorkspaceTableMapDispatchToProps {
   startServer: (userName: string, name: string, id: string) => void
   stopServer: (userName: string, name: string, id: string) => void
   deleteServer: (userName: string, name: string, id: string) => void
+  updateStatus: (status: string) => void
 }
 
 type WorkspaceTableProps = WorkspaceTableMapStateToProps &
@@ -33,18 +45,29 @@ type WorkspaceTableProps = WorkspaceTableMapStateToProps &
   RouteComponentProps<WorkspaceTableRouteProps>
 
 const WorkspaceTable = class extends React.PureComponent<WorkspaceTableProps> {
+  socket: WebSocket
+  constructor(props: WorkspaceTableProps) {
+    super(props)
+    this.socket = new WebSocket(props.statusURL)
+    this.socket.addEventListener('message', function(event: any) {
+      var object = JSON.parse(event.data)
+      console.log('Message from server in table render: ', event)
+      props.updateStatus(object.status)
+    })
+  }
+
+  componentWillUnmount() {
+    this.socket.close()
+  }
+
   componentDidUpdate(prev: any) {
     const {
       match,
       getWorkspaces,
       projectDetails,
-      serverRunning,
       deleteServerSuccess
     } = this.props
-    if (
-      serverRunning !== prev.serverRunning ||
-      deleteServerSuccess !== prev.deleteServerSuccess
-    ) {
+    if (deleteServerSuccess !== prev.deleteServerSuccess) {
       getWorkspaces(match.params.userName, projectDetails.id)
     }
   }
@@ -56,12 +79,10 @@ const WorkspaceTable = class extends React.PureComponent<WorkspaceTableProps> {
       workspaces,
       startServer,
       stopServer,
-      deleteServer,
-      deleteServerSuccess
+      deleteServer
     } = this.props
     return (
       <Fragment>
-        {console.log('delete success', deleteServerSuccess)}
         {projectDetails.id === workspaces[0].project ? (
           <Table>
             <thead>
@@ -81,33 +102,66 @@ const WorkspaceTable = class extends React.PureComponent<WorkspaceTableProps> {
                   <TableData>
                     {i.status === 'Running' ? (
                       <Flex>
-                        <Button>Launch</Button>
+                        <Button variation="borderless" size="icon">
+                          <a
+                            style={{
+                              textDecoration: 'none',
+                              color: theme.colors.link
+                            }}
+                            href={i.endpoint}
+                            rel="noopener noreferrer"
+                            target="_blank"
+                          >
+                            Launch
+                          </a>
+                        </Button>
                         <Button
+                          variation="borderless"
+                          size="icon"
+                          color="primary"
                           onClick={() =>
                             stopServer(username, projectDetails.name, i.id)
                           }
-                          variation="danger"
                         >
                           Stop
                         </Button>
+                        <Button
+                          variation="borderless"
+                          size="icon"
+                          onClick={() =>
+                            deleteServer(username, projectDetails.name, i.id)
+                          }
+                        >
+                          <Icon
+                            size="25"
+                            type="delete"
+                            color={theme.colors.danger}
+                          />
+                        </Button>
                       </Flex>
                     ) : (
-                      <Button
-                        onClick={() =>
-                          startServer(username, projectDetails.name, i.id)
-                        }
-                      >
-                        Start
-                      </Button>
+                      <Flex>
+                        <Button
+                          variation="borderless"
+                          color="primary"
+                          size="icon"
+                          onClick={() =>
+                            startServer(username, projectDetails.name, i.id)
+                          }
+                        >
+                          Start
+                        </Button>
+                        <Button
+                          variation="icon"
+                          color="danger"
+                          onClick={() =>
+                            deleteServer(username, projectDetails.name, i.id)
+                          }
+                        >
+                          <Icon size="25" type="delete" />
+                        </Button>
+                      </Flex>
                     )}
-                    <Button
-                      variation="danger"
-                      onClick={() =>
-                        deleteServer(username, projectDetails.name, i.id)
-                      }
-                    >
-                      Delete
-                    </Button>
                   </TableData>
                 </TableRow>
               ))}
@@ -127,7 +181,9 @@ const mapStateToProps = (state: StoreState) => ({
   serverRunning: state.project.workspaces.servers.serverRunning,
   workspaces: state.project.workspaces.servers.workspaces,
   projectDetails: state.project.details.projectDetails,
-  deleteServerSuccess: state.project.workspaces.servers.deleteServerSuccess
+  deleteServerSuccess: state.project.workspaces.servers.deleteServerSuccess,
+  newWorkspace: state.project.workspaces.add.newWorkspace,
+  serverStatus: state.project.workspaces.servers.serverStatus
 })
 
 const mapDispatchToProps = (dispatch: Dispatch) =>
@@ -136,7 +192,8 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
       getWorkspaces,
       startServer,
       stopServer,
-      deleteServer
+      deleteServer,
+      updateStatus
     },
     dispatch
   )
