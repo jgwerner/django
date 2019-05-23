@@ -29,7 +29,7 @@ class SNSTestCase(APITestCase):
                     ]
                 },
                 'taskArn': '123',
-                'desiredStatus': 'RUNNING',
+                'lastStatus': 'RUNNING',
             }
         }
         url = reverse('sns')
