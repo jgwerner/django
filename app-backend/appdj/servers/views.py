@@ -249,7 +249,7 @@ class SNSView(views.APIView):
         server_id = detail['overrides']['containerOverrides'][0]['name']
         server = models.Server.objects.filter(is_active=True, pk=server_id).first()
         if server is not None:
-            status = detail['desiredStatus'].title()
+            status = detail['lastStatus'].title()
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
                 f"statuses_{server_id}",
