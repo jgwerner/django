@@ -344,7 +344,7 @@ def reset_assignment_file(request, *args, **kwargs):
         return Response({'message': 'No assignment id'}, status=status.HTTP_400_BAD_REQUEST)
     teacher_project = Project.objects.get(pk=workspace.project.config['copied_from'])
     assignment = next((a for a in workspace.config.get('assignments', []) if a['id'] == assignment_id))
-    copy_assignment(Path('release', assignment['path']), teacher_project, workspace.project)
+    copy_assignment(Path(assignment['path']), teacher_project, workspace.project)
     return Response({'message': 'OK'})
 
 

@@ -121,7 +121,7 @@ def setup_assignment(workspace, data, path):
         workspace.config['assignments'][index] = assignment
     workspace.save()
     teacher_project = Project.objects.get(pk=workspace.project.config['copied_from'])
-    copy_assignment(Path('release', assignment['path']), teacher_project, workspace.project)
+    copy_assignment(Path(assignment['path']), teacher_project, workspace.project)
     return assignment_id
 
 
