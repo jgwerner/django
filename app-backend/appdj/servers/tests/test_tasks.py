@@ -95,6 +95,28 @@ class LTITest(TestCase):
             str(self.project.pk), data, '')
         self.assertEqual(workspace_id, str(workspace.pk))
 
+    def test_assignment(self):
+        canvas_user_id = str(uuid.uuid4())
+        data = {
+            'user_id': canvas_user_id,
+            'lis_person_contact_email_primary': 'johndoe@example.com',
+            'custom_canvas_assignment_id': '123',
+            'custom_canvas_course_id': '123',
+            'lis_outcome_service_url': '',
+            'tool_consumer_instance_guid': '123'
+        }
+        assignment_path = 'ps1/Untitled.ipynb'
+        teachers_path = self.project.resource_root() / 'release' / assignment_path
+        teachers_path.parent.mkdir(exist_ok=True, parents=True)
+        teachers_path.write_bytes(b'test')
+        workspace_id, assingment_id = lti(
+            str(self.project.pk), data, 'ps1/Untitled.ipynb')
+        workspace = Server.objects.filter(id=workspace_id).first()
+        self.assertIsNotNone(workspace)
+        learner_path = workspace.project.resource_root() / assignment_path
+        self.assertTrue(learner_path.exists())
+        self.assertEqual(learner_path.read_bytes(), b'test')
+
 
 class LTITeamsTest(TestCase):
     def setUp(self):

@@ -17,7 +17,7 @@ from requests_oauthlib import OAuth1Session
 
 from appdj.canvas.models import CanvasInstance
 from appdj.projects.models import Project, Collaborator
-from appdj.projects.utils import perform_project_copy
+from appdj.projects.utils import perform_project_copy, copy_assignment
 from .models import Server, ServerRunStatistics
 from .spawners import get_spawner_class
 from .utils import create_server, server_action, email_to_username
@@ -68,7 +68,10 @@ def lti(project_pk, data, path):
     Collaborator.objects.get_or_create(user=learner, project_id=project_pk)
     if learner_project is None:
         logger.debug(f"Creating learner project from {project_pk}")
-        learner_project = perform_project_copy(learner, str(project_pk))
+        if 'custom_canvas_assignment_id' in data:
+            learner_project = perform_project_copy(learner, str(project_pk), copy_files=False)
+        else:
+            learner_project = perform_project_copy(learner, str(project_pk))
         learner_project.team = None
         learner_project.save()
     logger.debug('[LTI] learner project: %s', learner_project.pk)
@@ -105,7 +108,7 @@ def setup_assignment(workspace, data, path):
     assignment = {
         'id': data['custom_canvas_assignment_id'],
         'course_id': data['custom_canvas_course_id'],
-        'user_id': data['custom_canvas_user_id'],
+        'user_id': data['user_id'],
         'path': path,
         'outcome_url': data['lis_outcome_service_url'],
         'instance_guid': data['tool_consumer_instance_guid']
@@ -117,6 +120,8 @@ def setup_assignment(workspace, data, path):
     else:
         workspace.config['assignments'][index] = assignment
     workspace.save()
+    teacher_project = Project.objects.get(pk=workspace.project.config['copied_from'])
+    copy_assignment(Path('release', assignment['path']), teacher_project, workspace.project)
     return assignment_id
 
 

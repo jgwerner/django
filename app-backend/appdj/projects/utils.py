@@ -94,7 +94,7 @@ def copy_servers(old_project: Project, new_project: Project) -> None:
         logger.info(f"Copied {server.pk}")
 
 
-def perform_project_copy(user: User, project_id: str, request: Request = None, new_name: str = None) -> Project:
+def perform_project_copy(user: User, project_id: str, request: Request = None, new_name: str = None, copy_files: bool = True) -> Project:
     logger.info(f"Attempting to copy project {project_id} for user {user}")
     new_proj = None
     proj_to_copy = Project.objects.get(pk=project_id)
@@ -127,7 +127,7 @@ def perform_project_copy(user: User, project_id: str, request: Request = None, n
             user_to_pass = request.user
 
         create_ancillary_project_stuff(request, new_proj, user=user_to_pass)
-        if old_resource_root.is_dir():
+        if copy_files and old_resource_root.is_dir():
             # ignore assignments directory
             logger.info(f"Copying files from the {old_resource_root} to {new_proj.resource_root()}")
             shutil.copytree(

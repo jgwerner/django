@@ -13,7 +13,6 @@ from django.http import Http404
 from django.db.models import Sum, Max, F, Count, fields
 from django.db.models.functions import Coalesce, Now
 from django.urls import reverse
-from django.utils import timezone
 from django.shortcuts import redirect
 
 from rest_framework import status, viewsets, views
