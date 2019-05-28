@@ -304,7 +304,7 @@ DJOSER = {
     'DOMAIN': os.getenv("APP_DOMAIN"),
     'PASSWORD_RESET_CONFIRM_URL': os.getenv(
             'PASSWORD_RESET_CONFIRM_URL',
-            os.getenv('API_VERSION') + '/auth/password/reset/confirm/?uid={uid}&token={token}'
+            '/auth/password/reset/confirm/?uid={uid}&token={token}'
     ),
     'PASSWORD_RESET_DOMAIN': os.getenv('PASSWORD_RESET_DOMAIN', 'dev-app.illumidesk.com'),
     'SERIALIZERS': {'user_create': "appdj.users.serializers.UserSerializer",

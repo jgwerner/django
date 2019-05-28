@@ -44,6 +44,7 @@ The IllumiDesk `app-backend` application interacts with various internal applica
 | GOOGLE_CLIENT_SECRET | <string> | Secret access key associated with GOOGLE_CLIENT_ID |
 | MOCK_STRIPE | <boolean> | Enables use of mock connections to Stripe for development purposes |
 | NVIDIA_DOCKER_HOST | <string> | URL for NVIDIA Docker host |
+| PASSWORD_RESET_CONFIRM_URL | <string> | Path to confirm password reset |
 | RABBITMQ_URL | <string> | URL for RabbitMQ message broker |
 | REDIS_URL | <string> | URL for Redis data store/notifications |
 | RESOURCE_DIR | <string> | Root level directory for all user directories |
