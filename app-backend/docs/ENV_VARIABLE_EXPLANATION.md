@@ -4,6 +4,7 @@ The IllumiDesk `app-backend` application interacts with various internal applica
 
 | Variable  |  Type | Note  |
 |---|---|---|
+| API_VERSION |<string> | API version number, such as v1 |
 | AWS_SES_ACCESS_KEY_ID |<string> | Pair with AWS_SES_SECRET_ACCESS_KEY to access Simple Email Service (SES) |
 | AWS_SES_SECRET_ACCESS_KEY | <string> | Pair with AWS_SES_ACCESS_KEY_ID to access Simple Email Service (SES) |
 | AWS_SES_REGION_NAME | <string> | Name of AWS SES region, a geographic area containing Amazon data centers |

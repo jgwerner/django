@@ -2,6 +2,10 @@
 
 set -e
 
+create_env_file () {
+  cp ./app-backend/env.compose.dev ./app-backend/.env
+}
+
 create_docker_network () {
   docker network create $DOCKER_NETWORK
 }
@@ -34,6 +38,8 @@ install_terraform () {
 }
 
 main () {
+  echo "Create .env file.."
+  create_env_file
   echo "Creating docker network ${DOCKER_NETWORK}"
   create_docker_network
   echo "Build images with docker-compose ..."
