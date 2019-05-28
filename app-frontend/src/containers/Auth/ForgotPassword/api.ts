@@ -1,11 +1,10 @@
 import axios from 'axios'
 
 class ForgotPasswordAPI {
-  resetPassword = (values: { username: string; password: string }) => {
+  resetPassword = (values: { email: string }) => {
     const URL = `${process.env.REACT_APP_API_URL}auth/password/reset/`
     const body = {
-      username: values.username,
-      password: values.password
+      email: values.email
     }
     const headers = { 'Content-Type': 'application/json' }
     return axios

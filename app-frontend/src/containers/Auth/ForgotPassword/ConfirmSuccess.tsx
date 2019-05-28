@@ -4,9 +4,7 @@ import Text from 'components/atoms/Text'
 
 const RequestSuccess = () => (
   <Container my={5}>
-    <Text textAlign="center">
-      Check your email to finishing resetting your password.
-    </Text>
+    <Text textAlign="center">Your password has been reset.</Text>
   </Container>
 )
 

@@ -6,7 +6,7 @@ import {
   FormInput,
   FormError,
   FormButton
-} from '../../../components/Form'
+} from 'components/Form'
 
 interface ConfirmFormProps {
   input?: string

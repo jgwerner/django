@@ -72,7 +72,7 @@ const Auth = (props: AuthProps) => {
           <Redirect from={`${match.url}/`} to={`${match.url}/login`} exact />
           <Route path={`${match.path}/login`} component={AsyncLogin} />
           <Route
-            path={`${match.path}/password`}
+            path={`${match.path}/password/reset`}
             component={AsyncForgotPassword}
           />
           <Route

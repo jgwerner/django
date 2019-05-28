@@ -1,4 +1,4 @@
-import history from '../../../utils/history'
+import history from 'utils/history'
 import ForgotPasswordAPI from './api'
 import { Dispatch } from 'redux'
 
@@ -60,7 +60,7 @@ export const resetPassword = (values: any) => (
   ForgotPasswordAPI.resetPassword(values).then(
     response => {
       dispatch(success(response))
-      history.push('/password/next')
+      history.push('/auth/password/reset/request-success')
     },
     error => {
       dispatch(failure(error.response))
@@ -94,6 +94,7 @@ export const resetPasswordConfirm = (params: any, values: any) => (
   ForgotPasswordAPI.resetPasswordConfirm(params, values).then(
     response => {
       dispatch(success(response))
+      history.push('/auth/password/reset/confirm-success')
     },
     error => {
       dispatch(failure(error.response))

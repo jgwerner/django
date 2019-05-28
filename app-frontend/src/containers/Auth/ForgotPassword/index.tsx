@@ -15,10 +15,12 @@ import Heading from 'components/atoms/Heading'
 import Link from 'components/atoms/Link'
 import { resetPassword, resetPasswordConfirm } from './actions'
 import { StoreState } from 'utils/store'
+import qs from 'qs'
 
 interface ForgotPasswordRouteProps {
   path: string
   url: string
+  params: any
 }
 
 interface ForgotPasswordMapStateToProps {
@@ -28,7 +30,7 @@ interface ForgotPasswordMapStateToProps {
 
 interface ForgotPasswordMapDispatchToProps {
   resetPassword: (requestValues: any) => void
-  resetPasswordConfirm: (confirmValues: any) => void
+  resetPasswordConfirm: (params: any, confirmValues: any) => void
 }
 
 type ForgotPasswordProps = ForgotPasswordMapStateToProps &
@@ -39,7 +41,7 @@ const AsyncRequest = Loadable({
   loader: () => import('./RequestForm'),
   loading: () => <div />
 })
-const AsyncSuccess = Loadable({
+const AsyncRequestSuccess = Loadable({
   loader: () => import('./RequestSuccess'),
   loading: () => <div />
 })
@@ -47,37 +49,50 @@ const AsyncConfirm = Loadable({
   loader: () => import('./ConfirmForm'),
   loading: () => <div />
 })
+const AsyncConfirmSuccess = Loadable({
+  loader: () => import('./ConfirmSuccess'),
+  loading: () => <div />
+})
 
 const ForgotPassword = (props: ForgotPasswordProps) => {
   const {
     match,
+    location,
     requestValues,
     confirmValues,
     resetPassword,
     resetPasswordConfirm
   } = props
+  const params = qs.parse(location.search.slice(1))
   return (
     <React.Fragment>
       <Heading my={4} textAlign="center">
         Reset your password
       </Heading>
       <Switch>
+        <Redirect exact from={`${match.url}/`} to={`${match.url}/request`} />
         <Route
           path={`${match.path}/request`}
           render={() => (
             <AsyncRequest onSubmit={() => resetPassword(requestValues)} />
           )}
         />
-        <Route path={`${match.path}/next`} component={AsyncSuccess} />
+        <Route
+          path={`${match.path}/request-success`}
+          component={AsyncRequestSuccess}
+        />
         <Route
           path={`${match.path}/confirm`}
           render={() => (
             <AsyncConfirm
-              onSubmit={() => resetPasswordConfirm(confirmValues)}
+              onSubmit={() => resetPasswordConfirm(params, confirmValues)}
             />
           )}
         />
-        <Redirect exact from={`${match.url}/`} to={`${match.path}/request`} />
+        <Route
+          path={`${match.path}/confirm-success`}
+          component={AsyncConfirmSuccess}
+        />
       </Switch>
       <Container mx={4} mb={4} textAlign="center">
         <Link to="/auth">Return to login</Link>

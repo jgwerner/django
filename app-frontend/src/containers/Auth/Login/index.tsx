@@ -32,7 +32,7 @@ const Login = (props: LoginProps) => {
       </Heading>
       <LoginForm onSubmit={() => login(values)} />
       <Container mx={4} mb={4} textAlign="center">
-        <Link to="/auth/password/">Forgot password?</Link>
+        <Link to="/auth/password/reset">Forgot password?</Link>
       </Container>
       <Divider />
       <Text mx={4} textAlign="center" fontSize={1}>
