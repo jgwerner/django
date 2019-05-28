@@ -312,6 +312,8 @@ def lti_ready(request, *args, **kwargs):
     workspace = models.Server.objects.filter(pk=workspace_id).first()
     if workspace is None:
         return Response({'error': 'No workspace created'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    if workspace.status == workspace.ERROR:
+        return Response({'error': workspace.config.get('error', 'Server error')}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     scheme = 'https' if settings.HTTPS else 'http'
     endpoint = get_server_url(str(workspace.project.pk), str(workspace.pk),
                               scheme, '/endpoint/proxy/lab/tree/', namespace=workspace.namespace_name)

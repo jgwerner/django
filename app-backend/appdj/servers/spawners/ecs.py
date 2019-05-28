@@ -28,7 +28,12 @@ class ECSSpawner(BaseSpawner):
             cluster=self.server.cluster,
             taskDefinition=self.server.config['task_definition_arn'],
         )
-        self.server.config['task_arn'] = resp['tasks'][0]['taskArn']
+        if len(resp['tasks']) > 0:
+            self.server.config['task_arn'] = resp['tasks'][0]['taskArn']
+            if 'error' in self.server.config:
+                del self.server.config['error']
+        elif len(resp['failures']) > 0:
+            self.server.config['error'] = resp['failures'][0]['reason']
         self.server.save()
 
     def stop(self) -> None:
@@ -45,6 +50,8 @@ class ECSSpawner(BaseSpawner):
         )
 
     def status(self) -> str:
+        if 'error' in self.server.config:
+            return self.server.ERROR
         if 'task_arn' not in self.server.config:
             return self.server.STOPPED
         try:
