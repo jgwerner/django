@@ -1,4 +1,5 @@
 -r base.txt
+djet==0.2.2
 factory-boy==2.8.1
 fakeredis==0.8.2
 coverage==4.4.1

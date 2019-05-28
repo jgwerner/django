@@ -302,13 +302,22 @@ REST_FRAMEWORK = {
 
 DJOSER = {
     'DOMAIN': os.getenv("APP_DOMAIN"),
-    'PASSWORD_RESET_CONFIRM_URL': "auth/password-reset?uid={uid}&token={token}",
+    'PASSWORD_RESET_CONFIRM_URL': os.getenv(
+            'PASSWORD_RESET_CONFIRM_URL',
+            os.getenv('API_VERSION') + '/auth/password/reset/confirm/?uid={uid}&token={token}'
+    ),
+    'PASSWORD_RESET_DOMAIN': os.getenv('PASSWORD_RESET_DOMAIN', 'dev-app.illumidesk.com'),
     'SERIALIZERS': {'user_create': "appdj.users.serializers.UserSerializer",
                     'user': "appdj.users.serializers.UserSerializer",
                     'user_registration': "appdj.users.serializers.UserSerializer",
                     'token': "appdj.jwt_auth.serializers.JWTSerializer"},
     'SEND_ACTIVATION_EMAIL': True,
-    'ACTIVATION_URL': "auth/activate?uid={uid}&token={token}"
+    'ACTIVATION_URL': "auth/activate?uid={uid}&token={token}",
+    'EMAIL': {
+            'activation': 'appdj.users.emails.CustomActivationEmail',
+            'confirmation': 'appdj.users.emails.CustomConfirmationEmail',
+            'password_reset': 'appdj.users.emails.CustomPasswordResetEmail',
+        },
 }
 
 

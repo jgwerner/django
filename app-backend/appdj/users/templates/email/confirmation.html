@@ -1,0 +1,21 @@
+{% load i18n %}
+
+{% block subject %}
+{% blocktrans %}{{ site_name }} - Your account has been successfully created and activated!{% endblocktrans %}
+{% endblock subject %}
+
+{% block text_body %}
+{% trans "Your account has been created and is ready to use!" %}
+
+{% trans "Cheers," %}
+
+{% blocktrans %}The IllumiDesk Team{% endblocktrans %}
+{% endblock text_body %}
+
+{% block html_body %}
+<p>{% trans "Your account has been created and is ready to use!" %}</p>
+
+<p>{% trans "Cheers," %}</p>
+
+<p>{% blocktrans %}The IllumiDesk Team{% endblocktrans %}</p>
+{% endblock html_body %}

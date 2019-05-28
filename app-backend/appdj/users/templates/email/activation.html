@@ -1,0 +1,29 @@
+{% load i18n %}
+
+{% block subject %}
+{% blocktrans %}Account activation on {{ site_name }}{% endblocktrans %}
+{% endblock subject %}
+
+{% block text_body %}
+{% blocktrans %}You're receiving this email because you need to finish activation process for IllumiDesk.{% endblocktrans %}
+
+{% trans "Please go to the following page to activate account:" %}
+https://{{ domain }}/{{ url }}
+
+{% trans "Cheers," %}
+
+{% blocktrans %}The IllumiDesk Team{% endblocktrans %}
+{% endblock text_body %}
+
+{% block html_body %}
+{% blocktrans %}
+<p>You're receiving this email because you need to finish activation process for IllumiDesk.</p>{% endblocktrans %}
+
+<p>{% trans "Please go to the following page to activate account:" %}</p>
+<p><a href="https://{{ domain }}/{{ url }}">https://{{ domain }}/{{ url }}</a></p>
+
+<p>{% trans "Cheers," %}</p>
+
+<p>{% blocktrans %}The IllumiDesk Team{% endblocktrans %}</p>
+
+{% endblock html_body %}
