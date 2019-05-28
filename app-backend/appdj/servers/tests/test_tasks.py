@@ -110,7 +110,7 @@ class LTITest(TestCase):
         teachers_path.parent.mkdir(exist_ok=True, parents=True)
         teachers_path.write_bytes(b'test')
         workspace_id, assingment_id = lti(
-            str(self.project.pk), data, 'ps1/Untitled.ipynb')
+            str(self.project.pk), data, 'release/ps1/Untitled.ipynb')
         workspace = Server.objects.filter(id=workspace_id).first()
         self.assertIsNotNone(workspace)
         learner_path = workspace.project.resource_root() / assignment_path
