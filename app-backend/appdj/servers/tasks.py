@@ -147,11 +147,11 @@ def setup_assignment(workspace, data, path):
         assignment['source_did'] = data['lis_result_sourcedid']
     if index < 0:
         workspace.config['assignments'].append(assignment)
+        teacher_project = Project.objects.get(pk=workspace.project.config['copied_from'])
+        copy_assignment(Path(assignment['path']), teacher_project, workspace.project)
     else:
         workspace.config['assignments'][index] = assignment
     workspace.save()
-    teacher_project = Project.objects.get(pk=workspace.project.config['copied_from'])
-    copy_assignment(Path(assignment['path']), teacher_project, workspace.project)
     return assignment_id
 
 
@@ -175,8 +175,9 @@ def send_assignment(workspace_pk, assignment_id):
     teacher_project = Project.objects.get(pk=learner_workspace.project.config['copied_from'])
     teacher_workspace = teacher_project.servers.get(is_active=True, config__type='jupyter')
     assignment = next((a for a in learner_workspace.config.get('assignments', []) if a['id'] == assignment_id))
-    assingment_path = learner_workspace.project.resource_root() / assignment['path']
-    teacher_assignment_path = Path('submissions', learner.email, assignment['path'])
+    rel_path = Path(assignment['path']).relative_to('release')
+    assingment_path = learner_workspace.project.resource_root() / rel_path
+    teacher_assignment_path = Path('submissions', learner.email, rel_path)
     copy_assignment_file(assingment_path, teacher_project.resource_root() / teacher_assignment_path)
     canvas_apps = CanvasInstance.objects.get(instance_guid=assignment['instance_guid']).applications.values_list('id', flat=True)
     oauth_app = learner.profile.applications.filter(id__in=canvas_apps).first()
