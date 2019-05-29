@@ -44,53 +44,62 @@ def terminate_server(server):
     server_action('terminate', server)
 
 
-@shared_task()
-def lti(project_pk, data, path):
-    logger.debug(f'[LTI] data: {data}')
-    email = data['lis_person_contact_email_primary']
-    learner = User.objects.filter(email=email).first()
-    logger.debug('[LTI] learner %s', learner)
-    if learner is None:
-        learner = User.objects.create_user(
+def lti_user(email, canvas_user_id):
+    """
+    Gets lti user based on lti email
+    """
+    user, _ = User.objects.get_or_create(
+        email=email,
+        defaults=dict(
             username=email_to_username(email),
-            email=email,
         )
-    if 'canvas_user_id' not in learner.profile.config:
-        canvas_user_id = data['user_id']
-        learner.profile.config['canvas_user_id'] = canvas_user_id
-        learner.profile.save()
-    learner_projects = learner.projects.filter(is_active=True)
-    learner_project = learner_projects.filter(
+    )
+    if 'canvas_user_id' not in user.profile.config:
+        user.profile.config['canvas_user_id'] = canvas_user_id
+        user.profile.save()
+    return user
+
+
+def lti_project(user, project_pk, is_assignment):
+    """
+    Gets lti users project
+    """
+    is_teacher = False
+    projects = user.projects.filter(is_active=True)
+    project = projects.filter(
         config__copied_from=project_pk
     ).first()
-    if learner_project is None:
-        learner_project = learner_projects.filter(pk=project_pk).first()
-    Collaborator.objects.get_or_create(user=learner, project_id=project_pk)
-    if learner_project is None:
-        logger.debug(f"Creating learner project from {project_pk}")
-        if 'custom_canvas_assignment_id' in data:
-            learner_project = perform_project_copy(learner, str(project_pk), copy_files=False)
+    if project is None:
+        project = projects.filter(pk=project_pk).first()
+        is_teacher = project is not None
+    Collaborator.objects.get_or_create(user=user, project_id=project_pk)
+    if project is None:
+        logger.debug("Creating learner project from %s", project_pk)
+        if is_assignment:
+            project = perform_project_copy(user, str(project_pk), copy_files=False)
         else:
-            learner_project = perform_project_copy(learner, str(project_pk))
-        learner_project.team = None
-        learner_project.save()
-    logger.debug('[LTI] learner project: %s', learner_project.pk)
-    workspace = learner_project.servers.filter(
+            project = perform_project_copy(user, str(project_pk))
+        project.team = None
+        project.save()
+    return project, is_teacher
+
+
+def lti_workspace(user, project):
+    """
+    Gets and starts lti workspace
+    """
+    workspace = project.servers.filter(
         config__type='jupyter',
         is_active=True
     ).first()
     if workspace is None:
         logger.debug("Creating learner workspace")
-        workspace = create_server(learner, learner_project, 'workspace')
-    assignment_id = None
-    if 'custom_canvas_assignment_id' in data:
-        logger.debug("Setting up assignment")
-        assignment_id = setup_assignment(workspace, data, path)
+        workspace = create_server(user, project, 'workspace')
     if workspace.status != workspace.RUNNING:
-        logger.debug(f"Starting workspace {workspace.pk}")
+        logger.debug("Starting workspace %s", workspace.pk)
         workspace.spawner.start()
         # wait 30 sec for workspace to start
-        for i in range(30):  # pylint: disable=unused-variable
+        for _ in range(30):
             if 'error' in workspace.config:
                 break
             if workspace.status == workspace.RUNNING:
@@ -98,6 +107,25 @@ def lti(project_pk, data, path):
                 time.sleep(2)
                 break
             time.sleep(1)
+    return workspace
+
+
+@shared_task()
+def lti(project_pk, data, path):
+    """
+    Handles lti server launch
+    """
+    is_assignment = 'custom_canvas_assignment_id' in data
+    logger.debug('[LTI] data: %s', data)
+    user = lti_user(data['lis_person_contact_email_primary'], data['user_id'])
+    logger.debug('[LTI] user %s', user)
+    project, is_teacher = lti_project(user, project_pk, is_assignment)
+    workspace = lti_workspace(user, project)
+    logger.debug('[LTI] user project: %s', project.pk)
+    assignment_id = None
+    if not is_teacher and is_assignment:
+        logger.debug("Setting up assignment")
+        assignment_id = setup_assignment(workspace, data, path)
     return str(workspace.pk), assignment_id
 
 
