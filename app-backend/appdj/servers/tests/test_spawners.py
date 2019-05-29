@@ -200,6 +200,29 @@ class ECSSpawnerTestCase(TestCase):
             self.server.config['task_arn']
         )
 
+    def test_start_failure(self):
+        register_params = self.spawner._task_definition_args
+        register_response = {'taskDefinition': {'taskDefinitionArn': '123'}}
+        self.stubber.add_response('register_task_definition', register_response, register_params)
+        run_params = dict(
+            cluster=settings.ECS_CLUSTER,
+            taskDefinition=register_response['taskDefinition']['taskDefinitionArn']
+        )
+        run_response = {'tasks': [], 'failures': [{'reason': 'OOM'}]}
+        self.stubber.add_response('run_task', run_response, run_params)
+        self.stubber.activate()
+        self.spawner.start()
+        self.assertIn('error', self.server.config)
+        self.assertEqual(
+            register_response['taskDefinition']['taskDefinitionArn'],
+            self.server.config['task_definition_arn']
+        )
+        self.assertIn('error', self.server.config)
+        self.assertEqual(
+            run_response['failures'][0]['reason'],
+            self.server.config['error']
+        )
+
     def test_stop(self):
         task_arn = 'abc'
         self.server.config['task_arn'] = task_arn
