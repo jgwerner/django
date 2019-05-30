@@ -22,7 +22,7 @@ class Assignment:
         self.course_id = course_id
         self.user_id = user_id
         # relative path of assignment file ex. `dir/file.ipynb`
-        self.path = Path(path).relative_to('release') if path.startswith('release') else Path(path)
+        self.path = Path(path)
         self.outcome_url = outcome_url
         self.instance_guid = instance_guid
         self.source_did = source_did
@@ -87,15 +87,7 @@ class Assignment:
         workspace = teacher_project.servers.first()
         spawner = Spawner(workspace)
         assignment_id = self.path.parent
-        spawner.client.containers.run(
-            settings.JUPYTER_IMAGE,
-            f'nbgrader db assignment add {assignment_id}'
-        )
-        spawner.client.containers.run(
-            settings.JUPYTER_IMAGE,
-            f'nbgrader autograde "{assignment_id}" --create',
-            volumes=spawner._get_binds()
-        )
+        spawner.autograde(assignment_id)
 
     def get_grade(self, teacher_project, student):
         """
@@ -167,7 +159,7 @@ def create_canvas_assignment(data, path):
     return Assignment(
         aid=data['custom_canvas_assignment_id'],
         course_id=data['custom_canvas_course_id'],
-        user_id=data['custom_canvas_user_id'],
+        user_id=data['user_id'],
         path=path,
         outcome_url=data['lis_outcome_service_url'],
         instance_guid=data['tool_consumer_instance_guid'],

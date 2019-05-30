@@ -65,6 +65,26 @@ class ECSSpawner(BaseSpawner):
             logger.debug(resp)
             return self.server.ERROR
 
+    def autograde(self, assignment_id):
+        self.client.run_task(
+            cluster=self.server.cluster,
+            taskDefinition=self.server.config['task_definition_arn'],
+            overrides={
+                'containerOverrides': [
+                    {'command': f'nbgrader db assignment add {assignment_id}'}
+                ]
+            }
+        )
+        self.client.run_task(
+            cluster=self.server.cluster,
+            taskDefinition=self.server.config['task_definition_arn'],
+            overrides={
+                'containerOverrides': [
+                    {'command': f'nbgrader autograde "{assignment_id}" --create'}
+                ]
+            }
+        )
+
     def _register_task_definition(self) -> str:
         resp = self.client.register_task_definition(**self._task_definition_args)
         return resp['taskDefinition']['taskDefinitionArn']
