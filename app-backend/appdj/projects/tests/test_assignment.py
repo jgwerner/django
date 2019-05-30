@@ -25,7 +25,7 @@ class AssignmentTest(TestCase):
             source_did=123
         )
         self.assertEqual(assignment.id, 123)
-        self.assertEqual(assignment.path, Path('test/test.ipynb'))
+        self.assertEqual(assignment.path, Path(path))
 
     def test_assign(self):
         path = 'test/test.ipynb'

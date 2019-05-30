@@ -1,23 +1,15 @@
 import logging
 import time
-import uuid
 from pathlib import Path
 
 import boto3
-from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.sites.models import Site
-from django.urls import reverse
-from django.template.loader import render_to_string
 
 from celery import shared_task
 
-from requests.exceptions import HTTPError
-from requests_oauthlib import OAuth1Session
-
-from appdj.canvas.models import CanvasInstance
 from appdj.projects.models import Project, Collaborator
 from appdj.projects.utils import perform_project_copy, copy_assignment
+from appdj.projects.assignment import Assignment, create_canvas_assignment
 from .models import Server, ServerRunStatistics
 from .spawners import get_spawner_class
 from .utils import create_server, server_action, email_to_username
@@ -135,22 +127,13 @@ def setup_assignment(workspace, data, path):
     assignment_id = data['custom_canvas_assignment_id']
     index, assignment = next(((i, a) for i, a in enumerate(workspace.config['assignments'])
                               if a['id'] == assignment_id), (-1, None))
-    assignment = {
-        'id': data['custom_canvas_assignment_id'],
-        'course_id': data['custom_canvas_course_id'],
-        'user_id': data['user_id'],
-        'path': path,
-        'outcome_url': data['lis_outcome_service_url'],
-        'instance_guid': data['tool_consumer_instance_guid']
-    }
-    if 'lis_result_sourcedid' in data:
-        assignment['source_did'] = data['lis_result_sourcedid']
+    assignment = create_canvas_assignment(data, path)
     if index < 0:
-        workspace.config['assignments'].append(assignment)
+        workspace.config['assignments'].append(assignment.to_dict())
         teacher_project = Project.objects.get(pk=workspace.project.config['copied_from'])
-        copy_assignment(Path(assignment['path']), teacher_project, workspace.project)
+        copy_assignment(assignment.path, teacher_project, workspace.project)
     else:
-        workspace.config['assignments'][index] = assignment
+        workspace.config['assignments'][index] = assignment.to_dict()
     workspace.save()
     return assignment_id
 
@@ -171,47 +154,10 @@ def copy_assignment_file(source: Path, target: Path):
 @shared_task()
 def send_assignment(workspace_pk, assignment_id):
     learner_workspace = Server.objects.get(is_active=True, pk=workspace_pk)
-    learner = learner_workspace.project.owner
     teacher_project = Project.objects.get(pk=learner_workspace.project.config['copied_from'])
-    teacher_workspace = teacher_project.servers.get(is_active=True, config__type='jupyter')
-    assignment = next((a for a in learner_workspace.config.get('assignments', []) if a['id'] == assignment_id))
-    rel_path = Path(assignment['path']).relative_to('release')
-    assingment_path = learner_workspace.project.resource_root() / rel_path
-    teacher_assignment_path = Path('submissions', learner.email, rel_path)
-    copy_assignment_file(assingment_path, teacher_project.resource_root() / teacher_assignment_path)
-    canvas_apps = CanvasInstance.objects.get(instance_guid=assignment['instance_guid']).applications.values_list('id', flat=True)
-    oauth_app = learner.profile.applications.filter(id__in=canvas_apps).first()
-    oauth_session = OAuth1Session(oauth_app.client_id, client_secret=oauth_app.client_secret)
-    scheme = 'https' if settings.HTTPS else 'http'
-    namespace = teacher_project.namespace_name
-    url_path = reverse('lti-file', kwargs={
-        'version': settings.DEFAULT_VERSION,
-        'namespace': namespace,
-        'project_project': str(teacher_project.pk),
-        'server': str(teacher_workspace.pk),
-        'path': teacher_assignment_path
-    })
-    domain = Site.objects.get_current().domain
-    url = f"{scheme}://{domain}{url_path}"
-    logger.debug(f"[Send assignment] Server url: {url}")
-    context = {
-        'msg_id': uuid.uuid4().hex,
-        'source_did': assignment['source_did'],
-        'url': url
-    }
-    xml = render_to_string('servers/assignment.xml', context)
-    response = oauth_session.post(assignment['outcome_url'], data=xml,
-                                  headers={'Content-Type': 'application/xml'})
-    try:
-        response.raise_for_status()
-    except HTTPError as e:
-        if e.response.status_code == 422:
-            oauth_session = OAuth1Session(oauth_app.client_id, client_secret=oauth_app.client_secret)
-            response = oauth_session.post(assignment['outcome_url'], data=xml,
-                                          headers={'Content-Type': 'application/xml'})
-            response.raise_for_status()
-    logger.debug(f"[Send assignment] LTI Response: {response.__dict__}")
-
+    assignment_dict = next((a for a in learner_workspace.config.get('assignments', []) if a['aid'] == assignment_id))
+    assignmet = Assignment(**assignment_dict)
+    assignmet.submit(teacher_project, learner_workspace.project)
 
 @shared_task()
 def server_stats(server_id, status, task_arn, ecs=None):
