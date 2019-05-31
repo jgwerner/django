@@ -126,7 +126,7 @@ def setup_assignment(workspace, data, path):
         workspace.config['assignments'] = []
     assignment_id = data['custom_canvas_assignment_id']
     index, assignment = next(((i, a) for i, a in enumerate(workspace.config['assignments'])
-                              if a['id'] == assignment_id), (-1, None))
+                              if a['aid'] == assignment_id), (-1, None))
     assignment = create_canvas_assignment(data, path)
     if index < 0:
         workspace.config['assignments'].append(assignment.to_dict())
@@ -158,6 +158,7 @@ def send_assignment(workspace_pk, assignment_id):
     assignment_dict = next((a for a in learner_workspace.config.get('assignments', []) if a['aid'] == assignment_id))
     assignmet = Assignment(**assignment_dict)
     assignmet.submit(teacher_project, learner_workspace.project)
+
 
 @shared_task()
 def server_stats(server_id, status, task_arn, ecs=None):

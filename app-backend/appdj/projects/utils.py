@@ -136,6 +136,7 @@ def perform_project_copy(user: User, project_id: str, request: Request = None, n
                 ignore=shutil.ignore_patterns('submissions')
             )
         else:
+            new_proj.resource_root().mkdir(parents=True, exist_ok=True)
             logger.info(f"It seems {old_resource_root} does not exist, so there is nothing to copy.")
 
         copy_servers(proj_to_copy, new_proj)

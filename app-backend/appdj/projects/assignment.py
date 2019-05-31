@@ -22,7 +22,7 @@ class Assignment:
         self.course_id = course_id
         self.user_id = user_id
         # relative path of assignment file ex. `dir/file.ipynb`
-        self.path = Path(path)
+        self.path = Path(path).relative_to('release') if path.startswith('release') else Path(path)
         self.outcome_url = outcome_url
         self.instance_guid = instance_guid
         self.source_did = source_did
