@@ -131,7 +131,7 @@ def setup_assignment(workspace, data, path):
     if index < 0:
         workspace.config['assignments'].append(assignment.to_dict())
         teacher_project = Project.objects.get(pk=workspace.project.config['copied_from'])
-        copy_assignment(assignment.path, teacher_project, workspace.project)
+        assignment.assign(teacher_project, workspace.project)
     else:
         workspace.config['assignments'][index] = assignment.to_dict()
     workspace.save()
