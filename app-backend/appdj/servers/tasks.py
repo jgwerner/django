@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 from celery import shared_task
 
 from appdj.projects.models import Project, Collaborator
-from appdj.projects.utils import perform_project_copy, copy_assignment
+from appdj.projects.utils import perform_project_copy
 from appdj.projects.assignment import Assignment, create_canvas_assignment
 from .models import Server, ServerRunStatistics
 from .spawners import get_spawner_class

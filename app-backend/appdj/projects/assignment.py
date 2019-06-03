@@ -33,7 +33,8 @@ class Assignment:
         """
         source = self.teachers_path(teacher_project.resource_root()).parent
         destination = self.students_path(student_project.resource_root()).parent
-        destination.parent.mkdir(parents=True, exist_ok=True)
+        if destination.exists():
+            shutil.rmtree(destination)
         logger.info("Copy assignment file from teachers path %s to students path %s", source, destination)
         shutil.copytree(source, destination)
 

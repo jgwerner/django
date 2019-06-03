@@ -144,19 +144,6 @@ def perform_project_copy(user: User, project_id: str, request: Request = None, n
     return new_proj
 
 
-def copy_assignment(path, teacher_project, learner_project):
-    path = str(path)
-    source = teacher_project.resource_root() /  path
-    if path.startswith('release'):
-        students_path = Path(path).relative_to('release')
-    else:
-        students_path = Path(path)
-    destination = learner_project.resource_root() / students_path
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    logger.info("Copy assignment file from teachers path %s to students path %s", source, destination)
-    shutil.copyfile(source, destination)
-
-
 def check_project_name_exists(name: str, request: Request, existing_pk: str = None):
     qs = Project.objects.namespace(request.namespace).filter(name=name, is_active=True).exclude(pk=existing_pk)
     return qs.exists()

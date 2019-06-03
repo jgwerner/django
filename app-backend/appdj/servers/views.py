@@ -39,7 +39,7 @@ from appdj.canvas.authorization import CanvasAuth
 from appdj.canvas.models import CanvasInstance
 from appdj.projects.permissions import ProjectChildPermission
 from appdj.projects.models import Project, Collaborator
-from appdj.projects.utils import copy_assignment
+from appdj.projects.assignment import Assignment
 from appdj.jwt_auth.views import JWTApiView
 from appdj.jwt_auth.serializers import VerifyJSONWebTokenServerSerializer
 from appdj.jwt_auth.utils import create_server_jwt, create_auth_jwt
@@ -346,7 +346,8 @@ def reset_assignment_file(request, *args, **kwargs):
         return Response({'message': 'No assignment id'}, status=status.HTTP_400_BAD_REQUEST)
     teacher_project = Project.objects.get(pk=workspace.project.config['copied_from'])
     assignment = next((a for a in workspace.config.get('assignments', []) if a['id'] == assignment_id))
-    copy_assignment(Path(assignment['path']), teacher_project, workspace.project)
+    assignment = Assignment(assignment['path'])
+    assignment.assign(teacher_project, workspace.project)
     return Response({'message': 'OK'})
 
 
