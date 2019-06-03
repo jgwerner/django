@@ -14,7 +14,7 @@ class AssignmentTest(TestCase):
         self.student_root = self.student_col.project.resource_root()
 
     def test_assignment_init(self):
-        path = 'release/test/test.ipynb'
+        path = 'test/test.ipynb'
         assignment = Assignment(
             path=path,
             aid=123,

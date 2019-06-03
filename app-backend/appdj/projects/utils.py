@@ -145,8 +145,12 @@ def perform_project_copy(user: User, project_id: str, request: Request = None, n
 
 
 def copy_assignment(path, teacher_project, learner_project):
-    source = teacher_project.resource_root() / path
-    students_path = Path(path).relative_to('release')
+    try:
+        students_path = Path(path).relative_to('release')
+        source = teacher_project.resource_root() / path
+    except ValueError:
+        students_path = Path(path)
+        source = teacher_project.resource_root() / 'release' / path
     destination = learner_project.resource_root() / students_path
     destination.parent.mkdir(parents=True, exist_ok=True)
     logger.info("Copy assignment file from teachers path %s to students path %s", source, destination)
