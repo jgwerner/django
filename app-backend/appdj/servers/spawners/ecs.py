@@ -66,24 +66,39 @@ class ECSSpawner(BaseSpawner):
             return self.server.ERROR
 
     def autograde(self, assignment_id):
+        assignment_id = str(assignment_id)
         self.client.run_task(
             cluster=self.server.cluster,
             taskDefinition=self.server.config['task_definition_arn'],
             overrides={
                 'containerOverrides': [
-                    {'command': f'nbgrader db assignment add {assignment_id}'}
+                    {
+                        'command': ['nbgrader', 'db', 'assignment', 'add', assignment_id],
+                        'name': self.server.container_name
+                    }
                 ]
             }
         )
-        self.client.run_task(
+        resp = self.client.run_task(
             cluster=self.server.cluster,
             taskDefinition=self.server.config['task_definition_arn'],
             overrides={
                 'containerOverrides': [
-                    {'command': f'nbgrader autograde "{assignment_id}" --create'}
+                    {
+                        'command': ['nbgrader', 'autograde', assignment_id, '--create'],
+                        'name': self.server.container_name
+                    }
+
                 ]
             }
         )
+        if len(resp['tasks']) > 0:
+            waiter = self.client.get_waiter('tasks_stopped')
+            waiter.wait(
+                cluster=self.server.cluster,
+                tasks=[resp['tasks'][0]['taskArn']],
+            )
+
 
     def _register_task_definition(self) -> str:
         resp = self.client.register_task_definition(**self._task_definition_args)

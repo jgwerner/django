@@ -1,6 +1,5 @@
 import uuid
 from datetime import datetime, timedelta
-from pathlib import Path
 from unittest.mock import patch
 from guardian.shortcuts import assign_perm
 
@@ -15,7 +14,7 @@ from rest_framework.test import APITestCase
 from appdj.canvas.tests.factories import CanvasInstanceFactory
 from appdj.jwt_auth.utils import create_auth_jwt
 from appdj.projects.tests.factories import CollaboratorFactory, ProjectFactory
-from appdj.projects.utils import copy_assignment
+from appdj.projects.assignment import Assignment
 from appdj.users.tests.factories import UserFactory
 from ..models import Server, ServerRunStatistics
 from .factories import (
@@ -298,7 +297,8 @@ class ServerTest(APITestCase):
         teacher_assignment_path = teacher_server.project.resource_root() / 'release' / assignment_path
         teacher_assignment_path.parent.mkdir(parents=True, exist_ok=True)
         teacher_assignment_path.write_bytes(b'123')
-        copy_assignment(Path('release', assignment_path), teacher_server.project, learner_server.project)
+        assignment = Assignment(assignment_path)
+        assignment.assign(teacher_server.project, learner_server.project)
         learner_file = learner_server.project.resource_root() / assignment_path
         learner_file.write_bytes(b'456')
         kwargs = {

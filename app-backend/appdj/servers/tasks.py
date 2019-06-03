@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 from celery import shared_task
 
 from appdj.projects.models import Project, Collaborator
-from appdj.projects.utils import perform_project_copy, copy_assignment
+from appdj.projects.utils import perform_project_copy
 from appdj.projects.assignment import Assignment, create_canvas_assignment
 from .models import Server, ServerRunStatistics
 from .spawners import get_spawner_class
@@ -126,12 +126,12 @@ def setup_assignment(workspace, data, path):
         workspace.config['assignments'] = []
     assignment_id = data['custom_canvas_assignment_id']
     index, assignment = next(((i, a) for i, a in enumerate(workspace.config['assignments'])
-                              if a['id'] == assignment_id), (-1, None))
+                              if a['aid'] == assignment_id), (-1, None))
     assignment = create_canvas_assignment(data, path)
     if index < 0:
         workspace.config['assignments'].append(assignment.to_dict())
         teacher_project = Project.objects.get(pk=workspace.project.config['copied_from'])
-        copy_assignment(assignment.path, teacher_project, workspace.project)
+        assignment.assign(teacher_project, workspace.project)
     else:
         workspace.config['assignments'][index] = assignment.to_dict()
     workspace.save()
@@ -158,6 +158,7 @@ def send_assignment(workspace_pk, assignment_id):
     assignment_dict = next((a for a in learner_workspace.config.get('assignments', []) if a['aid'] == assignment_id))
     assignmet = Assignment(**assignment_dict)
     assignmet.submit(teacher_project, learner_workspace.project)
+
 
 @shared_task()
 def server_stats(server_id, status, task_arn, ecs=None):
