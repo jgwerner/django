@@ -38,6 +38,12 @@ class Assignment:
         logger.info("Copy assignment file from teachers path %s to students path %s", source, destination)
         shutil.copytree(source, destination)
 
+    def is_assigned(self, student_project):
+        """
+        States if assignment file was copied to student directory
+        """
+        return self.students_path(student_project.resource_root()).exists()
+
     def submit(self, teacher_project, student_project):
         """
         Submit assignment
