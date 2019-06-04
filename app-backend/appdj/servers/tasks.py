@@ -130,8 +130,9 @@ def setup_assignment(workspace, data, path):
     assignment = create_canvas_assignment(data, path)
     if index < 0:
         workspace.config['assignments'].append(assignment.to_dict())
-        teacher_project = Project.objects.get(pk=workspace.project.config['copied_from'])
-        assignment.assign(teacher_project, workspace.project)
+        if not assignment.is_assigned(workspace.project):
+            teacher_project = Project.objects.get(pk=workspace.project.config['copied_from'])
+            assignment.assign(teacher_project, workspace.project)
     else:
         workspace.config['assignments'][index] = assignment.to_dict()
     workspace.save()
