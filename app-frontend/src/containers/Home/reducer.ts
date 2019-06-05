@@ -5,6 +5,9 @@ import {
   USER_INFO_SUCCESS,
   LOGOUT
 } from './actions'
+import {
+  TOKEN_LOGIN_SUCCESS
+ } from '../Auth/Login/actions'
 import projects, { ProjectListProps } from './ProjectList/reducer'
 import addProject, { AddProjectProps } from './AddProject/reducer'
 
@@ -30,6 +33,11 @@ const initialState = {
 
 const user = (state = initialState, action: AnyAction) => {
   switch (action.type) {
+    case TOKEN_LOGIN_SUCCESS: 
+      return {
+        ...state,
+        profileInfoFetched: false
+      }
     case USER_INFO_REQUEST:
       return {
         ...state
