@@ -14,7 +14,7 @@ class Command(BaseCommand):
         logger.info("Adding default entries to ServerSize table...")
         try:
             for i in settings.SERVER_SIZE:
-                ServerSize.objects.update_or_create(
+                ServerSize.objects.get_or_create(
                     name__iexact=i,
                     defaults={
                         'name': i,
