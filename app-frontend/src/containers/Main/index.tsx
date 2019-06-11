@@ -1,9 +1,9 @@
 import React from 'react'
 import { Switch, Route } from 'react-router-dom'
 import Loadable from 'react-loadable'
-import PrivateRoute from '../../utils/PrivateRoute'
-import AuthenticatedLayout from '../../components/AuthenticatedLayout'
-import Content from '../../components/AuthenticatedLayout/Content'
+import PrivateRoute from 'utils/PrivateRoute'
+import AuthenticatedLayout from 'components/AuthenticatedLayout'
+import Content from 'components/AuthenticatedLayout/Content'
 import Header from './Header'
 
 const AsyncAuth = Loadable({
@@ -12,10 +12,6 @@ const AsyncAuth = Loadable({
 })
 const AsyncHome = Loadable({
   loader: () => import('../Home'),
-  loading: () => <div />
-})
-const AsyncProfile = Loadable({
-  loader: () => import('../Profile'),
   loading: () => <div />
 })
 const AsyncProject = Loadable({
@@ -34,7 +30,6 @@ const PrivateRoutes = () => (
       <Switch>
         <Route path="/projects/new" component={AsyncHome} />
         <Route path="/settings" component={AsyncSettings} />
-        <Route path="/:userName" component={AsyncProfile} exact />
         <Route path="/:userName/:projectName" component={AsyncProject} />
         <PrivateRoute path="/" component={AsyncHome} />
       </Switch>

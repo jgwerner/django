@@ -1,14 +1,13 @@
 import styled from 'styled-components/macro'
-import { color, ColorProps } from 'styled-system'
-import theme from '../../utils/theme'
+import { color, ColorProps, fontSize, FontSizeProps } from 'styled-system'
+import theme from 'utils/theme'
 
 export interface DropdownProps extends ColorProps {
   show: boolean
 }
 
-export interface ListItemProps {
-  show: boolean
-  bg: string
+export interface DropdownItemProps extends FontSizeProps {
+  noHover?: boolean
 }
 
 const Dropdown = styled.div<DropdownProps>`
@@ -21,22 +20,35 @@ const Dropdown = styled.div<DropdownProps>`
   border: 1px solid ${theme.colors.gray2};
   ${color}
 `
-export const DropdownItem = styled.li`
-  list-style-type: none;
-  padding: 15px;
-  color: black;
+
+export const DropdownSection = styled.div`
   border-bottom: 1px solid ${theme.colors.gray2};
+  padding: 10px 0;
+`
+
+export const DropdownItem = styled.li<DropdownItemProps>`
+  list-style-type: none;
+  padding: 8px;
+  color: black;
   &:hover {
-    cursor: pointer;
-    background-color: ${theme.colors.primary};
-    color: white;
+    cursor: ${props => (props.noHover ? 'default' : 'pointer')};
+    background-color: ${props =>
+      props.noHover ? 'white' : theme.colors.primary};
+    color: ${props => (props.noHover ? 'black' : 'white')};
   }
+  ${fontSize}
 `
 
 Dropdown.displayName = 'Dropdown'
 
+DropdownItem.displayName = 'DropdownItem'
+
 Dropdown.defaultProps = {
   bg: 'white'
+}
+
+DropdownItem.defaultProps = {
+  fontSize: 2
 }
 
 export default Dropdown

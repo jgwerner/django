@@ -27,7 +27,9 @@ class WorkspacesAPI {
     return axios
       .get(URL, { headers })
       .then(response => response.data)
-      .catch(error => error)
+      .catch(error => {
+        throw error
+      })
   }
 
   startServer = (username: string, projectID: string, workspaceID: string) => {

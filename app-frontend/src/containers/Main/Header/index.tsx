@@ -9,15 +9,17 @@ import {
   Item,
   DownArrow,
   DropdownWrapper
-} from '../../../components/AuthenticatedLayout/Header'
-import Logo from '../../../components/Logo'
-import { logout } from '../../../containers/Home/actions'
-import history from '../../../utils/history'
-import theme from '../../../utils/theme'
-import Dropdown, { DropdownItem } from '../../../components/Dropdown'
-import Flex from '../../../components/atoms/Flex'
-import Link from '../../../components/atoms/Link'
-import { StoreState } from '../../../utils/store'
+} from 'components/AuthenticatedLayout/Header'
+import Logo from 'components/Logo'
+import { logout } from 'containers/Home/actions'
+import history from 'utils/history'
+import theme from 'utils/theme'
+import Dropdown, { DropdownItem, DropdownSection } from 'components/Dropdown'
+import Flex from 'components/atoms/Flex'
+import Link from 'components/atoms/Link'
+import { StoreState } from 'utils/store'
+import Icon from 'components/Icon'
+import { TextSpan } from 'components/atoms/Text'
 
 interface DropdownToggleState {
   open: boolean
@@ -65,13 +67,52 @@ class DropdownToggle extends React.PureComponent<
           </Item>
         </Flex>
         <Dropdown show={state.open}>
-          <DropdownItem onClick={() => history.push(`/${username}`)}>
-            Profile
-          </DropdownItem>
-          <DropdownItem onClick={() => history.push(`/settings`)}>
-            Settings
-          </DropdownItem>
-          <DropdownItem onClick={logout}>Logout</DropdownItem>
+          <DropdownSection>
+            <DropdownItem noHover>
+              Signed in as <b>{username}</b>
+            </DropdownItem>
+          </DropdownSection>
+          <DropdownSection>
+            <DropdownItem onClick={() => history.push(`/settings`)}>
+              <Icon type="settings" />{' '}
+              <TextSpan p={1} verticalAlign="middle">
+                Settings
+              </TextSpan>
+            </DropdownItem>
+          </DropdownSection>
+          <DropdownSection>
+            <DropdownItem
+              onClick={() =>
+                window.open('https://docs.illumidesk.com', '_blank')
+              }
+            >
+              Help Center
+            </DropdownItem>
+            <DropdownItem
+              onClick={() =>
+                window.open('https://status.illumidesk.com', '_blank')
+              }
+            >
+              Status Page
+            </DropdownItem>
+            <DropdownItem
+              onClick={() =>
+                window.open('https://www.illumidesk.com/terms', '_blank')
+              }
+            >
+              Terms
+            </DropdownItem>
+            <DropdownItem
+              onClick={() =>
+                window.open('https://www.illumidesk.com/privacy', '_blank')
+              }
+            >
+              Privacy Policy
+            </DropdownItem>
+          </DropdownSection>
+          <DropdownSection>
+            <DropdownItem onClick={logout}>Logout</DropdownItem>
+          </DropdownSection>
         </Dropdown>
       </DropdownWrapper>
     )

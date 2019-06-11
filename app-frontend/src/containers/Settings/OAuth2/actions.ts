@@ -1,5 +1,6 @@
 import OAuth2API from './api'
 import { Dispatch } from 'redux'
+import { reset } from 'redux-form'
 
 export const GET_APPS_REQUEST = 'GET_APPS_REQUEST'
 export type GET_APPS_REQUEST = typeof GET_APPS_REQUEST
@@ -96,6 +97,7 @@ export const createApp = (username: string, appName: string) => (
   dispatch(request())
   return OAuth2API.createApp(username, appName).then(
     data => {
+      dispatch(reset('newApp'))
       dispatch(success(data))
     },
     error => {

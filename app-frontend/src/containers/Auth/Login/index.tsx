@@ -39,14 +39,14 @@ const Login = (props: LoginProps) => {
         By using our platform, you agree to our {` `}
         <a
           style={{ textDecoration: 'none', color: theme.colors.link }}
-          href="https://www.illumidesk.com/terms-and-conditions/"
+          href="https://www.illumidesk.com/terms"
         >
           Terms & Conditions
         </a>
         {` `} and {` `}
         <a
           style={{ textDecoration: 'none', color: theme.colors.link }}
-          href="https://www.illumidesk.com/privacy-policy/"
+          href="https://www.illumidesk.com/privacy"
         >
           {' '}
           Privacy Policy
