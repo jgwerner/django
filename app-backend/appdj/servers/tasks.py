@@ -1,15 +1,16 @@
 import logging
 import time
-from pathlib import Path
 
 import boto3
 from django.contrib.auth import get_user_model
 
 from celery import shared_task
 
+from appdj.canvas.models import CanvasInstance
+from appdj.oauth2.models import Application
 from appdj.projects.models import Project, Collaborator
 from appdj.projects.utils import perform_project_copy
-from appdj.projects.assignment import Assignment, create_canvas_assignment
+from appdj.assignments.models import Assignment
 from .models import Server, ServerRunStatistics
 from .spawners import get_spawner_class
 from .utils import create_server, server_action, email_to_username
@@ -122,43 +123,28 @@ def lti(project_pk, data, path):
 
 
 def setup_assignment(workspace, data, path):
-    if 'assignments' not in workspace.config:
-        workspace.config['assignments'] = []
-    assignment_id = data['custom_canvas_assignment_id']
-    index, assignment = next(((i, a) for i, a in enumerate(workspace.config['assignments'])
-                              if a['aid'] == assignment_id), (-1, None))
-    assignment = create_canvas_assignment(data, path)
-    if index < 0:
-        workspace.config['assignments'].append(assignment.to_dict())
-        if not assignment.is_assigned(workspace.project):
-            teacher_project = Project.objects.get(pk=workspace.project.config['copied_from'])
-            assignment.assign(teacher_project, workspace.project)
-    else:
-        workspace.config['assignments'][index] = assignment.to_dict()
-    workspace.save()
-    return assignment_id
-
-
-def copy_assignment_file(source: Path, target: Path):
-    """
-    :param source: Students assignment path
-    :param target: Teachers assignment path
-    """
-    if not source.exists():
-        raise FileNotFoundError(f"[Assignment Copy] Source file {source} does not exists.")
-    if not target.exists():
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.touch()
-    target.write_bytes(source.read_bytes())
+    assignment = Assignment.objects.filter(external_id=data['custom_canvas_assignment_id'], project=workspace.project).first()
+    if assignment is None:
+        teacher_project = Project.objects.get(pk=workspace.project.config['copied_from'])
+        Assignment.objects.create(
+            external_id=data['custom_canvas_assignment_id'],
+            path=str(workspace.project.resource_root() / path),
+            course_id=data['custom_canvas_course_id'],
+            outcome_url=data['lis_outcome_service_url'],
+            source_did=data['lis_result_sourcedid'],
+            student_project=workspace.project,
+            teacher_project=teacher_project,
+            oauth_app=Application.objects.get(client_id=data['oauth_consumer_key']),
+            lms_instance=CanvasInstance.objects.get(instance_guid=data['tool_consumer_instance_guid'])
+        )
+        assignment.assign()
+    return assignment.pk
 
 
 @shared_task()
 def send_assignment(workspace_pk, assignment_id):
-    learner_workspace = Server.objects.get(is_active=True, pk=workspace_pk)
-    teacher_project = Project.objects.get(pk=learner_workspace.project.config['copied_from'])
-    assignment_dict = next((a for a in learner_workspace.config.get('assignments', []) if a['aid'] == assignment_id))
-    assignmet = Assignment(**assignment_dict)
-    assignmet.submit(teacher_project, learner_workspace.project)
+    assignment = Assignment.objects.get(pk=assignment_id)
+    assignment.send()
 
 
 @shared_task()
