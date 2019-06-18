@@ -1,7 +1,6 @@
 import time
 import logging
 import json
-from pathlib import Path
 import requests
 
 from asgiref.sync import async_to_sync
@@ -251,7 +250,7 @@ class SNSView(views.APIView):
             status = detail['lastStatus'].title()
             channel_layer = get_channel_layer()
             if status == models.Server.RUNNING:
-                time.sleep(3) # traefik ecs pool period
+                time.sleep(3)  # traefik ecs pool period
             async_to_sync(channel_layer.group_send)(
                 f"statuses_{server_id}",
                 {'type': 'status_update', 'status': status}

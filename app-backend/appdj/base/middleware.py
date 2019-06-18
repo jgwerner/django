@@ -1,7 +1,7 @@
 from .namespace import Namespace
 
 
-class NamespaceMiddleware(object):
+class NamespaceMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
 
@@ -13,4 +13,3 @@ class NamespaceMiddleware(object):
     def process_view(request, view_func, view_args, view_kwargs):
         name = view_kwargs.pop('namespace', None)
         request.namespace = Namespace.from_name(name)
-        return

@@ -6,7 +6,7 @@ set -e
 run_linter () {
   echo "Running Pylint with Django plugin ..."
   docker-compose \
-    -f ./app-backend/$DOCKER_COMPOSE_DEV \
+    -f ./app-backend/$DOCKER_COMPOSE_TEST \
     run \
     api ash -c "/srv/env/bin/pylint \
       --load-plugins pylint_django \
