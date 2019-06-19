@@ -1,4 +1,3 @@
-import uuid
 import factory
 from oauth2_provider.models import Application
 
@@ -20,5 +19,5 @@ class CanvasInstanceFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = CanvasInstance
 
-    instance_guid = str(uuid.uuid4())
+    instance_guid = factory.Faker('uuid4')
     name = factory.Sequence(lambda n: f'instance_{n}')

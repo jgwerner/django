@@ -80,6 +80,7 @@ INSTALLED_APPS = [
     'appdj.jwt_auth.apps.JwtAuthConfig',
     'appdj.teams.apps.TeamsConfig',
     'appdj.canvas.apps.CanvasConfig',
+    'appdj.assignments.apps.AssignmentsConfig',
 ]
 
 MIDDLEWARE = [
