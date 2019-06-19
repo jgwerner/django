@@ -111,7 +111,7 @@ class Assignment(models.Model):
             (student_project.owner.username,)
         )
         grade = int(float(c.fetchone()[0]))
-        logger.info("Student %s grade %s", self.student_project.owner, grade)
+        logger.info("Student %s grade %s", student_project.owner, grade)
         return grade
 
     def copy_submitted_file(self, student_project):
@@ -128,10 +128,14 @@ class Assignment(models.Model):
         """
         Send assiignment to canvas
         """
+        self.copy_submitted_file(student_project)
         self.autograde()
         grade = self.get_grade(student_project)
         teacher_workspace = self.teacher_project.servers.get(is_active=True, config__type='jupyter')
-        oauth_session = OAuth1Session(self.oauth_app.client_id, client_secret=self.oauth_app.client_secret)
+        oauth_session = OAuth1Session(
+            self.oauth_app.application.client_id,
+            client_secret=self.oauth_app.application.client_secret
+        )
         scheme = 'https' if settings.HTTPS else 'http'
         namespace = self.teacher_project.namespace_name
         url_path = reverse('lti-file', kwargs={
