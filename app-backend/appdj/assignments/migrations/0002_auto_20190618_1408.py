@@ -13,16 +13,17 @@ def create_assignments(apps, schema_editor):
     for server in Server.objects.all():
         resource_root = Path(settings.RESOURCE_DIR, str(server.project.pk))
         for assignment in server.config.get('assignments', []):
-            a, _ = Assignment.objects.get_or_create(
-                external_id=assignment['aid'] if 'aid' in assignment else assignment['id'],
-                path=str(resource_root / assignment['path']),
-                outcome_url=assignment['outcome_url'],
-                source_did=assignment.get('source_did', ''),
-                teacher_project=Project.objects.get(pk=server.project.config['copied_from']),
-                lms_instance=CanvasInstance.objects.get(instance_guid=assignment['instance_guid'])
-            )
-            a.students_projects.add(server.project)
-            a.save()
+            if 'copied_from' in server.project.config and Project.objects.filter(pk=server.project.config['copied_from']).exists():
+                a, _ = Assignment.objects.get_or_create(
+                    external_id=assignment['aid'] if 'aid' in assignment else assignment['id'],
+                    path=str(resource_root / assignment['path']),
+                    outcome_url=assignment['outcome_url'],
+                    source_did=assignment.get('source_did', ''),
+                    teacher_project=Project.objects.get(pk=server.project.config['copied_from']),
+                    lms_instance=CanvasInstance.objects.get(instance_guid=assignment['instance_guid'])
+                )
+                a.students_projects.add(server.project)
+                a.save()
 
 
 def revert(apps, schema_editor):

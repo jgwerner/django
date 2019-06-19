@@ -4,6 +4,7 @@ import time
 import boto3
 from django.contrib.auth import get_user_model
 
+from oauth2_provider.models import Application as ProviderApp
 from celery import shared_task
 
 from appdj.canvas.models import CanvasInstance
@@ -126,6 +127,8 @@ def setup_assignment(workspace, data, path):
     assignment = Assignment.objects.filter(external_id=data['custom_canvas_assignment_id'], students_projects=workspace.project).first()
     if assignment is None:
         teacher_project = Project.objects.get(pk=workspace.project.config['copied_from'])
+        provider_app = ProviderApp.objects.get(client_id=data['oauth_consumer_key'])
+        oauth_app, _ = Application.objects.get_or_create(application=provider_app)
         assignment = Assignment.objects.create(
             external_id=data['custom_canvas_assignment_id'],
             path=str(teacher_project.resource_root() / path),
@@ -133,10 +136,11 @@ def setup_assignment(workspace, data, path):
             outcome_url=data['lis_outcome_service_url'],
             source_did=data['lis_result_sourcedid'],
             teacher_project=teacher_project,
-            oauth_app=Application.objects.get(application__client_id=data['oauth_consumer_key']),
+            oauth_app=oauth_app,
             lms_instance=CanvasInstance.objects.get(instance_guid=data['tool_consumer_instance_guid'])
         )
-    assignment.assign(workspace.project)
+    if not assignment.is_assigned(workspace.project):
+        assignment.assign(workspace.project)
     return assignment.external_id
 
 
