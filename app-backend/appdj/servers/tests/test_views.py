@@ -14,7 +14,7 @@ from rest_framework.test import APITestCase
 from appdj.canvas.tests.factories import CanvasInstanceFactory
 from appdj.jwt_auth.utils import create_auth_jwt
 from appdj.projects.tests.factories import CollaboratorFactory, ProjectFactory
-from appdj.projects.assignment import Assignment
+from appdj.assignments.tests.factories import AssignmentFactory
 from appdj.users.tests.factories import UserFactory
 from ..models import Server, ServerRunStatistics
 from .factories import (
@@ -297,15 +297,15 @@ class ServerTest(APITestCase):
         teacher_assignment_path = teacher_server.project.resource_root() / 'release' / assignment_path
         teacher_assignment_path.parent.mkdir(parents=True, exist_ok=True)
         teacher_assignment_path.write_bytes(b'123')
-        assignment = Assignment(assignment_path)
-        assignment.assign(teacher_server.project, learner_server.project)
+        assignment = AssignmentFactory(path=str(teacher_assignment_path), teacher_project=self.project)
+        assignment.assign(learner_col.project)
         learner_file = learner_server.project.resource_root() / assignment_path
         learner_file.write_bytes(b'456')
         kwargs = {
             'namespace': learner_col.user.username,
             'project_project': str(learner_server.project.pk),
             'server': (learner_server.pk),
-            'assignment_id': '123',
+            'assignment_id': assignment.external_id,
             **self.url_kwargs
         }
         url = reverse('reset-assignment', kwargs=kwargs)

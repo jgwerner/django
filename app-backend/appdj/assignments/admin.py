@@ -5,5 +5,5 @@ from .models import Assignment
 
 @admin.register(Assignment)
 class AssignmentAdmin(admin.ModelAdmin):
-    list_display = ('external_id', 'student_project', 'teacher_project', 'lms_instance')
-    list_filter = ('student_project', 'teacher_project', 'lms_instance')
+    list_display = ('external_id', 'teacher_project', 'lms_instance')
+    list_filter = ('teacher_project', 'lms_instance')

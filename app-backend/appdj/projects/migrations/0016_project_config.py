@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 import django.contrib.postgres.fields.jsonb
 from django.db import migrations
+from django.contrib.postgres.operations import BtreeGinExtension
 
 
 class Migration(migrations.Migration):
@@ -13,6 +14,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        BtreeGinExtension(),
         migrations.AddField(
             model_name='project',
             name='config',

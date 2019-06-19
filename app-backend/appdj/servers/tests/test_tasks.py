@@ -6,6 +6,11 @@ from botocore.stub import Stubber
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 
+from oauth2_provider.models import Application as App
+from oauth2_provider.generators import generate_client_id, generate_client_secret
+
+from appdj.canvas.tests.factories import CanvasInstanceFactory
+from appdj.oauth2.models import Application
 from appdj.projects.utils import perform_project_copy
 from appdj.projects.tests.factories import CollaboratorFactory, ProjectFactory
 from appdj.teams.tests.factories import TeamFactory, GroupFactory
@@ -96,6 +101,16 @@ class LTITest(TestCase):
         self.assertEqual(workspace_id, str(workspace.pk))
 
     def test_assignment(self):
+        app = Application.objects.create(
+            application=App.objects.create(
+                client_id=generate_client_id(),
+                client_secret=generate_client_secret(),
+                name='test',
+                client_type=App.CLIENT_CONFIDENTIAL,
+                authorization_grant_type=App.GRANT_CLIENT_CREDENTIALS
+            )
+        )
+        canvas_instance = CanvasInstanceFactory()
         canvas_user_id = str(uuid.uuid4())
         data = {
             'user_id': canvas_user_id,
@@ -103,7 +118,9 @@ class LTITest(TestCase):
             'custom_canvas_assignment_id': '123',
             'custom_canvas_course_id': '123',
             'lis_outcome_service_url': '',
-            'tool_consumer_instance_guid': '123'
+            'tool_consumer_instance_guid': canvas_instance.instance_guid,
+            'lis_result_sourcedid': '123',
+            'oauth_consumer_key': app.application.client_id,
         }
         assignment_path = 'ps1/Untitled.ipynb'
         teachers_path = self.project.resource_root() / 'release' / assignment_path

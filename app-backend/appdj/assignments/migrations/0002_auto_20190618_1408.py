@@ -13,37 +13,40 @@ def create_assignments(apps, schema_editor):
     for server in Server.objects.all():
         resource_root = Path(settings.RESOURCE_DIR, str(server.project.pk))
         for assignment in server.config.get('assignments', []):
-            Assignment.objects.create(
+            a, _ = Assignment.objects.get_or_create(
                 external_id=assignment['aid'] if 'aid' in assignment else assignment['id'],
                 path=str(resource_root / assignment['path']),
                 outcome_url=assignment['outcome_url'],
                 source_did=assignment.get('source_did', ''),
-                student_project=server.project,
                 teacher_project=Project.objects.get(pk=server.project.config['copied_from']),
                 lms_instance=CanvasInstance.objects.get(instance_guid=assignment['instance_guid'])
             )
+            a.students_projects.add(server.project)
+            a.save()
 
 
 def revert(apps, schema_editor):
     Assignment = apps.get_model('assignments', 'Assignment')
     for assignment in Assignment.objects.all():
-        server = assignment.student_project.servers.first()
-        assignments = server.config.get('assignments', [])
-        assignments.append({
-            'aid': assignment.external_id,
-            'path': Path(assignment.path).relative_to(assignment.student_project.resource_root()),
-            'outcome_url': assignment.outcome_url,
-            'source_did': assignment.source_did,
-            'instance_guid': assignment.instance_guid,
-        })
-        server.config['assignments'] = assignments
-        server.save()
+        for student_project in assignment.students_projects.all():
+            server = student_project.servers.first()
+            assignments = server.config.get('assignments', [])
+            assignments.append({
+                'aid': assignment.external_id,
+                'path': Path(assignment.path).relative_to(student_project.resource_root()),
+                'outcome_url': assignment.outcome_url,
+                'source_did': assignment.source_did,
+                'instance_guid': assignment.instance_guid,
+            })
+            server.config['assignments'] = assignments
+            server.save()
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
         ('assignments', '0001_initial'),
+        ('servers', '0001_initial'),
     ]
 
     operations = [

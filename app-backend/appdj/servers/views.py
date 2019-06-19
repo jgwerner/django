@@ -1,7 +1,6 @@
 import time
 import logging
 import json
-from pathlib import Path
 import requests
 
 from asgiref.sync import async_to_sync
@@ -39,7 +38,7 @@ from appdj.canvas.authorization import CanvasAuth
 from appdj.canvas.models import CanvasInstance
 from appdj.projects.permissions import ProjectChildPermission
 from appdj.projects.models import Project, Collaborator
-from appdj.projects.assignment import Assignment
+from appdj.assignments.models import Assignment
 from appdj.jwt_auth.views import JWTApiView
 from appdj.jwt_auth.serializers import VerifyJSONWebTokenServerSerializer
 from appdj.jwt_auth.utils import create_server_jwt, create_auth_jwt
@@ -342,12 +341,10 @@ def submit_assignment(request, *args, **kwargs):
 def reset_assignment_file(request, *args, **kwargs):
     workspace = get_object_or_404(models.Server, kwargs.get('server'))
     assignment_id = kwargs.get('assignment_id')
-    if assignment_id is None:
+    assignment = get_object_or_404(Assignment, assignment_id)
+    if assignment is None:
         return Response({'message': 'No assignment id'}, status=status.HTTP_400_BAD_REQUEST)
-    teacher_project = Project.objects.get(pk=workspace.project.config['copied_from'])
-    assignment = next((a for a in workspace.config.get('assignments', []) if a['id'] == assignment_id))
-    assignment = Assignment(assignment['path'])
-    assignment.assign(teacher_project, workspace.project)
+    assignment.assign(workspace.project)
     return Response({'message': 'OK'})
 
 

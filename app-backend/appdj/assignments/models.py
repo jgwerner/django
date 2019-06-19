@@ -11,12 +11,15 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from requests_oauthlib import OAuth1Session
 
+from appdj.base.models import TBSQuerySet
 from appdj.servers.spawners import get_spawner_class
 
 logger = logging.getLogger(__name__)
 
 
 class Assignment(models.Model):
+    NATURAL_KEY = 'external_id'
+
     external_id = models.TextField()
     path = models.FilePathField(path=settings.RESOURCE_DIR)
     course_id = models.TextField()
@@ -27,15 +30,14 @@ class Assignment(models.Model):
         related_name='assignments',
         on_delete=models.CASCADE
     )
-    student_project = models.ForeignKey(
-        'projects.Project',
-        related_name='student_assignments',
-        on_delete=models.CASCADE
-    )
     teacher_project = models.ForeignKey(
         'projects.Project',
         related_name='teacher_assignments',
         on_delete=models.CASCADE
+    )
+    students_projects = models.ManyToManyField(
+        'projects.Project',
+        related_name='student_assignments'
     )
     oauth_app = models.ForeignKey(
         'oauth2.Application',
@@ -43,42 +45,41 @@ class Assignment(models.Model):
         on_delete=models.SET_NULL, null=True
     )
 
-    def assign(self):
+    objects = TBSQuerySet.as_manager()
+
+    @property
+    def relative_path(self):
+        return Path(self.path).relative_to(Path(settings.RESOURCE_DIR, str(self.teacher_project.pk), 'release'))
+
+    def assign(self, student_project):
         """
         Copy assignment from teacher to student
         """
-        source = self.teachers_path().parent
-        destination = self.students_path().parent
+        source = Path(self.path).parent
+        destination = self.students_path(student_project).parent
         if destination.exists():
             shutil.rmtree(destination)
         logger.info("Copy assignment file from teachers path %s to students path %s", source, destination)
         shutil.copytree(source, destination)
 
-    def teachers_path(self):
-        """
-        Describes where assignment file resides in teachers project
-        We're using here nbgrader directory structure.
-        """
-        return self.teacher_project.resource_root() / 'release' / self.path
-
-    def students_path(self):
+    def students_path(self, student_project):
         """
         Where student will find assignment file
         """
-        return self.student_project.resource_root() / self.path
+        return student_project.resource_root() / self.relative_path
 
-    def is_assigned(self):
+    def is_assigned(self, student_project):
         """
         States if assignment file was copied to student directory
         """
-        return self.students_path().exists()
+        return self.students_path(student_project).exists()
 
-    def submission_path(self):
+    def submission_path(self, student_project):
         """
         Where assignment file should be submitted
         """
-        student_username = self.student_project.owner.username
-        return self.teacher_project.resource_root() / 'submitted' / student_username / self.path
+        student_username = student_project.owner.username
+        return self.teacher_project.resource_root() / 'submitted' / student_username / self.relative_path
 
     def autograde(self):
         """
@@ -87,10 +88,10 @@ class Assignment(models.Model):
         Spawner = get_spawner_class()
         workspace = self.teacher_project.servers.first()
         spawner = Spawner(workspace)
-        assignment_id = Path(self.path).parent
+        assignment_id = Path(self.relative_path).parent
         spawner.autograde(assignment_id)
 
-    def get_grade(self):
+    def get_grade(self, student_project):
         """
         Retrieve grade from nbgrader gradebook.db file
         """
@@ -107,28 +108,28 @@ class Assignment(models.Model):
                     ON submitted_notebook.assignment_id = submitted_assignment.id
                 WHERE submitted_assignment.student_id = ?
             """,
-            (self.student_project.owner.username,)
+            (student_project.owner.username,)
         )
         grade = int(float(c.fetchone()[0]))
         logger.info("Student %s grade %s", self.student_project.owner, grade)
         return grade
 
-    def copy_submitted_file(self):
+    def copy_submitted_file(self, student_project):
         """
         Copy student assignment file to teacher submitted directory
         """
-        source = self.students_path()
-        destination = self.submission_path()
+        source = self.students_path(student_project)
+        destination = self.submission_path(student_project)
         destination.parent.mkdir(parents=True, exist_ok=True)
         logger.info("Submit assignment file from %s to %s", source, destination)
         shutil.copy(source, destination)
 
-    def send(self):
+    def send(self, student_project):
         """
         Send assiignment to canvas
         """
         self.autograde()
-        grade = self.get_grade()
+        grade = self.get_grade(student_project)
         teacher_workspace = self.teacher_project.servers.get(is_active=True, config__type='jupyter')
         oauth_session = OAuth1Session(self.oauth_app.client_id, client_secret=self.oauth_app.client_secret)
         scheme = 'https' if settings.HTTPS else 'http'
@@ -138,7 +139,7 @@ class Assignment(models.Model):
             'namespace': namespace,
             'project_project': str(self.teacher_project.pk),
             'server': str(teacher_workspace.pk),
-            'path': self.submission_path()
+            'path': self.submission_path(student_project)
         })
         domain = Site.objects.get_current().domain
         url = f"{scheme}://{domain}{url_path}"

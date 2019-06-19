@@ -123,28 +123,28 @@ def lti(project_pk, data, path):
 
 
 def setup_assignment(workspace, data, path):
-    assignment = Assignment.objects.filter(external_id=data['custom_canvas_assignment_id'], project=workspace.project).first()
+    assignment = Assignment.objects.filter(external_id=data['custom_canvas_assignment_id'], students_projects=workspace.project).first()
     if assignment is None:
         teacher_project = Project.objects.get(pk=workspace.project.config['copied_from'])
-        Assignment.objects.create(
+        assignment = Assignment.objects.create(
             external_id=data['custom_canvas_assignment_id'],
-            path=str(workspace.project.resource_root() / path),
+            path=str(teacher_project.resource_root() / path),
             course_id=data['custom_canvas_course_id'],
             outcome_url=data['lis_outcome_service_url'],
             source_did=data['lis_result_sourcedid'],
-            student_project=workspace.project,
             teacher_project=teacher_project,
-            oauth_app=Application.objects.get(client_id=data['oauth_consumer_key']),
+            oauth_app=Application.objects.get(application__client_id=data['oauth_consumer_key']),
             lms_instance=CanvasInstance.objects.get(instance_guid=data['tool_consumer_instance_guid'])
         )
-        assignment.assign()
-    return assignment.pk
+    assignment.assign(workspace.project)
+    return assignment.external_id
 
 
 @shared_task()
 def send_assignment(workspace_pk, assignment_id):
-    assignment = Assignment.objects.get(pk=assignment_id)
-    assignment.send()
+    workspace = Server.objects.get(pk=workspace_pk)
+    assignment = Assignment.objects.get(external_id=assignment_id)
+    assignment.send(workspace.project)
 
 
 @shared_task()
