@@ -244,7 +244,7 @@ class SNSView(views.APIView):
     def handle_notification(self, payload):
         message = json.loads(payload)
         detail = json.loads(message['Message'])['detail']
-        server_id = detail['overrides']['containerOverrides'][0]['name']
+        server_id = detail['overrides']['containerOverrides'][0]['name'].split('_')[0]
         server = models.Server.objects.filter(is_active=True, pk=server_id).first()
         if server is not None:
             status = detail['lastStatus'].title()

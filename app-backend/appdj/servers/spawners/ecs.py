@@ -67,21 +67,19 @@ class ECSSpawner(BaseSpawner):
             return self.server.ERROR
 
     def autograde(self, assignment_id):
+        task_definition_args = self._task_definition_args
+        task_definition_args['containerDefinitions'][0].update({
+            'command': ['nbgrader', 'db', 'assignment', 'add', str(assignment_id)],
+            'name': f'{self.server.container_name}_autograde',
+            'cpu': 64,
+            'memory': 128,
+            'memoryReservation': 128,
+        })
+        resp = self.client.register_task_definition(**task_definition_args)
         assignment_id = str(assignment_id)
         run_task_args = dict(
             cluster=self.server.cluster,
-            taskDefinition=self.server.config['task_definition_arn'],
-            overrides={
-                'containerOverrides': [
-                    {
-                        'command': ['nbgrader', 'db', 'assignment', 'add', assignment_id],
-                        'name': self.server.container_name,
-                        'cpu': 64,
-                        'memory': 128
-                    }
-
-                ]
-            }
+            taskDefinition=resp['taskDefinition']['taskDefinitionArn']
         )
         resp = self.client.run_task(**run_task_args)
         if resp['tasks']:
@@ -90,8 +88,14 @@ class ECSSpawner(BaseSpawner):
                 cluster=self.server.cluster,
                 tasks=[resp['tasks'][0]['taskArn']],
             )
-            run_task_args['overrides']['containerOverrides'][0]['command'] = \
-                ['nbgrader', 'autograde', assignment_id, '--create']
+            run_task_args['overrides'] = {
+                'containerOverrides': [
+                    {
+                        'command': ['nbgrader', 'autograde', str(assignment_id), '--create'],
+                        'name': f'{self.server.container_name}_autograde',
+                    }
+                ]
+            }
             resp = self.client.run_task(**run_task_args)
             if resp['tasks']:
                 waiter.wait(
