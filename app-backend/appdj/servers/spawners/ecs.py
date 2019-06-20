@@ -1,7 +1,8 @@
 import os
-import boto3
 import logging
 from typing import List, Dict, Tuple
+import boto3
+from botocore.exceptions import ClientError
 from django.conf import settings
 from django.utils.functional import cached_property
 
@@ -28,11 +29,11 @@ class ECSSpawner(BaseSpawner):
             cluster=self.server.cluster,
             taskDefinition=self.server.config['task_definition_arn'],
         )
-        if len(resp['tasks']) > 0:
+        if resp['tasks']:
             self.server.config['task_arn'] = resp['tasks'][0]['taskArn']
             if 'error' in self.server.config:
                 del self.server.config['error']
-        elif len(resp['failures']) > 0:
+        elif resp['failures']:
             self.server.config['error'] = resp['failures'][0]['reason']
         self.server.save()
 
@@ -56,7 +57,7 @@ class ECSSpawner(BaseSpawner):
             return self.server.STOPPED
         try:
             resp = self.client.describe_tasks(tasks=[self.server.config['task_arn']], cluster=self.server.cluster)
-        except Exception as e:
+        except ClientError:
             logger.exception("Error getting server status")
             return self.server.ERROR
         try:
@@ -67,26 +68,36 @@ class ECSSpawner(BaseSpawner):
 
     def autograde(self, assignment_id):
         assignment_id = str(assignment_id)
-        resp = self.client.run_task(
+        run_task_args = dict(
             cluster=self.server.cluster,
             taskDefinition=self.server.config['task_definition_arn'],
             overrides={
                 'containerOverrides': [
                     {
-                        'command': ['nbgrader', 'autograde', assignment_id, '--create'],
-                        'name': self.server.container_name
+                        'command': ['nbgrader', 'db', 'assignment', 'add', assignment_id],
+                        'name': self.server.container_name,
+                        'cpu': 64,
+                        'memory': 128
                     }
 
                 ]
             }
         )
-        if len(resp['tasks']) > 0:
+        resp = self.client.run_task(**run_task_args)
+        if resp['tasks']:
             waiter = self.client.get_waiter('tasks_stopped')
             waiter.wait(
                 cluster=self.server.cluster,
                 tasks=[resp['tasks'][0]['taskArn']],
             )
-
+            run_task_args['overrides']['containerOverrides'][0]['command'] = \
+                ['nbgrader', 'autograde', assignment_id, '--create']
+            resp = self.client.run_task(**run_task_args)
+            if resp['tasks']:
+                waiter.wait(
+                    cluster=self.server.cluster,
+                    tasks=[resp['tasks'][0]['taskArn']],
+                )
 
     def _register_task_definition(self) -> str:
         resp = self.client.register_task_definition(**self._task_definition_args)
@@ -130,7 +141,8 @@ class ECSSpawner(BaseSpawner):
     def _get_links(self) -> List[str]:
         return [f'{name}:{alias}' for name, alias in super()._get_links().items()]
 
-    def _get_constrains(self) -> List[str]:
+    @staticmethod
+    def _get_constrains() -> List[str]:
         return []
 
     def _get_devices(self) -> List[Dict[str, str]]:

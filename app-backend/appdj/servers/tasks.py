@@ -124,9 +124,10 @@ def lti(project_pk, data, path):
 
 
 def setup_assignment(workspace, data, path):
-    assignment = Assignment.objects.filter(external_id=data['custom_canvas_assignment_id'], students_projects=workspace.project).first()
-    if assignment is None:
-        teacher_project = Project.objects.get(pk=workspace.project.config['copied_from'])
+    teacher_project = Project.objects.get(pk=workspace.project.config['copied_from'])
+    try:
+        assignment = Assignment.objects.get(external_id=data['custom_canvas_assignment_id'], teacher_project=teacher_project)
+    except Assignment.DoesNotExist:
         provider_app = ProviderApp.objects.get(client_id=data['oauth_consumer_key'])
         oauth_app, _ = Application.objects.get_or_create(application=provider_app)
         assignment = Assignment.objects.create(
