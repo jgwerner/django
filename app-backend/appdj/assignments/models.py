@@ -143,7 +143,7 @@ class Assignment(models.Model):
             'namespace': namespace,
             'project_project': str(self.teacher_project.pk),
             'server': str(teacher_workspace.pk),
-            'path': self.submission_path(student_project)
+            'path': self.submission_path(student_project).relative_to(self.teacher_project.resource_root())
         })
         domain = Site.objects.get_current().domain
         url = f"{scheme}://{domain}{url_path}"
