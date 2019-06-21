@@ -28,6 +28,8 @@ USER root
 
 COPY jupyter_notebook_config.py /etc/jupyter/
 COPY env_test.ipynb $HOME/
+RUN mkdir -p /srv/nbgrader/exchange
+RUN fix-permissions /srv/nbgrader/exchange/
 RUN fix-permissions /etc/jupyter/
 RUN fix-permissions $HOME/env_test.ipynb
 
