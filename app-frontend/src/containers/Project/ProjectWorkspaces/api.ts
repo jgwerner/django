@@ -13,7 +13,9 @@ class WorkspacesAPI {
     return axios
       .get(URL, { headers })
       .then(response => response.data)
-      .catch(error => error)
+      .catch(error => {
+        throw error
+      })
   }
 
   getWorkspaces = (username: string, projectID: string) => {
@@ -43,7 +45,9 @@ class WorkspacesAPI {
     return axios
       .post(URL, '', { headers })
       .then(response => response.data)
-      .catch(error => error)
+      .catch(error => {
+        throw error
+      })
   }
 
   stopServer = (username: string, projectID: string, workspaceID: string) => {
@@ -57,7 +61,9 @@ class WorkspacesAPI {
     return axios
       .post(URL, '', { headers })
       .then(response => response.data)
-      .catch(error => error)
+      .catch(error => {
+        throw error
+      })
   }
 
   deleteServer = (username: string, projectID: string, workspaceID: string) => {
@@ -71,7 +77,9 @@ class WorkspacesAPI {
     return axios
       .delete(URL, { headers })
       .then(response => response.data)
-      .catch(error => error)
+      .catch(error => {
+        throw error
+      })
   }
 }
 

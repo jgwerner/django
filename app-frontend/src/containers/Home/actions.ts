@@ -1,4 +1,4 @@
-import history from '../../utils/history'
+import history from 'utils/history'
 import HomeAPI from './api'
 import { Dispatch } from 'redux'
 
@@ -48,15 +48,21 @@ export const getUserInfo = () => (dispatch: Dispatch<HomeActions>) => {
       dispatch(success(data))
     },
     error => {
-      dispatch(failure(error))
+      dispatch(failure(error.response))
     }
   )
 }
 
-export const logout = () => (dispatch: Dispatch<LogoutAction>) => {
-  dispatch({
-    type: LOGOUT
-  })
+// export const logout = () => (dispatch: Dispatch<LogoutAction>) => {
+//   dispatch({
+//     type: LOGOUT
+//   })
+//   localStorage.clear()
+//   history.push('/auth')
+// }
+
+export const logout = () => {
   localStorage.clear()
   history.push('/auth')
+  return { type: LOGOUT }
 }

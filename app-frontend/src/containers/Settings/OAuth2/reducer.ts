@@ -7,9 +7,9 @@ import {
   NEW_APP_FAILURE,
   DELETE_APP_REQUEST,
   DELETE_APP_SUCCESS,
-  DELETE_APP_FAILURE,
-  OAuth2Actions
+  DELETE_APP_FAILURE
 } from './actions'
+import { AnyAction } from 'redux'
 
 export interface OAuth2StoreState {
   apps: any
@@ -18,14 +18,14 @@ export interface OAuth2StoreState {
   appDeleted: boolean
 }
 
-const initialState = {
+export const initialState = {
   apps: [],
   appsFetched: false,
   newApp: false,
   appDeleted: false
 }
 
-const oauth2 = (state = initialState, action: OAuth2Actions) => {
+const oauth2 = (state = initialState, action: AnyAction) => {
   switch (action.type) {
     case GET_APPS_REQUEST:
       return {

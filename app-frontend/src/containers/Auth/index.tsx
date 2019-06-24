@@ -49,6 +49,7 @@ const Auth = (props: AuthProps) => {
   const displayError = () =>
     loginError ? (
       <Container>
+        {console.log('error in render', errorMessage)}
         <Banner
           danger
           message={errorMessage}

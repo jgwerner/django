@@ -53,7 +53,7 @@ export const getProjectList = (username: string) => (
       dispatch(success(data))
     },
     error => {
-      dispatch(failure(error))
+      dispatch(failure(error.response))
     }
   )
 }

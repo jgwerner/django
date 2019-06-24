@@ -12,12 +12,12 @@ export interface DetailsStoreState {
   projectFetched: boolean
 }
 
-const initialState = {
+export const initialState = {
   projectDetails: {},
   projectFetched: false
 }
 
-const details = (state = initialState, action: AnyAction) => {
+export const details = (state = initialState, action: AnyAction) => {
   switch (action.type) {
     case PROJECT_DETAILS_REQUEST:
       return {

@@ -15,11 +15,11 @@ export interface PasswordStoreState {
   confirmPasswordErrorMsg: any
 }
 
-const initialState = {
+export const initialState = {
   resetPasswordRequest: false,
   confirmPasswordRequest: false,
   confirmPasswordSuccess: false,
-  confirmPasswordErrorMsg: {}
+  confirmPasswordErrorMsg: ''
 }
 
 const password = (state = initialState, action: AnyAction) => {

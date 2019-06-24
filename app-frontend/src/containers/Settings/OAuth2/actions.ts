@@ -69,7 +69,7 @@ export const getApps = (username: string) => (
       dispatch(success(data))
     },
     error => {
-      dispatch(failure(error))
+      dispatch(failure(error.response))
     }
   )
 }
@@ -101,7 +101,7 @@ export const createApp = (username: string, appName: string) => (
       dispatch(success(data))
     },
     error => {
-      dispatch(failure(error))
+      dispatch(failure(error.response))
     }
   )
 }
@@ -132,7 +132,7 @@ export const deleteApp = (username: string, appID: string) => (
       dispatch(success(data))
     },
     error => {
-      dispatch(failure(error))
+      dispatch(failure(error.response))
     }
   )
 }

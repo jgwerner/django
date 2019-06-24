@@ -51,7 +51,7 @@ export const addProject = (username: string, values: any) => (
       history.push('/')
     },
     error => {
-      dispatch(failure(error))
+      dispatch(failure(error.response))
     }
   )
 }

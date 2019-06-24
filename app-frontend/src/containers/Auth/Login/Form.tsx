@@ -7,8 +7,8 @@ import {
   FormInput,
   FormError,
   FormButton
-} from '../../../components/Form'
-import { StoreState } from '../../../utils/store'
+} from 'components/Form'
+import { StoreState } from 'utils/store'
 
 interface RenderFieldProps {
   input?: string
@@ -26,7 +26,7 @@ interface LoginFormProps extends InjectedFormProps {
 const required = (value: string) =>
   value || typeof value === 'string' ? undefined : 'Required'
 
-const renderField = ({
+export const renderField = ({
   input,
   label,
   type,

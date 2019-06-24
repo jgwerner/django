@@ -49,4 +49,6 @@ const Content = (props: ContentProps) => (
   </ContentWrapper>
 )
 
+ContentTop.displayName = 'ContentTop'
+
 export default Content

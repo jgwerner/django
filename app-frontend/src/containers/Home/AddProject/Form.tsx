@@ -15,6 +15,7 @@ import {
 import { StoreState } from 'utils/store'
 import Banner from 'components/Banner'
 import { closeError, CloseErrorAction } from './actions'
+import Container from 'components/atoms/Container'
 
 interface AddProjectFormProps {
   input: string
@@ -83,10 +84,10 @@ const renderTextArea = ({
   </FormField>
 )
 
-const AddProjectForm = (props: FormProps) => {
+export const AddProjectForm = (props: FormProps) => {
   const { handleSubmit, invalid, newProjectError, closeError } = props
   return (
-    <React.Fragment>
+    <Container>
       {newProjectError ? (
         <Banner
           danger
@@ -131,7 +132,7 @@ const AddProjectForm = (props: FormProps) => {
           Submit
         </FormButton>
       </Form>
-    </React.Fragment>
+    </Container>
   )
 }
 

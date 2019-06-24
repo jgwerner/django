@@ -23,13 +23,6 @@ export type DELETE_PROJECT_SUCCESS = typeof DELETE_PROJECT_SUCCESS
 export const DELETE_PROJECT_FAILURE = 'DELETE_PROJECT_FAILURE'
 export type DELETE_PROJECT_FAILURE = typeof DELETE_PROJECT_FAILURE
 
-export const SEARCH_RESULTS_REQUEST = 'GET_SEARCH_RESULTS_REQUEST'
-export type SEARCH_RESULTS_REQUEST = typeof SEARCH_RESULTS_REQUEST
-export const SEARCH_RESULTS_SUCCESS = 'GET_SEARCH_RESULTS_SUCCESS'
-export type SEARCH_RESULTS_SUCCESS = typeof SEARCH_RESULTS_SUCCESS
-export const SEARCH_RESULTS_FAILURE = 'GET_SEARCH_RESULTS_FAILURE'
-export type SEARCH_RESULTS_FAILURE = typeof SEARCH_RESULTS_FAILURE
-
 export interface UpdateProjectActions {
   type: UPDATE_PROJECT_REQUEST | UPDATE_PROJECT_SUCCESS | UPDATE_PROJECT_FAILURE
   data?: any
@@ -80,7 +73,7 @@ export const updateProject = (
       history.push(`/${username}/${values.name}/settings`)
     },
     error => {
-      dispatch(failure(error))
+      dispatch(failure(error.response))
     }
   )
 }
@@ -118,7 +111,7 @@ export const changeVisibility = (
       history.goBack()
     },
     error => {
-      dispatch(failure(error))
+      dispatch(failure(error.response))
     }
   )
 }
@@ -150,35 +143,7 @@ export const deleteProject = (username: string, projectName: string) => (
       history.push('/')
     },
     error => {
-      dispatch(failure(error))
+      dispatch(failure(error.response))
     }
   )
 }
-
-// export const getSearchResults = (username, value) => dispatch => {
-//   function request() {
-//     return {
-//       type: SEARCH_RESULTS_REQUEST
-//     }
-//   }
-//   function success(data) {
-//     return {
-//       type: SEARCH_RESULTS_SUCCESS,
-//       data
-//     }
-//   }
-//   function failure() {
-//     return {
-//       type: SEARCH_RESULTS_FAILURE
-//     }
-//   }
-//   dispatch(request())
-//   return UpdateProjectAPI.getSearchResults(username, value).then(
-//     data => {
-//       dispatch(success(data))
-//     },
-//     error => {
-//       dispatch(failure(error))
-//     }
-//   )
-// }

@@ -28,7 +28,7 @@ interface GetWorkspacesStoreState {
   serverStatus: string
 }
 
-const initialState = {
+export const initialState = {
   serverSizes: [],
   workspaces: [],
   serverRunning: false,
@@ -37,7 +37,7 @@ const initialState = {
   serverStatus: ''
 }
 
-const servers = (state = initialState, action: AnyAction) => {
+export const servers = (state = initialState, action: AnyAction) => {
   switch (action.type) {
     case GET_SIZES_REQUEST:
       return {

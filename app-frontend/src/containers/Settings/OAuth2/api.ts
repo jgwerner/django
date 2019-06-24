@@ -13,7 +13,9 @@ class OAuth2API {
     return axios
       .get(URL, { headers })
       .then(response => response.data)
-      .catch(error => error)
+      .catch(error => {
+        throw error
+      })
   }
 
   createApp = (username: string, name: string) => {
@@ -32,8 +34,10 @@ class OAuth2API {
     }
     return axios
       .post(URL, body, { headers })
-      .then(response => response)
-      .catch(error => error)
+      .then(response => response.data)
+      .catch(error => {
+        throw error
+      })
   }
 
   deleteApp = (username: string, appID: string) => {
@@ -46,8 +50,10 @@ class OAuth2API {
     }
     return axios
       .delete(URL, { headers })
-      .then(response => response)
-      .catch(error => error)
+      .then(response => response.data)
+      .catch(error => {
+        throw error
+      })
   }
 }
 

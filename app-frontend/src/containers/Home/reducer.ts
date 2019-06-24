@@ -19,17 +19,17 @@ export interface UserStoreState {
   profileInfoFetched: boolean
 }
 
-const initialState = {
+export const initialState = {
   accountID: '',
   username: '',
   firstName: '',
   lastName: '',
   email: '',
-  profleInfo: {},
+  profileInfo: {},
   profileInfoFetched: false
 }
 
-const user = (state = initialState, action: AnyAction) => {
+export const user = (state = initialState, action: AnyAction) => {
   switch (action.type) {
     case TOKEN_LOGIN_SUCCESS:
       return {

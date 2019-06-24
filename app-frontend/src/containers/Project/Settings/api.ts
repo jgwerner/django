@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { getToken } from '../../../utils/auth'
+import { getToken } from 'utils/auth'
 
 class UpdateProjectAPI {
   updateDetails = (
@@ -21,7 +21,9 @@ class UpdateProjectAPI {
     return axios
       .patch(URL, body, { headers })
       .then(response => response.data)
-      .catch(error => error)
+      .catch(error => {
+        throw error
+      })
   }
 
   changeVisibility = (
@@ -42,7 +44,9 @@ class UpdateProjectAPI {
     return axios
       .patch(URL, body, { headers })
       .then(response => response.data)
-      .catch(error => error)
+      .catch(error => {
+        throw error
+      })
   }
 
   deleteProject = (username: string, projectName: string) => {
@@ -56,21 +60,9 @@ class UpdateProjectAPI {
     return axios
       .delete(URL, { headers })
       .then(response => response.data)
-      .catch(error => error)
-  }
-
-  getSearchResults = (username: string, value: string) => {
-    const URL = `${
-      process.env.REACT_APP_API_URL
-    }v1/${username}/search/?q=${value}&type=users&limit=5`
-    const headers = {
-      Accept: 'application/json',
-      Authorization: getToken()
-    }
-    return axios
-      .get(URL, { headers })
-      .then(response => response.data)
-      .catch(error => error)
+      .catch(error => {
+        throw error
+      })
   }
 }
 

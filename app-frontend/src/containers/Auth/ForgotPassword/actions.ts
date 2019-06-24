@@ -57,9 +57,9 @@ export const resetPassword = (values: any) => (
     }
   }
   dispatch(request())
-  ForgotPasswordAPI.resetPassword(values).then(
+  return ForgotPasswordAPI.resetPassword(values).then(
     response => {
-      dispatch(success(response))
+      dispatch(success(response.data))
       history.push('/auth/password/reset/request-success')
     },
     error => {
@@ -91,9 +91,9 @@ export const resetPasswordConfirm = (params: any, values: any) => (
     }
   }
   dispatch(request())
-  ForgotPasswordAPI.resetPasswordConfirm(params, values).then(
+  return ForgotPasswordAPI.resetPasswordConfirm(params, values).then(
     response => {
-      dispatch(success(response))
+      dispatch(success(response.data))
       history.push('/auth/password/reset/confirm-success')
     },
     error => {

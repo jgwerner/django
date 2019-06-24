@@ -47,7 +47,7 @@ export const addWorkspace = (
       history.goBack()
     },
     error => {
-      dispatch(failure(error))
+      dispatch(failure(error.response))
     }
   )
 }

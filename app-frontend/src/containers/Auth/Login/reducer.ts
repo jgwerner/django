@@ -14,7 +14,7 @@ export interface LoginStoreState {
   errorMessage: string
 }
 
-const initialState = {
+export const initialState = {
   accountID: '',
   token: '',
   loggingIn: false,

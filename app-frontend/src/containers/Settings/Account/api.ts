@@ -15,29 +15,7 @@ class AccountSettingsAPI {
     }
     return axios
       .patch(URL, body, { headers })
-      .then(response => response)
-      .catch(error => error)
-  }
-
-  updateProfile = (
-    accountID: string,
-    values: { firstName: string; lastName: string; email: string }
-  ) => {
-    const URL = `${
-      process.env.REACT_APP_API_URL
-    }v1/users/profiles/${accountID}/`
-    const headers = {
-      Accept: 'application/json',
-      Authorization: getToken()
-    }
-    const body = {
-      first_name: values.firstName,
-      last_name: values.lastName,
-      email: values.email
-    }
-    return axios
-      .patch(URL, body, { headers })
-      .then(response => response)
+      .then(response => response.data)
       .catch(error => {
         throw error
       })
@@ -53,7 +31,7 @@ class AccountSettingsAPI {
     }
     return axios
       .delete(URL, { headers })
-      .then(response => response)
+      .then(response => response.data)
       .catch(error => {
         throw error
       })

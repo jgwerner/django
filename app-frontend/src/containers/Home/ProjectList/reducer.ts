@@ -10,7 +10,7 @@ export interface ProjectListProps {
   projectsFetched: boolean
 }
 
-const initialState = {
+export const initialState = {
   projects: [],
   projectsFetched: false
 }

@@ -9,7 +9,7 @@ export interface AddWorkspaceStoreState {
   newWorkspace: boolean
 }
 
-const initialState = {
+export const initialState = {
   newWorkspace: false
 }
 

@@ -2,31 +2,22 @@ import {
   CHANGE_PASSWORD_REQUEST,
   CHANGE_PASSWORD_SUCCESS,
   CHANGE_PASSWORD_FAILURE,
-  UPDATE_PROFILE_REQUEST,
-  UPDATE_PROFILE_SUCCESS,
-  UPDATE_PROFILE_FAILURE,
-  CLOSE_PROFILE_SUCCESS,
-  CLOSE_PROFILE_ERROR,
   CLOSE_PASSWORD_SUCCESS,
-  CLOSE_PASSWORD_ERROR,
-  AccountSettingsActions
+  CLOSE_PASSWORD_ERROR
 } from './actions'
+import { AnyAction } from 'redux'
 
 export interface AccountSettingsStoreState {
-  profileUpdateSuccess: boolean
-  profileUpdateError: boolean
   passwordUpdateSuccess: boolean
   passwordUpdateError: boolean
 }
 
-const initialState = {
-  profileUpdateSuccess: false,
-  profileUpdateError: false,
+export const initialState = {
   passwordUpdateSuccess: false,
   passwordUpdateError: false
 }
 
-const account = (state = initialState, action: AccountSettingsActions) => {
+const account = (state = initialState, action: AnyAction) => {
   switch (action.type) {
     case CHANGE_PASSWORD_REQUEST:
       return {
@@ -43,32 +34,6 @@ const account = (state = initialState, action: AccountSettingsActions) => {
       return {
         ...state,
         passwordUpdateError: true
-      }
-    case UPDATE_PROFILE_REQUEST:
-      return {
-        ...state,
-        profileUpdateSuccess: false,
-        profileUpdateError: false
-      }
-    case UPDATE_PROFILE_SUCCESS:
-      return {
-        ...state,
-        profileUpdateSuccess: true
-      }
-    case UPDATE_PROFILE_FAILURE:
-      return {
-        ...state,
-        profileUpdateError: true
-      }
-    case CLOSE_PROFILE_SUCCESS:
-      return {
-        ...state,
-        profileUpdateSuccess: false
-      }
-    case CLOSE_PROFILE_ERROR:
-      return {
-        ...state,
-        profileUpdateError: false
       }
     case CLOSE_PASSWORD_SUCCESS:
       return {

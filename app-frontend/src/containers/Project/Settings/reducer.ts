@@ -5,9 +5,6 @@ import {
   DELETE_PROJECT_REQUEST,
   DELETE_PROJECT_SUCCESS,
   DELETE_PROJECT_FAILURE,
-  SEARCH_RESULTS_REQUEST,
-  SEARCH_RESULTS_SUCCESS,
-  SEARCH_RESULTS_FAILURE,
   CHANGE_VISIBILITY_REQUEST,
   CHANGE_VISIBILITY_SUCCESS,
   CHANGE_VISIBILITY_FAILURE
@@ -19,9 +16,8 @@ export interface SettingsStoreState {
   results: any
 }
 
-const initialState = {
-  projectDetails: {},
-  results: {}
+export const initialState = {
+  projectDetails: {}
 }
 
 const settings = (state = initialState, action: AnyAction) => {
@@ -61,20 +57,6 @@ const settings = (state = initialState, action: AnyAction) => {
         ...state
       }
     case DELETE_PROJECT_FAILURE:
-      return {
-        ...state
-      }
-    case SEARCH_RESULTS_REQUEST:
-      return {
-        ...state,
-        results: {}
-      }
-    case SEARCH_RESULTS_SUCCESS:
-      return {
-        ...state,
-        results: action.data.users ? action.data.users.results : {}
-      }
-    case SEARCH_RESULTS_FAILURE:
       return {
         ...state
       }

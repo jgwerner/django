@@ -13,7 +13,9 @@ class ProjectAPI {
     return axios
       .get(URL, { headers })
       .then(response => response.data)
-      .catch(error => error)
+      .catch(error => {
+        throw error
+      })
   }
 }
 

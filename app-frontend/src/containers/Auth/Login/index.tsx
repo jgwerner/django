@@ -13,7 +13,6 @@ import { login, LoginActions } from './actions'
 import { StoreState } from 'utils/store'
 
 interface LoginMapStateToProps {
-  loggingIn: boolean
   values: any
 }
 

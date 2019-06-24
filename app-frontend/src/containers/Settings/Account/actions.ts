@@ -16,18 +16,6 @@ export type DELETE_ACCOUNT_SUCCESS = typeof DELETE_ACCOUNT_SUCCESS
 export const DELETE_ACCOUNT_FAILURE = 'DELETE_ACCOUNT_FAILURE'
 export type DELETE_ACCOUNT_FAILURE = typeof DELETE_ACCOUNT_FAILURE
 
-export const UPDATE_PROFILE_REQUEST = 'UPDATE_PROFILE_REQUEST'
-export type UPDATE_PROFILE_REQUEST = typeof UPDATE_PROFILE_REQUEST
-export const UPDATE_PROFILE_SUCCESS = 'UPDATE_PROFILE_SUCCESS'
-export type UPDATE_PROFILE_SUCCESS = typeof UPDATE_PROFILE_SUCCESS
-export const UPDATE_PROFILE_FAILURE = 'UPDATE_PROFILEFAILURE'
-export type UPDATE_PROFILE_FAILURE = typeof UPDATE_PROFILE_FAILURE
-
-export const CLOSE_PROFILE_SUCCESS = 'CLOSE_PROFILE_SUCCESS'
-export type CLOSE_PROFILE_SUCCESS = typeof CLOSE_PROFILE_SUCCESS
-export const CLOSE_PROFILE_ERROR = 'CLOSE_PROFILE_ERROR'
-export type CLOSE_PROFILE_ERROR = typeof CLOSE_PROFILE_ERROR
-
 export const CLOSE_PASSWORD_SUCCESS = 'CLOSE_PASSWORD_SUCCESS'
 export type CLOSE_PASSWORD_SUCCESS = typeof CLOSE_PASSWORD_SUCCESS
 export const CLOSE_PASSWORD_ERROR = 'CLOSE_PASSWORD_ERROR'
@@ -48,56 +36,13 @@ export interface DeleteAccountActions {
   error?: any
 }
 
-export interface UpdateProfileActions {
-  type: UPDATE_PROFILE_REQUEST | UPDATE_PROFILE_SUCCESS | UPDATE_PROFILE_FAILURE
-  data?: any
-  error?: any
-}
-
 export interface CloseBannerActions {
-  type:
-    | CLOSE_PROFILE_SUCCESS
-    | CLOSE_PROFILE_ERROR
-    | CLOSE_PASSWORD_SUCCESS
-    | CLOSE_PASSWORD_ERROR
+  type: CLOSE_PASSWORD_SUCCESS | CLOSE_PASSWORD_ERROR
 }
 
 export type AccountSettingsActions = ChangePasswordActions &
   DeleteAccountActions &
-  UpdateProfileActions &
   CloseBannerActions
-
-export const updateProfile = (
-  accountID: string,
-  values: { firstName: string; lastName: string; email: string }
-) => (dispatch: Dispatch<UpdateProfileActions>) => {
-  function request(): UpdateProfileActions {
-    return {
-      type: UPDATE_PROFILE_REQUEST
-    }
-  }
-  function success(data: any): UpdateProfileActions {
-    return {
-      type: UPDATE_PROFILE_SUCCESS,
-      data
-    }
-  }
-  function failure(error: any): UpdateProfileActions {
-    return {
-      type: UPDATE_PROFILE_FAILURE,
-      error
-    }
-  }
-  dispatch(request())
-  return AccountSettingsAPI.updateProfile(accountID, values).then(
-    data => {
-      dispatch(success(data))
-    },
-    error => {
-      dispatch(failure(error))
-    }
-  )
-}
 
 export const changePassword = (
   accountID: string,
@@ -126,42 +71,18 @@ export const changePassword = (
       dispatch(success(data))
     },
     error => {
-      dispatch(failure(error))
+      dispatch(failure(error.response))
     }
   )
 }
 
-export const closeProfileSuccess = () => (
-  dispatch: Dispatch<CloseBannerActions>
-) => {
-  dispatch({
-    type: CLOSE_PROFILE_SUCCESS
-  })
-}
+export const closePasswordSuccess = () => ({
+  type: CLOSE_PASSWORD_SUCCESS
+})
 
-export const closeProfileError = () => (
-  dispatch: Dispatch<CloseBannerActions>
-) => {
-  dispatch({
-    type: CLOSE_PROFILE_ERROR
-  })
-}
-
-export const closePasswordSuccess = () => (
-  dispatch: Dispatch<CloseBannerActions>
-) => {
-  dispatch({
-    type: CLOSE_PASSWORD_SUCCESS
-  })
-}
-
-export const closePasswordError = () => (
-  dispatch: Dispatch<CloseBannerActions>
-) => {
-  dispatch({
-    type: CLOSE_PASSWORD_ERROR
-  })
-}
+export const closePasswordError = () => ({
+  type: CLOSE_PASSWORD_ERROR
+})
 
 export const deleteAccount = (accountID: string) => (
   dispatch: Dispatch<DeleteAccountActions>
@@ -190,7 +111,7 @@ export const deleteAccount = (accountID: string) => (
       history.push('/auth')
     },
     error => {
-      dispatch(failure(error))
+      dispatch(failure(error.response))
     }
   )
 }

@@ -11,7 +11,7 @@ export interface AddProjectProps {
   newProjectError: boolean
 }
 
-const initialState = {
+export const initialState = {
   newProjectSuccess: false,
   newProjectError: false
 }
@@ -20,8 +20,7 @@ const addProject = (state = initialState, action: AnyAction) => {
   switch (action.type) {
     case ADD_PROJECT_REQUEST:
       return {
-        ...state,
-        projects: []
+        ...state
       }
     case ADD_PROJECT_SUCCESS:
       return {

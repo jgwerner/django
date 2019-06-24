@@ -31,12 +31,12 @@ const AsyncAddProject = Loadable({
   loading: () => <div />
 })
 
-const AsyncProjectList = Loadable({
+export const AsyncProjectList = Loadable({
   loader: () => import('./ProjectList'),
   loading: () => <div />
 })
 
-const Home = class extends React.PureComponent<HomeProps> {
+export const Home = class extends React.PureComponent<HomeProps> {
   componentDidMount() {
     const { getUserInfo, profileInfoFetched } = this.props
     if (!profileInfoFetched) {

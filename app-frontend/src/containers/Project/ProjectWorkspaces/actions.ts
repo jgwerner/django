@@ -98,7 +98,7 @@ export const getServerSizes = () => (dispatch: Dispatch<GetSizesActions>) => {
       dispatch(success(data))
     },
     error => {
-      dispatch(failure(error))
+      dispatch(failure(error.response))
     }
   )
 }
@@ -129,7 +129,7 @@ export const getWorkspaces = (username: string, projectID: string) => (
       dispatch(success(data))
     },
     error => {
-      dispatch(failure(error))
+      dispatch(failure(error.response))
     }
   )
 }
@@ -162,7 +162,7 @@ export const startServer = (
       dispatch(success(data))
     },
     error => {
-      dispatch(failure(error))
+      dispatch(failure(error.response))
     }
   )
 }
@@ -195,7 +195,7 @@ export const stopServer = (
       dispatch(success(data))
     },
     error => {
-      dispatch(failure(error))
+      dispatch(failure(error.response))
     }
   )
 }
@@ -228,16 +228,23 @@ export const deleteServer = (
       dispatch(success(data))
     },
     error => {
-      dispatch(failure(error))
+      dispatch(failure(error.response))
     }
   )
 }
 
-export const updateStatus = (data: any) => (
-  dispatch: Dispatch<UpdateStatusAction>
-) => {
-  dispatch({
+// export const updateStatus = (data: any) => (
+//   dispatch: Dispatch<UpdateStatusAction>
+// ) => {
+//   dispatch({
+//     type: UPDATE_STATUS,
+//     data
+//   })
+// }
+
+export const updateStatus = (data: any) => {
+  return {
     type: UPDATE_STATUS,
     data
-  })
+  }
 }

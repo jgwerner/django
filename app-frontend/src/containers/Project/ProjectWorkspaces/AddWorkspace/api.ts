@@ -26,7 +26,9 @@ class AddWorkspaceAPI {
     return axios
       .post(URL, body, { headers })
       .then(response => response.data)
-      .catch(error => error)
+      .catch(error => {
+        throw error
+      })
   }
 }
 
