@@ -1,6 +1,8 @@
 from unittest import TestCase
 
-from ..utils import email_to_username
+from appdj.projects.tests.factories import CollaboratorFactory
+from .factories import ServerFactory
+from ..utils import email_to_username, lti_ready_url
 
 
 class TestUtils(TestCase):
@@ -55,3 +57,24 @@ class TestUtils(TestCase):
         email = "(comment1)!#$%&'*/=?^`{{|}}~john.test_test-test!#$%&'*/=?^`{{|}}~(comment2)+tag123@example.com"
         username = email_to_username(email)
         self.assertEqual(expected, username)
+
+    def test_lti_ready_assignment_url(self):
+        col = CollaboratorFactory()
+        server = ServerFactory(project=col.project, created_by=col.user)
+        path = 'release/test/test.ipynb'
+        url = lti_ready_url('https', server, path, '123')
+        self.assertNotIn('release', url)
+        self.assertIn(str(server.pk), url)
+        self.assertIn(str(server.project.pk), url)
+        self.assertIn(server.project.owner.username, url)
+        self.assertIn('test/test.ipynb', url)
+
+    def test_lti_ready_url(self):
+        col = CollaboratorFactory()
+        server = ServerFactory(project=col.project, created_by=col.user)
+        path = 'test/test.ipynb'
+        url = lti_ready_url('https', server, path)
+        self.assertIn(str(server.pk), url)
+        self.assertIn(str(server.project.pk), url)
+        self.assertIn(server.project.owner.username, url)
+        self.assertIn('test/test.ipynb', url)

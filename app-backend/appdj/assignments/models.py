@@ -106,9 +106,11 @@ class Assignment(models.Model):
                     ON grade.notebook_id = submitted_notebook.id
                 JOIN submitted_assignment
                     ON submitted_notebook.assignment_id = submitted_assignment.id
-                WHERE submitted_assignment.student_id = ?
+                JOIN assignment
+                    ON submitted_assignment.assignment_id = assignment.id
+                WHERE submitted_assignment.student_id = ? AND assignment.name = ?
             """,
-            (student_project.owner.username,)
+            (student_project.owner.username, str(self.relative_path.parent))
         )
         grade = int(float(c.fetchone()[0]))
         logger.info("Student %s grade %s", student_project.owner, grade)

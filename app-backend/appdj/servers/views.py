@@ -53,7 +53,7 @@ from .tasks import (
 )
 from .permissions import ServerChildPermission, ServerActionPermission
 from . import serializers, models
-from .utils import get_server_usage, get_server_url
+from .utils import get_server_usage, lti_ready_url
 
 
 logger = logging.getLogger(__name__)
@@ -314,12 +314,7 @@ def lti_ready(request, *args, **kwargs):
     if workspace.status == workspace.ERROR:
         return Response({'error': workspace.config.get('error', 'Server error')}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     scheme = 'https' if settings.HTTPS else 'http'
-    endpoint = get_server_url(str(workspace.project.pk), str(workspace.pk),
-                              scheme, '/endpoint/proxy/lab/tree/', namespace=workspace.namespace_name)
-    path = kwargs.get('path')
-    url = f'{endpoint}{path}?token={workspace.access_token}'
-    if assignment_id:
-        url += f'&assignment_id={assignment_id}'
+    url = lti_ready_url(scheme, workspace, kwargs.get('path'), assignment_id)
     return Response({'url': url})
 
 
