@@ -47,3 +47,11 @@ matrix:
           secure: $NPM_KEY
         on:
           branch: master
+
+    - language: node_js
+      node_js:
+        - "10"
+      install:
+        - bash app-frontend/scripts/install.sh
+      script:
+        - bash app-frontend/scripts/script.sh             
