@@ -3,7 +3,7 @@ import time
 
 import boto3
 from django.contrib.auth import get_user_model
-
+from guardian.shortcuts import assign_perm
 from oauth2_provider.models import Application as ProviderApp
 from celery import shared_task
 
@@ -66,7 +66,7 @@ def lti_project(user, project_pk, is_assignment):
     if project is None:
         project = projects.filter(pk=project_pk).first()
         is_teacher = project is not None
-    Collaborator.objects.get_or_create(user=user, project_id=project_pk)
+    col, _ = Collaborator.objects.get_or_create(user=user, project_id=project_pk)
     if project is None:
         logger.debug("Creating learner project from %s", project_pk)
         if is_assignment:
@@ -75,6 +75,8 @@ def lti_project(user, project_pk, is_assignment):
             project = perform_project_copy(user, str(project_pk))
         project.team = None
         project.save()
+    if not is_teacher:
+        assign_perm('read_project', user, col.project)
     return project, is_teacher
 
 

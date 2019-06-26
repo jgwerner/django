@@ -173,17 +173,6 @@ class DockerSpawner(TraefikMixin, BaseSpawner):
                 'exited': self.server.STOPPED
             }[result['State']['Status']]
 
-    def autograde(self, assignment_id):
-        self.client.containers.run(
-            self.server.image_name,
-            f'nbgrader db assignment add {assignment_id}'
-        )
-        self.client.containers.run(
-            self.server.image_name,
-            f'nbgrader autograde "{assignment_id}" --create',
-            volumes=self._get_binds()
-        )
-
     def _compare_container_env(self, container) -> bool:
         old_envs = dict(env.split("=", maxsplit=1) for env in container.get('Config', {}).get('Env', []))
         return all(old_envs.get(key) == val for key, val in (self.server.env_vars or {}).items())

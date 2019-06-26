@@ -1,10 +1,11 @@
+import tempfile
 from .base import *
 
 
 SECRET_KEY = 'test'
-
-RESOURCE_DIR = '/tmp/illumidesk'
-MEDIA_ROOT = "/tmp/illumidesk"
+tmp_dir = tempfile.mkdtemp()
+RESOURCE_DIR = tmp_dir
+MEDIA_ROOT = tmp_dir
 
 
 PASSWORD_HASHERS = (

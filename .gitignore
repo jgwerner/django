@@ -71,6 +71,7 @@ target/
 # Jupyter Notebook
 .ipynb_checkpoints
 *.ipynb
+!app-backend/appdj/assignments/tests/nbgrader_fixture/**/*.ipynb
 
 # pyenv
 .python-version

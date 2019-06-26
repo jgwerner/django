@@ -10,9 +10,11 @@ from django.contrib.sites.models import Site
 from django.template.loader import render_to_string
 from django.urls import reverse
 from requests_oauthlib import OAuth1Session
+from nbgrader.apps import NbGraderAPI
+from nbgrader.coursedir import CourseDirectory
+from traitlets.config import Config
 
 from appdj.base.models import TBSQuerySet
-from appdj.servers.spawners import get_spawner_class
 
 logger = logging.getLogger(__name__)
 
@@ -81,15 +83,16 @@ class Assignment(models.Model):
         student_username = student_project.owner.username
         return self.teacher_project.resource_root() / 'submitted' / student_username / self.relative_path
 
-    def autograde(self):
+    def autograde(self, student_project):
         """
         Autograde assignment
         """
-        Spawner = get_spawner_class()
-        workspace = self.teacher_project.servers.first()
-        spawner = Spawner(workspace)
-        assignment_id = Path(self.relative_path).parent
-        spawner.autograde(assignment_id)
+        config = Config()
+        config.CourseDirectory.root = str(self.teacher_project.resource_root())
+        api = NbGraderAPI(CourseDirectory(config=config), config=config)
+        resp = api.autograde(str(self.relative_path.parent), student_project.owner.username)
+        if not resp['success']:
+            raise Exception(f"Assignment {self.external_id} not autograded for student {student_project.owner.username}: {resp}")
 
     def get_grade(self, student_project):
         """
@@ -131,7 +134,7 @@ class Assignment(models.Model):
         Send assiignment to canvas
         """
         self.copy_submitted_file(student_project)
-        self.autograde()
+        self.autograde(student_project)
         grade = self.get_grade(student_project)
         teacher_workspace = self.teacher_project.servers.get(is_active=True, config__type='jupyter')
         oauth_session = OAuth1Session(

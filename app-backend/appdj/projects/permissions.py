@@ -6,8 +6,8 @@ from .models import Collaborator
 def has_project_permission(request, project):
     if project.private is False and request.method in permissions.SAFE_METHODS:
         return True
-    if project.private is True and not Collaborator.objects.filter(user=request.user, project=project).exists():
-        return False
+    if request.user.has_perm('read_project', project) and request.method in permissions.SAFE_METHODS:
+        return True
     if request.method in permissions.SAFE_METHODS:
         return (request.user.has_perm('read_project', project) or
                 request.user.has_perm('write_project', project))

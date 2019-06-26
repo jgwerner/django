@@ -66,43 +66,6 @@ class ECSSpawner(BaseSpawner):
             logger.debug(resp)
             return self.server.ERROR
 
-    def autograde(self, assignment_id):
-        task_definition_args = self._task_definition_args
-        task_definition_args['containerDefinitions'][0].update({
-            'command': ['nbgrader', 'db', 'assignment', 'add', str(assignment_id)],
-            'name': f'{self.server.container_name}_autograde',
-            'cpu': 64,
-            'memory': 128,
-            'memoryReservation': 128,
-        })
-        resp = self.client.register_task_definition(**task_definition_args)
-        assignment_id = str(assignment_id)
-        run_task_args = dict(
-            cluster=self.server.cluster,
-            taskDefinition=resp['taskDefinition']['taskDefinitionArn']
-        )
-        resp = self.client.run_task(**run_task_args)
-        if resp['tasks']:
-            waiter = self.client.get_waiter('tasks_stopped')
-            waiter.wait(
-                cluster=self.server.cluster,
-                tasks=[resp['tasks'][0]['taskArn']],
-            )
-            run_task_args['overrides'] = {
-                'containerOverrides': [
-                    {
-                        'command': ['nbgrader', 'autograde', str(assignment_id), '--create'],
-                        'name': f'{self.server.container_name}_autograde',
-                    }
-                ]
-            }
-            resp = self.client.run_task(**run_task_args)
-            if resp['tasks']:
-                waiter.wait(
-                    cluster=self.server.cluster,
-                    tasks=[resp['tasks'][0]['taskArn']],
-                )
-
     def _register_task_definition(self) -> str:
         resp = self.client.register_task_definition(**self._task_definition_args)
         return resp['taskDefinition']['taskDefinitionArn']
