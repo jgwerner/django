@@ -38,11 +38,15 @@ class ECSSpawner(BaseSpawner):
         self.server.save()
 
     def stop(self) -> None:
-        self.client.stop_task(
-            cluster=self.server.cluster,
-            task=self.server.config['task_arn'],
-            reason='User request'
-        )
+        try:
+            self.client.stop_task(
+                cluster=self.server.cluster,
+                task=self.server.config['task_arn'],
+                reason='User request'
+            )
+        except ClientError:
+            logger.exception("Stop task exception")
+
 
     def terminate(self) -> None:
         self.stop()

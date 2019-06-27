@@ -173,9 +173,9 @@ class ECSSpawnerTestCase(TestCase):
                 'script': 'test.py'
             }
         )
-        client = botocore.session.get_session().create_client('ecs')
-        self.stubber = Stubber(client)
-        self.spawner = ECSSpawner(self.server, client)
+        self.ecs = botocore.session.get_session().create_client('ecs')
+        self.stubber = Stubber(self.ecs)
+        self.spawner = ECSSpawner(self.server, self.ecs)
 
     def test_start(self):
         register_params = self.spawner._task_definition_args
@@ -232,6 +232,13 @@ class ECSSpawnerTestCase(TestCase):
         self.stubber.add_response('stop_task', stop_response, stop_params)
         self.stubber.activate()
         self.spawner.stop()
+
+    def test_stop_no_task_no_error(self):
+        task_arn = 'abc'
+        self.server.config['task_arn'] = task_arn
+        self.server.save()
+        self.stubber.add_client_error('stop_task', 'InvalidParameterException')
+        self.stubber.activate()
 
     def test_terminate(self):
         task_arn = 'abc'
