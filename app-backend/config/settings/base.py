@@ -394,7 +394,6 @@ MIGRATION_MODULES = {
     'auth': 'appdj.migrations.auth',
     'contenttypes': 'appdj.migrations.contenttypes',
     'django_celery_results': 'appdj.migrations.django_celery_results',
-    'oauth2_provider': 'appdj.migrations.oauth2_provider',
     'social_django': 'appdj.migrations.social_django',
     'guardian': 'appdj.migrations.guardian',
     'django_ses': 'appdj.migrations.django_ses',

@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
         migrations.swappable_dependency(settings.OAUTH2_PROVIDER_REFRESH_TOKEN_MODEL),
         migrations.swappable_dependency(settings.OAUTH2_PROVIDER_APPLICATION_MODEL),
         migrations.swappable_dependency(settings.OAUTH2_PROVIDER_ACCESS_TOKEN_MODEL),
-        ('oauth2_provider', '0003_auto_20190313_0854'),
+        ('oauth2_provider', '0006_auto_20171214_2232'),
     ]
 
     operations = [
