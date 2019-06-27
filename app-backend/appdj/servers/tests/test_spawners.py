@@ -239,6 +239,9 @@ class ECSSpawnerTestCase(TestCase):
         self.server.save()
         self.stubber.add_client_error('stop_task', 'InvalidParameterException')
         self.stubber.activate()
+        self.spawner.stop()
+        self.server.refresh_from_db()
+        self.assertEqual(self.server.config['task_arn'], '')
 
     def test_terminate(self):
         task_arn = 'abc'

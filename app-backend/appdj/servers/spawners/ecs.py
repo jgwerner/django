@@ -44,7 +44,9 @@ class ECSSpawner(BaseSpawner):
                 task=self.server.config['task_arn'],
                 reason='User request'
             )
-        except ClientError:
+        except self.client.exceptions.InvalidParameterException:
+            self.server.config['task_arn'] = ''
+            self.server.save()
             logger.exception("Stop task exception")
 
 
