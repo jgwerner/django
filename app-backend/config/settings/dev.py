@@ -1,5 +1,6 @@
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
+from sentry_sdk.integrations.celery import CeleryIntegration
 from .base import *
 
 DEBUG = True
@@ -37,5 +38,8 @@ SPAWNER = 'appdj.servers.spawners.ecs.ECSSpawner'
 
 sentry_sdk.init(
     dsn=os.getenv('SENTRY_DSN'),
-    integrations=[DjangoIntegration()]
+    integrations=[
+        DjangoIntegration(),
+        CeleryIntegration()
+    ]
 )

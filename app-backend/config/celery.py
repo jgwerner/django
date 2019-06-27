@@ -1,5 +1,6 @@
 import os
 import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
 from sentry_sdk.integrations.celery import CeleryIntegration
 
 
@@ -8,7 +9,7 @@ from celery import Celery
 # set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.local')
 
-sentry_sdk.init(os.getenv("SENTRY_DSN"), integrations=[CeleryIntegration()])
+sentry_sdk.init(os.getenv("SENTRY_DSN"), integrations=[CeleryIntegration(), DjangoIntegration()])
 
 app = Celery('appdj')
 

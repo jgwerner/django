@@ -1,10 +1,14 @@
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
+from sentry_sdk.integrations.celery import CeleryIntegration
 from .base import *
 
 sentry_sdk.init(
     dsn=os.getenv('SENTRY_DSN'),
-    integrations=[DjangoIntegration()]
+    integrations=[
+        DjangoIntegration(),
+        CeleryIntegration()
+    ]
 )
 
 ALLOWED_HOSTS = ['localhost', os.getenv('EXTERNAL_IPV4'), 'api.illumidesk.com']
