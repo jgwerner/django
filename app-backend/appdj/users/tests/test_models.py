@@ -6,9 +6,11 @@ from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.conf import settings
+from django.urls import reverse
 
 from appdj.base.utils import deactivate_user
 from .factories import UserFactory
+from ..models import Email
 
 User = get_user_model()
 
@@ -45,3 +47,28 @@ class UserTestCase(TestCase):
         us = User(username='admin.1', email='test@example.com')
         with self.assertRaises(ValidationError):
             us.full_clean()
+
+    def test_email_validation(self):
+        us = User(username='admin.1', email='test@example')
+        with self.assertRaises(ValidationError):
+            us.full_clean()
+
+
+class EmailTestCase(TestCase):
+    def setUp(self):
+        self.user = UserFactory()
+        self.user_dir = Path(settings.RESOURCE_DIR, self.user.username)
+
+    def tearDown(self):
+        if os.path.isdir(str(self.user_dir)):
+            shutil.rmtree(str(self.user_dir))
+
+    def test_email_model_create(self):
+        email = Email.objects.create(user=self.user, public=True)
+        self.assertIsNotNone(email)
+        self.assertEqual(email.user_id, self.user.id)
+
+    def test_email_model_namespace_name(self):
+        email = Email.objects.create(user=self.user, public=True)
+        self.assertIsNotNone(email)
+        self.assertEqual(email.namespace_name, self.user.username)
