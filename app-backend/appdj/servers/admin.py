@@ -5,9 +5,9 @@ from .models import Server, ServerSize, Framework, Runtime
 
 @admin.register(Server)
 class ServerAdmin(admin.ModelAdmin):
-    list_display = ('name', 'project', 'created_by', 'is_active', 'created_at')
+    list_display = ('name', 'id', 'project', 'created_by', 'is_active', 'created_at')
     list_filter = ('created_by', 'is_active', 'project')
-    search_fields = ('name',)
+    search_fields = ('name', 'id')
     readonly_fields = ('access_token',)
 
 

@@ -31,9 +31,9 @@ class CollaboratorInline(admin.TabularInline):
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = ('name', 'is_active', 'private', 'owner', 'server_count', 'collaborator_count')
+    list_display = ('name', 'id', 'is_active', 'private', 'owner', 'server_count', 'collaborator_count')
     list_filter = ('is_active', 'private', OwnerFilter)
-    search_fields = ('name', 'description')
+    search_fields = ('name', 'description', 'id')
     inlines = [CollaboratorInline]
 
     def server_count(self, obj):
