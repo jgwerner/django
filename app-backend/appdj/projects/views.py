@@ -168,7 +168,11 @@ def file_selection(request, *args, **kwargs):
         if workspace is None:
             workspace = create_server(request.user, project, 'workspace')
         files = []
-        for f in iterate_dir(project_root):
+        if request.data.get('ext_lti_assignment_id'):
+            root = project_root / 'release'
+        else:
+            root = project_root
+        for f in iterate_dir(root):
             path = str(f.relative_to(project_root))
             quoted = quote(path, safe='/')
             scheme = 'https' if settings.HTTPS else 'http'
