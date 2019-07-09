@@ -14,13 +14,21 @@ def create_assignments(apps, schema_editor):
         resource_root = Path(settings.RESOURCE_DIR, str(server.project.pk))
         for assignment in server.config.get('assignments', []):
             if 'copied_from' in server.project.config and Project.objects.filter(pk=server.project.config['copied_from']).exists():
+                if 'instance_guid' in assignment:
+                    try:
+                        lms_instance = CanvasInstance.objects.get(instance_guid=assignment['instance_guid'])
+                    except:
+                        lms_instance = CanvasInstance.objects.first()
+                else:
+                    lms_instance = CanvasInstance.objects.first()
+
                 a, _ = Assignment.objects.get_or_create(
                     external_id=assignment['aid'] if 'aid' in assignment else assignment['id'],
                     path=str(resource_root / assignment['path']),
                     outcome_url=assignment['outcome_url'],
                     source_did=assignment.get('source_did', ''),
                     teacher_project=Project.objects.get(pk=server.project.config['copied_from']),
-                    lms_instance=CanvasInstance.objects.get(instance_guid=assignment['instance_guid'])
+                    lms_instance=lms_instance
                 )
                 a.students_projects.add(server.project)
                 a.save()

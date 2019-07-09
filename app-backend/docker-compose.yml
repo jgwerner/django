@@ -6,15 +6,11 @@ x-django: &django
   image: illumidesk/app-backend:latest
   volumes:
     - /workspaces:/workspaces
-  env_file: env.compose
-  depends_on:
-    - cache
-    - db
+  env_file: .env
 services:
   api:
     <<: *django
     command: /srv/env/bin/gunicorn --bind 0.0.0.0:8080 --reload --workers 1 --log-level=DEBUG --error-logfile=- --access-logfile=- config.wsgi
-    entrypoint: ''
     labels:
       - "traefik.enable=true"
       - "traefik.backend=api"
@@ -23,7 +19,7 @@ services:
       - "traefik.frontend.rule=PathPrefix:/"
   channels:
     <<: *django
-    command: /srv/env/bin/daphne -p 8080 -b 0.0.0.0 -v 2 config.asgi:channel_layer
+    command: /srv/env/bin/daphne -p 8080 -b 0.0.0.0 -v 2 config.asgi:application
     entrypoint: ''
     ports:
       - "8080"
@@ -35,7 +31,7 @@ services:
       - "traefik.frontend.rule=Path:/sns/{server}/,/{version}/{namespace}/projects/{project}/servers/{server}/status/"
   channel_worker:
     <<: *django
-    command: /srv/env/bin/python manage.py runworker -v 2
+    command: /srv/env/bin/python manage.py runworker -v 2 statuses
     entrypoint: ''
   celery:
     <<: *django
@@ -45,22 +41,15 @@ services:
     <<: *django
     command: /srv/env/bin/celery -A config.celery beat -l info
     entrypoint: ''
-  db:
-    image: postgres:9.6-alpine
-    ports:
-      - "5432:5432"
-  cache:
-    image: redis:alpine
-    ports:
-      - "6379:6379"
   server:
+    env_file: .env
     build:
       context: ../reverse-proxies/traefik/.
     image: illumidesk/traefik:latest
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
-      - "5001:80"
+      - "8000:80"
       - "8080:8080"
   nginx:
     build:

@@ -23,9 +23,9 @@ class Assignment(models.Model):
     NATURAL_KEY = 'external_id'
 
     external_id = models.TextField()
-    path = models.FilePathField(path=settings.RESOURCE_DIR)
+    path = models.FilePathField(path=settings.RESOURCE_DIR, max_length=255)
     course_id = models.TextField()
-    outcome_url = models.URLField()
+    outcome_url = models.URLField(max_length=255)
     source_did = models.TextField()
     lms_instance = models.ForeignKey(
         'canvas.CanvasInstance',
