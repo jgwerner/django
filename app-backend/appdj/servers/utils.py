@@ -107,8 +107,8 @@ def lti_ready_url(scheme, workspace, path, assignment_id=None):
     endpoint = get_server_url(str(workspace.project.pk), str(workspace.pk),
                               scheme, '/endpoint/proxy/lab/tree/', namespace=workspace.namespace_name)
     params = {'token': workspace.access_token}
+    path = str(Path(path).relative_to('release')) if path.startswith('release') else path
     if assignment_id:
-        path = str(Path(path).relative_to('release'))
         params['assignment_id'] = assignment_id
     query = urlencode(params)
     return f'{endpoint}{path}?{query}'

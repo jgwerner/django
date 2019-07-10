@@ -50,12 +50,12 @@ class Assignment(models.Model):
     objects = TBSQuerySet.as_manager()
 
     @property
-    def is_release_dir(self):
-        return 'release' in self.path
+    def should_autograde(self):
+        return b'nbgrader' in Path(self.path).read_bytes()
 
     @property
     def relative_path(self):
-        if self.is_release_dir:
+        if self.should_autograde:
             rel_path = Path(self.path).relative_to(Path(settings.RESOURCE_DIR, str(self.teacher_project.pk), 'release'))
         else:
             rel_path = Path(self.path).relative_to(Path(settings.RESOURCE_DIR, str(self.teacher_project.pk)))
@@ -67,10 +67,12 @@ class Assignment(models.Model):
         """
         source = Path(self.path).parent
         destination = self.students_path(student_project).parent
-        if destination.exists():
+        if destination.exists() and destination != student_project.resource_root():
             shutil.rmtree(destination)
-        logger.info("Copy assignment file from teachers path %s to students path %s", source, destination)
-        shutil.copytree(source, destination)
+            logger.info("Copy assignment file from teachers path %s to students path %s", source, destination)
+            shutil.copytree(source, destination)
+        else:
+            shutil.copy2(self.path, destination)
 
     def students_path(self, student_project):
         """
@@ -142,7 +144,7 @@ class Assignment(models.Model):
         Send assiignment to canvas
         """
         self.copy_submitted_file(student_project)
-        if self.is_release_dir:
+        if self.should_autograde:
             self.autograde(student_project)
             grade = self.get_grade(student_project)
         teacher_workspace = self.teacher_project.servers.get(is_active=True, config__type='jupyter')
@@ -167,7 +169,7 @@ class Assignment(models.Model):
             'source_did': self.source_did,
             'url': url,
         }
-        if self.is_release_dir:
+        if self.should_autograde:
             context.update({
                 'grade': grade
             })
