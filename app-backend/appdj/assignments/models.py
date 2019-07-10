@@ -50,8 +50,16 @@ class Assignment(models.Model):
     objects = TBSQuerySet.as_manager()
 
     @property
+    def is_release_dir(self):
+        return 'release' in self.path
+
+    @property
     def relative_path(self):
-        return Path(self.path).relative_to(Path(settings.RESOURCE_DIR, str(self.teacher_project.pk), 'release'))
+        if self.is_release_dir:
+            rel_path = Path(self.path).relative_to(Path(settings.RESOURCE_DIR, str(self.teacher_project.pk), 'release'))
+        else:
+            rel_path = Path(self.path).relative_to(Path(settings.RESOURCE_DIR, str(self.teacher_project.pk)))
+        return rel_path
 
     def assign(self, student_project):
         """
@@ -134,8 +142,9 @@ class Assignment(models.Model):
         Send assiignment to canvas
         """
         self.copy_submitted_file(student_project)
-        self.autograde(student_project)
-        grade = self.get_grade(student_project)
+        if self.is_release_dir:
+            self.autograde(student_project)
+            grade = self.get_grade(student_project)
         teacher_workspace = self.teacher_project.servers.get(is_active=True, config__type='jupyter')
         oauth_session = OAuth1Session(
             self.oauth_app.application.client_id,
@@ -157,8 +166,11 @@ class Assignment(models.Model):
             'msg_id': uuid.uuid4().hex,
             'source_did': self.source_did,
             'url': url,
-            'grade': grade
         }
+        if self.is_release_dir:
+            context.update({
+                'grade': grade
+            })
         xml = render_to_string('servers/assignment.xml', context)
         response = oauth_session.post(self.outcome_url, data=xml,
                                       headers={'Content-Type': 'application/xml'})

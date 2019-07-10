@@ -61,6 +61,31 @@ class AssignmentTest(TestCase):
         self.assertIn('ps1', out)
         self.assertIn('notebook_grader_tests.ipynb', out)
 
+    def test_teachers_path_without_release_dir(self):
+        path = self.teacher_col.project.resource_root() / 'ps1/notebook_grader_tests.ipynb'
+        assignment = AssignmentFactory(
+            path=str(path),
+            teacher_project=self.teacher_col.project,
+            oauth_app=self.oauth_app
+        )
+        assignment.students_projects.add(self.student_col.project)
+        out = str(assignment.path)
+        self.assertIn(str(self.teacher_col.project.resource_root()), out)
+        self.assertIn('ps1', out)
+        self.assertIn('notebook_grader_tests.ipynb', out)
+
+    def test_students_path_without_release_dir(self):
+        path = self.teacher_col.project.resource_root() / 'ps1/notebook_grader_tests.ipynb'
+        assignment = AssignmentFactory(
+            path=str(path),
+            teacher_project=self.teacher_col.project,
+            oauth_app=self.oauth_app
+        )
+        out = str(assignment.students_path(self.student_col.project))
+        self.assertIn(str(self.student_col.project.resource_root()), out)
+        self.assertIn('ps1', out)
+        self.assertIn('notebook_grader_tests.ipynb', out)
+
     def test_submission_path(self):
         assignment = AssignmentFactory(
             path=str(self.path),

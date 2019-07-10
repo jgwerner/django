@@ -168,7 +168,7 @@ def file_selection(request, *args, **kwargs):
         if workspace is None:
             workspace = create_server(request.user, project, 'workspace')
         files = []
-        if request.data.get('ext_lti_assignment_id'):
+        if request.data.get('ext_lti_assignment_id') and (project_root / 'release').exists():
             root = project_root / 'release'
         else:
             root = project_root
