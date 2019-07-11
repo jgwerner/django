@@ -67,7 +67,10 @@ class Assignment(models.Model):
         """
         source = Path(self.path).parent
         destination = self.students_path(student_project).parent
-        if destination.exists() and destination != student_project.resource_root():
+        is_student_root = destination == student_project.resource_root()
+        if not is_student_root and not destination.is_dir():
+            destination.mkdir(parents=True)
+        if destination.exists() and not is_student_root:
             shutil.rmtree(destination)
             logger.info("Copy assignment file from teachers path %s to students path %s", source, destination)
             shutil.copytree(source, destination)
