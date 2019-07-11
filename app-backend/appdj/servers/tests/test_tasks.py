@@ -12,8 +12,7 @@ from oauth2_provider.generators import generate_client_id, generate_client_secre
 from appdj.canvas.tests.factories import CanvasInstanceFactory
 from appdj.oauth2.models import Application
 from appdj.projects.utils import perform_project_copy
-from appdj.projects.tests.factories import CollaboratorFactory, ProjectFactory
-from appdj.teams.tests.factories import TeamFactory, GroupFactory
+from appdj.projects.tests.factories import CollaboratorFactory
 from appdj.users.tests.factories import UserFactory
 from .factories import ServerFactory
 from ..models import Server, ServerSize, ServerRunStatistics
@@ -125,14 +124,14 @@ class LTITest(TestCase):
         assignment_path = 'ps1/Untitled.ipynb'
         teachers_path = self.project.resource_root() / 'release' / assignment_path
         teachers_path.parent.mkdir(exist_ok=True, parents=True)
-        teachers_path.write_bytes(b'test')
+        teachers_path.write_bytes(b'nbgrader')
         workspace_id, assingment_id = lti(
             str(self.project.pk), data, 'release/ps1/Untitled.ipynb')
         workspace = Server.objects.filter(id=workspace_id).first()
         self.assertIsNotNone(workspace)
         learner_path = workspace.project.resource_root() / assignment_path
         self.assertTrue(learner_path.exists())
-        self.assertEqual(learner_path.read_bytes(), b'test')
+        self.assertEqual(learner_path.read_bytes(), b'nbgrader')
 
 
 class TestTasks(TestCase):
