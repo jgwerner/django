@@ -25,18 +25,20 @@ class AssignmentTest(TestCase):
                 authorization_grant_type=App.GRANT_CLIENT_CREDENTIALS
             )
         )
+        self.fixture_path = Path(__file__).parent / 'nbgrader_fixture'
 
     def test_assign(self):
+        shutil.copytree(self.fixture_path / 'release', self.teacher_col.project.resource_root() / 'release')
         assignment = AssignmentFactory(
             path=str(self.path),
             teacher_project=self.teacher_col.project,
             oauth_app=self.oauth_app
         )
-        Path(assignment.path).mkdir(parents=True)
         assignment.assign(self.student_col.project)
         self.assertTrue(assignment.students_path(self.student_col.project).exists())
 
     def test_teachers_path(self):
+        shutil.copytree(self.fixture_path / 'release', self.teacher_col.project.resource_root() / 'release')
         assignment = AssignmentFactory(
             path=str(self.path),
             teacher_project=self.teacher_col.project,
@@ -50,6 +52,7 @@ class AssignmentTest(TestCase):
         self.assertIn('notebook_grader_tests.ipynb', out)
 
     def test_students_path(self):
+        shutil.copytree(self.fixture_path / 'release', self.teacher_col.project.resource_root() / 'release')
         assignment = AssignmentFactory(
             path=str(self.path),
             teacher_project=self.teacher_col.project,
@@ -75,6 +78,7 @@ class AssignmentTest(TestCase):
         self.assertIn('notebook_grader_tests.ipynb', out)
 
     def test_students_path_without_release_dir(self):
+        shutil.copytree(self.fixture_path / 'ps1', self.teacher_col.project.resource_root() / 'ps1')
         path = self.teacher_col.project.resource_root() / 'ps1/notebook_grader_tests.ipynb'
         assignment = AssignmentFactory(
             path=str(path),
@@ -87,6 +91,8 @@ class AssignmentTest(TestCase):
         self.assertIn('notebook_grader_tests.ipynb', out)
 
     def test_submission_path(self):
+        shutil.copytree(self.fixture_path / 'release', self.teacher_col.project.resource_root() / 'release')
+        shutil.copytree(self.fixture_path / 'submitted', self.teacher_col.project.resource_root() / 'submitted')
         assignment = AssignmentFactory(
             path=str(self.path),
             teacher_project=self.teacher_col.project,

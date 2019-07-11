@@ -292,15 +292,18 @@ class ServerTest(APITestCase):
     def test_reset_assignment_file(self):
         teacher_server = ServerFactory(project=self.project)
         learner_col = CollaboratorFactory(project__config={'copied_from': str(teacher_server.project.pk)})
-        learner_server = ServerFactory(project=learner_col.project, config={'assignments': [{'id': '123', 'path': 'release/test/test.ipynb'}], 'type': 'jupyter'})
+        learner_server = ServerFactory(
+            project=learner_col.project,
+            config={'assignments': [{'id': '123', 'path': 'release/test/test.ipynb'}], 'type': 'jupyter'}
+        )
         assignment_path = 'test/test.ipynb'
         teacher_assignment_path = teacher_server.project.resource_root() / 'release' / assignment_path
         teacher_assignment_path.parent.mkdir(parents=True, exist_ok=True)
-        teacher_assignment_path.write_bytes(b'123')
+        teacher_assignment_path.touch()
+        teacher_assignment_path.write_bytes(b'nbgrader')
         assignment = AssignmentFactory(path=str(teacher_assignment_path), teacher_project=self.project)
         assignment.assign(learner_col.project)
         learner_file = learner_server.project.resource_root() / assignment_path
-        learner_file.write_bytes(b'456')
         kwargs = {
             'namespace': learner_col.user.username,
             'project_project': str(learner_server.project.pk),
