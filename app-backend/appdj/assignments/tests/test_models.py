@@ -13,22 +13,30 @@ from .factories import AssignmentFactory
 
 class AssignmentTest(TestCase):
     def setUp(self):
+        self.app_name = 'ps1'
+        self.file = 'notebook_grader_tests.ipynb'
         self.teacher_col = CollaboratorFactory()
-        self.path = self.teacher_col.project.resource_root() / 'release/ps1/notebook_grader_tests.ipynb'
+        self.path = self.teacher_col.project.resource_root() / 'release' / self.app_name / self.file
+        self.no_release_path = self.teacher_col.project.resource_root() / self.app_name / self.file
         self.student_col = CollaboratorFactory(user__username='jkpteststudent')
+        self.fixture_path = Path(__file__).parent / 'nbgrader_fixture'
         self.oauth_app = Application.objects.create(
             application=App.objects.create(
                 client_id=generate_client_id(),
                 client_secret=generate_client_secret(),
-                name='ps1',
+                name=self.app_name,
                 client_type=App.CLIENT_CONFIDENTIAL,
                 authorization_grant_type=App.GRANT_CLIENT_CREDENTIALS
             )
         )
-        self.fixture_path = Path(__file__).parent / 'nbgrader_fixture'
+
+    def copy_fixture_tree_to_teacher_path(self, directory):
+        from_fixture = self.fixture_path / directory
+        teacher_path = self.teacher_col.project.resource_root() / directory
+        shutil.copytree(from_fixture, teacher_path)
 
     def test_assign(self):
-        shutil.copytree(self.fixture_path / 'release', self.teacher_col.project.resource_root() / 'release')
+        self.copy_fixture_tree_to_teacher_path('release')
         assignment = AssignmentFactory(
             path=str(self.path),
             teacher_project=self.teacher_col.project,
@@ -36,9 +44,10 @@ class AssignmentTest(TestCase):
         )
         assignment.assign(self.student_col.project)
         self.assertTrue(assignment.students_path(self.student_col.project).exists())
+        self.assertTrue(assignment.is_assigned(self.student_col.project))
 
     def test_teachers_path(self):
-        shutil.copytree(self.fixture_path / 'release', self.teacher_col.project.resource_root() / 'release')
+        self.copy_fixture_tree_to_teacher_path('release')
         assignment = AssignmentFactory(
             path=str(self.path),
             teacher_project=self.teacher_col.project,
@@ -48,11 +57,11 @@ class AssignmentTest(TestCase):
         out = str(assignment.path)
         self.assertIn(str(self.teacher_col.project.resource_root()), out)
         self.assertIn('release', out)
-        self.assertIn('ps1', out)
-        self.assertIn('notebook_grader_tests.ipynb', out)
+        self.assertIn(self.app_name, out)
+        self.assertIn(self.file, out)
 
     def test_students_path(self):
-        shutil.copytree(self.fixture_path / 'release', self.teacher_col.project.resource_root() / 'release')
+        self.copy_fixture_tree_to_teacher_path('release')
         assignment = AssignmentFactory(
             path=str(self.path),
             teacher_project=self.teacher_col.project,
@@ -61,38 +70,46 @@ class AssignmentTest(TestCase):
         out = str(assignment.students_path(self.student_col.project))
         self.assertIn(str(self.student_col.project.resource_root()), out)
         self.assertNotIn('release', out)
-        self.assertIn('ps1', out)
-        self.assertIn('notebook_grader_tests.ipynb', out)
+        self.assertIn(self.app_name, out)
+        self.assertIn(self.file, out)
+
+    def test_assign_student_dir_does_not_exist(self):
+        self.copy_fixture_tree_to_teacher_path('release')
+        assignment = AssignmentFactory(
+            path=str(self.path),
+            teacher_project=self.teacher_col.project,
+            oauth_app=self.oauth_app
+        )
+        shutil.rmtree(self.teacher_col.project.resource_root())
+        self.assertRaises(Exception, assignment.assign, self.student_col.project)
 
     def test_teachers_path_without_release_dir(self):
-        path = self.teacher_col.project.resource_root() / 'ps1/notebook_grader_tests.ipynb'
         assignment = AssignmentFactory(
-            path=str(path),
+            path=str(self.no_release_path),
             teacher_project=self.teacher_col.project,
             oauth_app=self.oauth_app
         )
         assignment.students_projects.add(self.student_col.project)
         out = str(assignment.path)
         self.assertIn(str(self.teacher_col.project.resource_root()), out)
-        self.assertIn('ps1', out)
-        self.assertIn('notebook_grader_tests.ipynb', out)
+        self.assertIn(self.app_name, out)
+        self.assertIn(self.file, out)
 
     def test_students_path_without_release_dir(self):
-        shutil.copytree(self.fixture_path / 'ps1', self.teacher_col.project.resource_root() / 'ps1')
-        path = self.teacher_col.project.resource_root() / 'ps1/notebook_grader_tests.ipynb'
+        self.copy_fixture_tree_to_teacher_path(self.app_name)
         assignment = AssignmentFactory(
-            path=str(path),
+            path=str(self.no_release_path),
             teacher_project=self.teacher_col.project,
             oauth_app=self.oauth_app
         )
         out = str(assignment.students_path(self.student_col.project))
         self.assertIn(str(self.student_col.project.resource_root()), out)
-        self.assertIn('ps1', out)
-        self.assertIn('notebook_grader_tests.ipynb', out)
+        self.assertIn(self.app_name, out)
+        self.assertIn(self.file, out)
 
     def test_submission_path(self):
-        shutil.copytree(self.fixture_path / 'release', self.teacher_col.project.resource_root() / 'release')
-        shutil.copytree(self.fixture_path / 'submitted', self.teacher_col.project.resource_root() / 'submitted')
+        self.copy_fixture_tree_to_teacher_path('release')
+        self.copy_fixture_tree_to_teacher_path('submitted')
         assignment = AssignmentFactory(
             path=str(self.path),
             teacher_project=self.teacher_col.project,
@@ -102,8 +119,21 @@ class AssignmentTest(TestCase):
         out = str(assignment.submission_path(self.student_col.project))
         self.assertIn(str(self.teacher_col.project.resource_root()), out)
         self.assertIn('submitted', out)
-        self.assertIn('ps1', out)
-        self.assertIn('notebook_grader_tests.ipynb', out)
+        self.assertIn(self.app_name, out)
+        self.assertIn(self.file, out)
+
+    def test_copy_submitted_file(self):
+        self.copy_fixture_tree_to_teacher_path('release')
+        self.copy_fixture_tree_to_teacher_path('submitted')
+        assignment = AssignmentFactory(
+            path=str(self.path),
+            teacher_project=self.teacher_col.project,
+            oauth_app=self.oauth_app
+        )
+        assignment.students_projects.add(self.student_col.project)
+        assignment.assign(self.student_col.project)
+        assignment.copy_submitted_file(self.student_col.project)
+        self.assertTrue(assignment.submission_path(self.student_col.project).exists())
 
     def test_autograde(self):
         """
@@ -115,9 +145,8 @@ class AssignmentTest(TestCase):
             teacher_project=self.teacher_col.project,
             oauth_app=self.oauth_app
         )
-        fixture = Path(__file__).parent / 'nbgrader_fixture'
-        shutil.copytree(fixture, self.teacher_col.project.resource_root())
-        self.assertTrue((self.teacher_col.project.resource_root() / 'release/ps1/notebook_grader_tests.ipynb').exists())
+        shutil.copytree(self.fixture_path, self.teacher_col.project.resource_root())
+        self.assertTrue(self.path.exists())
         assignment.students_projects.add(self.student_col.project)
         assignment.autograde(self.student_col.project)
         self.assertEqual(assignment.get_grade(self.student_col.project), 2)
