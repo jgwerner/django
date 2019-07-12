@@ -9,6 +9,9 @@ import Flex from 'components/atoms/Flex'
 import Button from 'components/atoms/Button'
 import history from 'utils/history'
 import { getProject } from '../../actions'
+import { closeError, closeSuccess } from '../actions'
+import { StoreState } from 'utils/store'
+import Banner from 'components/Banner'
 
 interface AdvancedSettingsRouteProps {
   userName: string
@@ -17,10 +20,15 @@ interface AdvancedSettingsRouteProps {
 
 interface AdvancedSettingsMapStateToProps {
   projectDetails: any
+  updateError: boolean
+  updateSuccess: boolean
+  errorMessage: string
 }
 
 interface AdvancedSettingsMapDispatchToProps {
   getProject: (userName: string, projectName: string) => void
+  closeError: () => void
+  closeSuccess: () => void
 }
 
 type AdvancedSettingsProps = AdvancedSettingsMapStateToProps &
@@ -40,20 +48,59 @@ const AsyncDeleteConfirm = Loadable({
 const AdvancedSettings = class extends React.PureComponent<
   AdvancedSettingsProps
 > {
+  componentDidMount() {
+    const { closeError, closeSuccess } = this.props
+    closeError()
+    closeSuccess()
+  }
+
   componentDidUpdate(prev: any) {
     const { match, projectDetails, getProject } = this.props
     if (prev.projectDetails.private !== projectDetails.private)
       getProject(match.params.userName, match.params.projectName)
   }
 
+  componentWillUnmount() {
+    const { closeError, closeSuccess } = this.props
+    closeError()
+    closeSuccess()
+  }
+
   render() {
-    const { match, projectDetails } = this.props
+    const {
+      match,
+      projectDetails,
+      updateError,
+      updateSuccess,
+      closeError,
+      closeSuccess
+    } = this.props
     return (
       <React.Fragment>
         <Heading mb={4} bold>
           Advanced Settings
         </Heading>
-        <Flex width="100%" m={4}>
+        {updateError ? (
+          <Banner
+            danger
+            width={1}
+            message="There was an error updating the project"
+            action={() => closeError()}
+          />
+        ) : (
+          ''
+        )}
+        {updateSuccess ? (
+          <Banner
+            success
+            width={1}
+            message="Project has been updated"
+            action={() => closeSuccess()}
+          />
+        ) : (
+          ''
+        )}
+        <Flex width="100%" m={[2, 3, 4]}>
           <Text m={2}>
             {projectDetails.private
               ? 'Make this project public'
@@ -71,7 +118,7 @@ const AdvancedSettings = class extends React.PureComponent<
             render={() => <AsyncChangeVisibility />}
           />
         </Flex>
-        <Flex width="100%" m={4}>
+        <Flex width="100%" m={[2, 3, 4]}>
           <Text m={2}>Delete project</Text>
           <Button
             ml="auto"
@@ -91,17 +138,26 @@ const AdvancedSettings = class extends React.PureComponent<
   }
 }
 
+const mapStateToProps = (state: StoreState) => ({
+  projectDetails: state.project.details.projectDetails,
+  updateError: state.project.settings.updateError,
+  updateSuccess: state.project.settings.updateSuccess,
+  errorMessage: state.project.settings.errorMessage
+})
+
 const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
-      getProject
+      getProject,
+      closeError,
+      closeSuccess
     },
     dispatch
   )
 
 export default withRouter(
   connect(
-    null,
+    mapStateToProps,
     mapDispatchToProps
   )(AdvancedSettings)
 )

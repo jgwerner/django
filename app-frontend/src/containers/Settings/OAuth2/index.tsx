@@ -8,6 +8,7 @@ import Divider from 'components/atoms/Divider'
 import Loadable from 'react-loadable'
 import { createApp } from './actions'
 import { StoreState } from 'utils/store'
+import ErrorBoundary from 'utils/ErrorBoundary'
 
 interface OAuth2MapStateToProps {
   username: string
@@ -32,14 +33,18 @@ const AsyncAppList = Loadable({
 const OAuth2 = (props: OAuth2Props) => {
   const { username, values, createApp } = props
   return (
-    <Container width={1 / 2}>
+    <Container width={[1, 2 / 3, 1 / 2]}>
       <Heading bold>Applications</Heading>
-      <AsyncAppList />
+      <ErrorBoundary>
+        <AsyncAppList />
+      </ErrorBoundary>
       <Divider />
       <Heading size="h3" bold>
         New Application
       </Heading>
-      <AsyncNewApp onSubmit={() => createApp(username, values.name)} />
+      <ErrorBoundary>
+        <AsyncNewApp onSubmit={() => createApp(username, values.name)} />
+      </ErrorBoundary>
     </Container>
   )
 }

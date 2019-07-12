@@ -7,7 +7,10 @@ import {
   NEW_APP_FAILURE,
   DELETE_APP_REQUEST,
   DELETE_APP_SUCCESS,
-  DELETE_APP_FAILURE
+  DELETE_APP_FAILURE,
+  CLOSE_DELETE_SUCCESS,
+  CLOSE_CREATE_SUCCESS,
+  CLOSE_CREATE_ERROR
 } from './actions'
 import { AnyAction } from 'redux'
 
@@ -16,13 +19,15 @@ export interface OAuth2StoreState {
   appsFetched: boolean
   newApp: boolean
   appDeleted: boolean
+  newAppError: boolean
 }
 
 export const initialState = {
   apps: [],
   appsFetched: false,
   newApp: false,
-  appDeleted: false
+  appDeleted: false,
+  newAppError: false
 }
 
 const oauth2 = (state = initialState, action: AnyAction) => {
@@ -44,7 +49,8 @@ const oauth2 = (state = initialState, action: AnyAction) => {
     case NEW_APP_REQUEST:
       return {
         ...state,
-        newApp: false
+        newApp: false,
+        newAppError: false
       }
     case NEW_APP_SUCCESS:
       return {
@@ -53,7 +59,8 @@ const oauth2 = (state = initialState, action: AnyAction) => {
       }
     case NEW_APP_FAILURE:
       return {
-        ...state
+        ...state,
+        newAppError: true
       }
     case DELETE_APP_REQUEST:
       return {
@@ -68,6 +75,21 @@ const oauth2 = (state = initialState, action: AnyAction) => {
     case DELETE_APP_FAILURE:
       return {
         ...state
+      }
+    case CLOSE_DELETE_SUCCESS:
+      return {
+        ...state,
+        appDeleted: false
+      }
+    case CLOSE_CREATE_SUCCESS:
+      return {
+        ...state,
+        newApp: false
+      }
+    case CLOSE_CREATE_ERROR:
+      return {
+        ...state,
+        newAppError: false
       }
     default:
       return state

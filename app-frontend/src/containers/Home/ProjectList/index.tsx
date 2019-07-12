@@ -9,6 +9,7 @@ import Text from 'components/atoms/Text'
 import Link from 'components/atoms/Link'
 import { getProjectList } from './actions'
 import { StoreState } from 'utils/store'
+import ErrorBoundary from 'utils/ErrorBoundary'
 
 interface ProjectsListMapStateToProps {
   projectsFetched: boolean
@@ -45,31 +46,33 @@ const ProjectList = class extends React.Component<ProjectsListProps> {
         {!projectsFetched ? (
           <Projects />
         ) : (
-          <Projects>
-            {projects.map((project: ProjectProps) => (
-              <Project key={project.id}>
-                {project.private ? (
-                  <Icon size="25" type="private" />
-                ) : (
-                  <Icon size="25" type="public" />
-                )}
-                <Text mt={2} color="gray7" caps bold>
-                  {project.owner}
-                </Text>
-                <Heading size="h4">
-                  <Link to={`/${username}/${project.name}`}>
-                    {project.name}
-                  </Link>
-                </Heading>
-                <Text color="gray7">
-                  {project.description || <span>&nbsp;</span>}
-                </Text>
-                <Text mt={4} mb={2} color="gray7">
-                  Updated {distanceInWordsToNow(project.last_updated)} ago
-                </Text>
-              </Project>
-            ))}
-          </Projects>
+          <ErrorBoundary>
+            <Projects>
+              {projects.map((project: ProjectProps) => (
+                <Project key={project.id}>
+                  {project.private ? (
+                    <Icon size="25" type="private" />
+                  ) : (
+                    <Icon size="25" type="public" />
+                  )}
+                  <Text mt={2} color="gray7" caps bold>
+                    {project.owner}
+                  </Text>
+                  <Heading size="h4">
+                    <Link to={`/${username}/${project.name}`}>
+                      {project.name}
+                    </Link>
+                  </Heading>
+                  <Text color="gray7">
+                    {project.description || <span>&nbsp;</span>}
+                  </Text>
+                  <Text mt={4} mb={2} color="gray7">
+                    Updated {distanceInWordsToNow(project.last_updated)} ago
+                  </Text>
+                </Project>
+              ))}
+            </Projects>
+          </ErrorBoundary>
         )}
       </React.Fragment>
     )

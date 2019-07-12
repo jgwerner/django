@@ -49,9 +49,10 @@ const BG = styled.div`
   height: 100%;
   left: 0;
   top: 0;
-  z-index: 10;
+  z-index: 2;
 `
 const ModalContainer = styled(Container)`
+  margin: 0 auto;
   position: fixed;
   top: 45%;
   left: 50%;
@@ -75,11 +76,11 @@ const CloseButton = styled(Icon)`
 export const Overlay = (props: ModalProps) => <BG {...props} />
 
 export const ModalCard = (props: ModalProps) => (
-  <ModalContainer mx="auto" bg="white" width={1 / 3} {...props} />
+  <ModalContainer bg="white" width={[8 / 10, 1 / 2, 1 / 3]} {...props} />
 )
 
 export const ModalContent = (props: any) => (
-  <Text fontWeight={600} p={4} {...props} />
+  <Text fontWeight={600} p={[2, 4]} {...props} />
 )
 
 export default class Modal extends React.PureComponent<ModalProps> {
@@ -97,7 +98,7 @@ export default class Modal extends React.PureComponent<ModalProps> {
             </ModalTitle>
             <CloseButton size="25" type="close" onClick={handleClick} />
           </ModalHeader>
-          <ModalBody textAlign="center" p={3} {...props}>
+          <ModalBody textAlign="center" p={[2, 3]} {...props}>
             {props.body}
           </ModalBody>
         </ModalCard>

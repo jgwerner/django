@@ -3,12 +3,21 @@ import { color, ColorProps, fontSize, FontSizeProps } from 'styled-system'
 import theme from 'utils/theme'
 
 export interface DropdownProps extends ColorProps {
-  show: boolean
+  show?: boolean
 }
 
 export interface DropdownItemProps extends FontSizeProps {
   noHover?: boolean
 }
+
+export const DropdownBG = styled.div<DropdownProps>`
+  display: ${props => (props.show ? 'block' : 'none')};
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+`
 
 const Dropdown = styled.div<DropdownProps>`
   display: ${props => (props.show ? 'inline' : 'none')};

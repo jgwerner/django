@@ -41,7 +41,9 @@ const login = (state = initialState, action: AnyAction) => {
         ...state,
         loggingIn: false,
         loginError: true,
-        errorMessage: action.error.data.non_field_errors[0]
+        errorMessage: action.error.data.non_field_errors
+          ? action.error.data.non_field_errors[0]
+          : 'Login Failed'
       }
     case CLOSE_ERROR:
       return {

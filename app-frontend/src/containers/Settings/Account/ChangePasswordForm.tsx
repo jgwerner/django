@@ -8,7 +8,6 @@ import {
   FormError,
   FormButton
 } from 'components/Form'
-import Flex from 'components/atoms/Flex'
 import Container from 'components/atoms/Container'
 
 interface RenderFieldProps {
@@ -41,22 +40,18 @@ const renderField = ({
   meta: { touched, error }
 }: RenderFieldProps) => (
   <FormField>
-    <Flex>
-      <FieldLabel py={0} width={1 / 2}>
-        {label}
-      </FieldLabel>
-      <Container width={2 / 3}>
-        <FormInput {...input} type={type} placeholder={label} />
-        {touched && (error && <FormError>{error}</FormError>)}
-      </Container>
-    </Flex>
+    <FieldLabel py={3}>{label}</FieldLabel>
+    <Container>
+      <FormInput {...input} type={type} placeholder={label} />
+      {touched && (error && <FormError>{error}</FormError>)}
+    </Container>
   </FormField>
 )
 
 const ChangePasswordForm = (props: ChangePasswordFormProps) => {
   const { handleSubmit, invalid, registering } = props
   return (
-    <Form mx={3} width={1 / 2} onSubmit={handleSubmit}>
+    <Form mx={3} width={[1, 1, 1 / 3]} onSubmit={handleSubmit}>
       <Field
         name="password"
         label="New Password"

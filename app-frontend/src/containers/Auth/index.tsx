@@ -43,31 +43,33 @@ const AsyncTokenLogin = Loadable({
 })
 
 const Auth = (props: AuthProps) => {
-  // const handleBanner = () => {
-  //   closeError()
-  // }
   const displayError = () =>
     loginError ? (
       <Container>
-        {console.log('error in render', errorMessage)}
         <Banner
           danger
           message={errorMessage}
           my={3}
-          width={1 / 3}
+          width={[9 / 10, 1 / 2, 1 / 3]}
           action={() => closeError()}
         />
       </Container>
     ) : (
       ''
     )
-  // setTimeout(() => handleBanner(), 4000)
 
   const { match, loginError, errorMessage, closeError } = props
   return (
     <Container>
       {displayError()}
-      <Card mx="auto" my={6} py={3} px={5} type="basic" width={1 / 3}>
+      <Card
+        mx="auto"
+        my={6}
+        py={3}
+        px={[1, 3, 5]}
+        type="basic"
+        width={[9 / 10, 1 / 2, 1 / 3]}
+      >
         <Logo width="60px" mt={3} mb={4} />
         <Switch>
           <Redirect from={`${match.url}/`} to={`${match.url}/login`} exact />

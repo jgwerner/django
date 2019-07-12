@@ -3,11 +3,14 @@ import { Provider } from 'react-redux'
 import { ConnectedRouter } from 'connected-react-router'
 import { PersistGate } from 'redux-persist/integration/react'
 import { ThemeProvider } from 'styled-components'
-import { store, persistor } from '../../utils/store'
-import history from '../../utils/history'
-import theme from '../../utils/theme'
-import Global from '../../utils/theme/global'
+import { store, persistor } from 'utils/store'
+import history from 'utils/history'
+import theme from 'utils/theme'
+import Global from 'utils/theme/global'
 import Main from '../Main'
+import * as Sentry from '@sentry/browser'
+
+Sentry.init({ dsn: process.env.REACT_APP_SENTRY_DSN || '' })
 
 const App = () => (
   <Provider store={store}>

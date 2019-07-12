@@ -51,7 +51,6 @@ const WorkspaceTable = class extends React.PureComponent<WorkspaceTableProps> {
     this.socket = new WebSocket(props.statusURL)
     this.socket.addEventListener('message', function(event: any) {
       var object = JSON.parse(event.data)
-      console.log('Message from server in table render: ', event)
       props.updateStatus(object.status)
     })
   }

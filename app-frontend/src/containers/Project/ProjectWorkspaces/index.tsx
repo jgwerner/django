@@ -3,9 +3,11 @@ import { withRouter, RouteComponentProps } from 'react-router-dom'
 import { connect } from 'react-redux'
 import { bindActionCreators, Dispatch } from 'redux'
 import Loadable from 'react-loadable'
-import { getWorkspaces, GetWorkspacesActions } from './actions'
+import { getWorkspaces, GetWorkspacesActions, closeError } from './actions'
 import { getProject, ProjectDetailsActions } from '../actions'
 import { StoreState } from 'utils/store'
+import Container from 'components/atoms/Container'
+import Banner from 'components/Banner'
 
 interface WorkspacesRouteProps {
   userName: string
@@ -17,6 +19,7 @@ interface WorkspacesMapStateToProps {
   projectDetails: any
   newWorkspace: boolean
   workspaces: any
+  startServerError: boolean
 }
 
 interface WorkspacesMapDispatchToProps {
@@ -28,6 +31,7 @@ interface WorkspacesMapDispatchToProps {
     userName: string,
     id: string
   ) => (dispatch: Dispatch<GetWorkspacesActions>) => void
+  closeError: () => void
 }
 
 type WorkspacesProps = WorkspacesMapDispatchToProps &
@@ -60,7 +64,13 @@ class Workspaces extends React.Component<WorkspacesProps> {
   }
 
   render() {
-    const { projectDetails, workspaces, match } = this.props
+    const {
+      projectDetails,
+      workspaces,
+      match,
+      startServerError,
+      closeError
+    } = this.props
     return (
       <Fragment>
         {projectDetails.name === match.params.projectName ? (
@@ -71,6 +81,19 @@ class Workspaces extends React.Component<WorkspacesProps> {
               </Fragment>
             ) : (
               <Fragment>
+                {startServerError ? (
+                  <Container>
+                    <Banner
+                      danger
+                      message="The server could not be found. Please delete the server and create a new one."
+                      my={3}
+                      width={1}
+                      action={() => closeError()}
+                    />
+                  </Container>
+                ) : (
+                  ''
+                )}
                 {workspaces[0].project === projectDetails.id ? (
                   <AsyncWorkspaceTable statusURL={workspaces[0].status_url} />
                 ) : (
@@ -92,14 +115,16 @@ const mapStateToProps = ({
 }: StoreState): WorkspacesMapStateToProps => ({
   workspaces: project.workspaces.servers.workspaces,
   newWorkspace: project.workspaces.add.newWorkspace,
-  projectDetails: project.details.projectDetails
+  projectDetails: project.details.projectDetails,
+  startServerError: project.workspaces.servers.startServerError
 })
 
 const mapDispatchToProps = (dispatch: Dispatch): WorkspacesMapDispatchToProps =>
   bindActionCreators(
     {
       getProject,
-      getWorkspaces
+      getWorkspaces,
+      closeError
     },
     dispatch
   )

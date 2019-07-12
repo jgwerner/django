@@ -9,7 +9,8 @@ describe('project reducer', () => {
       serverRunning: false,
       deleteServerSuccess: false,
       deleteServerError: false,
-      serverStatus: ''
+      serverStatus: '',
+      startServerError: false
     })
   })
 
@@ -96,7 +97,8 @@ describe('project reducer', () => {
       type: actions.START_SERVER_FAILURE
     }
     expect(servers(initialState, failureAction)).toEqual({
-      ...initialState
+      ...initialState,
+      startServerError: true
     })
   })
 

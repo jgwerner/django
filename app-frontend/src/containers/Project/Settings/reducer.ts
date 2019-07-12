@@ -7,46 +7,62 @@ import {
   DELETE_PROJECT_FAILURE,
   CHANGE_VISIBILITY_REQUEST,
   CHANGE_VISIBILITY_SUCCESS,
-  CHANGE_VISIBILITY_FAILURE
+  CHANGE_VISIBILITY_FAILURE,
+  CLOSE_ERROR,
+  CLOSE_SUCCESS
 } from './actions'
 import { AnyAction } from 'redux'
 
 export interface SettingsStoreState {
-  projectDetails: any
-  results: any
+  projectUpdated: boolean
+  updateSuccess: boolean
+  updateError: boolean
+  errorMessage: string
 }
 
 export const initialState = {
-  projectDetails: {}
+  projectUpdated: false,
+  updateSuccess: false,
+  updateError: false,
+  errorMessage: ''
 }
 
 const settings = (state = initialState, action: AnyAction) => {
   switch (action.type) {
     case UPDATE_PROJECT_REQUEST:
       return {
-        ...state
+        ...state,
+        projectUpdated: false
       }
     case UPDATE_PROJECT_SUCCESS:
       return {
         ...state,
-        projectDetails: action.data[0]
+        projectUpdated: true,
+        updateSuccess: true,
+        updateError: false
       }
     case UPDATE_PROJECT_FAILURE:
       return {
-        ...state
+        ...state,
+        updateError: true,
+        updateSuccess: false,
+        errorMessage: action.error.data.name[0]
       }
     case CHANGE_VISIBILITY_REQUEST:
       return {
-        ...state
+        ...state,
+        projectUpdated: false
       }
     case CHANGE_VISIBILITY_SUCCESS:
       return {
         ...state,
-        projectDetails: action.data[0]
+        projectUpdated: true,
+        updateSuccess: true
       }
     case CHANGE_VISIBILITY_FAILURE:
       return {
-        ...state
+        ...state,
+        updateError: true
       }
     case DELETE_PROJECT_REQUEST:
       return {
@@ -59,6 +75,17 @@ const settings = (state = initialState, action: AnyAction) => {
     case DELETE_PROJECT_FAILURE:
       return {
         ...state
+      }
+    case CLOSE_ERROR:
+      return {
+        ...state,
+        updateError: false
+      }
+    case CLOSE_SUCCESS:
+      return {
+        ...state,
+        updateSuccess: false,
+        projectUpdated: false
       }
     default:
       return state

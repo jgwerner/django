@@ -8,9 +8,9 @@ import {
   FormTextArea,
   FormError,
   FormButton
-} from '../../../../components/Form'
+} from 'components/Form'
 
-interface ProjectDetailsFormProps {
+interface RenderFieldProps {
   input: string
   label: string
   type: string
@@ -24,16 +24,15 @@ interface ProjectDetailsFormProps {
 const required = (value: string) =>
   value ? undefined : 'This field cannot be blank'
 
-const renderField = ({
+export const renderField = ({
   input,
   label,
   type,
-  placeholder,
   meta: { touched, error }
-}: ProjectDetailsFormProps) => (
+}: RenderFieldProps) => (
   <FormField>
     <FieldLabel>{label}</FieldLabel>
-    <FormInput {...input} type={type} placeholder={placeholder} />
+    <FormInput {...input} type={type} placeholder={label} />
     {touched && (error && <FormError>{error}</FormError>)}
   </FormField>
 )
@@ -43,7 +42,7 @@ const renderTextArea = ({
   label,
   type,
   meta: { touched, error }
-}: ProjectDetailsFormProps) => (
+}: RenderFieldProps) => (
   <FormField>
     <FieldLabel>{label}</FieldLabel>
     <FormTextArea {...input} type={type} placeholder={label} />
@@ -51,14 +50,11 @@ const renderTextArea = ({
   </FormField>
 )
 
-const ProjectDetailsForm = (
-  props: InjectedFormProps,
-  enableReinitialize: boolean
-) => {
-  const { handleSubmit, invalid } = props
+const ProjectDetailsForm = (props: InjectedFormProps) => {
+  const { handleSubmit, invalid, pristine } = props
   return (
     <React.Fragment>
-      <Form m={2} width={1 / 2} onSubmit={handleSubmit}>
+      <Form m={2} width={[1, 1 / 3, 1 / 2]} onSubmit={handleSubmit}>
         <Field
           name="name"
           label="Project Name"
@@ -72,7 +68,7 @@ const ProjectDetailsForm = (
           component={renderTextArea}
           type="textarea"
         />
-        <FormButton type="submit" disabled={invalid}>
+        <FormButton type="submit" disabled={invalid || pristine}>
           Save Changes
         </FormButton>
       </Form>

@@ -1,4 +1,4 @@
-import history from '../../../utils/history'
+import history from 'utils/history'
 import UpdateProjectAPI from './api'
 import { Dispatch } from 'redux'
 
@@ -23,6 +23,12 @@ export type DELETE_PROJECT_SUCCESS = typeof DELETE_PROJECT_SUCCESS
 export const DELETE_PROJECT_FAILURE = 'DELETE_PROJECT_FAILURE'
 export type DELETE_PROJECT_FAILURE = typeof DELETE_PROJECT_FAILURE
 
+export const CLOSE_ERROR = 'CLOSE_ERROR'
+export type CLOSE_ERROR = typeof CLOSE_ERROR
+
+export const CLOSE_SUCCESS = 'CLOSE_SUCCESS'
+export type CLOSE_SUCCESS = typeof CLOSE_SUCCESS
+
 export interface UpdateProjectActions {
   type: UPDATE_PROJECT_REQUEST | UPDATE_PROJECT_SUCCESS | UPDATE_PROJECT_FAILURE
   data?: any
@@ -42,6 +48,14 @@ export interface DeleteProjectActions {
   type: DELETE_PROJECT_REQUEST | DELETE_PROJECT_SUCCESS | DELETE_PROJECT_FAILURE
   data?: any
   error?: any
+}
+
+export interface CloseErrorAction {
+  type: CLOSE_ERROR
+}
+
+export interface CloseSuccessAction {
+  type: CLOSE_SUCCESS
 }
 
 export const updateProject = (
@@ -146,4 +160,16 @@ export const deleteProject = (username: string, projectName: string) => (
       dispatch(failure(error.response))
     }
   )
+}
+
+export const closeError = () => (dispatch: Dispatch) => {
+  dispatch({
+    type: CLOSE_ERROR
+  })
+}
+
+export const closeSuccess = () => (dispatch: Dispatch) => {
+  dispatch({
+    type: CLOSE_SUCCESS
+  })
 }

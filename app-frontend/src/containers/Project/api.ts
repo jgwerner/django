@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { getToken } from '../../utils/auth'
+import { getToken } from 'utils/auth'
 
 class ProjectAPI {
   getProject = (username: string, projectName: string) => {

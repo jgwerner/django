@@ -9,12 +9,12 @@ import {
   RouteComponentProps
 } from 'react-router-dom'
 import Loadable from 'react-loadable'
-import { TabbedNav, TabbedNavLink } from '../../components/TabbedNav'
-import { ContentTop } from '../../components/AuthenticatedLayout/Content'
-import Container from '../../components/atoms/Container'
+import { TabbedNav, TabbedNavLink } from 'components/TabbedNav'
+import { ContentTop } from 'components/AuthenticatedLayout/Content'
+import Container from 'components/atoms/Container'
 import Breadcrumbs from './Breadcrumbs'
 import { getProject } from './actions'
-import { StoreState } from '../../utils/store'
+import { StoreState } from 'utils/store'
 
 interface ProjectRouterProps {
   userName: string
@@ -22,8 +22,8 @@ interface ProjectRouterProps {
 }
 
 interface ProjectMapStateToProps {
-  projectDetails: any
   projectFetched: boolean
+  projectUpdated: boolean
 }
 
 interface ProjectMapDispatchToProps {
@@ -49,8 +49,15 @@ const Project = class extends React.PureComponent<ProjectProps> {
     getProject(match.params.userName, match.params.projectName)
   }
 
+  componentDidUpdate(prev: any) {
+    const { match, getProject } = this.props
+    if (match.params.projectName !== prev.match.params.projectName) {
+      getProject(match.params.userName, match.params.projectName)
+    }
+  }
+
   render() {
-    const { projectFetched, match, projectDetails } = this.props
+    const { projectFetched, match } = this.props
     return (
       <React.Fragment>
         {!projectFetched ? (
@@ -75,7 +82,7 @@ const Project = class extends React.PureComponent<ProjectProps> {
               />
               <Route
                 path={`${match.path}/settings`}
-                render={() => <AsyncSettings projectDetails={projectDetails} />}
+                render={() => <AsyncSettings />}
               />
               <Redirect
                 from={`${match.path}`}
@@ -90,8 +97,8 @@ const Project = class extends React.PureComponent<ProjectProps> {
 }
 
 const mapStateToProps = (state: StoreState) => ({
-  projectDetails: state.project.details.projectDetails,
-  projectFetched: state.project.details.projectFetched
+  projectFetched: state.project.details.projectFetched,
+  projectUpdated: state.project.settings.projectUpdated
 })
 
 const mapDispatchToProps = (dispatch: Dispatch) =>

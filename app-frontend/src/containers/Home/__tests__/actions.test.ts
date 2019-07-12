@@ -1,7 +1,7 @@
 import moxios from 'moxios'
 import thunk from 'redux-thunk'
 import configureMockStore from 'redux-mock-store'
-import { getUserInfo, logout, LOGOUT } from '../actions'
+import { getUserInfo, logout } from '../actions'
 
 const middlewares = [thunk]
 const mockStore = configureMockStore(middlewares)
@@ -83,8 +83,12 @@ describe('home page actions', () => {
 
   describe('logout', () => {
     it('dispatches logout', () => {
-      const expectedActions = { type: 'LOGOUT' }
-      expect(logout()).toEqual(expectedActions)
+      const expectedActions = [{ type: 'LOGOUT' }]
+
+      const store = mockStore({})
+
+      store.dispatch<any>(logout())
+      return expect(store.getActions()).toEqual(expectedActions)
     })
   })
 })

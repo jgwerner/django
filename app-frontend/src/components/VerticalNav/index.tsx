@@ -1,8 +1,9 @@
 import React, { Fragment } from 'react'
 import styled from 'styled-components/macro'
 import { NavLink } from 'react-router-dom'
-import theme from '../../utils/theme'
-import Icon from '../../components/Icon'
+import theme from 'utils/theme'
+import Icon from 'components/Icon'
+import { space, width } from 'styled-system'
 
 export const VerticalNavLayout = styled.div`
   display: flex;
@@ -10,19 +11,34 @@ export const VerticalNavLayout = styled.div`
     props.project ? theme.contentPadding : ''};
   width: 100%;
 `
-export const VerticalNavLayoutMenu = styled.div`
+const VerticalNavLayoutMenuStyled = styled.div`
   margin: -${theme.contentPadding};
   margin-right: 0;
   padding-top: ${theme.contentPadding};
-  padding-right: ${theme.contentPadding};
   background-color: ${theme.colors.blueLight};
   border-right: 1px solid ${theme.colors.gray2};
-  width: 300px;
+  ${space}
+  ${width}
 `
-export const VerticalNavLayoutContent = styled.div`
+
+export const VerticalNavLayoutMenu = (props: any) => (
+  <VerticalNavLayoutMenuStyled
+    pr={['5px', '25px', '50px']}
+    width={[1 / 3, 1 / 2, 1 / 5]}
+    {...props}
+  />
+)
+
+const VerticalNavLayoutContentStyled = styled.div`
   margin: 0 ${theme.contentPadding};
   width: 100%;
+  ${space}
 `
+
+export const VerticalNavLayoutContent = (props: any) => (
+  <VerticalNavLayoutContentStyled my={[2, 3, 4]} {...props} />
+)
+
 export const VerticalNavLink = styled(NavLink).attrs({
   activeClassName: 'active'
 })`

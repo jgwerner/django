@@ -21,6 +21,7 @@
     "not op_mini all"
   ],
   "dependencies": {
+    "@sentry/browser": "^5.5.0",
     "@types/node": "^11.13.4",
     "@types/qs": "^6.5.3",
     "@types/react": "^16.8.19",

@@ -56,7 +56,6 @@ export const addProject = (username: string, values: any) => (
   )
 }
 export const closeError = () => (dispatch: Dispatch) => {
-  console.log('close err action')
   dispatch({
     type: CLOSE_ERROR
   })

@@ -2,11 +2,11 @@ import React, { Fragment } from 'react'
 import { connect } from 'react-redux'
 import { withRouter, RouteComponentProps } from 'react-router-dom'
 import { bindActionCreators, Dispatch } from 'redux'
-import Modal from '../../../../components/Modal'
-import Text from '../../../../components/atoms/Text'
-import Button from '../../../../components/atoms/Button'
+import Modal from 'components/Modal'
+import Text from 'components/atoms/Text'
+import Button from 'components/atoms/Button'
 import { changeVisibility, ChangeVisibilityActions } from '../actions'
-import { StoreState } from '../../../../utils/store'
+import { StoreState } from 'utils/store'
 
 interface ChangeVisibilityRouteProps {
   userName: string

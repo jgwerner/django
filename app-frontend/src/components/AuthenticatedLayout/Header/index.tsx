@@ -20,10 +20,12 @@ const HeaderItems = styled(Flex)<FlexProps>`
   align-items: center;
   padding: 0;
   width: 100%;
+  z-index: 10;
 `
 
 export const HeaderItemsLeft = styled(Flex)`
   padding-right: 20px;
+  z-index: 6;
 `
 
 export const HeaderItemsRight = styled(Flex)`
@@ -39,6 +41,7 @@ export const DropdownWrapper = styled.div`
   &:hover {
     cursor: pointer;
   }
+  z-index: 20;
 `
 
 const DownArrowSvg = (props: any) => (

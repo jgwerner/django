@@ -12,16 +12,31 @@ import {
   VerticalNavLayoutMenu,
   VerticalNavLayoutContent,
   VerticalNavMenu
-} from '../../../components/VerticalNav'
+} from 'components/VerticalNav'
+import { StoreState } from 'utils/store'
+import { bindActionCreators, Dispatch } from 'redux'
+import { connect } from 'react-redux'
+import { getProject } from '../actions'
 
 interface SettingsRouterProps {
   url: string
   path: string
+  userName: string
+  projectName: string
 }
 
-interface SettingsProps extends RouteComponentProps<SettingsRouterProps> {
-  projectDetails: any
+interface SettingsMapStateToProps {
+  projectFetched: boolean
+  projectUpdated: boolean
 }
+
+interface SettingsMapDispatchToProps {
+  getProject: (userName: string, projectName: string) => void
+}
+
+type SettingsProps = SettingsMapStateToProps &
+  SettingsMapDispatchToProps &
+  RouteComponentProps<SettingsRouterProps>
 
 const AsyncProjectDetails = Loadable({
   loader: () => import('./ProjectDetails'),
@@ -32,40 +47,65 @@ const AsyncAdvancedSettings = Loadable({
   loading: () => <div />
 })
 
-const Settings = (props: SettingsProps) => {
-  const { match, projectDetails } = props
-  return (
-    <VerticalNavLayout project>
-      <VerticalNavLayoutMenu>
-        <VerticalNavMenu
-          links={[
-            {
-              to: `${match.url}/details`,
-              children: 'Project Details',
-              exact: true
-            },
-            { to: `${match.url}/advanced`, children: 'Advanced Settings' }
-          ]}
-        />
-      </VerticalNavLayoutMenu>
-      <VerticalNavLayoutContent>
-        <Switch>
-          <Route
-            path={`${match.path}/details`}
-            render={() => <AsyncProjectDetails />}
-            exact
+const Settings = class extends React.PureComponent<SettingsProps> {
+  // componentDidMount() {
+  //   const { match, getProject, projectUpdated } = this.props
+  //   console.log('CDM')
+  //   if (projectUpdated) {
+  //   getProject(match.params.userName, match.params.projectName)
+  //   }
+  // }
+  render() {
+    const { match } = this.props
+    return (
+      <VerticalNavLayout project>
+        <VerticalNavLayoutMenu>
+          <VerticalNavMenu
+            links={[
+              {
+                to: `${match.url}/details`,
+                children: 'Project Details',
+                exact: true
+              },
+              { to: `${match.url}/advanced`, children: 'Advanced Settings' }
+            ]}
           />
-          <Route
-            path={`${match.path}/advanced`}
-            render={() => (
-              <AsyncAdvancedSettings projectDetails={projectDetails} />
-            )}
-          />
-          <Redirect from={`${match.url}`} to={`${match.url}/details`} />
-        </Switch>
-      </VerticalNavLayoutContent>
-    </VerticalNavLayout>
-  )
+        </VerticalNavLayoutMenu>
+        <VerticalNavLayoutContent>
+          <Switch>
+            <Route
+              path={`${match.path}/details`}
+              render={() => <AsyncProjectDetails />}
+              exact
+            />
+            <Route
+              path={`${match.path}/advanced`}
+              render={() => <AsyncAdvancedSettings />}
+            />
+            <Redirect from={`${match.url}`} to={`${match.url}/details`} />
+          </Switch>
+        </VerticalNavLayoutContent>
+      </VerticalNavLayout>
+    )
+  }
 }
 
-export default withRouter(Settings)
+const mapStateToProps = (state: StoreState) => ({
+  projectFetched: state.project.details.projectFetched,
+  projectUpdated: state.project.settings.projectUpdated
+})
+
+const mapDispatchToProps = (dispatch: Dispatch) =>
+  bindActionCreators(
+    {
+      getProject
+    },
+    dispatch
+  )
+
+export default withRouter(
+  connect(
+    mapStateToProps,
+    mapDispatchToProps
+  )(Settings)
+)

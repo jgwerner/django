@@ -52,6 +52,11 @@ const AsyncDeleteAccountConfirm = Loadable({
 })
 
 const Account = class extends React.PureComponent<AccountSettingsProps> {
+  componentWillUnmount() {
+    const { closePasswordError, closePasswordSuccess } = this.props
+    closePasswordError()
+    closePasswordSuccess()
+  }
   render() {
     const {
       match,

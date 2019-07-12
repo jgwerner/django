@@ -7,7 +7,8 @@ describe('OAuth2 settings reducer', () => {
       apps: [],
       appsFetched: false,
       newApp: false,
-      appDeleted: false
+      appDeleted: false,
+      newAppError: false
     })
   })
 
@@ -65,7 +66,8 @@ describe('OAuth2 settings reducer', () => {
       type: actions.NEW_APP_FAILURE
     }
     expect(reducer(initialState, expectedAction)).toEqual({
-      ...initialState
+      ...initialState,
+      newAppError: true
     })
   })
 

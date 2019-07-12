@@ -53,16 +53,10 @@ export const getUserInfo = () => (dispatch: Dispatch<HomeActions>) => {
   )
 }
 
-// export const logout = () => (dispatch: Dispatch<LogoutAction>) => {
-//   dispatch({
-//     type: LOGOUT
-//   })
-//   localStorage.clear()
-//   history.push('/auth')
-// }
-
-export const logout = () => {
+export const logout = () => (dispatch: Dispatch<LogoutAction>) => {
+  dispatch({
+    type: LOGOUT
+  })
   localStorage.clear()
   history.push('/auth')
-  return { type: LOGOUT }
 }

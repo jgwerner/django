@@ -12,11 +12,11 @@ type PanelProps = FlexProps & ContentProps
 
 export const ContentWrapper = styled(Container)<ContainerProps>`
   position: relative;
-  width: 75%;
   top: 50px;
 `
 export const ContentPanel = styled(Flex)<PanelProps>`
-  padding: ${theme.contentPadding};
+  padding-top: ${theme.contentPadding};
+  padding-bottom: ${theme.contentPadding};
   border: 1px solid ${theme.colors.gray2};
   position: relative;
 `
@@ -37,9 +37,10 @@ export const ContentTopAction = styled(Container)`
 `
 
 const Content = (props: ContentProps) => (
-  <ContentWrapper>
+  <ContentWrapper width={['98%', '75%']}>
     <ContentPanel
       bg="white"
+      px={['25px', '50px']}
       mt="50px"
       mx="auto"
       mb="30px"

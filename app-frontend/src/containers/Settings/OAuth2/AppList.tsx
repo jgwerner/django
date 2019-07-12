@@ -7,7 +7,13 @@ import Container, { ContainerProps } from 'components/atoms/Container'
 import Flex from 'components/atoms/Flex'
 import Divider from 'components/atoms/Divider'
 import Icon from 'components/Icon'
-import { deleteApp, getApps } from './actions'
+import {
+  deleteApp,
+  getApps,
+  closeDeleteSuccess,
+  closeCreateSuccess,
+  closeCreateError
+} from './actions'
 import { StoreState } from 'utils/store'
 import {
   Expand,
@@ -17,6 +23,7 @@ import {
   DeleteButton,
   ToolTip
 } from 'components/AppDetails'
+import Banner from 'components/Banner'
 
 interface AppState {
   open: boolean
@@ -37,11 +44,15 @@ interface AppListMapStateToProps {
   appsFetched: boolean
   newApp: boolean
   appDeleted: boolean
+  newAppError: boolean
 }
 
 interface AppListMapDispatchToProps {
   deleteApp: (username: string, id: string) => void
   getApps: (username: string) => void
+  closeDeleteSuccess: () => void
+  closeCreateSuccess: () => void
+  closeCreateError: () => void
 }
 
 type AppListProps = AppListMapStateToProps & AppListMapDispatchToProps
@@ -124,14 +135,61 @@ const AppList = class extends React.PureComponent<AppListProps> {
     }
   }
 
+  componentWillUnmount() {
+    const { closeDeleteSuccess, closeCreateSuccess } = this.props
+    closeCreateSuccess()
+    closeDeleteSuccess()
+  }
+
   render() {
-    const { apps, appsFetched, deleteApp, username } = this.props
+    const {
+      apps,
+      appsFetched,
+      deleteApp,
+      username,
+      appDeleted,
+      closeDeleteSuccess,
+      closeCreateSuccess,
+      newApp,
+      newAppError,
+      closeCreateError
+    } = this.props
     return (
       <React.Fragment>
         {!appsFetched ? (
           <Container />
         ) : (
           <Container>
+            {newApp ? (
+              <Banner
+                success
+                width={1}
+                message="New application created"
+                action={() => closeCreateSuccess()}
+              />
+            ) : (
+              ''
+            )}
+            {newAppError ? (
+              <Banner
+                danger
+                width={1}
+                message="Error creating new app"
+                action={() => closeCreateError()}
+              />
+            ) : (
+              ''
+            )}
+            {appDeleted ? (
+              <Banner
+                success
+                width={1}
+                message="Delete Application Request Succeeded"
+                action={() => closeDeleteSuccess()}
+              />
+            ) : (
+              ''
+            )}
             {apps.map((i: any) => (
               <Container key={i.id}>
                 <App
@@ -156,14 +214,18 @@ const mapStateToProps = (state: StoreState) => ({
   appsFetched: state.settings.oauth2.appsFetched,
   newApp: state.settings.oauth2.newApp,
   appDeleted: state.settings.oauth2.appDeleted,
-  username: state.home.user.username
+  username: state.home.user.username,
+  newAppError: state.settings.oauth2.newAppError
 })
 
 const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
       deleteApp,
-      getApps
+      getApps,
+      closeDeleteSuccess,
+      closeCreateSuccess,
+      closeCreateError
     },
     dispatch
   )

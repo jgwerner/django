@@ -4,7 +4,10 @@ import * as actions from '../actions'
 describe('project reducer', () => {
   it('should return the initial state', () => {
     expect(settings(initialState, { type: null })).toEqual({
-      projectDetails: {}
+      projectUpdated: false,
+      updateSuccess: false,
+      updateError: false,
+      errorMessage: ''
     })
   })
 
@@ -19,21 +22,30 @@ describe('project reducer', () => {
 
   it('should handle UPDATE_PROJECT_SUCCESS', () => {
     const successAction = {
-      type: actions.UPDATE_PROJECT_SUCCESS,
-      data: ['updated project details']
+      type: actions.UPDATE_PROJECT_SUCCESS
     }
     expect(settings(initialState, successAction)).toEqual({
       ...initialState,
-      projectDetails: successAction.data[0]
+      projectUpdated: true,
+      updateSuccess: true,
+      updateError: false
     })
   })
 
   it('should handle UPDATE_PROJECT_FAILURE', () => {
     const failureAction = {
-      type: actions.UPDATE_PROJECT_FAILURE
+      type: actions.UPDATE_PROJECT_FAILURE,
+      error: {
+        data: {
+          name: ['You can have only one project named project']
+        }
+      }
     }
     expect(settings(initialState, failureAction)).toEqual({
-      ...initialState
+      ...initialState,
+      updateError: true,
+      errorMessage: failureAction.error.data.name[0],
+      updateSuccess: false
     })
   })
 
@@ -42,18 +54,19 @@ describe('project reducer', () => {
       type: actions.CHANGE_VISIBILITY_REQUEST
     }
     expect(settings(initialState, requestAction)).toEqual({
-      ...initialState
+      ...initialState,
+      projectUpdated: false
     })
   })
 
   it('should handle CHANGE_VISIBILITY_SUCCESS', () => {
     const successAction = {
-      type: actions.CHANGE_VISIBILITY_SUCCESS,
-      data: ['updated visbility']
+      type: actions.CHANGE_VISIBILITY_SUCCESS
     }
     expect(settings(initialState, successAction)).toEqual({
       ...initialState,
-      projectDetails: successAction.data[0]
+      projectUpdated: true,
+      updateSuccess: true
     })
   })
 
@@ -62,7 +75,8 @@ describe('project reducer', () => {
       type: actions.CHANGE_VISIBILITY_FAILURE
     }
     expect(settings(initialState, failureAction)).toEqual({
-      ...initialState
+      ...initialState,
+      updateError: true
     })
   })
 

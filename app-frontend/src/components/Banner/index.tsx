@@ -80,7 +80,6 @@ const warning = (props: TypeProps) =>
 
 const BannerWrapper = styled(Container)<BannerProps>(
   {
-    height: '50px',
     display: 'block',
     position: 'relative',
     borderRadius: 4,
