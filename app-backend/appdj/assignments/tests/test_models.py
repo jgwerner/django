@@ -1,4 +1,3 @@
-import os
 import shutil
 from pathlib import Path
 
@@ -8,7 +7,8 @@ from oauth2_provider.generators import generate_client_id, generate_client_secre
 
 from appdj.oauth2.models import Application
 from appdj.projects.tests.factories import CollaboratorFactory
-from .factories import AssignmentFactory
+from .factories import AssignmentFactory, ModuleFactory
+from ..models import get_assignment_or_module
 
 
 class AssignmentTest(TestCase):
@@ -16,8 +16,8 @@ class AssignmentTest(TestCase):
         self.app_name = 'ps1'
         self.file = 'notebook_grader_tests.ipynb'
         self.teacher_col = CollaboratorFactory()
-        self.path = self.teacher_col.project.resource_root() / 'release' / self.app_name / self.file
-        self.no_release_path = self.teacher_col.project.resource_root() / self.app_name / self.file
+        self.path = Path('release', self.app_name, self.file)
+        self.no_release_path = Path(self.app_name, self.file)
         self.student_col = CollaboratorFactory(user__username='jkpteststudent')
         self.fixture_path = Path(__file__).parent / 'nbgrader_fixture'
         self.oauth_app = Application.objects.create(
@@ -29,6 +29,7 @@ class AssignmentTest(TestCase):
                 authorization_grant_type=App.GRANT_CLIENT_CREDENTIALS
             )
         )
+        self.course_id = '123'
 
     def copy_fixture_tree_to_teacher_path(self, directory):
         from_fixture = self.fixture_path / directory
@@ -54,7 +55,7 @@ class AssignmentTest(TestCase):
             oauth_app=self.oauth_app
         )
         assignment.students_projects.add(self.student_col.project)
-        out = str(assignment.path)
+        out = str(assignment.teachers_path)
         self.assertIn(str(self.teacher_col.project.resource_root()), out)
         self.assertIn('release', out)
         self.assertIn(self.app_name, out)
@@ -68,7 +69,6 @@ class AssignmentTest(TestCase):
             oauth_app=self.oauth_app
         )
         out = str(assignment.students_path(self.student_col.project))
-        self.assertIn(str(self.student_col.project.resource_root()), out)
         self.assertNotIn('release', out)
         self.assertIn(self.app_name, out)
         self.assertIn(self.file, out)
@@ -91,7 +91,6 @@ class AssignmentTest(TestCase):
         )
         assignment.students_projects.add(self.student_col.project)
         out = str(assignment.path)
-        self.assertIn(str(self.teacher_col.project.resource_root()), out)
         self.assertIn(self.app_name, out)
         self.assertIn(self.file, out)
 
@@ -103,7 +102,6 @@ class AssignmentTest(TestCase):
             oauth_app=self.oauth_app
         )
         out = str(assignment.students_path(self.student_col.project))
-        self.assertIn(str(self.student_col.project.resource_root()), out)
         self.assertIn(self.app_name, out)
         self.assertIn(self.file, out)
 
@@ -117,7 +115,6 @@ class AssignmentTest(TestCase):
         )
         assignment.students_projects.add(self.student_col.project)
         out = str(assignment.submission_path(self.student_col.project))
-        self.assertIn(str(self.teacher_col.project.resource_root()), out)
         self.assertIn('submitted', out)
         self.assertIn(self.app_name, out)
         self.assertIn(self.file, out)
@@ -146,7 +143,89 @@ class AssignmentTest(TestCase):
             oauth_app=self.oauth_app
         )
         shutil.copytree(self.fixture_path, self.teacher_col.project.resource_root())
-        self.assertTrue(self.path.exists())
+        self.assertTrue((self.teacher_col.project.resource_root() / self.path).exists())
         assignment.students_projects.add(self.student_col.project)
         assignment.autograde(self.student_col.project)
         self.assertEqual(assignment.get_grade(self.student_col.project), 2)
+
+    def test_get_assignment_or_module_is_assignment_is_teacher(self):
+        AssignmentFactory(
+            course_id=self.course_id,
+            path=str(self.path),
+            teacher_project=self.teacher_col.project,
+            oauth_app=self.oauth_app
+        )
+        obj, is_assignment, is_teacher = get_assignment_or_module(
+            str(self.teacher_col.project.pk),
+            self.course_id,
+            str(self.path)
+        )
+        self.assertIsNotNone(obj)
+        self.assertTrue(is_assignment)
+        self.assertTrue(is_teacher)
+
+    def test_get_assignment_or_module_is_assignment_not_is_teacher(self):
+        assignment = AssignmentFactory(
+            course_id=self.course_id,
+            path=str(self.path),
+            teacher_project=self.teacher_col.project,
+            oauth_app=self.oauth_app
+        )
+        assignment.students_projects.add(self.student_col.project)
+        obj, is_assignment, is_teacher = get_assignment_or_module(
+            str(self.student_col.project.pk),
+            self.course_id,
+            str(self.path)
+        )
+        self.assertIsNotNone(obj)
+        self.assertTrue(is_assignment)
+        self.assertFalse(is_teacher)
+
+    def test_get_assignment_or_module_not_is_assignment_is_teacher(self):
+        ModuleFactory(
+            course_id=self.course_id,
+            path=str(self.path),
+            teacher_project=self.teacher_col.project,
+            oauth_app=self.oauth_app
+        )
+        obj, is_assignment, is_teacher = get_assignment_or_module(
+            str(self.teacher_col.project.pk),
+            self.course_id,
+            str(self.path)
+        )
+        self.assertIsNotNone(obj)
+        self.assertFalse(is_assignment)
+        self.assertTrue(is_teacher)
+
+    def test_get_assignment_or_module_not_is_assignment_not_is_teacher(self):
+        assignment = ModuleFactory(
+            course_id=self.course_id,
+            path=str(self.path),
+            teacher_project=self.teacher_col.project,
+            oauth_app=self.oauth_app
+        )
+        assignment.students_projects.add(self.student_col.project)
+        obj, is_assignment, is_teacher = get_assignment_or_module(
+            str(self.student_col.project.pk),
+            self.course_id,
+            str(self.path)
+        )
+        self.assertIsNotNone(obj)
+        self.assertFalse(is_assignment)
+        self.assertFalse(is_teacher)
+
+    def test_get_assignment_or_module_different_course(self):
+        AssignmentFactory(
+            course_id=self.course_id,
+            path=str(self.path),
+            teacher_project=self.teacher_col.project,
+            oauth_app=self.oauth_app
+        )
+        obj, is_assignment, is_teacher = get_assignment_or_module(
+            str(self.teacher_col.project.pk),
+            '124',
+            str(self.path)
+        )
+        self.assertIsNone(obj)
+        self.assertFalse(is_assignment)
+        self.assertFalse(is_teacher)

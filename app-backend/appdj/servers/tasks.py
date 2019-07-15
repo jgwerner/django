@@ -11,7 +11,7 @@ from appdj.canvas.models import CanvasInstance
 from appdj.oauth2.models import Application
 from appdj.projects.models import Project, Collaborator
 from appdj.projects.utils import perform_project_copy
-from appdj.assignments.models import Assignment
+from appdj.assignments.models import Assignment, get_assignment_or_module
 from .models import Server, ServerRunStatistics
 from .spawners import get_spawner_class
 from .utils import create_server, server_action, email_to_username
@@ -111,11 +111,14 @@ def lti(project_pk, data, path):
     """
     Handles lti server launch
     """
-    is_assignment = 'custom_canvas_assignment_id' in data
+    course_id = data['custom_canvas_course_id']
+    obj, is_assignment, is_teacher = get_assignment_or_module(project_pk, course_id, path)
     logger.debug('[LTI] data: %s', data)
     user = lti_user(data['lis_person_contact_email_primary'], data['user_id'])
     logger.debug('[LTI] user %s', user)
-    project, is_teacher = lti_project(user, project_pk, is_assignment)
+    if not obj:
+        is_assignment = 'custom_canvas_assignment_id' in data
+        project, is_teacher = lti_project(user, project_pk, is_assignment)
     workspace = lti_workspace(user, project)
     logger.debug('[LTI] user project: %s', project.pk)
     assignment_id = None
@@ -126,15 +129,15 @@ def lti(project_pk, data, path):
 
 
 def setup_assignment(workspace, data, path):
-    teacher_project = Project.objects.get(pk=workspace.project.config['copied_from'])
     try:
-        assignment = Assignment.objects.get(external_id=data['custom_canvas_assignment_id'], teacher_project=teacher_project)
+        assignment = Assignment.objects.get(external_id=data['custom_canvas_assignment_id'])
     except Assignment.DoesNotExist:
+        teacher_project = Project.objects.get(pk=workspace.project.config['copied_from'])
         provider_app = ProviderApp.objects.get(client_id=data['oauth_consumer_key'])
         oauth_app, _ = Application.objects.get_or_create(application=provider_app)
         assignment = Assignment.objects.create(
             external_id=data['custom_canvas_assignment_id'],
-            path=str(teacher_project.resource_root() / path),
+            path=path,
             course_id=data['custom_canvas_course_id'],
             outcome_url=data['lis_outcome_service_url'],
             source_did=data['lis_result_sourcedid'],
@@ -142,6 +145,9 @@ def setup_assignment(workspace, data, path):
             oauth_app=oauth_app,
             lms_instance=CanvasInstance.objects.get(instance_guid=data['tool_consumer_instance_guid'])
         )
+    if not assignment.outcome_url:
+        assignment.outcome_url = data['lis_outcome_service_url']
+        assignment.save()
     if not assignment.is_assigned(workspace.project):
         assignment.assign(workspace.project)
     return assignment.external_id

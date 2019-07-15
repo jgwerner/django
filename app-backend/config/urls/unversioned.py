@@ -21,6 +21,7 @@ from rest_framework.decorators import api_view
 from rest_framework.exceptions import NotFound, APIException
 from rest_framework_nested import routers
 
+from appdj.assignments import views as assignments_views
 from appdj.projects import views as project_views
 from appdj.servers import views as servers_views
 from appdj.users import views as user_views
@@ -90,6 +91,8 @@ urlpatterns = [
         servers_views.reset_assignment_file, name='reset-assignment'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/start/$',
         servers_views.start, name='server-start'),
+    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/assignments/$',
+        assignments_views.CreateModuleOrAssignment.as_view(), name='create-assignment'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/stop/$',
         servers_views.stop, name='server-stop'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/terminate/$',

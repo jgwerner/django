@@ -19,14 +19,22 @@ from appdj.base.models import TBSQuerySet
 logger = logging.getLogger(__name__)
 
 
-class Assignment(models.Model):
+class ModuleAbstract(models.Model):
     NATURAL_KEY = 'external_id'
 
     external_id = models.TextField()
-    path = models.FilePathField(path=settings.RESOURCE_DIR, max_length=255)
-    course_id = models.TextField()
-    outcome_url = models.URLField(max_length=255)
-    source_did = models.TextField()
+    path = models.TextField()
+    course_id = models.TextField(blank=True)
+    source_did = models.TextField(blank=True)
+
+    objects = TBSQuerySet.as_manager()
+
+    class Meta:
+        abstract = True
+
+
+class Assignment(ModuleAbstract):
+    outcome_url = models.URLField(max_length=255, blank=True)
     lms_instance = models.ForeignKey(
         'canvas.CanvasInstance',
         related_name='assignments',
@@ -47,25 +55,30 @@ class Assignment(models.Model):
         on_delete=models.SET_NULL, null=True
     )
 
-    objects = TBSQuerySet.as_manager()
+    def students_path(self, student_project):
+        """
+        Where student will find assignment file
+        """
+        path = Path(self.path).relative_to('release') if 'release' in self.path else self.path
+        return student_project.resource_root() / path
+
+    @property
+    def teachers_path(self):
+        return self.teacher_project.resource_root() / self.path
+
+    @property
+    def assignment_id(self):
+        return Path(self.path).parent.name
 
     @property
     def should_autograde(self):
-        return b'nbgrader' in Path(self.path).read_bytes()
-
-    @property
-    def relative_path(self):
-        if self.should_autograde:
-            rel_path = Path(self.path).relative_to(Path(settings.RESOURCE_DIR, str(self.teacher_project.pk), 'release'))
-        else:
-            rel_path = Path(self.path).relative_to(Path(settings.RESOURCE_DIR, str(self.teacher_project.pk)))
-        return rel_path
+        return b'nbgrader' in self.teachers_path.read_bytes()
 
     def assign(self, student_project):
         """
         Copy assignment from teacher to student
         """
-        source = Path(self.path).parent
+        source = self.teachers_path.parent
         destination = self.students_path(student_project).parent
         is_student_root = destination == student_project.resource_root()
         if not is_student_root and not destination.is_dir():
@@ -76,12 +89,6 @@ class Assignment(models.Model):
             shutil.copytree(source, destination)
         else:
             shutil.copy2(self.path, destination)
-
-    def students_path(self, student_project):
-        """
-        Where student will find assignment file
-        """
-        return student_project.resource_root() / self.relative_path
 
     def is_assigned(self, student_project):
         """
@@ -94,7 +101,7 @@ class Assignment(models.Model):
         Where assignment file should be submitted
         """
         student_username = student_project.owner.username
-        return self.teacher_project.resource_root() / 'submitted' / student_username / self.relative_path
+        return self.teacher_project.resource_root() / 'submitted' / student_username / self.path
 
     def autograde(self, student_project):
         """
@@ -103,7 +110,7 @@ class Assignment(models.Model):
         config = Config()
         config.CourseDirectory.root = str(self.teacher_project.resource_root())
         api = NbGraderAPI(CourseDirectory(config=config), config=config)
-        resp = api.autograde(str(self.relative_path.parent), student_project.owner.username)
+        resp = api.autograde(self.assignment_id, student_project.owner.username)
         if not resp['success']:
             raise Exception(f"Assignment {self.external_id} not autograded for student {student_project.owner.username}: {resp}")
 
@@ -126,7 +133,7 @@ class Assignment(models.Model):
                     ON submitted_assignment.assignment_id = assignment.id
                 WHERE submitted_assignment.student_id = ? AND assignment.name = ?
             """,
-            (student_project.owner.username, str(self.relative_path.parent))
+            (student_project.owner.username, self.assignment_id)
         )
         grade = int(float(c.fetchone()[0]))
         logger.info("Student %s grade %s", student_project.owner, grade)
@@ -180,3 +187,50 @@ class Assignment(models.Model):
         response = oauth_session.post(self.outcome_url, data=xml,
                                       headers={'Content-Type': 'application/xml'})
         response.raise_for_status()
+
+
+class Module(ModuleAbstract):
+    lms_instance = models.ForeignKey(
+        'canvas.CanvasInstance',
+        related_name='modules',
+        on_delete=models.CASCADE
+    )
+    teacher_project = models.ForeignKey(
+        'projects.Project',
+        related_name='teacher_modules',
+        on_delete=models.CASCADE
+    )
+    students_projects = models.ManyToManyField(
+        'projects.Project',
+        related_name='student_modules'
+    )
+    oauth_app = models.ForeignKey(
+        'oauth2.Application',
+        related_name='modules',
+        on_delete=models.SET_NULL, null=True
+    )
+
+
+def get_assignment_or_module(project_pk, course_id, path):
+    """
+    Checks if query is assignment or module.
+    Returns object and bool whether it's assignment or module
+    """
+    is_teacher = False
+    is_assignment = False
+    obj = None
+    obj = Assignment.objects.filter(teacher_project=project_pk, course_id=course_id, path=path).first()
+    if obj is not None:
+        is_assignment = True
+        is_teacher = True
+        return obj, is_assignment, is_teacher
+    obj = Module.objects.filter(teacher_project=project_pk, course_id=course_id, path=path).first()
+    if obj is not None:
+        is_teacher = True
+        return obj, is_assignment, is_teacher
+    obj = Assignment.objects.filter(students_projects=project_pk, course_id=course_id, path=path).first()
+    if obj is not None:
+        is_assignment = True
+        return obj, is_assignment, is_teacher
+    obj = Module.objects.filter(students_projects=project_pk, course_id=course_id, path=path).first()
+    return obj, is_assignment, is_teacher

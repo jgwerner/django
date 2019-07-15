@@ -8,6 +8,8 @@ from guardian.shortcuts import assign_perm
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from appdj.canvas.tests.factories import CanvasInstanceFactory
+from appdj.oauth2.tests.factories import ApplicationFactory
 from appdj.servers.models import Server
 from appdj.servers.tests.factories import ServerFactory
 from appdj.users.tests.factories import UserFactory
@@ -667,10 +669,14 @@ class LTITest(APITestCase):
         release_test_file.parent.mkdir(parents=True)
         release_test_file.touch()
         url = reverse('project-file-select', kwargs={'version': settings.DEFAULT_VERSION})
+        lms_instance = CanvasInstanceFactory()
+        oauth2_app = ApplicationFactory()
         data = {
+            'oauth_consumer_key': oauth2_app.client_id,
             'lti_version': '1',
             'content_item_return_url': 'http://example.com',
-            'ext_lti_assignment_id': ''
+            'ext_lti_assignment_id': '',
+            'tool_consumer_instance_guid': lms_instance.instance_guid
         }
         resp = self.client.post(url, data, format='multipart')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
@@ -712,10 +718,14 @@ class LTITest(APITestCase):
         release_test_file.parent.mkdir(parents=True)
         release_test_file.touch()
         url = reverse('project-file-select', kwargs={'version': settings.DEFAULT_VERSION})
+        lms_instance = CanvasInstanceFactory()
+        oauth2_app = ApplicationFactory()
         data = {
+            'oauth_consumer_key': oauth2_app.client_id,
             'lti_version': '1',
             'content_item_return_url': 'http://example.com',
-            'ext_lti_assignment_id': '123'
+            'ext_lti_assignment_id': '123',
+            'tool_consumer_instance_guid': lms_instance.instance_guid
         }
         resp = self.client.post(url, data, format='multipart')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)

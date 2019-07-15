@@ -1,4 +1,5 @@
 import uuid
+from pathlib import Path
 from datetime import datetime, timedelta
 from unittest.mock import patch
 from guardian.shortcuts import assign_perm
@@ -301,7 +302,7 @@ class ServerTest(APITestCase):
         teacher_assignment_path.parent.mkdir(parents=True, exist_ok=True)
         teacher_assignment_path.touch()
         teacher_assignment_path.write_bytes(b'nbgrader')
-        assignment = AssignmentFactory(path=str(teacher_assignment_path), teacher_project=self.project)
+        assignment = AssignmentFactory(path=str(Path('release', assignment_path)), teacher_project=self.project)
         assignment.assign(learner_col.project)
         learner_file = learner_server.project.resource_root() / assignment_path
         kwargs = {

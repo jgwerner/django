@@ -21,7 +21,7 @@
       }
       li {
         margin-left:5px;
-         list-style:none; 
+         list-style:none;
       }
 
       a {
@@ -58,7 +58,7 @@
     </style>
   </head>
   <body>
-    <form action="{{ action_url}}" name="fileForm" method="post">
+    <form action="{{ action_url}}" id="fileForm" name="fileForm" method="post">
       <input type="hidden" value="ContentItemSelection" name="lti_message_type" />
       <input type="hidden" value="{{ lti_version }}" name="lti_version" />
       <h2>Select notebook file:</h2>
@@ -72,7 +72,7 @@
           <ul{% if not forloop.first %} style="display: none;"{% endif %}>{% for file in project.files %}
             <li>
               <label>
-                <input type="radio" id="url" value="{{ file.content_items|escape }}" name="content_items" required />
+                  <input type="radio" id="url" value="{{ file.content_items|escape }}" data-path="{{ file.path }}" data-project="{{ file.project }}" name="content_items" required />
                 {{ file.path }}
               </label>
             </li>
@@ -99,8 +99,29 @@
           }
         }
       });
+      var form = document.getElementById("fileForm");
+      form.onsubmit = submit;
+      function submit(e) {
+        e.preventDefault();
+        var input = document.getElementById("url");
+        var path = input.getAttribute("data-path");
+        var project = input.getAttribute("data-project");
+        fetch('{{ create_assignment_url }}', {
+            method: 'post',
+            body: JSON.strigify({
+                external_id: '{{ assignment_id }}',
+                path: path,
+                lms_instance: '{{ canvas_instance_id }}',
+                oauth_app: '{{ oauth_consumer_key }}',
+                teacher_project: project,
+            }),
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'JWT {{ token }}',
+            },
+        }).then(() => form.submit()).catch(err => alert(`There was an error selecting assignment:\n ${err}`));
+      }
     }());
   </script>
   </body>
 </html>
-

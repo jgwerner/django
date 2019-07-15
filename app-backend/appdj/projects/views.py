@@ -3,6 +3,7 @@ import json
 import shutil
 from urllib.parse import quote
 
+from django.urls import reverse
 from django.http import Http404
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -22,8 +23,10 @@ from rest_framework.parsers import MultiPartParser, FormParser
 
 from appdj.base.views import NamespaceMixin, LookupByMultipleFields
 from appdj.base.utils import validate_uuid
+from appdj.canvas.models import CanvasInstance
 from appdj.canvas.authorization import CanvasAuth
 from appdj.servers.utils import get_server_url, create_server
+from appdj.jwt_auth.utils import create_auth_jwt
 from appdj.teams.models import Team
 from appdj.teams.permissions import TeamGroupPermission
 from .serializers import (
@@ -152,7 +155,7 @@ def file_selection(request, *args, **kwargs):
 
     def iterate_dir(directory):
         for item in directory.iterdir():
-            if item.name.startswith('.'):
+            if item.name.startswith('.') or item.name.startswith('submissions'):
                 continue
             if item.is_dir():
                 yield from iterate_dir(item)
@@ -168,7 +171,8 @@ def file_selection(request, *args, **kwargs):
         if workspace is None:
             workspace = create_server(request.user, project, 'workspace')
         files = []
-        if request.data.get('ext_lti_assignment_id') and (project_root / 'release').exists():
+        assignment_id = request.data.get('ext_lti_assignment_id')
+        if assignment_id and (project_root / 'release').exists():
             root = project_root / 'release'
         else:
             root = project_root
@@ -180,6 +184,7 @@ def file_selection(request, *args, **kwargs):
                                  f"/{quoted}", namespace=project.namespace_name)
             files.append({
                 'path': path,
+                'project': str(project.pk),
                 'content_items': json.dumps({
                     "@context": "http://purl.imsglobal.org/ctx/lti/v1/ContentItem",
                     "@graph": [{
@@ -199,9 +204,20 @@ def file_selection(request, *args, **kwargs):
         })
 
     context = {
+        'token': create_auth_jwt(request.user),
         'lti_version': request.data['lti_version'],
         'projects': projects_context,
         'action_url': request.data['content_item_return_url'],
         'assignment_id': request.data['ext_lti_assignment_id'],
+        'canvas_instance_id': CanvasInstance.objects.filter(instance_guid=request.data['tool_consumer_instance_guid']).first().pk,
+        'oauth_consumer_key': request.data['oauth_consumer_key'],
+        'create_assignment_url': reverse(
+            'create-assignment',
+            kwargs={
+                'version': request.version,
+                'namespace': project.namespace_name,
+                'project_project': str(project.pk),
+            }
+        )
     }
     return Response(context, template_name='projects/file_selection.html')
