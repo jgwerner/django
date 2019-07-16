@@ -2,16 +2,15 @@ import logging
 import time
 
 import boto3
+from django.db.models import Q
 from django.contrib.auth import get_user_model
-from guardian.shortcuts import assign_perm
 from oauth2_provider.models import Application as ProviderApp
 from celery import shared_task
 
 from appdj.canvas.models import CanvasInstance
 from appdj.oauth2.models import Application
-from appdj.projects.models import Project, Collaborator
 from appdj.projects.utils import perform_project_copy
-from appdj.assignments.models import Assignment, get_assignment_or_module
+from appdj.assignments.models import Assignment, StudentProjectThrough, get_assignment_or_module
 from .models import Server, ServerRunStatistics
 from .spawners import get_spawner_class
 from .utils import create_server, server_action, email_to_username
@@ -54,29 +53,31 @@ def lti_user(email, canvas_user_id):
     return user
 
 
-def lti_project(user, project_pk, is_assignment):
+def lti_project(user, project_pk, course_id, is_assignment, path):
     """
     Gets lti users project
     """
-    is_teacher = False
-    projects = user.projects.filter(is_active=True)
-    project = projects.filter(
-        config__copied_from=project_pk
-    ).first()
+    obj, is_teacher = get_assignment_or_module(project_pk, course_id, user, path, is_assignment)
+    if is_teacher:
+        project = obj.teacher_project
+    else:
+        if is_assignment:
+            project = user.projects.filter(
+                student_assignments=obj,
+                collaborator__owner=True
+            ).first()
+        else:
+            project = user.projects.filter(
+                student_modules=obj,
+                collaborator__owner=True
+            ).first()
     if project is None:
-        project = projects.filter(pk=project_pk).first()
-        is_teacher = project is not None
-    col, _ = Collaborator.objects.get_or_create(user=user, project_id=project_pk)
-    if project is None:
-        logger.debug("Creating learner project from %s", project_pk)
         if is_assignment:
             project = perform_project_copy(user, str(project_pk), copy_files=False)
         else:
             project = perform_project_copy(user, str(project_pk))
-        project.team = None
-        project.save()
-    if not is_teacher:
-        assign_perm('read_project', user, col.project)
+        if obj:
+            obj.students_projects.add(project)
     return project, is_teacher
 
 
@@ -111,40 +112,39 @@ def lti(project_pk, data, path):
     """
     Handles lti server launch
     """
-    course_id = data['custom_canvas_course_id']
-    obj, is_assignment, is_teacher = get_assignment_or_module(project_pk, course_id, path)
     logger.debug('[LTI] data: %s', data)
     user = lti_user(data['lis_person_contact_email_primary'], data['user_id'])
     logger.debug('[LTI] user %s', user)
-    if not obj:
-        is_assignment = 'custom_canvas_assignment_id' in data
-        project, is_teacher = lti_project(user, project_pk, is_assignment)
+    course_id = data['custom_canvas_course_id']
+    is_assignment = bool(data.get('ext_lti_assignment_id'))
+    project, is_teacher = lti_project(user, project_pk, course_id, path, is_assignment)
     workspace = lti_workspace(user, project)
     logger.debug('[LTI] user project: %s', project.pk)
     assignment_id = None
     if not is_teacher and is_assignment:
         logger.debug("Setting up assignment")
-        assignment_id = setup_assignment(workspace, data, path)
+        assignment_id = setup_assignment(workspace, data, path, project_pk)
     return str(workspace.pk), assignment_id
 
 
-def setup_assignment(workspace, data, path):
+def setup_assignment(workspace, data, path, teacher_project_pk):
     try:
-        assignment = Assignment.objects.get(external_id=data['custom_canvas_assignment_id'])
+        assignment = Assignment.objects.get(external_id=data['ext_lti_assignment_id'])
     except Assignment.DoesNotExist:
-        teacher_project = Project.objects.get(pk=workspace.project.config['copied_from'])
         provider_app = ProviderApp.objects.get(client_id=data['oauth_consumer_key'])
         oauth_app, _ = Application.objects.get_or_create(application=provider_app)
         assignment = Assignment.objects.create(
-            external_id=data['custom_canvas_assignment_id'],
+            external_id=data['ext_lti_assignment_id'],
             path=path,
             course_id=data['custom_canvas_course_id'],
             outcome_url=data['lis_outcome_service_url'],
-            source_did=data['lis_result_sourcedid'],
-            teacher_project=teacher_project,
+            teacher_project_id=teacher_project_pk,
             oauth_app=oauth_app,
             lms_instance=CanvasInstance.objects.get(instance_guid=data['tool_consumer_instance_guid'])
         )
+    source_did_obj, _ = StudentProjectThrough.objects.get_or_create(assignment=assignment, project=workspace.project)
+    source_did_obj.source_did = data['lis_result_sourcedid']
+    source_did_obj.save()
     if not assignment.outcome_url:
         assignment.outcome_url = data['lis_outcome_service_url']
         assignment.save()

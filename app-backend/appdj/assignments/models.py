@@ -15,8 +15,15 @@ from nbgrader.coursedir import CourseDirectory
 from traitlets.config import Config
 
 from appdj.base.models import TBSQuerySet
+from appdj.projects.models import Project
 
 logger = logging.getLogger(__name__)
+
+
+class StudentProjectThrough(models.Model):
+    assignment = models.ForeignKey('Assignment', on_delete=models.CASCADE)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    source_did = models.TextField(blank=True)
 
 
 class ModuleAbstract(models.Model):
@@ -25,7 +32,6 @@ class ModuleAbstract(models.Model):
     external_id = models.TextField()
     path = models.TextField()
     course_id = models.TextField(blank=True)
-    source_did = models.TextField(blank=True)
 
     objects = TBSQuerySet.as_manager()
 
@@ -47,7 +53,8 @@ class Assignment(ModuleAbstract):
     )
     students_projects = models.ManyToManyField(
         'projects.Project',
-        related_name='student_assignments'
+        related_name='student_assignments',
+        through=StudentProjectThrough,
     )
     oauth_app = models.ForeignKey(
         'oauth2.Application',
@@ -88,7 +95,7 @@ class Assignment(ModuleAbstract):
             logger.info("Copy assignment file from teachers path %s to students path %s", source, destination)
             shutil.copytree(source, destination)
         else:
-            shutil.copy2(self.path, destination)
+            shutil.copy2(self.teachers_path, destination)
 
     def is_assigned(self, student_project):
         """
@@ -101,7 +108,8 @@ class Assignment(ModuleAbstract):
         Where assignment file should be submitted
         """
         student_username = student_project.owner.username
-        return self.teacher_project.resource_root() / 'submitted' / student_username / self.path
+        path = Path(self.path).relative_to('release') if 'release' in self.path else self.path
+        return self.teacher_project.resource_root() / 'submitted' / student_username / path
 
     def autograde(self, student_project):
         """
@@ -174,9 +182,10 @@ class Assignment(ModuleAbstract):
         domain = Site.objects.get_current().domain
         url = f"{scheme}://{domain}{url_path}"
         logger.debug(f"[Send assignment] Server url: {url}")
+        source_did = StudentProjectThrough.objects.get(assignment=self, project=student_project).source_did
         context = {
             'msg_id': uuid.uuid4().hex,
-            'source_did': self.source_did,
+            'source_did': source_did,
             'url': url,
         }
         if self.should_autograde:
@@ -211,26 +220,17 @@ class Module(ModuleAbstract):
     )
 
 
-def get_assignment_or_module(project_pk, course_id, path):
-    """
-    Checks if query is assignment or module.
-    Returns object and bool whether it's assignment or module
-    """
-    is_teacher = False
-    is_assignment = False
-    obj = None
-    obj = Assignment.objects.filter(teacher_project=project_pk, course_id=course_id, path=path).first()
-    if obj is not None:
-        is_assignment = True
-        is_teacher = True
-        return obj, is_assignment, is_teacher
-    obj = Module.objects.filter(teacher_project=project_pk, course_id=course_id, path=path).first()
-    if obj is not None:
-        is_teacher = True
-        return obj, is_assignment, is_teacher
-    obj = Assignment.objects.filter(students_projects=project_pk, course_id=course_id, path=path).first()
-    if obj is not None:
-        is_assignment = True
-        return obj, is_assignment, is_teacher
-    obj = Module.objects.filter(students_projects=project_pk, course_id=course_id, path=path).first()
-    return obj, is_assignment, is_teacher
+def get_assignment_or_module(project_pk, course_id, user, path, is_assignment):
+    cls = Assignment if is_assignment else Module
+    qs = cls.objects.filter(teacher_project=project_pk, course_id=course_id, path=path)
+    teacher_obj = qs.filter(
+        teacher_project__collaborator__user=user,
+        teacher_project__collaborator__owner=True,
+    ).first()
+    if teacher_obj is not None:
+        return teacher_obj, True
+    student_obj = qs.filter(
+        students_projects__collaborator__user=user,
+        students_projects__collaborator__owner=True,
+    ).first()
+    return student_obj, False

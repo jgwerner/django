@@ -119,6 +119,7 @@ class LTITest(TestCase):
             'user_id': canvas_user_id,
             'lis_person_contact_email_primary': 'johndoe@example.com',
             'custom_canvas_assignment_id': '123',
+            'ext_lti_assignment_id': '123',
             'custom_canvas_course_id': '123',
             'lis_outcome_service_url': '',
             'tool_consumer_instance_guid': canvas_instance.instance_guid,

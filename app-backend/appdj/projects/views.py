@@ -9,6 +9,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 
+from oauth2_provider.models import Application as ProviderApp
 from rest_framework import viewsets, status, permissions
 from rest_framework.response import Response
 from rest_framework.decorators import (
@@ -25,6 +26,7 @@ from appdj.base.views import NamespaceMixin, LookupByMultipleFields
 from appdj.base.utils import validate_uuid
 from appdj.canvas.models import CanvasInstance
 from appdj.canvas.authorization import CanvasAuth
+from appdj.oauth2.models import Application
 from appdj.servers.utils import get_server_url, create_server
 from appdj.jwt_auth.utils import create_auth_jwt
 from appdj.teams.models import Team
@@ -202,15 +204,17 @@ def file_selection(request, *args, **kwargs):
             'name': project.name,
             'files': files
         })
-
+    course_id = request.META['HTTP_REFERER'].split('/')[4]
+    oauth_app, _ = Application.objects.get_or_create(application=ProviderApp.objects.get(client_id=request.data['oauth_consumer_key']))
     context = {
+        'course_id': course_id,
         'token': create_auth_jwt(request.user),
         'lti_version': request.data['lti_version'],
         'projects': projects_context,
         'action_url': request.data['content_item_return_url'],
         'assignment_id': request.data['ext_lti_assignment_id'],
         'canvas_instance_id': CanvasInstance.objects.filter(instance_guid=request.data['tool_consumer_instance_guid']).first().pk,
-        'oauth_consumer_key': request.data['oauth_consumer_key'],
+        'oauth_app': str(oauth_app.pk),
         'create_assignment_url': reverse(
             'create-assignment',
             kwargs={

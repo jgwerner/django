@@ -678,7 +678,7 @@ class LTITest(APITestCase):
             'ext_lti_assignment_id': '',
             'tool_consumer_instance_guid': lms_instance.instance_guid
         }
-        resp = self.client.post(url, data, format='multipart')
+        resp = self.client.post(url, data, format='multipart', **{'HTTP_REFERER': 'https://test.test/courses/123/'})
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertIn('lti_version', resp.data)
         self.assertEqual(resp.data['lti_version'], data['lti_version'])
@@ -727,7 +727,7 @@ class LTITest(APITestCase):
             'ext_lti_assignment_id': '123',
             'tool_consumer_instance_guid': lms_instance.instance_guid
         }
-        resp = self.client.post(url, data, format='multipart')
+        resp = self.client.post(url, data, format='multipart', **{'HTTP_REFERER': 'https://test.test/courses/123/'})
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertIn('lti_version', resp.data)
         self.assertEqual(resp.data['lti_version'], data['lti_version'])

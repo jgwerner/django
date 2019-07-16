@@ -155,13 +155,14 @@ class AssignmentTest(TestCase):
             teacher_project=self.teacher_col.project,
             oauth_app=self.oauth_app
         )
-        obj, is_assignment, is_teacher = get_assignment_or_module(
+        obj, is_teacher = get_assignment_or_module(
             str(self.teacher_col.project.pk),
             self.course_id,
-            str(self.path)
+            self.teacher_col.user,
+            str(self.path),
+            True
         )
         self.assertIsNotNone(obj)
-        self.assertTrue(is_assignment)
         self.assertTrue(is_teacher)
 
     def test_get_assignment_or_module_is_assignment_not_is_teacher(self):
@@ -172,13 +173,14 @@ class AssignmentTest(TestCase):
             oauth_app=self.oauth_app
         )
         assignment.students_projects.add(self.student_col.project)
-        obj, is_assignment, is_teacher = get_assignment_or_module(
-            str(self.student_col.project.pk),
+        obj, is_teacher = get_assignment_or_module(
+            str(self.teacher_col.project.pk),
             self.course_id,
-            str(self.path)
+            self.student_col.user,
+            str(self.path),
+            True
         )
         self.assertIsNotNone(obj)
-        self.assertTrue(is_assignment)
         self.assertFalse(is_teacher)
 
     def test_get_assignment_or_module_not_is_assignment_is_teacher(self):
@@ -188,13 +190,14 @@ class AssignmentTest(TestCase):
             teacher_project=self.teacher_col.project,
             oauth_app=self.oauth_app
         )
-        obj, is_assignment, is_teacher = get_assignment_or_module(
+        obj, is_teacher = get_assignment_or_module(
             str(self.teacher_col.project.pk),
             self.course_id,
-            str(self.path)
+            self.teacher_col.user,
+            str(self.path),
+            False
         )
         self.assertIsNotNone(obj)
-        self.assertFalse(is_assignment)
         self.assertTrue(is_teacher)
 
     def test_get_assignment_or_module_not_is_assignment_not_is_teacher(self):
@@ -205,13 +208,14 @@ class AssignmentTest(TestCase):
             oauth_app=self.oauth_app
         )
         assignment.students_projects.add(self.student_col.project)
-        obj, is_assignment, is_teacher = get_assignment_or_module(
-            str(self.student_col.project.pk),
+        obj, is_teacher = get_assignment_or_module(
+            str(self.teacher_col.project.pk),
             self.course_id,
-            str(self.path)
+            self.student_col.user,
+            str(self.path),
+            False
         )
         self.assertIsNotNone(obj)
-        self.assertFalse(is_assignment)
         self.assertFalse(is_teacher)
 
     def test_get_assignment_or_module_different_course(self):
@@ -221,11 +225,12 @@ class AssignmentTest(TestCase):
             teacher_project=self.teacher_col.project,
             oauth_app=self.oauth_app
         )
-        obj, is_assignment, is_teacher = get_assignment_or_module(
+        obj, is_teacher = get_assignment_or_module(
             str(self.teacher_col.project.pk),
             '124',
-            str(self.path)
+            self.student_col.user,
+            str(self.path),
+            True
         )
         self.assertIsNone(obj)
-        self.assertFalse(is_assignment)
         self.assertFalse(is_teacher)

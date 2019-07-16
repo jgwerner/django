@@ -39,7 +39,7 @@ class AssignmentTestCase(APITestCase):
             'path': str(self.path),
             'lms_instance': str(self.lms_instance.pk),
             'teacher_project': str(self.teacher_col.project.pk),
-            'oauth_app': self.oauth_app.application.client_id,
+            'oauth_app': str(self.oauth_app.pk),
         }
         url = reverse('create-assignment', kwargs={
             'version': 'v1',
@@ -58,7 +58,7 @@ class AssignmentTestCase(APITestCase):
             'path': str(self.path),
             'lms_instance': str(self.lms_instance.pk),
             'teacher_project': str(self.teacher_col.project.pk),
-            'oauth_app': self.oauth_app.application.client_id,
+            'oauth_app': str(self.oauth_app.pk),
         }
         url = reverse('create-assignment', kwargs={
             'version': 'v1',
@@ -66,7 +66,6 @@ class AssignmentTestCase(APITestCase):
             'project_project': str(self.teacher_col.project.pk),
         })
         resp = self.client.post(url, data)
-        print(resp.content)
         self.assertEqual(resp.status_code, 201)
         assignment = Module.objects.get(path=str(self.path), teacher_project=self.teacher_col.project)
         self.assertEqual(assignment.teacher_project.pk, self.teacher_col.project.pk)
