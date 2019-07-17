@@ -16,6 +16,8 @@ RUN pip install virtualenv
 
 RUN addgroup -g 1000 -S app && \
     adduser -u 1000 -S app -G app
+    
+RUN mkdir -p /workspaces/
 
 RUN mkdir -p /srv/
 WORKDIR /srv/
@@ -33,6 +35,7 @@ ADD . /srv/app
 
 RUN touch /srv/app/celerybeat.pid
 RUN chown -R 1000:1000 /srv/
+RUN chown -R 1000:1000 /workspaces/
 USER app
 
 ENTRYPOINT ["/srv/app/docker-entrypoint.sh"]
