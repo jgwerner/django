@@ -2,7 +2,6 @@ import logging
 import time
 
 import boto3
-from django.db.models import Q
 from django.contrib.auth import get_user_model
 from oauth2_provider.models import Application as ProviderApp
 from celery import shared_task
@@ -118,16 +117,16 @@ def lti(project_pk, data, path):
     course_id = data['custom_canvas_course_id']
     is_assignment = bool(data.get('ext_lti_assignment_id'))
     project, is_teacher = lti_project(user, project_pk, course_id, path, is_assignment)
-    workspace = lti_workspace(user, project)
     logger.debug('[LTI] user project: %s', project.pk)
     assignment_id = None
     if not is_teacher and is_assignment:
         logger.debug("Setting up assignment")
-        assignment_id = setup_assignment(workspace, data, path, project_pk)
+        assignment_id = setup_assignment(project, data, path, project_pk)
+    workspace = lti_workspace(user, project)
     return str(workspace.pk), assignment_id
 
 
-def setup_assignment(workspace, data, path, teacher_project_pk):
+def setup_assignment(project, data, path, teacher_project_pk):
     try:
         assignment = Assignment.objects.get(external_id=data['ext_lti_assignment_id'])
     except Assignment.DoesNotExist:
@@ -142,14 +141,15 @@ def setup_assignment(workspace, data, path, teacher_project_pk):
             oauth_app=oauth_app,
             lms_instance=CanvasInstance.objects.get(instance_guid=data['tool_consumer_instance_guid'])
         )
-    source_did_obj, _ = StudentProjectThrough.objects.get_or_create(assignment=assignment, project=workspace.project)
-    source_did_obj.source_did = data['lis_result_sourcedid']
-    source_did_obj.save()
+    if 'lis_result_sourcedid' in data:
+        source_did_obj, _ = StudentProjectThrough.objects.get_or_create(assignment=assignment, project=project)
+        source_did_obj.source_did = data['lis_result_sourcedid']
+        source_did_obj.save()
     if not assignment.outcome_url:
         assignment.outcome_url = data['lis_outcome_service_url']
         assignment.save()
-    if not assignment.is_assigned(workspace.project):
-        assignment.assign(workspace.project)
+    if not assignment.is_assigned(project):
+        assignment.assign(project)
     return assignment.external_id
 
 
