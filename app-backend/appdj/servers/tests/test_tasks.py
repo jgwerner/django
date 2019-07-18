@@ -9,6 +9,7 @@ from django.test import TestCase
 from oauth2_provider.models import Application as App
 from oauth2_provider.generators import generate_client_id, generate_client_secret
 
+from appdj.assignments.tests.factories import AssignmentFactory
 from appdj.canvas.tests.factories import CanvasInstanceFactory
 from appdj.oauth2.models import Application
 from appdj.projects.utils import perform_project_copy
@@ -16,7 +17,7 @@ from appdj.projects.tests.factories import CollaboratorFactory
 from appdj.users.tests.factories import UserFactory
 from .factories import ServerFactory
 from ..models import Server, ServerSize, ServerRunStatistics
-from ..tasks import lti, server_stats
+from ..tasks import lti, server_stats, setup_assignment
 
 User = get_user_model()
 
@@ -164,3 +165,76 @@ class TestTasks(TestCase):
         server_stats(self.server.id, status, '123', self.ecs)
         run_stats.refresh_from_db()
         self.assertEqual(run_stats.stop, task_stopped)
+
+    def test_setup_assignment(self):
+        app = Application.objects.create(
+            application=App.objects.create(
+                client_id=generate_client_id(),
+                client_secret=generate_client_secret(),
+                name='test',
+                client_type=App.CLIENT_CONFIDENTIAL,
+                authorization_grant_type=App.GRANT_CLIENT_CREDENTIALS
+            )
+        )
+        canvas_instance = CanvasInstanceFactory()
+        teacher_col = CollaboratorFactory()
+        student_col = CollaboratorFactory()
+        data = {'ext_lti_assignment_id': '123'}
+        path = 'test/test.ipynb'
+        as1 = AssignmentFactory(
+            external_id=data['ext_lti_assignment_id'],
+            teacher_project=teacher_col.project,
+            path=path,
+            oauth_app=app,
+            lms_instance=canvas_instance
+        )
+        as1.teachers_path.parent.mkdir(parents=True)
+        as1.teachers_path.touch()
+        assignment = setup_assignment(
+            student_col.project,
+            data,
+            path,
+            teacher_col.project.pk
+        )
+        self.assertEqual(assignment.external_id, data['ext_lti_assignment_id'])
+
+    def test_setup_assignment_two_teachers(self):
+        app = Application.objects.create(
+            application=App.objects.create(
+                client_id=generate_client_id(),
+                client_secret=generate_client_secret(),
+                name='test',
+                client_type=App.CLIENT_CONFIDENTIAL,
+                authorization_grant_type=App.GRANT_CLIENT_CREDENTIALS
+            )
+        )
+        canvas_instance = CanvasInstanceFactory()
+        teacher1_col = CollaboratorFactory()
+        teacher2_col = CollaboratorFactory()
+        student_col = CollaboratorFactory()
+        data = {'ext_lti_assignment_id': '123'}
+        path = 'test/test.ipynb'
+        as1 = AssignmentFactory(
+            external_id=data['ext_lti_assignment_id'],
+            teacher_project=teacher1_col.project,
+            path=path,
+            oauth_app=app,
+            lms_instance=canvas_instance
+        )
+        as1.teachers_path.parent.mkdir(parents=True)
+        as1.teachers_path.touch()
+        as2 = AssignmentFactory(
+            external_id=data['ext_lti_assignment_id'],
+            teacher_project=teacher2_col.project,
+            path=path,
+            oauth_app=app,
+            lms_instance=canvas_instance
+        )
+        assignment = setup_assignment(
+            student_col.project,
+            data,
+            path,
+            teacher1_col.project.pk
+        )
+        self.assertEqual(assignment.external_id, data['ext_lti_assignment_id'])
+        self.assertEqual(assignment.id, as1.id)

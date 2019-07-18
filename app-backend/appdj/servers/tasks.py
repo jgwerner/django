@@ -121,14 +121,19 @@ def lti(project_pk, data, path):
     assignment_id = None
     if not is_teacher and is_assignment:
         logger.debug("Setting up assignment")
-        assignment_id = setup_assignment(project, data, path, project_pk)
+        assignment = setup_assignment(project, data, path, project_pk)
+        assignment_id = assignment.external_id
     workspace = lti_workspace(user, project)
     return str(workspace.pk), assignment_id
 
 
 def setup_assignment(project, data, path, teacher_project_pk):
     try:
-        assignment = Assignment.objects.get(external_id=data['ext_lti_assignment_id'])
+        assignment = Assignment.objects.get(
+            external_id=data['ext_lti_assignment_id'],
+            teacher_project_id=teacher_project_pk,
+            path=path
+        )
     except Assignment.DoesNotExist:
         provider_app = ProviderApp.objects.get(client_id=data['oauth_consumer_key'])
         oauth_app, _ = Application.objects.get_or_create(application=provider_app)
@@ -150,7 +155,7 @@ def setup_assignment(project, data, path, teacher_project_pk):
         assignment.save()
     if not assignment.is_assigned(project):
         assignment.assign(project)
-    return assignment.external_id
+    return assignment
 
 
 @shared_task()
