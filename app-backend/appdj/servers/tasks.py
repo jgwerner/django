@@ -174,10 +174,11 @@ def server_stats(server_id, status, task_arn, ecs=None):
     if 'startedAt' not in task:
         return
     if status == Server.RUNNING:
-        ServerRunStatistics.objects.create(
+        ServerRunStatistics.objects.get_or_create(
             container_id=task_arn,
             server=server,
             start=task['startedAt'],
+            stop=None,
             project=server.project,
             owner=server.project.owner
         )
