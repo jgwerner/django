@@ -1,5 +1,6 @@
 from unittest import TestCase
 
+from appdj.assignments.tests.factories import AssignmentFactory
 from appdj.projects.tests.factories import CollaboratorFactory
 from .factories import ServerFactory
 from ..utils import email_to_username, lti_ready_url
@@ -78,3 +79,15 @@ class TestUtils(TestCase):
         self.assertIn(str(server.project.pk), url)
         self.assertIn(server.project.owner.username, url)
         self.assertIn('test/test.ipynb', url)
+
+    def test_lti_ready_url_for_teacher_assignment(self):
+        teacher_col = CollaboratorFactory()
+        server = ServerFactory(project=teacher_col.project, created_by=teacher_col.user)
+        path = 'release/ps1/Untitled.ipynb'
+        assignment = AssignmentFactory(
+            teacher_project=teacher_col.project,
+            path=path,
+            external_id='123',
+        )
+        out = lti_ready_url('https', server, path, assignment.external_id)
+        self.assertIn(path, out)
