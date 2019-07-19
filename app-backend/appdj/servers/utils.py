@@ -12,6 +12,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from guardian.shortcuts import assign_perm
 
+from appdj.assignments.models import Assignment
 from appdj.projects.models import Project
 from .models import ServerRunStatistics, Server, ServerSize
 from appdj.jwt_auth.utils import create_server_jwt
@@ -107,7 +108,8 @@ def lti_ready_url(scheme, workspace, path, assignment_id=None):
     endpoint = get_server_url(str(workspace.project.pk), str(workspace.pk),
                               scheme, '/endpoint/proxy/lab/tree/', namespace=workspace.namespace_name)
     params = {'token': workspace.access_token}
-    path = str(Path(path).relative_to('release')) if path.startswith('release') else path
+    if not Assignment.objects.filter(teacher_project=workspace.project, external_id=assignment_id, path=path).exists():
+        path = str(Path(path).relative_to('release')) if path.startswith('release') else path
     if assignment_id:
         params['assignment_id'] = assignment_id
     query = urlencode(params)
