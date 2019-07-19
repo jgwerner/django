@@ -128,6 +128,12 @@ class LTITest(TestCase):
             'oauth_consumer_key': app.application.client_id,
         }
         assignment_path = 'ps1/Untitled.ipynb'
+        AssignmentFactory(
+            teacher_project=self.project,
+            oauth_app=app,
+            path='release/ps1/Untitled.ipynb',
+            external_id='123'
+        )
         teachers_path = self.project.resource_root() / 'release' / assignment_path
         teachers_path.parent.mkdir(exist_ok=True, parents=True)
         teachers_path.write_bytes(b'nbgrader')

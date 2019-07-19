@@ -220,9 +220,16 @@ class Module(ModuleAbstract):
     )
 
 
-def get_assignment_or_module(project_pk, course_id, user, path, is_assignment):
-    cls = Assignment if is_assignment else Module
-    qs = cls.objects.filter(teacher_project=project_pk, course_id=course_id, path=path)
+def get_assignment_or_module(*, project_pk, course_id, user, path, assignment_id):
+    cls = Assignment if assignment_id else Module
+    qs = cls.objects.filter(
+        teacher_project_id=project_pk,
+        teacher_project__is_active=True,
+        course_id=course_id,
+        path=path
+    )
+    if assignment_id:
+        qs = qs.filter(external_id=assignment_id)
     teacher_obj = qs.filter(
         teacher_project__collaborator__user=user,
         teacher_project__collaborator__owner=True,
@@ -230,6 +237,7 @@ def get_assignment_or_module(project_pk, course_id, user, path, is_assignment):
     if teacher_obj is not None:
         return teacher_obj, True
     student_obj = qs.filter(
+        students_projects__is_active=True,
         students_projects__collaborator__user=user,
         students_projects__collaborator__owner=True,
     ).first()

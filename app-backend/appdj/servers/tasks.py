@@ -3,11 +3,8 @@ import time
 
 import boto3
 from django.contrib.auth import get_user_model
-from oauth2_provider.models import Application as ProviderApp
 from celery import shared_task
 
-from appdj.canvas.models import CanvasInstance
-from appdj.oauth2.models import Application
 from appdj.projects.utils import perform_project_copy
 from appdj.assignments.models import Assignment, StudentProjectThrough, get_assignment_or_module
 from .models import Server, ServerRunStatistics
@@ -52,15 +49,21 @@ def lti_user(email, canvas_user_id):
     return user
 
 
-def lti_project(user, project_pk, course_id, is_assignment, path):
+def lti_project(*, user, project_pk, course_id, path, assignment_id):
     """
     Gets lti users project
     """
-    obj, is_teacher = get_assignment_or_module(project_pk, course_id, user, path, is_assignment)
+    obj, is_teacher = get_assignment_or_module(
+        project_pk=project_pk,
+        course_id=course_id,
+        user=user,
+        path=path,
+        assignment_id=assignment_id
+    )
     if is_teacher:
         project = obj.teacher_project
     else:
-        if is_assignment:
+        if assignment_id:
             project = user.projects.filter(
                 student_assignments=obj,
                 collaborator__owner=True
@@ -71,7 +74,7 @@ def lti_project(user, project_pk, course_id, is_assignment, path):
                 collaborator__owner=True
             ).first()
     if project is None:
-        if is_assignment:
+        if assignment_id:
             project = perform_project_copy(user, str(project_pk), copy_files=False)
         else:
             project = perform_project_copy(user, str(project_pk))
@@ -115,37 +118,28 @@ def lti(project_pk, data, path):
     user = lti_user(data['lis_person_contact_email_primary'], data['user_id'])
     logger.debug('[LTI] user %s', user)
     course_id = data['custom_canvas_course_id']
-    is_assignment = bool(data.get('ext_lti_assignment_id'))
-    project, is_teacher = lti_project(user, project_pk, course_id, path, is_assignment)
+    assignment_id = data.get('ext_lti_assignment_id')
+    project, is_teacher = lti_project(
+        user=user,
+        project_pk=project_pk,
+        course_id=course_id,
+        path=path,
+        assignment_id=assignment_id
+    )
     logger.debug('[LTI] user project: %s', project.pk)
-    assignment_id = None
-    if not is_teacher and is_assignment:
+    if not is_teacher and assignment_id:
         logger.debug("Setting up assignment")
         assignment = setup_assignment(project, data, path, project_pk)
-        assignment_id = assignment.external_id
     workspace = lti_workspace(user, project)
     return str(workspace.pk), assignment_id
 
 
 def setup_assignment(project, data, path, teacher_project_pk):
-    try:
-        assignment = Assignment.objects.get(
-            external_id=data['ext_lti_assignment_id'],
-            teacher_project_id=teacher_project_pk,
-            path=path
-        )
-    except Assignment.DoesNotExist:
-        provider_app = ProviderApp.objects.get(client_id=data['oauth_consumer_key'])
-        oauth_app, _ = Application.objects.get_or_create(application=provider_app)
-        assignment = Assignment.objects.create(
-            external_id=data['ext_lti_assignment_id'],
-            path=path,
-            course_id=data['custom_canvas_course_id'],
-            outcome_url=data['lis_outcome_service_url'],
-            teacher_project_id=teacher_project_pk,
-            oauth_app=oauth_app,
-            lms_instance=CanvasInstance.objects.get(instance_guid=data['tool_consumer_instance_guid'])
-        )
+    assignment = Assignment.objects.get(
+        external_id=data['ext_lti_assignment_id'],
+        teacher_project_id=teacher_project_pk,
+        path=path
+    )
     if 'lis_result_sourcedid' in data:
         source_did_obj, _ = StudentProjectThrough.objects.get_or_create(assignment=assignment, project=project)
         source_did_obj.source_did = data['lis_result_sourcedid']
@@ -161,7 +155,10 @@ def setup_assignment(project, data, path, teacher_project_pk):
 @shared_task()
 def send_assignment(workspace_pk, assignment_id):
     workspace = Server.objects.get(pk=workspace_pk)
-    assignment = Assignment.objects.get(external_id=assignment_id)
+    assignment = Assignment.objects.get(
+        external_id=assignment_id,
+        students_projects=workspace.project
+    )
     assignment.send(workspace.project)
 
 
