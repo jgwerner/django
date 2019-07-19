@@ -87,6 +87,9 @@ class Collaborator(models.Model):
 
     objects = CollaboratorQuerySet.as_manager()
 
+    def __str__(self):
+        return f'{self.user} - {self.project}'
+
     @property
     def namespace_name(self):
         return self.user.username

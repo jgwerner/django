@@ -25,19 +25,20 @@ class OwnerFilter(admin.SimpleListFilter):
         return queryset
 
 
-class CollaboratorInline(admin.TabularInline):
-    model = Collaborator
-
-
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
     list_display = ('name', 'id', 'is_active', 'private', 'owner', 'server_count', 'collaborator_count')
     list_filter = ('is_active', 'private', OwnerFilter)
     search_fields = ('name', 'description', 'id')
-    inlines = [CollaboratorInline]
 
     def server_count(self, obj):
         return obj.servers.filter(is_active=True).count()
 
     def collaborator_count(self, obj):
         return obj.collaborators.count()
+
+
+@admin.register(Collaborator)
+class CollaboratorAdmin(admin.ModelAdmin):
+    list_filter = ('user__username',)
+    search_fields = ('user__username', 'project__name', 'project__id')
