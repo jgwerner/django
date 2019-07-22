@@ -659,6 +659,7 @@ class LTITest(APITestCase):
 
     @patch('appdj.canvas.authorization.CanvasAuth.authenticate')
     def test_file_selection(self, authenticate):
+        CollaboratorFactory(owner=False, user=self.user)
         authenticate.return_value = (self.user, None)
         root = self.project.resource_root()
         root.mkdir(parents=True, exist_ok=True)
@@ -683,7 +684,8 @@ class LTITest(APITestCase):
         self.assertIn('lti_version', resp.data)
         self.assertEqual(resp.data['lti_version'], data['lti_version'])
         self.assertIn('projects', resp.data)
-        self.assertGreater(len(resp.data['projects']), 0)
+        self.assertEqual(self.user.projects.count(), 2)
+        self.assertEqual(len(resp.data['projects']), 1)
         self.assertEqual(resp.data['projects'][0]['name'], self.project.name)
         self.assertIn('action_url', resp.data)
         self.assertEqual(data['content_item_return_url'], resp.data['action_url'])
