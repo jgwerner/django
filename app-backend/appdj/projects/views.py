@@ -152,7 +152,8 @@ class CloneGitProject(CreateAPIView):
 def file_selection(request, *args, **kwargs):
     projects = Project.objects.filter(
         Q(collaborator__user=request.user) | Q(team__in=Team.objects.filter(groups__user=request.user)),
-        Q(is_active=True)
+        Q(is_active=True),
+        Q(collaborator__owner=True)
     )
 
     def iterate_dir(directory):
