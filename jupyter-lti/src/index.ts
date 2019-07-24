@@ -1,6 +1,9 @@
 import { IDisposable, DisposableDelegate } from '@phosphor/disposable';
 
-import { JupyterLab, JupyterLabPlugin } from '@jupyterlab/application';
+import {
+  JupyterFrontEnd,
+  JupyterFrontEndPlugin
+} from '@jupyterlab/application';
 
 import { ToolbarButton, showDialog, Dialog } from '@jupyterlab/apputils';
 
@@ -11,7 +14,7 @@ import { NotebookPanel, INotebookModel } from '@jupyterlab/notebook';
 /**
  * The plugin registration information.
  */
-const plugin: JupyterLabPlugin<void> = {
+const plugin: JupyterFrontEndPlugin<void> = {
   activate,
   id: 'jupyter-lti:buttonPlugin',
   autoStart: true
@@ -24,9 +27,7 @@ let getUrl = (assignment_id: string) => {
   let serverName = parts[6];
   let projectName = parts[4];
   let accountName = parts[2];
-  return `${proto}//${
-    window.location.host
-  }/${version}/${accountName}/projects/${projectName}/servers/${serverName}/lti/assignment/${assignment_id}/`;
+  return `${proto}//${window.location.host}/${version}/${accountName}/projects/${projectName}/servers/${serverName}/lti/assignment/${assignment_id}/`;
 };
 
 let sendCallback = (
@@ -153,7 +154,7 @@ export class ButtonExtension
 /**
  * Activate the extension.
  */
-function activate(app: JupyterLab) {
+function activate(app: JupyterFrontEnd) {
   let query = new URLSearchParams(window.location.search);
   let assignment_id = query.get('assignment_id');
   if (!!assignment_id) {
