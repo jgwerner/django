@@ -216,13 +216,7 @@ def file_selection(request, *args, **kwargs):
         'assignment_id': request.data['ext_lti_assignment_id'],
         'canvas_instance_id': CanvasInstance.objects.filter(instance_guid=request.data['tool_consumer_instance_guid']).first().pk,
         'oauth_app': str(oauth_app.pk),
-        'create_assignment_url': reverse(
-            'create-assignment',
-            kwargs={
-                'version': request.version,
-                'namespace': project.namespace_name,
-                'project_project': str(project.pk),
-            }
-        )
+        'version': request.version,
+        'namespace': request.namespace,
     }
     return Response(context, template_name='projects/file_selection.html')

@@ -657,10 +657,9 @@ class LTITest(APITestCase):
         self.project = col.project
         self.server = ServerFactory(project=self.project, config={'type': 'jupyter'})
 
-    @patch('appdj.canvas.authorization.CanvasAuth.authenticate')
-    def test_file_selection(self, authenticate):
+    def test_file_selection(self):
+        self.client.force_authenticate(self.user)
         CollaboratorFactory(owner=False, user=self.user)
-        authenticate.return_value = (self.user, None)
         root = self.project.resource_root()
         root.mkdir(parents=True, exist_ok=True)
         test_file = root / 'test.py'
@@ -708,9 +707,8 @@ class LTITest(APITestCase):
         test_file.unlink()
         release_test_file.unlink()
 
-    @patch('appdj.canvas.authorization.CanvasAuth.authenticate')
-    def test_assignment_file_selection(self, authenticate):
-        authenticate.return_value = (self.user, None)
+    def test_assignment_file_selection(self):
+        self.client.force_authenticate(self.user)
         root = self.project.resource_root()
         root.mkdir(parents=True, exist_ok=True)
         test_file = root / 'test.py'

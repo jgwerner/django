@@ -106,7 +106,8 @@
         var input = document.querySelector('input[name="content_items"]:checked');
         var path = input.getAttribute("data-path");
         var project = input.getAttribute("data-project");
-        fetch('{{ create_assignment_url }}', {
+        var url = `${window.location.origin}/{{ version }}/{{ namespace }}/projects/${project}/assignments/`
+        fetch(url, {
             method: 'post',
             body: JSON.stringify({
                 external_id: '{{ assignment_id }}',
