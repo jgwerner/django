@@ -1,4 +1,3 @@
-[![Build Status](https://travis-ci.com/IllumiDesk/jupyter-lti.svg?branch=master)](https://travis-ci.org/IllumiDesk/jupyter-lti)
 [![npm version](http://img.shields.io/npm/v/@illumidesk/jupyter-lti.svg?style=flat)](https://npmjs.org/package/@illumidesk/jupyter-lti 'View this project on npm')
 
 # JupyterLab LTI Extension
@@ -29,15 +28,15 @@ For a development install (requires npm version 4 or later), do the following in
 - Install dependencies
 
 ```bash
-jlpm install
-jlpm run build
+npm install
+npm run build
 jupyter labextension install .
 ```
 
 (Optional) Watch files as they are changed:
 
 ```bash
-jlpm run watch
+npm run watch
 ```
 
 Then launch JupyterLab using:
@@ -59,3 +58,7 @@ jupyter lab
 Only users with the `Student` role are able to see the extension and submit an assignment to the Canvas LMS.
 
 [These help docs](https://docs.illumidesk.com) contain more information about the Canvas LMS and IllumiDesk configuration steps.
+
+# Version Control
+
+- `npm version major | minor | patch` update npm version automatically (avoids having to manually update package.json)
