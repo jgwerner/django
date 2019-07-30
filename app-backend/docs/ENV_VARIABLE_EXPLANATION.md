@@ -4,7 +4,11 @@ The IllumiDesk `app-backend` application interacts with various internal applica
 
 | Variable  |  Type | Note  |
 |---|---|---|
+| API_HOST |<string> | API host name, used primarily when setting the SITE_ID |
+| API_PORT |<string> | API port number, used primarily when setting the SITE_ID |
 | API_VERSION |<string> | API version number, such as v1 |
+| APP_DOMAIN | <string> | Domain of IllumiDesk main development environment |
+| APP_SCHEME | <string> | An additional host name or IP address from which the application will allow connections, added to Django's ALLOWED_HOSTS |
 | AWS_SES_ACCESS_KEY_ID |<string> | Pair with AWS_SES_SECRET_ACCESS_KEY to access Simple Email Service (SES) |
 | AWS_SES_SECRET_ACCESS_KEY | <string> | Pair with AWS_SES_ACCESS_KEY_ID to access Simple Email Service (SES) |
 | AWS_SES_REGION_NAME | <string> | Name of AWS SES region, a geographic area containing Amazon data centers |
@@ -56,7 +60,5 @@ The IllumiDesk `app-backend` application interacts with various internal applica
 | SLACK_SECRET | <string> | Secret access key associated with SLACK_KEY |
 | STATIC_ROOT | <string> | Absolute path to the directory static files should be collected to. |
 | STRIPE_SECRET_KEY | <string> | Secret key associated with Stripe payment information |
-| APP_DOMAIN | <string> | Domain of IllumiDesk main development environment |
-| APP_SCHEME | <string> | An additional host name or IP address from which the application will allow connections, added to Django's ALLOWED_HOSTS |
 | TLS | <boolean> | Enables application's use of secure HTTP |
 | TRAVIS_PULL_REQUEST | <boolean> | Enables Travis CI's automated Docker image building upon pull request submission |

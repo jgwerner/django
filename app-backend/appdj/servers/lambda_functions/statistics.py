@@ -100,7 +100,7 @@ class APIClient(requests.Session):
     def request(self, method, url, **kwargs):
         api_url = ''.join([
             f'{os.environ.get("APP_SCHEME")}',
-            f'/{os.environ.get("TBS_DEFAULT_VERSION")}',
+            f'/{os.environ.get("API_VERSION")}',
             url
         ])
         return super().request(method, api_url, **kwargs)

@@ -322,7 +322,7 @@ DJOSER = {
 }
 
 
-DEFAULT_VERSION = os.environ.get('TBS_DEFAULT_VERSION', "v1")
+DEFAULT_VERSION = os.environ.get('API_VERSION', "v1")
 
 RESOURCE_DIR = os.environ.get('RESOURCE_DIR', '/workspaces')
 
