@@ -4,11 +4,6 @@ The IllumiDesk `app-backend` application interacts with various internal applica
 
 | Variable  |  Type | Note  |
 |---|---|---|
-| API_HOST |<string> | API host name, used primarily when setting the SITE_ID |
-| API_PORT |<string> | API port number, used primarily when setting the SITE_ID |
-| API_VERSION |<string> | API version number, such as v1 |
-| APP_DOMAIN | <string> | Domain of IllumiDesk main development environment |
-| APP_SCHEME | <string> | An additional host name or IP address from which the application will allow connections, added to Django's ALLOWED_HOSTS |
 | AWS_SES_ACCESS_KEY_ID |<string> | Pair with AWS_SES_SECRET_ACCESS_KEY to access Simple Email Service (SES) |
 | AWS_SES_SECRET_ACCESS_KEY | <string> | Pair with AWS_SES_ACCESS_KEY_ID to access Simple Email Service (SES) |
 | AWS_SES_REGION_NAME | <string> | Name of AWS SES region, a geographic area containing Amazon data centers |
@@ -48,17 +43,20 @@ The IllumiDesk `app-backend` application interacts with various internal applica
 | GOOGLE_CLIENT_SECRET | <string> | Secret access key associated with GOOGLE_CLIENT_ID |
 | MOCK_STRIPE | <boolean> | Enables use of mock connections to Stripe for development purposes |
 | NVIDIA_DOCKER_HOST | <string> | URL for NVIDIA Docker host |
-| PASSWORD_RESET_CONFIRM_URL | <string> | Path to confirm password reset |
 | RABBITMQ_URL | <string> | URL for RabbitMQ message broker |
 | REDIS_URL | <string> | URL for Redis data store/notifications |
 | RESOURCE_DIR | <string> | Root level directory for all user directories |
 | SECRET_KEY | <string> | Secret key used for Django-related security |
 | SENTRY_DSN | <string> | Data Source Name (DSN) for Sentry's error tracking and monitoring service |
 | SERVER_PORT | <integer> | Port number for main application environment |
-| SERVER_RESOURCE_DIR | <string> | Name of relevant project's resource directory |
+| SERVER_RESOURCE_DIR | <string> | Name of relevant project's resource directory. It should be notebooks workdir.|
 | SLACK_KEY | <string> | Slack account ID key |
 | SLACK_SECRET | <string> | Secret access key associated with SLACK_KEY |
-| STATIC_ROOT | <string> | Absolute path to the directory static files should be collected to. |
-| STRIPE_SECRET_KEY | <string> | Secret key associated with Stripe payment information |
+| STATIC_ROOT | <string> | The absolute path to the directory where collectstatic will collect static files for deployment. |
+| STATIC_URL | <string> | URL to use when referring to static files located in `STATIC_ROOT`. |
+| STATICFILES_DIRS | <string> | defines the additional locations the staticfiles app will traverse if the `FileSystemFinder` finder is enabled. |
+| STATICFILES_FINDERS | <string> | The list of finder backends that know how to find static files in various locations. |
+| APP_DOMAIN | <string> | Domain of IllumiDesk main development environment |
+| APP_SCHEME | <string> | An additional host name or IP address from which the application will allow connections, added to Django's ALLOWED_HOSTS |
 | TLS | <boolean> | Enables application's use of secure HTTP |
 | TRAVIS_PULL_REQUEST | <boolean> | Enables Travis CI's automated Docker image building upon pull request submission |

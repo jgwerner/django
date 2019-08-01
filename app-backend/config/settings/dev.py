@@ -1,6 +1,7 @@
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 from sentry_sdk.integrations.celery import CeleryIntegration
+
 from .base import *
 
 DEBUG = True
@@ -29,10 +30,6 @@ GRAPH_MODELS = {
 }
 
 INTERNAL_IPS = ['127.0.0.1']
-
-STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 SPAWNER = 'appdj.servers.spawners.ecs.ECSSpawner'
 

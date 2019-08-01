@@ -57,7 +57,7 @@ services:
     image: illumidesk/nginx:latest
     command: /nginx/sbin/nginx -p '' -g 'daemon off;'
     volumes:
-      - ./static:/srv/app/static
+      - ./static:/srv/app/
     labels:
       - "traefik.enable=true"
       - "traefik.backend=nginx"

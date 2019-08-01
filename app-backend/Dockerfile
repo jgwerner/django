@@ -13,30 +13,31 @@ RUN apk update \
     curl
 
 RUN pip install virtualenv
-
-RUN addgroup -g 1000 -S app && \
-    adduser -u 1000 -S app -G app
     
 RUN mkdir -p /workspaces/
+RUN mkdir -p /srv/app/staticfiles
 
 WORKDIR /srv/
 RUN virtualenv env --python=python3
 RUN . env/bin/activate; pip install --upgrade setuptools pip wheel
 
-WORKDIR /srv/app/
-
 ADD requirements/ /srv/app/requirements
 
 # install requirements to run app
-RUN . ../env/bin/activate; pip install -r requirements/base.txt
+RUN . env/bin/activate; pip install -r app/requirements/base.txt
 
 ADD . /srv/app
 
 RUN touch /srv/app/celerybeat.pid
+
+RUN addgroup -g 1000 -S app && \
+    adduser -u 1000 -S app -G app
 RUN chown -R 1000:1000 /srv/
 RUN chown -R 1000:1000 /workspaces/
+
 USER app
+WORKDIR /srv/app
 
 ENTRYPOINT ["/srv/app/docker-entrypoint.sh"]
 
-EXPOSE 80
+EXPOSE 8080

@@ -5,8 +5,8 @@ x-django: &django
     dockerfile: Dockerfile.dev
   image: illumidesk/app-backend:dev
   volumes:
-    - .:/srv/app
-    - /workspaces:/workspaces
+    - staticfiles:/srv/app/staticfiles
+    - workspaces:/workspaces
   env_file: env.compose.test
   depends_on:
     - cache
@@ -46,7 +46,7 @@ services:
     command: /srv/env/bin/celery -A config.celery beat -l debug
     entrypoint: ''
   db:
-    image: postgres:9.6-alpine
+    image: postgres:10.2-alpine
     ports:
       - "5432:5432"
   cache:
@@ -66,11 +66,19 @@ services:
     build:
       context: ../reverse-proxies/nginx/.
     image: illumidesk/nginx:dev
-    command: /nginx/sbin/nginx -p '' -g 'daemon off;'
+    volumes:
+      - staticfiles:/srv/app/staticfiles
+    command: nginx -p '' -g 'daemon off;'
+    depends_on:
+      - api
     labels:
       - "traefik.enable=true"
       - "traefik.backend=nginx"
       - "traefik.nginx.frontend.rule=PathPrefix:/media"
+
+volumes:
+  staticfiles:
+  workspaces:
 
 networks:
   default:

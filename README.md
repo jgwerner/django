@@ -133,7 +133,9 @@ Run tests:
 
 ### Environment Variables
 
-The IllumiDesk `app-backend` application interacts with various internal applications and external, third-party services. A list of the environment variables used by the IllumiDesk application [are located here](docs/ENV_VARIABLE_EXPLANATION.md).
+The IllumiDesk `app-backend` application interacts with various internal applications and external, third-party services. The following descriptions should help to understand the most important of these variables:
+
+Please refer to the [environment variables document](./app-backend/docs/ENVIRONMENT_VARIABLES.md) for further reference.
 
 ## Trouble Shooting
 

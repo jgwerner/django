@@ -1,61 +1,10 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html>
   <head>
     <meta charset="utf-8">
-    <style type="text/css" media="all">
-      * {
-        margin: 0;
-        padding: 0;
-        -webkit-box-sizing: border-box;
-        -moz-box-sizing: border-box;
-        box-sizing: border-box;
-      }
-
-      html {
-        text-size-adjust: 100%;
-      }
-
-      form {
-        margin:25px;
-        padding:1em;
-      }
-      li {
-        margin-left:5px;
-         list-style:none;
-      }
-
-      a {
-        display:block;
-        text-decoration: none;
-        color: #5c7f00;
-      }
-
-      form ul li {
-        line-height:2em;
-      }
-      form ul ul a {
-        margin-left:15px;
-      }
-
-      form ul ul ul a {
-        margin-left:30px;
-      }
-
-      button {
-        background-color: #5c7f00;
-        padding: 0.7rem 2rem;
-        border: 1px solid #d0d3d8;
-        border-radius: 3px;
-        color: #fff;
-        transition: all 0.15s;
-        font-weight: 500;
-        font-size: 1rem;
-      }
-
-      label {
-        color: #5c7f00;
-      }
-    </style>
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
   </head>
   <body>
     <form action="{{ action_url}}" id="fileForm" name="fileForm" method="post">
@@ -81,49 +30,8 @@
         {% endfor %}</ul>
       <button type="submit">Accept</button>
     </form>
-  <script type="text/javascript">
-    (function() {
-      document.querySelectorAll('.directory').forEach(function(item) {
-        item.onclick = function (e) {
-          var fileList = e.target.closest('.project').querySelector('ul'),
-              arrowDown = e.target.parentElement.querySelector('.arrow-down'),
-              arrowRight = e.target.parentElement.querySelector('.arrow-right');
-          if (fileList.style.display === "none") {
-            fileList.style.display = "block";
-            arrowDown.style.display = "inline";
-            arrowRight.style.display = "none";
-          } else {
-            fileList.style.display = "none";
-            arrowDown.style.display = "none";
-            arrowRight.style.display = "inline";
-          }
-        }
-      });
-      var form = document.getElementById("fileForm");
-      form.onsubmit = submit;
-      function submit(e) {
-        e.preventDefault();
-        var input = document.querySelector('input[name="content_items"]:checked');
-        var path = input.getAttribute("data-path");
-        var project = input.getAttribute("data-project");
-        var url = `${window.location.origin}/{{ version }}/{{ namespace }}/projects/${project}/assignments/`
-        fetch(url, {
-            method: 'post',
-            body: JSON.stringify({
-                external_id: '{{ assignment_id }}',
-                path: path,
-                lms_instance: '{{ canvas_instance_id }}',
-                oauth_app: '{{ oauth_app }}',
-                teacher_project: project,
-                course_id: '{{ course_id }}',
-            }),
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'JWT {{ token }}',
-            },
-        }).then(() => form.submit()).catch(err => alert(`There was an error selecting assignment:\n ${err}`));
-      }
-    }());
-  </script>
+    {% block javascript %}
+    <script src="{% static 'js/file_selector.js' %}"></script>
+    {% endblock javascript %}
   </body>
 </html>

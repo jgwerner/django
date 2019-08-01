@@ -1,43 +1,11 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Prepare workspace</title>
-    <style>
-      .layout {
-		margin-top: 20%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100%;
-      }
-      .spinner {
-		height: 6rem;
-		width: 6rem;
-        border-radius: 100%;
-        opacity: 0;
-        position: relative;
-        animation: fadein .5s ease-in .6s forwards;
-      }
-      .circle {
-        content: '';
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        border-radius: 100%;
-        border: calc(6rem / 10) solid transparent;
-        border-top-color: #5c7f00;
-        border-bottom-color: #5c7f00;
-        animation: spin 1s infinite;
-      }
-    h2 {
-        color: #5c7f00;
-        text-align: center;
-        margin-top: 4rem;
-    }
-    @keyframes spin { from { transform:rotate(0deg) } to { transform:rotate(360deg) } }
-    @keyframes fadein { to { opacity: 1 } }
-    </style>
+    <title>Launching Workspace</title>
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
   </head>
   <body>
     <div class='layout'>
@@ -45,30 +13,9 @@
         <div class='circle'></div>
       </div>
     </div>
-		<h2 id="message">Preparing workspace. Please wait.</h2>
-    <script type="text/javascript">
-      (function(){
-        function redirect() {
-            fetch("{{ task_url }}", {
-              headers: {
-                'Authorization': 'JWT {{ access_token }}'
-              }
-            }).then(function(response) {
-              return response.json();
-            }).then(function(data) {
-                if (!!data.url) {
-                    window.location = data.url;
-                } else {
-                    setTimeout(redirect, 5000);
-                }
-            }).catch(function(error) {
-                document.querySelector('.layout').remove();
-                let message = !!error.error ? error.error : "Server error";
-                document.getElementById('message').innerHTML = message;
-            });
-        }
-        redirect();
-      }());
-    </script>
+		<h2 id="message">Preparing workspace. Please wait...</h2>
+    {% block javascript %}
+    <script src="{% static 'js/preparing_workspace.js' %}"></script>
+    {% endblock javascript %}
   </body>
 </html>

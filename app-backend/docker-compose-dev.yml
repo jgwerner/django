@@ -5,8 +5,8 @@ x-django: &django
     dockerfile: Dockerfile.dev
   image: illumidesk/app-backend:dev
   volumes:
-    - .:/srv/app
-    - /workspaces:/workspaces
+    - staticfiles:/srv/app/staticfiles
+    - workspaces:/workspaces
   env_file: .env
 services:
   api:
@@ -55,13 +55,19 @@ services:
     build:
       context: ../reverse-proxies/nginx/.
     image: illumidesk/nginx:dev
-    command: /nginx/sbin/nginx -p '' -g 'daemon off;'
+    command: nginx -p '' -g 'daemon off;'
     volumes:
-      - ./static:/srv/app/static
+      - staticfiles:/srv/app/staticfiles
+    depends_on:
+      - api
     labels:
       - "traefik.enable=true"
       - "traefik.backend=nginx"
       - "traefik.nginx.frontend.rule=PathPrefix:/media,/static"
+
+volumes:
+  staticfiles:
+  workspaces:
 
 networks:
   default:

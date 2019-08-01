@@ -7,7 +7,6 @@ tmp_dir = tempfile.mkdtemp()
 RESOURCE_DIR = tmp_dir
 MEDIA_ROOT = tmp_dir
 
-
 PASSWORD_HASHERS = (
     'django.contrib.auth.hashers.MD5PasswordHasher',
 )
