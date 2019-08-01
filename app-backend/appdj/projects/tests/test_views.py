@@ -692,8 +692,7 @@ class LTITest(APITestCase):
         project = resp.data['projects'][0]
         self.assertIn('files', project)
         self.assertEqual(len(project['files']), 2)
-        f = project['files'][0]
-        self.assertEqual(f['path'], rel_release_test_file)
+        f = [f for f in project['files'] if f['path'] == rel_release_test_file][0]
         self.assertIn('content_items', f)
         content_items = json.loads(f['content_items'])
         self.assertIn('@context', content_items)
