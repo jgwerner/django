@@ -2,22 +2,22 @@ import React from 'react'
 import { Route, Redirect, RouteProps } from 'react-router-dom'
 import { isLoggedIn } from './auth'
 
-export interface PrivateRouteProps extends RouteProps {
+export interface AuthRouteProps extends RouteProps {
   component: React.ComponentType<any>
 }
 
-const PrivateRoute = (props: PrivateRouteProps) => {
+const AuthRoute = (props: AuthRouteProps) => {
   const { component: Component, ...rest } = props
   return (
     <Route
       {...rest}
       render={props =>
-        isLoggedIn() ? (
+        !isLoggedIn() ? (
           <Component {...props} />
         ) : (
           <Redirect
             to={{
-              pathname: '/auth/login',
+              pathname: '/',
               state: {
                 /* eslint-disable */
                 ...props.location.state,
@@ -32,4 +32,4 @@ const PrivateRoute = (props: PrivateRouteProps) => {
   )
 }
 
-export default PrivateRoute
+export default AuthRoute

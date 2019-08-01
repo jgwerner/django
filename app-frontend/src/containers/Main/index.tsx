@@ -2,6 +2,7 @@ import React from 'react'
 import { Switch, Route } from 'react-router-dom'
 import Loadable from 'react-loadable'
 import PrivateRoute from 'utils/PrivateRoute'
+import AuthRoute from 'utils/AuthRoute'
 import AuthenticatedLayout from 'components/AuthenticatedLayout'
 import Content from 'components/AuthenticatedLayout/Content'
 import Header from './Header'
@@ -40,7 +41,7 @@ const PrivateRoutes = () => (
 const Main = () => (
   <React.Fragment>
     <Switch>
-      <Route path="/auth" component={AsyncAuth} />
+      <AuthRoute path="/auth" component={AsyncAuth} />
       <PrivateRoutes />
     </Switch>
   </React.Fragment>
