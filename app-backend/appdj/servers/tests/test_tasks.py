@@ -22,7 +22,7 @@ from ..tasks import lti, server_stats, setup_assignment
 User = get_user_model()
 
 
-class LTITest(TestCase):
+class LTI11Test(TestCase):
     def setUp(self):
         ServerSize.objects.get_or_create(
             name='Nano',
@@ -44,6 +44,7 @@ class LTITest(TestCase):
             'custom_canvas_course_id': '123',
             'user_id': str(uuid.uuid4()),
             'lis_person_contact_email_primary': 'jdoe@example.com',
+            'lti_version': 'LTI-1p0',
         }
         workspace_id, assignment_id = lti(
             str(self.project.pk), data, '')
@@ -59,6 +60,7 @@ class LTITest(TestCase):
             'custom_canvas_course_id': '123',
             'user_id': canvas_user_id,
             'lis_person_contact_email_primary': learner.email,
+            'lti_version': 'LTI-1p0',
         }
         workspace_id, assignment_id = lti(
             str(self.project.pk), data, '')
@@ -75,6 +77,7 @@ class LTITest(TestCase):
             'custom_canvas_course_id': '123',
             'user_id': canvas_user_id,
             'lis_person_contact_email_primary': learner.email,
+            'lti_version': 'LTI-1p0',
         }
         learner_project = perform_project_copy(learner, str(self.project.pk))
         workspace_id, assignment_id = lti(
@@ -93,6 +96,7 @@ class LTITest(TestCase):
             'custom_canvas_course_id': '123',
             'user_id': canvas_user_id,
             'lis_person_contact_email_primary': learner.email,
+            'lti_version': 'LTI-1p0',
         }
         learner_project = perform_project_copy(learner, str(self.project.pk))
         workspace = ServerFactory(
@@ -117,6 +121,7 @@ class LTITest(TestCase):
         canvas_instance = CanvasInstanceFactory()
         canvas_user_id = str(uuid.uuid4())
         data = {
+            'lti_version': 'LTI-1p0',
             'user_id': canvas_user_id,
             'lis_person_contact_email_primary': 'johndoe@example.com',
             'custom_canvas_assignment_id': '123',
@@ -185,7 +190,10 @@ class TestTasks(TestCase):
         canvas_instance = CanvasInstanceFactory()
         teacher_col = CollaboratorFactory()
         student_col = CollaboratorFactory()
-        data = {'ext_lti_assignment_id': '123'}
+        data = {
+            'lti_version': 'LTI-1p0',
+            'ext_lti_assignment_id': '123'
+        }
         path = 'test/test.ipynb'
         as1 = AssignmentFactory(
             external_id=data['ext_lti_assignment_id'],
@@ -218,7 +226,10 @@ class TestTasks(TestCase):
         teacher1_col = CollaboratorFactory()
         teacher2_col = CollaboratorFactory()
         student_col = CollaboratorFactory()
-        data = {'ext_lti_assignment_id': '123'}
+        data = {
+            'ext_lti_assignment_id': '123',
+            'lti_version': 'LTI-1p0',
+        }
         path = 'test/test.ipynb'
         as1 = AssignmentFactory(
             external_id=data['ext_lti_assignment_id'],

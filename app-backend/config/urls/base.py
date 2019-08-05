@@ -4,9 +4,11 @@ from django.contrib import admin
 
 from djoser import views as djoser_views
 from rest_framework.documentation import include_docs_urls
+from mozilla_django_oidc.views import OIDCAuthenticationCallbackView, OIDCLogoutView
 
 from appdj.jwt_auth import views as jwt_views
 from appdj.base.views import tbs_status
+from appdj.canvas.views import OIDCAuthenticationRequest
 from appdj.users import views as users_views
 from appdj.servers import views as servers_views
 from .unversioned import urlpatterns as unversioned_urls
@@ -15,6 +17,11 @@ from .unversioned import urlpatterns as unversioned_urls
 urlpatterns = [
     url(r'^docs/', include_docs_urls(title='IllumiDesk API', public=False)),
     url(r'^sns/$', servers_views.SNSView.as_view(), name='sns'),
+    url(r'^auth/oidc/callback/$', OIDCAuthenticationCallbackView.as_view(),
+        name='oidc_authentication_callback'),
+    url(r'^auth/oidc/authenticate/$', OIDCAuthenticationRequest.as_view(),
+        name='oidc_authentication_init'),
+    url(r'^auth/oidc/logout/$', OIDCLogoutView.as_view(), name='oidc_logout'),
     url(r'^auth/jwt-token-auth/$', jwt_views.ObtainJSONWebToken.as_view(), name='obtain-jwt'),
     url(r'^auth/temp-token-auth/$', users_views.my_api_key, name='temp-token-auth'),
     url(r'^auth/jwt-token-refresh/$', jwt_views.RefreshJSONWebToken.as_view(), name='refresh-jwt'),

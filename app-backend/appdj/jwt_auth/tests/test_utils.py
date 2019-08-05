@@ -49,7 +49,7 @@ class TestJWT(APITestCase):
         resp = cli.get(url)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         resp = cli.get(url)
-        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
 
     @override_settings(JWT_TMP_EXPIRATION_DELTA=timedelta(seconds=1))
     def test_one_time_jwt_with_view_expiry(self):
@@ -58,4 +58,4 @@ class TestJWT(APITestCase):
         url = reverse('temp-token-auth')
         sleep(1)
         resp = cli.get(url)
-        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)

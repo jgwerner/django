@@ -5,6 +5,8 @@ import boto3
 from django.contrib.auth import get_user_model
 from celery import shared_task
 
+from appdj.canvas.lti import get_lti
+
 from appdj.projects.utils import perform_project_copy
 from appdj.assignments.models import Assignment, StudentProjectThrough, get_assignment_or_module
 from .models import Server, ServerRunStatistics
@@ -114,31 +116,31 @@ def lti(project_pk, data, path):
     """
     Handles lti server launch
     """
+    lti_helper = get_lti(data)
     logger.debug('[LTI] data: %s', data)
-    user = lti_user(data['lis_person_contact_email_primary'], data['user_id'])
+    user = lti_user(lti_helper.email, lti_helper.user_id)
     logger.debug('[LTI] user %s', user)
-    course_id = data['custom_canvas_course_id']
-    assignment_id = data.get('ext_lti_assignment_id')
     project, is_teacher = lti_project(
         user=user,
         project_pk=project_pk,
-        course_id=course_id,
+        course_id=lti_helper.course_id,
         path=path,
-        assignment_id=assignment_id
+        assignment_id=lti_helper.assignment_id
     )
     logger.debug('[LTI] user project: %s', project.pk)
-    if not is_teacher and assignment_id:
+    if not is_teacher and lti_helper.assignment_id:
         logger.debug("Setting up assignment")
-        assignment = setup_assignment(project, data, path, project_pk)
+        setup_assignment(project, data, path, project_pk)
     workspace = lti_workspace(user, project)
-    return str(workspace.pk), assignment_id
+    return str(workspace.pk), lti_helper.assignment_id
 
 
 def setup_assignment(project, data, path, teacher_project_pk):
+    lti_helper = get_lti(data)
     assignment = Assignment.objects.get(
-        external_id=data['ext_lti_assignment_id'],
+        external_id=lti_helper.assignment_id,
         teacher_project_id=teacher_project_pk,
-        path=path
+        path=path,
     )
     if 'lis_result_sourcedid' in data:
         source_did_obj, _ = StudentProjectThrough.objects.get_or_create(assignment=assignment, project=project)

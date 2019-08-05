@@ -12,23 +12,19 @@ from django.db.models import Q
 from oauth2_provider.models import Application as ProviderApp
 from rest_framework import viewsets, status, permissions
 from rest_framework.response import Response
-from rest_framework.decorators import (
-    api_view, authentication_classes,
-    permission_classes,
-    renderer_classes,
-    parser_classes
-)
+from rest_framework.decorators import api_view
 from rest_framework.generics import CreateAPIView
 from rest_framework.renderers import TemplateHTMLRenderer
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.views import APIView
 
 from appdj.base.views import NamespaceMixin, LookupByMultipleFields
 from appdj.base.utils import validate_uuid
 from appdj.canvas.models import CanvasInstance
-from appdj.canvas.authorization import CanvasAuth
-from appdj.oauth2.models import Application
+from appdj.canvas.authorization import CanvasAuth, JSONWebTokenAuthenticationForm
 from appdj.servers.utils import get_server_url, create_server
 from appdj.jwt_auth.utils import create_auth_jwt
+from appdj.oauth2.models import Application
 from appdj.teams.models import Team
 from appdj.teams.permissions import TeamGroupPermission
 from .serializers import (
@@ -144,79 +140,109 @@ class CloneGitProject(CreateAPIView):
     serializer_class = CloneGitProjectSerializer
 
 
-@api_view(['post'])
-@authentication_classes([CanvasAuth])
-@permission_classes([])
-@parser_classes([MultiPartParser, FormParser])
-@renderer_classes([TemplateHTMLRenderer])
-def file_selection(request, *args, **kwargs):
-    projects = Project.objects.filter(
-        Q(collaborator__user=request.user) | Q(team__in=Team.objects.filter(groups__user=request.user)),
-        Q(is_active=True),
-        Q(collaborator__owner=True)
-    )
+class FileSelection(APIView):
+    authentication_classes = (JSONWebTokenAuthenticationForm, CanvasAuth)
+    permission_classes = ()
+    parser_classes = (FormParser, MultiPartParser)
+    renderer_classes = (TemplateHTMLRenderer,)
 
-    def iterate_dir(directory):
+    def post(self, request, *args, **kwargs):
+        projects = Project.objects.filter(
+            Q(collaborator__user=request.user) | Q(team__in=Team.objects.filter(groups__user=request.user)),
+            Q(is_active=True),
+            Q(collaborator__owner=True)
+        )
+
+        projects_context = []
+        for project in projects:
+            project_root = project.resource_root()
+            if not project_root.exists():
+                continue
+            workspace = project.servers.filter(config__type='jupyter', is_active=True).first()
+            if workspace is None:
+                workspace = create_server(request.user, project, 'workspace')
+            files = []
+            assignment_id = request.data.get('ext_lti_assignment_id')
+            if assignment_id and (project_root / 'release').exists():
+                root = project_root / 'release'
+            else:
+                root = project_root
+            for f in self._iterate_dir(root):
+                path = str(f.relative_to(project_root))
+                quoted = quote(path, safe='/')
+                scheme = 'https' if settings.HTTPS else 'http'
+                url = get_server_url(str(project.pk), str(workspace.pk), scheme,
+                                     f"/{quoted}", namespace=project.namespace_name)
+                files.append({
+                    'path': path,
+                    'content_items': json.dumps({
+                        "@context": "http://purl.imsglobal.org/ctx/lti/v1/ContentItem",
+                        "@graph": [{
+                            "@type": "LtiLinkItem",
+                            "@id": url,
+                            "url": url,
+                            "title": f.name,
+                            "text": f.name,
+                            "mediaType": "application/vnd.ims.lti.v1.ltilink",
+                            "placementAdvice": {"presentationDocumentTarget": "frame"}
+                        }]
+                    })
+                })
+            projects_context.append({
+                'name': project.name,
+                'files': files
+            })
+
+        if 'lti_version' in request.data:
+            context = self.get_v1_context(request, projects_context)
+        else:
+            context = self.get_v13_context(request, projects_context)
+
+        return Response(context, template_name='projects/file_selection.html')
+
+    @staticmethod
+    def get_v1_context(request, projects_context):
+        course_id = request.META['HTTP_REFERER'].split('/')[4]
+        oauth_app, _ = Application.objects.get_or_create(
+            application=ProviderApp.objects.get(client_id=request.data['oauth_consumer_key']))
+        return {
+            'course_id': course_id,
+            'token': create_auth_jwt(request.user),
+            'lti_version': request.data['lti_version'],
+            'projects': projects_context,
+            'action_url': request.data['content_item_return_url'],
+            'assignment_id': request.data['ext_lti_assignment_id'],
+            'canvas_instance_id': CanvasInstance.objects.filter(
+                instance_guid=request.data['tool_consumer_instance_guid']).first().pk,
+            'oauth_app': str(oauth_app.pk),
+            'version': request.version,
+            'namespace': request.namespace
+        }
+
+    @staticmethod
+    def get_v13_context(request, projects_context):
+        course_id = request.META['HTTP_REFERER'].split('/')[4]
+        oauth_app, _ = Application.objects.get_or_create(
+            application=ProviderApp.objects.get(client_id=request.data['oauth_consumer_key']))
+        return {
+            'course_id': course_id,
+            'token': create_auth_jwt(request.user),
+            'lti_version': request.auth['https://purl.imsglobal.org/spec/lti/claim/version'],
+            'projects': projects_context,
+            'action_url': request.auth['https://purl.imsglobal.org/spec/lti/claim/launch_presentation']['return_url'],
+            'assignment_id': request.auth.get('ext_lti_assignment_id'),
+            'canvas_instance_id': CanvasInstance.objects.filter(
+                instance_guid=request.data['tool_consumer_instance_guid']).first().pk,
+            'oauth_app': str(oauth_app.pk),
+            'version': request.version,
+            'namespace': request.namespace
+        }
+
+    def _iterate_dir(self, directory):
         for item in directory.iterdir():
             if item.name.startswith('.') or item.name.startswith('submissions'):
                 continue
             if item.is_dir():
-                yield from iterate_dir(item)
+                yield from self._iterate_dir(item)
             else:
                 yield item
-
-    projects_context = []
-    for project in projects:
-        project_root = project.resource_root()
-        if not project_root.exists():
-            continue
-        workspace = project.servers.filter(config__type='jupyter', is_active=True).first()
-        if workspace is None:
-            workspace = create_server(request.user, project, 'workspace')
-        files = []
-        assignment_id = request.data.get('ext_lti_assignment_id')
-        if assignment_id and (project_root / 'release').exists():
-            root = project_root / 'release'
-        else:
-            root = project_root
-        for f in iterate_dir(root):
-            path = str(f.relative_to(project_root))
-            quoted = quote(path, safe='/')
-            scheme = 'https' if settings.HTTPS else 'http'
-            url = get_server_url(str(project.pk), str(workspace.pk), scheme,
-                                 f"/{quoted}", namespace=project.namespace_name)
-            files.append({
-                'path': path,
-                'project': str(project.pk),
-                'content_items': json.dumps({
-                    "@context": "http://purl.imsglobal.org/ctx/lti/v1/ContentItem",
-                    "@graph": [{
-                        "@type": "LtiLinkItem",
-                        "@id": url,
-                        "url": url,
-                        "title": f.name,
-                        "text": f.name,
-                        "mediaType": "application/vnd.ims.lti.v1.ltilink",
-                        "placementAdvice": {"presentationDocumentTarget": "frame"}
-                    }]
-                })
-            })
-        projects_context.append({
-            'name': project.name,
-            'files': files
-        })
-    course_id = request.META['HTTP_REFERER'].split('/')[4]
-    oauth_app, _ = Application.objects.get_or_create(application=ProviderApp.objects.get(client_id=request.data['oauth_consumer_key']))
-    context = {
-        'course_id': course_id,
-        'token': create_auth_jwt(request.user),
-        'lti_version': request.data['lti_version'],
-        'projects': projects_context,
-        'action_url': request.data['content_item_return_url'],
-        'assignment_id': request.data['ext_lti_assignment_id'],
-        'canvas_instance_id': CanvasInstance.objects.filter(instance_guid=request.data['tool_consumer_instance_guid']).first().pk,
-        'oauth_app': str(oauth_app.pk),
-        'version': request.version,
-        'namespace': request.namespace,
-    }
-    return Response(context, template_name='projects/file_selection.html')

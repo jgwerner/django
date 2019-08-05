@@ -48,3 +48,5 @@ django-environ==0.4.5
 channels_redis==2.4.0
 djangorestframework-csv==2.1.0
 nbgrader==0.5.5
+mozilla-django-oidc==1.2.2
+service-identity==18.1.0

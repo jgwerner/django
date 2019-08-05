@@ -1,17 +1,27 @@
+import logging
 import re
+import json
 import time
+import jwt
+import requests
 
 from oauth2_provider.models import Application
 from oauthlib.oauth1 import RequestValidator, SignatureOnlyEndpoint
-from rest_framework import authentication
-
+from rest_framework import authentication, exceptions
+from rest_framework_jwt.authentication import BaseJSONWebTokenAuthentication
 from django.core.cache import cache
+from django.core.exceptions import SuspiciousOperation
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.utils.encoding import force_bytes, smart_text
+from josepy.jws import JWS, Header
 
 from appdj.servers.utils import email_to_username
 from .models import CanvasInstance
+from .forms import JWTForm
+from .lti import get_lti
 
+logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
@@ -92,3 +102,101 @@ class CanvasAuth(authentication.BaseAuthentication):
 
         return {normalize_header_name(header): request.META[header]
                 for header in request.META if matcher(header)}
+
+
+def retrieve_matching_jwk(token, endpoint, verify):
+    response_jwks = requests.get(
+        endpoint,
+        verify=verify
+    )
+    response_jwks.raise_for_status()
+    return response_jwks.json()
+
+
+def lti_jwt_decode(token, jwks=None, verify=True, audience=None):
+    if jwks:
+        token = force_bytes(token)
+        jwks = retrieve_matching_jwk(token, jwks, verify or settings.LTI_JWT_VERIFY)
+        jws = JWS.from_compact(token)
+        json_header = jws.signature.protected
+        header = Header.json_loads(json_header)
+        key = None
+        for jwk in jwks['keys']:
+            if jwk['kid'] != smart_text(header.kid):
+                continue
+            if 'alg' in jwk and jwk['alg'] != smart_text(header.alg):
+                raise SuspiciousOperation('alg values do not match')
+            key = jwk
+        if key is None:
+            raise SuspiciousOperation('Could not find a valid JWKS')
+        key = jwt.algorithms.RSAAlgorithm.from_jwk(json.dumps(key))
+    else:
+        key = settings.LTI_JWT_PUBLIC_KEY
+    return jwt.decode(
+        token,
+        key,
+        verify or settings.LTI_JWT_VERIFY,
+        audience=audience
+    )
+
+
+class JSONWebTokenAuthenticationForm(BaseJSONWebTokenAuthentication):
+    def authenticate(self, request):
+        jwt_value = self.get_jwt_value(request)
+        if jwt_value is None:
+            return None
+
+        jwks_endpoint = None
+        audience = None
+        if 'state' in jwt_value:
+            state = jwt_value['state']
+            iss = cache.get(state)
+            canvas_instance = CanvasInstance.objects.filter(instance_guid=iss).first()
+            if not canvas_instance:
+                raise exceptions.AuthenticationFailed('Invalid iss')
+            cache.delete(state)
+            jwks_endpoint = canvas_instance.oidc_jwks_endpoint
+            audience = canvas_instance.applications.first().client_id
+        try:
+            payload = lti_jwt_decode(jwt_value['id_token'], jwks_endpoint, audience=audience)
+        except jwt.ExpiredSignature:
+            raise exceptions.AuthenticationFailed('Signature has expired')
+        except jwt.DecodeError:
+            raise exceptions.AuthenticationFailed('Error decoding signature')
+        except jwt.InvalidTokenError:
+            raise exceptions.AuthenticationFailed("Invalid token")
+        except Exception as e:
+            logger.exception("JWT validation exception")
+            raise exceptions.AuthenticationFailed(e)
+        self.verify_lti(payload)
+        user = self.authenticate_credentials(payload)
+        return (user, payload)
+
+    def verify_lti(self, payload):
+        lti = get_lti(payload)
+        try:
+            lti.verify()
+        except Exception as e:
+            logger.exception("Validation error")
+            raise exceptions.AuthenticationFailed(e)
+
+    def get_jwt_value(self, request):
+        form = JWTForm(request.POST)
+        if form.is_valid():
+            return form.cleaned_data
+        return None
+
+    def authenticate_credentials(self, payload):
+        User = get_user_model()
+        email = payload.get('email')
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            user = User.objects.create_user(
+                username=email_to_username(email),
+                email=email
+            )
+        if not user.is_active:
+            raise exceptions.AuthenticationFailed("User account is disabled")
+        return user

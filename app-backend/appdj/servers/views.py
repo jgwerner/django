@@ -34,7 +34,7 @@ from appdj.base.views import LookupByMultipleFields
 from appdj.base.permissions import IsAdminUser
 from appdj.base.parser import PlainTextParser
 from appdj.base.utils import get_object_or_404, validate_uuid
-from appdj.canvas.authorization import CanvasAuth
+from appdj.canvas.authorization import CanvasAuth, JSONWebTokenAuthenticationForm
 from appdj.canvas.models import CanvasInstance
 from appdj.projects.permissions import ProjectChildPermission
 from appdj.projects.models import Project, Collaborator
@@ -278,7 +278,7 @@ def lti_redirect(request, *args, **kwargs):
 
 
 @api_view(['post'])
-@authentication_classes([CanvasAuth])
+@authentication_classes([CanvasAuth, JSONWebTokenAuthenticationForm])
 @permission_classes([])
 @parser_classes([MultiPartParser, FormParser, JSONParser])
 @renderer_classes([TemplateHTMLRenderer, JSONRenderer])

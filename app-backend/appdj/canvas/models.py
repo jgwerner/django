@@ -10,6 +10,10 @@ class CanvasInstance(models.Model):
     applications = models.ManyToManyField(settings.OAUTH2_PROVIDER_APPLICATION_MODEL)
     users = models.ManyToManyField(settings.AUTH_USER_MODEL)
     clusters = models.ManyToManyField(ECSCluster)
+    oidc_token_endpoint = models.URLField(blank=True)
+    oidc_user_endpoint = models.URLField(blank=True)
+    oidc_jwks_endpoint = models.URLField(blank=True)
+    oidc_auth_endpoint = models.URLField(blank=True)
 
     class Meta:
         permissions = (

@@ -27,7 +27,9 @@ let getUrl = (assignment_id: string) => {
   let serverName = parts[6];
   let projectName = parts[4];
   let accountName = parts[2];
-  return `${proto}//${window.location.host}/${version}/${accountName}/projects/${projectName}/servers/${serverName}/lti/assignment/${assignment_id}/`;
+  return `${proto}//${
+    window.location.host
+  }/${version}/${accountName}/projects/${projectName}/servers/${serverName}/lti/assignment/${assignment_id}/`;
 };
 
 let sendCallback = (

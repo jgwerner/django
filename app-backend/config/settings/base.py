@@ -2,6 +2,7 @@ import os
 import datetime
 import uuid
 import environ
+from pathlib import Path
 from . import BASE_DIR
 
 # Using django-environ to set/read env vars (it simplify the use of keys like DATABASE_URL)
@@ -16,7 +17,7 @@ APPS_DIR = ROOT_DIR.path('appdj')
 # set default values and casting
 env = environ.Env(DEBUG=(bool, False), TLS=(bool, False),)
 
-environ.Env.read_env(os.path.join(ROOT_DIR, '.env')) # reading .env file if exists
+environ.Env.read_env(os.path.join(ROOT_DIR, '.env'))  # reading .env file if exists
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.10/howto/deployment/checklist/
@@ -57,6 +58,7 @@ INSTALLED_APPS = [
     'djoser',
     'django_ses',
     'treebeard',
+    'mozilla_django_oidc',
 
     'appdj.oauth2.apps.OAuth2Config',
     'appdj.base.apps.BaseConfig',
@@ -225,8 +227,13 @@ BCRYPT_LOG_ROUNDS = 13
 JWT_AUTH = {
     'JWT_EXPIRATION_DELTA': datetime.timedelta(days=30),
     'JWT_ALLOW_REFRESH': True,
-    'JWT_DECODE_HANDLER': 'appdj.jwt_auth.utils.jwt_decode_handler'
+    'JWT_DECODE_HANDLER': 'appdj.jwt_auth.utils.jwt_decode_handler',
 }
+LTI_JWT_VERIFY_EXPIRATION = True
+LTI_JWT_VERIFY = True
+LTI_JWT_PRIVATE_KEY = b''
+LTI_JWT_PUBLIC_KEY = b''
+LTI_JWT_AUDIENCE = 'UfHhTGyPiCRyGwvX37EIATA3LUT7qa2Rje97cOcV'
 JWT_TMP_EXPIRATION_DELTA = datetime.timedelta(seconds=60)
 
 # Internationalization
@@ -269,12 +276,13 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
     ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
+        'appdj.canvas.authorization.JSONWebTokenAuthenticationForm',
+        'appdj.canvas.authorization.CanvasAuth',
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
         'rest_framework_social_oauth2.authentication.SocialAuthentication',
         'rest_framework.authentication.SessionAuthentication',
-        'appdj.canvas.authorization.CanvasAuth',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'appdj.teams.permissions.TeamGroupPermission',
@@ -287,8 +295,8 @@ REST_FRAMEWORK = {
 DJOSER = {
     'DOMAIN': os.getenv("APP_DOMAIN"),
     'PASSWORD_RESET_CONFIRM_URL': os.getenv(
-            'PASSWORD_RESET_CONFIRM_URL',
-            '/auth/password/reset/confirm/?uid={uid}&token={token}'
+        'PASSWORD_RESET_CONFIRM_URL',
+        '/auth/password/reset/confirm/?uid={uid}&token={token}'
     ),
     'PASSWORD_RESET_DOMAIN': os.getenv('PASSWORD_RESET_DOMAIN', 'dev-app.illumidesk.com'),
     'SERIALIZERS': {'user_create': "appdj.users.serializers.UserSerializer",
@@ -298,12 +306,11 @@ DJOSER = {
     'SEND_ACTIVATION_EMAIL': True,
     'ACTIVATION_URL': "auth/activate?uid={uid}&token={token}",
     'EMAIL': {
-            'activation': 'appdj.users.emails.CustomActivationEmail',
-            'confirmation': 'appdj.users.emails.CustomConfirmationEmail',
-            'password_reset': 'appdj.users.emails.CustomPasswordResetEmail',
-        },
+        'activation': 'appdj.users.emails.CustomActivationEmail',
+        'confirmation': 'appdj.users.emails.CustomConfirmationEmail',
+        'password_reset': 'appdj.users.emails.CustomPasswordResetEmail',
+    },
 }
-
 
 DEFAULT_VERSION = os.environ.get('API_VERSION', "v1")
 

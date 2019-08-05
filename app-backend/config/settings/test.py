@@ -1,5 +1,7 @@
 import tempfile
 from .base import *
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.asymmetric import rsa
 
 
 SECRET_KEY = 'test'
@@ -53,3 +55,10 @@ CACHEOPS_REDIS = REDIS_URL
 CELERY_RESULT_BACKEND = REDIS_URL
 CELERY_BROKER_URL = REDIS_URL
 CELERY_REDBEAT_REDIS_URL = REDIS_URL
+
+LTI_JWT_PRIVATE_KEY = rsa.generate_private_key(
+    public_exponent=65537,
+    key_size=2048,
+    backend=default_backend()
+)
+LTI_JWT_PUBLIC_KEY = LTI_JWT_PRIVATE_KEY.public_key()

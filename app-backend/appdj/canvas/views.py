@@ -1,13 +1,21 @@
+from urllib.parse import urlencode
+
+from django.core.cache import cache
 from django.conf import settings
 from django.urls import reverse
+from django.utils.crypto import get_random_string
 from django.http import HttpResponseRedirect
 from django.contrib.sites.shortcuts import get_current_site
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import views
 from rest_framework.response import Response
 from rest_framework.parsers import FormParser
 from oauth2_provider.models import get_application_model
+from mozilla_django_oidc.views import OIDCAuthenticationRequestView
+from mozilla_django_oidc.utils import absolutify
 
-from .authorization import CanvasAuth
+from appdj.canvas.models import CanvasInstance
 from .renderer import CanvasRenderer
 
 Application = get_application_model()
@@ -121,9 +129,64 @@ class CanvasXML(views.APIView):
 
 
 class Auth(views.APIView):
-    authentication_classes = (CanvasAuth,)
     permission_classes = []
     parser_classes = (FormParser,)
 
     def post(self, request, **kwargs):
         return HttpResponseRedirect(settings.LOGIN_REDIRECT_URL)
+
+
+class Auth13(views.APIView):
+    permission_classes = []
+    parser_classes = (FormParser,)
+
+    def post(self, request, **kwargs):
+        return HttpResponseRedirect(settings.LOGIN_REDIRECT_URL)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class OIDCAuthenticationRequest(OIDCAuthenticationRequestView):
+
+    http_method_names = ['get', 'post']
+
+    def __init__(self, *args, **kwargs):
+        super(OIDCAuthenticationRequestView).__init__(*args, **kwargs)  # pylint: disable=bad-super-call
+
+    def _common(self, request, iss, login_hint, lti_message_hint):
+        canvas_instance = CanvasInstance.objects.get(instance_guid=iss)
+        state = get_random_string(32)
+        nonce = get_random_string(32)
+
+        params = {
+            'response_type': 'id_token',
+            'response_mode': 'form_post',
+            'scope': 'openid',
+            'client_id': canvas_instance.applications.first().client_id,
+            'redirect_uri': absolutify(
+                request,
+                reverse('lti-auth', kwargs={'version': settings.DEFAULT_VERSION})
+            ),
+            'state': state,
+            'nonce': nonce,
+            'login_hint': login_hint,
+            'lti_message_hint': lti_message_hint
+        }
+
+        params.update(self.get_extra_params(request))
+
+        cache.set(state, iss)
+        query = urlencode(params)
+        redirect_url = f'{canvas_instance.oidc_auth_endpoint}?{query}'
+        return HttpResponseRedirect(redirect_url)
+
+    def get(self, request):
+        iss = request.GET.get('iss')
+        login_hint = request.GET.get('login_hint')
+        lti_message_hint = request.GET.get('lti_message_hint')
+        return self._common(request, iss, login_hint, lti_message_hint)
+
+    def post(self, request):
+        iss = request.POST.get('iss')
+        login_hint = request.POST.get('login_hint')
+        lti_message_hint = request.POST.get('lti_message_hint')
+        return self._common(request, iss, login_hint, lti_message_hint)
