@@ -23,6 +23,13 @@ We maintain `docker-compose-*.yml` files to launch our working `app-backend` sta
 - [Traefik](https://hub.docker.com/_/traefik)
 - [Nginx](https://hub.docker.com/_/nginx)
 
+### Create RSA key pair
+
+You need to create RSA key pair like so:
+
+    openssl genpkey -algorithm RSA -out rsa_private.pem -pkeyopt rsa_keygen_bits:2048
+    openssl rsa -in rsa_private.pem -pubout -out rsa_public.pem
+
 ### Launch Stack
 
 Establish your environment variables. The `env.compose.*` file included in this repo includes a sensible set of defaults which should work to launch a basic version of the application:
