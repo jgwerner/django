@@ -7,7 +7,7 @@ from .models import CanvasInstance
 
 @admin.register(CanvasInstance)
 class CanvasInstanceAdmin(GuardedModelAdmin):
-    list_display = ('instance_guid',)
+    list_display = ('instance_guid', 'name')
     filter_horizontal = ('users', 'applications', 'clusters')
 
     def get_urls(self):

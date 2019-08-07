@@ -185,7 +185,7 @@ class ECSSpawnerTestCase(TestCase):
             cluster=settings.ECS_CLUSTER,
             taskDefinition=register_response['taskDefinition']['taskDefinitionArn']
         )
-        run_response = {'tasks': [{'taskArn': 'abc'}]}
+        run_response = {'tasks': [{'taskArn': 'abc', 'clusterArn': '123'}]}
         self.stubber.add_response('run_task', run_response, run_params)
         self.stubber.activate()
         self.spawner.start()

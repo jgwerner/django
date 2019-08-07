@@ -2,6 +2,7 @@ import time
 import logging
 import json
 import requests
+from datetime import timedelta
 
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
@@ -9,7 +10,7 @@ from celery.result import AsyncResult
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.http import Http404
-from django.db.models import Sum, Max, F, Count, fields
+from django.db.models import Sum, Max, F, Count, fields, Q, OuterRef, Subquery
 from django.db.models.functions import Coalesce, Now
 from django.urls import reverse
 from django.shortcuts import redirect
@@ -23,12 +24,14 @@ from rest_framework.decorators import (
     authentication_classes,
     parser_classes
 )
+from rest_framework import filters
 from rest_framework.response import Response
 from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser as DRFIsAdminUser
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework_jwt.settings import api_settings
 from rest_framework_csv.renderers import CSVRenderer
+from rest_framework.generics import ListAPIView
 
 from appdj.base.views import LookupByMultipleFields
 from appdj.base.permissions import IsAdminUser
@@ -37,7 +40,8 @@ from appdj.base.utils import get_object_or_404, validate_uuid
 from appdj.canvas.authorization import CanvasAuth, JSONWebTokenAuthenticationForm
 from appdj.canvas.models import CanvasInstance
 from appdj.projects.permissions import ProjectChildPermission
-from appdj.projects.models import Project, Collaborator
+from appdj.projects.models import Project
+from appdj.servers.models import ServerRunStatistics
 from appdj.assignments.models import Assignment
 from appdj.jwt_auth.views import JWTApiView
 from appdj.jwt_auth.serializers import VerifyJSONWebTokenServerSerializer
@@ -51,7 +55,7 @@ from .tasks import (
     send_assignment,
     server_stats
 )
-from .permissions import ServerChildPermission, ServerActionPermission
+from .permissions import ServerChildPermission, ServerActionPermission, CanvasAdminPermission
 from . import serializers, models
 from .utils import get_server_usage, lti_ready_url
 
@@ -312,7 +316,8 @@ def lti_ready(request, *args, **kwargs):
     if workspace is None:
         return Response({'error': 'No workspace created'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     if workspace.status == workspace.ERROR:
-        return Response({'error': workspace.config.get('error', 'Server error')}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({'error': workspace.config.get('error', 'Server error')},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     scheme = 'https' if settings.HTTPS else 'http'
     url = lti_ready_url(scheme, workspace, kwargs.get('path'), assignment_id)
     return Response({'url': url})
@@ -343,24 +348,47 @@ def reset_assignment_file(request, *args, **kwargs):
     return Response({'message': 'OK'})
 
 
-@api_view(['get'])
-@renderer_classes([CSVRenderer, JSONRenderer])
-def usage_report(request, version, org=None):
-    if org is None and not request.user.is_staff:
-        return Response({"message": "Bad request"}, status=400)
-    usage = Sum(
-        F('project__servers__serverrunstatistics__stop') - F('project__servers__serverrunstatistics__start'),
-        output_field=fields.DurationField()
-    )
-    qs = Collaborator.objects.filter(owner=True).annotate(
-        servers=Count('project__servers', distinct=True),
-        usage=usage
-    )
-    if org is not None:
-        canvas_instance = CanvasInstance.objects.filter(name=org, users=request.user).first()
-        if canvas_instance is not None and request.user.has_perm('is_admin', canvas_instance):
-            qs = qs.filter(user__in=canvas_instance.users.all())
-        else:
-            return Response({"message": "Forbidden"}, status=403)
-    serializer = serializers.UsageRecordsSerializer(qs, many=True)
-    return Response(serializer.data)
+class UsageReport(ListAPIView):
+    permission_classes = [CanvasAdminPermission]
+    serializer_class = serializers.UsageRecordsSerializer
+    renderer_classes = [CSVRenderer, JSONRenderer]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['email']
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def get_queryset(self):
+        org = self.kwargs.get('org')
+        qs = self.filter_queryset(User.objects.filter(is_active=True))
+        if org is not None:
+            canvas_instance = CanvasInstance.objects.filter(instance_guid=org, users=self.request.user).first()
+            if canvas_instance is not None and self.request.user.has_perm('is_admin', canvas_instance):
+                qs = qs.filter(pk__in=canvas_instance.users.all())
+        sub = ServerRunStatistics.objects.filter(owner=OuterRef('pk'), stop=None).order_by('-start').values('pk')
+        qs1 = qs.order_by('pk').annotate(
+            usage=Sum(
+                F('serverrunstatistics__stop') - F('serverrunstatistics__start'),
+                filter=Q(serverrunstatistics__stop__isnull=False),
+                output_field=fields.DurationField(),
+            ),
+            server_count=Count('servers')
+        )
+        qs2 = qs.order_by('pk').filter(serverrunstatistics=Subquery(sub[:1])).annotate(
+            usage=Sum(
+                Coalesce('serverrunstatistics__stop', Now()) - F('serverrunstatistics__start'),
+                output_field=fields.DurationField(),
+            )
+        )
+        out = []
+        for user in qs1:
+            item = {'server_count': user.server_count, 'email': user.email}
+            usage = user.usage or timedelta()
+            user2 = qs2.filter(pk=user.pk).first()
+            if user2:
+                usage += user2.usage
+            item['usage'] = usage
+            out.append(item)
+        return out

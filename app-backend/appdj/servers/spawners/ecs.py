@@ -31,6 +31,7 @@ class ECSSpawner(BaseSpawner):
         )
         if resp['tasks']:
             self.server.config['task_arn'] = resp['tasks'][0]['taskArn']
+            self.server.config['cluster_arn'] = resp['tasks'][0]['clusterArn']
             if 'error' in self.server.config:
                 del self.server.config['error']
         elif resp['failures']:

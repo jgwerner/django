@@ -76,7 +76,6 @@ class ServerModelAbstract(models.Model):
             if cluster:
                 return cluster.name
         return settings.ECS_CLUSTER
-        
 
 
 class Server(ServerModelAbstract):

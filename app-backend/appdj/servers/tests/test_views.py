@@ -334,24 +334,25 @@ class TestUsageReport(APITestCase):
         self.client.force_authenticate(user)
         resp = self.client.get(url, format='json')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        self.assertEqual(resp.data[0]['user'], user.username)
 
     def test_usage_report_for_canvas_instance_admin(self):
         col = CollaboratorFactory()
+        col.user.is_staff = False
+        col.user.save()
         server = ServerFactory(project=col.project)
         end = timezone.now()
         start = end - timedelta(hours=5)
         ServerRunStatisticsFactory(start=start, stop=end, server=server)
         canvas_instance = CanvasInstanceFactory()
         canvas_instance.users.add(col.user)
-        url = reverse('organisation-usage-records', kwargs={'version': 'v1', 'org': canvas_instance.name})
+        url = reverse('organisation-usage-records', kwargs={'version': 'v1', 'org': canvas_instance.instance_guid})
         self.client.force_authenticate(col.user)
         resp = self.client.get(url, format='json')
         self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
         assign_perm('is_admin', col.user, canvas_instance)
         resp = self.client.get(url, format='json')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        self.assertEqual(resp.data[0]['user'], col.user.username)
+        self.assertEqual(resp.data[0]['email'], col.user.email)
 
 
 class ServerTestWithName(APITestCase):

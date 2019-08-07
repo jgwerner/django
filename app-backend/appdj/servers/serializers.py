@@ -1,5 +1,6 @@
 import uuid
 import logging
+from datetime import timedelta
 from django.conf import settings
 from rest_framework import serializers
 from guardian.shortcuts import assign_perm, remove_perm
@@ -200,7 +201,12 @@ class ServerStatisticsAggregatedSerializer(serializers.Serializer):
     stop = serializers.DateTimeField()
 
 
+class UsageField(serializers.DurationField):
+    def get_attribute(self, obj):
+        return (obj.inactive_usage or timedelta()) + (obj.active_usage or timedelta())
+
+
 class UsageRecordsSerializer(serializers.Serializer):
-    servers = serializers.IntegerField()
+    server_count = serializers.IntegerField()
     usage = serializers.DurationField()
-    user = serializers.UUIDField()
+    email = serializers.EmailField()

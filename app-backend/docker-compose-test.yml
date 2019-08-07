@@ -5,6 +5,7 @@ x-django: &django
     dockerfile: Dockerfile.dev
   image: illumidesk/app-backend:dev
   volumes:
+    - .:/srv/app
     - staticfiles:/srv/app/staticfiles
     - workspaces:/workspaces
   env_file: env.compose.test

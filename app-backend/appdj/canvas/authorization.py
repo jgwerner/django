@@ -84,6 +84,7 @@ class CanvasAuth(authentication.BaseAuthentication):
                     email=email
                 )
             user.profile.applications.add(application)
+            canvas_instance.users.add(user)
             if 'canvas_user_id' not in user.profile.config:
                 user.profile.config['canvas_user_id'] = request.data['user_id']
                 user.profile.save()
