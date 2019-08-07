@@ -1,13 +1,17 @@
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 from sentry_sdk.integrations.celery import CeleryIntegration
+from sentry_sdk.integrations.redis import RedisIntegration
+
 from .base import *
+
 
 sentry_sdk.init(
     dsn=os.getenv('SENTRY_DSN'),
     integrations=[
         DjangoIntegration(),
-        CeleryIntegration()
+        CeleryIntegration(),
+        RedisIntegration()
     ]
 )
 

@@ -42,6 +42,14 @@ services:
     <<: *django
     command: /srv/env/bin/celery -A config.celery beat -l debug
     entrypoint: ''
+  db:
+    image: postgres:9.6-alpine
+    ports:
+      - "5432:5432"
+  cache:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
   server:
     build:
       context: ../reverse-proxies/traefik/.

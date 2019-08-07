@@ -3,14 +3,22 @@ import os
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 from sentry_sdk.integrations.celery import CeleryIntegration
-
+from sentry_sdk.integrations.redis import RedisIntegration
 
 from celery import Celery
 
+
+sentry_sdk.init(
+    dsn=os.getenv('SENTRY_DSN'),
+    integrations=[
+        DjangoIntegration(),
+        CeleryIntegration(),
+        RedisIntegration()
+    ]
+)
+
 # set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.local')
-
-sentry_sdk.init(os.getenv("SENTRY_DSN"), integrations=[CeleryIntegration(), DjangoIntegration()])
 
 app = Celery('appdj')
 
