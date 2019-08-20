@@ -50,3 +50,4 @@ djangorestframework-csv==2.1.0
 nbgrader==0.5.5
 mozilla-django-oidc==1.2.2
 service-identity==18.1.0
+django-oidc-provider==0.7.0

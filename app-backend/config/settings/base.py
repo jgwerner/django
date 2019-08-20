@@ -25,6 +25,7 @@ environ.Env.read_env(os.path.join(ROOT_DIR, '.env'))  # reading .env file if exi
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('SECRET_KEY', 'test')
 
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # https://docs.djangoproject.com/en/dev/ref/settings/#debug
@@ -59,6 +60,7 @@ INSTALLED_APPS = [
     'django_ses',
     'treebeard',
     'mozilla_django_oidc',
+    'oidc_provider',
 
     'appdj.oauth2.apps.OAuth2Config',
     'appdj.base.apps.BaseConfig',
@@ -235,6 +237,8 @@ LTI_JWT_PRIVATE_KEY = b''
 LTI_JWT_PUBLIC_KEY = b''
 JWT_TMP_EXPIRATION_DELTA = datetime.timedelta(seconds=60)
 
+OIDC_AUTHENTICATION_CALLBACK_URL = 'lti13-auth'
+
 # Internationalization
 # https://docs.djangoproject.com/en/1.10/topics/i18n/
 
@@ -386,6 +390,7 @@ MIGRATION_MODULES = {
     'social_django': 'appdj.migrations.social_django',
     'guardian': 'appdj.migrations.guardian',
     'django_ses': 'appdj.migrations.django_ses',
+    'oidc_provider': 'appdj.migrations.oidc_provider',
 }
 
 

@@ -142,6 +142,10 @@ def lti_jwt_decode(token, jwks=None, verify=True, audience=None):
 
 
 class JSONWebTokenAuthenticationForm(BaseJSONWebTokenAuthentication):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.canvas_instance = None
+
     def authenticate(self, request):
         jwt_value = self.get_jwt_value(request)
         if jwt_value is None:
@@ -152,12 +156,11 @@ class JSONWebTokenAuthenticationForm(BaseJSONWebTokenAuthentication):
         if 'state' in jwt_value:
             state = jwt_value['state']
             iss = cache.get(state)
-            canvas_instance = CanvasInstance.objects.filter(instance_guid=iss).first()
-            if not canvas_instance:
+            self.canvas_instance = CanvasInstance.objects.filter(instance_guid=iss).first()
+            if not self.canvas_instance:
                 raise exceptions.AuthenticationFailed('Invalid iss')
-            cache.delete(state)
-            jwks_endpoint = canvas_instance.oidc_jwks_endpoint
-            audience = canvas_instance.applications.first().client_id
+            jwks_endpoint = self.canvas_instance.oidc_jwks_endpoint
+            audience = self.canvas_instance.applications.first().client_id
         try:
             payload = lti_jwt_decode(jwt_value['id_token'], jwks_endpoint, audience=audience)
         except jwt.ExpiredSignature:
@@ -173,7 +176,8 @@ class JSONWebTokenAuthenticationForm(BaseJSONWebTokenAuthentication):
         user = self.authenticate_credentials(payload)
         return (user, payload)
 
-    def verify_lti(self, payload):
+    @staticmethod
+    def verify_lti(payload):
         lti = get_lti(payload)
         try:
             lti.verify()
@@ -181,15 +185,17 @@ class JSONWebTokenAuthenticationForm(BaseJSONWebTokenAuthentication):
             logger.exception("Validation error")
             raise exceptions.AuthenticationFailed(e)
 
-    def get_jwt_value(self, request):
+    @staticmethod
+    def get_jwt_value(request):
         form = JWTForm(request.POST)
         if form.is_valid():
             return form.cleaned_data
         return None
 
     def authenticate_credentials(self, payload):
-        User = get_user_model()
         email = payload.get('email')
+        if email is None:
+            raise exceptions.AuthenticationFailed("Email is required")
 
         try:
             user = User.objects.get(email=email)

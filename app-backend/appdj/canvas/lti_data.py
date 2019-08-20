@@ -47,12 +47,19 @@ REQUIRED = {
     'https://purl.imsglobal.org/spec/lti/claim/version': ['1.3.0'],
     'https://purl.imsglobal.org/spec/lti/claim/deployment_id': [validators.MaxLengthValidator(256)],
     'sub': [validators.MaxLengthValidator(256)],
-    'email': [validators.EmailValidator()],
     'https://purl.imsglobal.org/spec/lti/claim/roles': [check_roles]
 }
 
 
+CLAIMS = {
+    'LtiResourceLinkRequest': {
+        'https://purl.imsglobal.org/spec/lti/claim/target_link_uri': [validators.URLValidator()],
+        'https://purl.imsglobal.org/spec/lti/claim/resource_link': [check_param('id')],
+    },
+    'LtiDeepLinkingRequest': {}
+}
+
+
 OPTIONAL = {
-    'https://purl.imsglobal.org/spec/lti/claim/target_link_uri': [validators.URLValidator()],
-    'https://purl.imsglobal.org/spec/lti/claim/resource_link': [check_param('id')],
+    'email': [validators.EmailValidator()],
 }

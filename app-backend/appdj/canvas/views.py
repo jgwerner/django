@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.utils.crypto import get_random_string
 from django.http import HttpResponseRedirect
 from django.contrib.sites.shortcuts import get_current_site
+from django.contrib import auth
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import views
@@ -146,7 +147,6 @@ class Auth13(views.APIView):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class OIDCAuthenticationRequest(OIDCAuthenticationRequestView):
-
     http_method_names = ['get', 'post']
 
     def __init__(self, *args, **kwargs):
@@ -158,13 +158,14 @@ class OIDCAuthenticationRequest(OIDCAuthenticationRequestView):
         nonce = get_random_string(32)
 
         params = {
-            'response_type': 'id_token',
+            'prompt': 'none',
             'response_mode': 'form_post',
+            'response_type': 'id_token',
             'scope': 'openid',
             'client_id': canvas_instance.applications.first().client_id,
             'redirect_uri': absolutify(
                 request,
-                reverse('lti-auth', kwargs={'version': settings.DEFAULT_VERSION})
+                reverse('lti13-auth', kwargs={'version': settings.DEFAULT_VERSION})
             ),
             'state': state,
             'nonce': nonce,

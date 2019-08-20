@@ -2,7 +2,7 @@ from abc import ABCMeta, abstractproperty, abstractmethod
 
 from django.core.validators import ValidationError
 
-from .lti_data import REQUIRED, OPTIONAL
+from .lti_data import REQUIRED, OPTIONAL, CLAIMS
 
 
 class LTI(metaclass=ABCMeta):
@@ -97,6 +97,9 @@ class LTI13(LTI):
 
     def verify(self):
         self._verify_version()
+        self._verify_required()
+        self._verify_optional()
+        self._verify_claims(self.data['https://purl.imsglobal.org/spec/lti/claim/message_type'])
 
     def _verify_version(self):
         if self.version != '1.3.0':
@@ -106,6 +109,10 @@ class LTI13(LTI):
         for claim, validators in REQUIRED.items():
             if claim not in self.data:
                 raise ValueError(f"{claim} claim is required")
+            self._verify_claim(claim, validators)
+
+    def _verify_claims(self, message_type):
+        for claim, validators in CLAIMS[message_type].items():
             self._verify_claim(claim, validators)
 
     def _verify_optional(self):
