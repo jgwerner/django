@@ -61,7 +61,7 @@ class CanvasAuth(authentication.BaseAuthentication):
         endpoint = SignatureOnlyEndpoint(CanvasValidator())
         uri = request.build_absolute_uri()
         valid, _ = endpoint.validate_request(
-            uri.replace('http', 'https') if settings.HTTPS else uri,
+            uri,
             http_method=request.method,
             body=request.data,
             headers=self.normalize_headers(request),
