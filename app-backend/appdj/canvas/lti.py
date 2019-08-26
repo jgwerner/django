@@ -1,3 +1,4 @@
+import time
 from abc import ABCMeta, abstractproperty, abstractmethod
 
 from django.core.validators import ValidationError
@@ -94,6 +95,25 @@ class LTI13(LTI):
     @property
     def course_id(self):
         return ''
+
+    @property
+    def deep_link_return_url(self):
+        return self.data['https://purl.imsglobal.org/spec/lti-dl/claim/deep_linking_settings']['deep_link_return_url']
+
+    def prepare_deep_linking_response(self, content_items=None):
+        content_items = content_items or []
+        return {
+            'iss': self.data['iss'],
+            'aud': self.data['aud'],
+            'exp': int(time.time()) + 600,
+            'iat': int(time.time()),
+            'nonce': self.data['nonce'],
+            'https://purl.imsglobal.org/spec/lti/claim/message_type': 'LtiDeepLinkingResponse',
+            'https://purl.imsglobal.org/spec/lti/claim/version': '1.3.0',
+            'https://purl.imsglobal.org/spec/lti/claim/deployment_id': 'testdeploy',
+            'https://purl.imsglobal.org/spec/lti-dl/claim/content_items': content_items,
+            'https://purl.imsglobal.org/spec/lti-dl/claim/data': self.data['https://purl.imsglobal.org/spec/lti-dl/claim/deep_linking_settings']['data'],
+        }
 
     def verify(self):
         self._verify_version()

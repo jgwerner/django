@@ -11,3 +11,6 @@ OAUTH2_PROVIDER = {
 }
 
 SPAWNER = 'appdj.servers.spawners.docker.DockerSpawner'
+
+LTI_JWT_PRIVATE_KEY = Path(str(ROOT_DIR), 'rsa_private.pem').read_bytes()
+LTI_JWT_PUBLIC_KEY = Path(str(ROOT_DIR), 'rsa_public.pem').read_bytes()

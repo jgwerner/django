@@ -1,5 +1,8 @@
+import logging
 from urllib.parse import urlencode
 
+import requests
+import jwt
 from django.core.cache import cache
 from django.conf import settings
 from django.urls import reverse
@@ -17,8 +20,10 @@ from mozilla_django_oidc.views import OIDCAuthenticationRequestView
 from mozilla_django_oidc.utils import absolutify
 
 from appdj.canvas.models import CanvasInstance
+from appdj.canvas.lti import get_lti
 from .renderer import CanvasRenderer
 
+logger = logging.getLogger(__name__)
 Application = get_application_model()
 
 
@@ -142,6 +147,24 @@ class Auth13(views.APIView):
     parser_classes = (FormParser,)
 
     def post(self, request, **kwargs):
+        return HttpResponseRedirect(settings.LOGIN_REDIRECT_URL)
+
+
+class LTIDeepLinking(views.APIView):
+    permission_classes = []
+    parser_classes = (FormParser,)
+
+    def post(self, request, **kwargs):
+        lti = get_lti(request.auth)
+        response = lti.prepare_deep_linking_response()
+        token = jwt.encode(
+            response,
+            settings.LTI_JWT_PRIVATE_KEY,
+            algorithm='RS256'
+        )
+        resp = requests.post(lti.deep_link_return_url, data={'JWT': token})
+        resp.raise_for_status()
+        logger.debug(resp)
         return HttpResponseRedirect(settings.LOGIN_REDIRECT_URL)
 
 
