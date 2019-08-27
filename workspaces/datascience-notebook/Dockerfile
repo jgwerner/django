@@ -14,12 +14,18 @@ ARG JUPYTER_LTI_VERSION=@illumidesk/jupyter-lti@latest
 # set explicitly just in case
 USER $NB_UID
 
+# Install conda-build, update conda and pip
+RUN conda install conda-build &&\
+    conda update -n base conda && \
+    conda update conda-build && \
+    conda install pip
+
 # Create a Python 2.x environment 
 RUN conda create --quiet --yes -p $CONDA_DIR/envs/python2 python=2.7 \
     ipython \
     ipykernel \
     kernda && \
-    conda clean -tipsy
+    conda build purge-all
 
 USER root
 
@@ -36,27 +42,41 @@ RUN jupyter labextension install $JUPYTER_LTI_VERSION
 # Install nbgrader
 RUN conda install -c conda-forge \
     nbgrader && \
-    conda clean -tipsy && \
+    conda build purge-all && \
     fix-permissions $CONDA_DIR && \
     fix-permissions /home/$NB_USER
 
-# Install Tensorflow for Python3
+# Install nbgrader
+RUN conda install -c conda-forge \
+    nbgrader && \
+    conda build purge-all && \
+    fix-permissions $CONDA_DIR && \
+    fix-permissions /home/$NB_USER
+
+# Install Tensorflow
 RUN conda install --quiet --yes \
-    'tensorflow=1.12*' \
+    'tensorflow=1.13*' \
     'keras=2.2*' && \
-    conda clean -tipsy && \
+    conda build purge-all && \
     fix-permissions $CONDA_DIR && \
     fix-permissions /home/$NB_USER
-
-# install nodejs kernel
-RUN conda install -c conda-forge nodejs
-RUN npm install -g ijavascript
-RUN ijsinstall
 
 # Xeus Cling
 RUN conda install -c conda-forge \
     xeus-cling && \
-    conda clean -tipsy && \
+    conda build purge-all && \
+    fix-permissions $CONDA_DIR && \
+    fix-permissions /home/$NB_USER
+
+# Additional pip packages
+RUN pip install \
+    bqplot \
+    colour \
+    cvxpy \
+    ipympl \
+    ipyvolume \
+    plotly==2.7 \
+    voila && \
     fix-permissions $CONDA_DIR && \
     fix-permissions /home/$NB_USER
 
@@ -64,11 +84,11 @@ RUN conda install -c conda-forge \
 USER root
 
 COPY jupyter_notebook_config.py /etc/jupyter/
-COPY env_test.ipynb $HOME/
 RUN mkdir -p /srv/nbgrader/exchange
 RUN fix-permissions /srv/nbgrader/exchange/
 RUN fix-permissions /etc/jupyter/
-RUN fix-permissions $HOME/env_test.ipynb
+RUN fix-permissions $CONDA_DIR && \
+    fix-permissions /home/$NB_USER
 
 EXPOSE 8080
 
