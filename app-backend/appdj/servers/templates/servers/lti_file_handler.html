@@ -2,20 +2,44 @@
 
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8">
-    <title>Launching Workspace</title>
-    <link rel="stylesheet" href="{% static 'css/base.css' %}">
-  </head>
-  <body>
-    <div class='layout'>
-      <div class='spinner'>
-        <div class='circle'></div>
-      </div>
+
+<head>
+  <meta charset="utf-8">
+  <title>Launching Workspace</title>
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+</head>
+
+<body>
+  <div class='layout'>
+    <div class='spinner'>
+      <div class='circle'></div>
     </div>
-		<h2 id="message">Preparing workspace. Please wait...</h2>
-    {% block javascript %}
-    <script src="{% static 'js/prepare_workspace.js' %}"></script>
-    {% endblock javascript %}
-  </body>
+  </div>
+  <h2 id="message">Preparing workspace. Please wait...</h2>
+  <script type="text/javascript">
+    (function () {
+      function redirect() {
+        fetch("{{ task_url }}", {
+          headers: {
+            'Authorization': 'JWT {{ access_token }}'
+          }
+        }).then(function (response) {
+          return response.json();
+        }).then(function (data) {
+          if (!!data.url) {
+            window.location = data.url;
+          } else {
+            setTimeout(redirect, 5000);
+          }
+        }).catch(function (error) {
+          document.querySelector('.layout').remove();
+          let message = !!error.error ? error.error : "Server error";
+          document.getElementById('message').innerHTML = message;
+        });
+      }
+      redirect();
+    }());
+  </script>
+</body>
+
 </html>
