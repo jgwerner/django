@@ -41,7 +41,7 @@ RUN jupyter labextension install $JUPYTER_LTI_VERSION
 
 # Install nbgrader
 RUN conda install -c conda-forge \
-    nbgrader && \
+    nbgrader=0.6.0 && \
     conda build purge-all && \
     fix-permissions $CONDA_DIR && \
     fix-permissions /home/$NB_USER
