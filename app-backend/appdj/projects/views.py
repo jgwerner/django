@@ -175,6 +175,7 @@ class FileSelection(APIView):
                                      f"/{quoted}", namespace=project.namespace_name)
                 files.append({
                     'path': path,
+                    'project': project.id,
                     'content_items': json.dumps({
                         "@context": "http://purl.imsglobal.org/ctx/lti/v1/ContentItem",
                         "@graph": [{
