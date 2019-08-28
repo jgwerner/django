@@ -6,7 +6,7 @@ x-django: &django
   image: illumidesk/app-backend:dev
   volumes:
     - staticfiles:/srv/app/staticfiles
-    - workspaces:/workspaces
+    - /workspaces:/workspaces
   env_file: .env
 services:
   api:
