@@ -12,7 +12,7 @@ const AuthRoute = (props: AuthRouteProps) => {
     <Route
       {...rest}
       render={props =>
-        !isLoggedIn() ? (
+        !isLoggedIn() || props.location.pathname.includes('token-login') ? (
           <Component {...props} />
         ) : (
           <Redirect

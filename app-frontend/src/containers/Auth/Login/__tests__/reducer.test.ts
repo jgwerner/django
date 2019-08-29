@@ -5,7 +5,6 @@ describe('login reducer', () => {
   it('should return the initial state', () => {
     expect(reducer(initialState, { type: null })).toEqual({
       accountID: '',
-      token: '',
       loggingIn: false,
       loginError: false,
       errorMessage: ''
@@ -16,13 +15,11 @@ describe('login reducer', () => {
     const successAction = {
       type: actions.LOGIN_SUCCESS,
       data: {
-        token: 'access token',
         account_id: 'account id'
       }
     }
     expect(reducer(initialState, successAction)).toEqual({
       ...initialState,
-      token: 'access token',
       accountID: 'account id',
       loggingIn: false
     })

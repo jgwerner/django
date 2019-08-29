@@ -2,13 +2,15 @@ import {
   LOGIN_REQUEST,
   LOGIN_SUCCESS,
   LOGIN_FAILURE,
-  CLOSE_ERROR
+  CLOSE_ERROR,
+  TOKEN_LOGIN_REQUEST,
+  TOKEN_LOGIN_SUCCESS,
+  TOKEN_LOGIN_FAILURE
 } from './actions'
 import { AnyAction } from 'redux'
 
 export interface LoginStoreState {
   accountID: string
-  token: string
   loggingIn: boolean
   loginError: boolean
   errorMessage: string
@@ -16,7 +18,6 @@ export interface LoginStoreState {
 
 export const initialState = {
   accountID: '',
-  token: '',
   loggingIn: false,
   loginError: false,
   errorMessage: ''
@@ -33,7 +34,6 @@ const login = (state = initialState, action: AnyAction) => {
       return {
         ...state,
         loggingIn: false,
-        token: action.data.token,
         accountID: action.data.account_id
       }
     case LOGIN_FAILURE:
@@ -49,6 +49,18 @@ const login = (state = initialState, action: AnyAction) => {
       return {
         ...state,
         loginError: false
+      }
+    case TOKEN_LOGIN_REQUEST:
+      return {
+        ...state
+      }
+    case TOKEN_LOGIN_SUCCESS:
+      return {
+        ...state
+      }
+    case TOKEN_LOGIN_FAILURE:
+      return {
+        ...state
       }
     default:
       return state
