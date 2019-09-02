@@ -118,7 +118,7 @@ class Assignment(ModuleAbstract):
         config = Config()
         config.CourseDirectory.root = str(self.teacher_project.resource_root())
         api = NbGraderAPI(CourseDirectory(config=config), config=config)
-        resp = api.autograde(self.assignment_id, student_project.owner.username)
+        resp = api.autograde(self.assignment_id, student_project.owner.username, force=False)
         if not resp['success']:
             raise Exception(f"Assignment {self.external_id} not autograded for student {student_project.owner.username}: {resp}")
 
