@@ -119,6 +119,21 @@ class AssignmentTest(TestCase):
         self.assertIn(self.app_name, out)
         self.assertIn(self.file, out)
 
+    def test_autograded_path(self):
+        self.copy_fixture_tree_to_teacher_path('release')
+        self.copy_fixture_tree_to_teacher_path('submitted')
+        self.copy_fixture_tree_to_teacher_path('autograded')
+        assignment = AssignmentFactory(
+            path=str(self.path),
+            teacher_project=self.teacher_col.project,
+            oauth_app=self.oauth_app
+        )
+        assignment.students_projects.add(self.student_col.project)
+        out = str(assignment.autograded_path(self.student_col.project))
+        self.assertIn('autograded', out)
+        self.assertIn(self.app_name, out)
+        self.assertIn(self.file, out)
+
     def test_copy_submitted_file(self):
         self.copy_fixture_tree_to_teacher_path('release')
         self.copy_fixture_tree_to_teacher_path('submitted')
@@ -143,10 +158,21 @@ class AssignmentTest(TestCase):
             oauth_app=self.oauth_app
         )
         shutil.copytree(self.fixture_path, self.teacher_col.project.resource_root())
+        shutil.rmtree(self.teacher_col.project.resource_root() / 'autograded')
         self.assertTrue((self.teacher_col.project.resource_root() / self.path).exists())
         assignment.students_projects.add(self.student_col.project)
         assignment.autograde(self.student_col.project)
         self.assertEqual(assignment.get_grade(self.student_col.project), 2)
+
+    def test_is_autograded(self):
+        assignment = AssignmentFactory(
+            path=str(self.path),
+            teacher_project=self.teacher_col.project,
+            oauth_app=self.oauth_app
+        )
+        self.assertFalse(assignment.is_autograded(self.student_col.project))
+        self.copy_fixture_tree_to_teacher_path('autograded')
+        self.assertTrue(assignment.is_autograded(self.student_col.project))
 
     def test_get_assignment_or_module_is_assignment_is_teacher(self):
         assignment = AssignmentFactory(

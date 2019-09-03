@@ -107,9 +107,21 @@ class Assignment(ModuleAbstract):
         """
         Where assignment file should be submitted
         """
+        return self._processed_path(student_project, 'submitted')
+
+    def autograded_path(self, student_project):
+        """
+        Where assignment file is being stored after autograding
+        """
+        return self._processed_path(student_project, 'autograded')
+
+    def is_autograded(self, student_project):
+        return self.autograded_path(student_project).exists()
+
+    def _processed_path(self, student_project, directory):
         student_username = student_project.owner.username
         path = Path(self.path).relative_to('release') if 'release' in self.path else self.path
-        return self.teacher_project.resource_root() / 'submitted' / student_username / path
+        return self.teacher_project.resource_root() / directory / student_username / path
 
     def autograde(self, student_project):
         """
@@ -143,7 +155,7 @@ class Assignment(ModuleAbstract):
             """,
             (student_project.owner.username, self.assignment_id)
         )
-        grade = int(float(c.fetchone()[0]))
+        grade = int(float(c.fetchone()[0] or 0))
         logger.info("Student %s grade %s", student_project.owner, grade)
         return grade
 
@@ -172,12 +184,16 @@ class Assignment(ModuleAbstract):
         )
         scheme = 'https' if settings.HTTPS else 'http'
         namespace = self.teacher_project.namespace_name
+        if self.is_autograded(student_project):
+            path = self.autograded_path(student_project)
+        else:
+            path = self.submission_path(student_project)
         url_path = reverse('lti-file', kwargs={
             'version': settings.DEFAULT_VERSION,
             'namespace': namespace,
             'project_project': str(self.teacher_project.pk),
             'server': str(teacher_workspace.pk),
-            'path': self.submission_path(student_project).relative_to(self.teacher_project.resource_root())
+            'path': path.relative_to(self.teacher_project.resource_root())
         })
         domain = Site.objects.get_current().domain
         url = f"{scheme}://{domain}{url_path}"
