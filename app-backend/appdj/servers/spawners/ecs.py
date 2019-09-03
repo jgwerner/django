@@ -135,8 +135,14 @@ class ECSSpawner(BaseSpawner):
 
     def _get_volumes_and_mount_points(self) -> Tuple[List[Dict[str, Dict[str, str]]], List[Dict[str, str]]]:
         logger.info("Getting volumes")
-        volumes = [{'name': 'project', 'host': {'sourcePath': self.server.volume_path}}]
-        mount_points = [{'sourceVolume': 'project', 'containerPath': settings.SERVER_RESOURCE_DIR}]
+        volumes = [
+            {'name': 'project', 'host': {'sourcePath': self.server.volume_path}},
+            {'name': 'exchange', 'host': {'sourcePath': settings.EXCHANGE_DIR_HOST}},
+        ]
+        mount_points = [
+            {'sourceVolume': 'project', 'containerPath': settings.SERVER_RESOURCE_DIR},
+            {'sourceVolume': 'exchange', 'containerPath': settings.EXCHANGE_DIR_CONTAINER},
+        ]
         if self.server.startup_script:
             volumes.append({
                 'name': 'script',

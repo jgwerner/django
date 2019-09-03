@@ -39,20 +39,6 @@ USER $NB_UID
 # install jupyter-lti extension
 RUN jupyter labextension install $JUPYTER_LTI_VERSION
 
-# Install nbgrader
-RUN conda install -c conda-forge \
-    nbgrader=0.6.0 && \
-    conda build purge-all && \
-    fix-permissions $CONDA_DIR && \
-    fix-permissions /home/$NB_USER
-
-# Install nbgrader
-RUN conda install -c conda-forge \
-    nbgrader && \
-    conda build purge-all && \
-    fix-permissions $CONDA_DIR && \
-    fix-permissions /home/$NB_USER
-
 # Install Tensorflow
 RUN conda install --quiet --yes \
     'tensorflow=1.13*' \
@@ -75,6 +61,7 @@ RUN pip install \
     cvxpy \
     ipympl \
     ipyvolume \
+    nbgrader==0.6.0 \
     plotly==2.7 \
     voila && \
     fix-permissions $CONDA_DIR && \
@@ -84,6 +71,7 @@ RUN pip install \
 USER root
 
 COPY jupyter_notebook_config.py /etc/jupyter/
+COPY nbgrader_config.py /etc/jupyter/
 RUN mkdir -p /srv/nbgrader/exchange
 RUN fix-permissions /srv/nbgrader/exchange/
 RUN fix-permissions /etc/jupyter/

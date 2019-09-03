@@ -36,6 +36,8 @@ The IllumiDesk `app-backend` application interacts with various internal applica
 | EMAIL_HOST_PASSWORD | <string> | Password associated with EMAIL_HOST_USER |
 | EMAIL_USE_TLS | <boolean> | Enables Transport Layer Security (TLS) when talking to SMTP server |
 | EMAIL_USE_SSL | <boolean> | Enables implicit TLS (commonly known as "SSL") when talking to SMTP server |
+| EXCHANGE_DIR_CONTAINER | <string> | Exchange directory used by `nbgrader` to exchange files. Defaults to `/srv/nbgrader/exchange`. |
+| EXCHANGE_DIR_HOST | <string> | Exchange directory used by `nbgrader` to exchange files. Defaults to `/workspaces/nbgrader/exchange`. |
 | EXTERNAL_IPV4 | <string> | External facing IPV4 address, required by webapp to accept connections without a domain name. |
 | GITHUB_CLIENT_ID | <string> | Client ID for Github account |
 | GITHUB_CLIENT_SECRET | <string> | Secret access key associated with GITHUB_CLIENT_ID |
@@ -49,7 +51,7 @@ The IllumiDesk `app-backend` application interacts with various internal applica
 | SECRET_KEY | <string> | Secret key used for Django-related security |
 | SENTRY_DSN | <string> | Data Source Name (DSN) for Sentry's error tracking and monitoring service |
 | SERVER_PORT | <integer> | Port number for main application environment |
-| SERVER_RESOURCE_DIR | <string> | Name of relevant project's resource directory. It should be notebooks workdir.|
+| SERVER_RESOURCE_DIR | <string> | Container user home folder. Defaults to `/home/jovyan`. |
 | SLACK_KEY | <string> | Slack account ID key |
 | SLACK_SECRET | <string> | Secret access key associated with SLACK_KEY |
 | STATIC_ROOT | <string> | The absolute path to the directory where collectstatic will collect static files for deployment. |

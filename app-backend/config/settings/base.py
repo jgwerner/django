@@ -318,6 +318,8 @@ DJOSER = {
 DEFAULT_VERSION = os.environ.get('API_VERSION', "v1")
 
 RESOURCE_DIR = os.environ.get('RESOURCE_DIR', '/workspaces')
+EXCHANGE_DIR_CONTAINER = os.environ.get('EXCHANGE_DIR_CONTAINER', '/srv/nbgrader/exchange')
+EXCHANGE_DIR_HOST = os.environ.get('EXCHANGE_DIR_HOST', '/workspaces/nbgrader/exchange')
 
 CACHES = {
     'default': {
@@ -395,7 +397,7 @@ MIGRATION_MODULES = {
 
 
 # Server settings
-SERVER_RESOURCE_DIR = os.environ.get("SERVER_RESOURCE_DIR", "/resources")
+SERVER_RESOURCE_DIR = os.environ.get("SERVER_RESOURCE_DIR", "/home/jovyan")
 SERVER_PORT_MAPPING = {'8080': "proxy"}
 SERVER_TYPES = {"proxy"}
 SERVER_TYPE_MAPPING = {'jupyter': 'proxy'}

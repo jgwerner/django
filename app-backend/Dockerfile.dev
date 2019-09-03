@@ -19,6 +19,7 @@ RUN addgroup -g 1000 -S app && \
 
 RUN mkdir -p /workspaces/
 RUN mkdir -p /srv/app/staticfiles
+RUN mkdir -p /srv/nbgrader/exchange
 RUN chown -R 1000:1000 /workspaces/
 RUN chown -R 1000:1000 /srv
 
