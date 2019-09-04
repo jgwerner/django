@@ -3,7 +3,7 @@
 set -e
 
 create_env_file () {
-  cp ./app-backend/env.compose.dev ./app-backend/.env
+  cp ./app-backend/env.compose ./app-backend/.env
 }
 
 create_docker_network () {

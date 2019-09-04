@@ -2,63 +2,35 @@
 
 The IllumiDesk `app-backend` application interacts with various internal applications and external, third-party services. The following descriptions should help to understand the most important of these variables:
 
-| Variable  |  Type | Note  |
-|---|---|---|
-| AWS_SES_ACCESS_KEY_ID |<string> | Pair with AWS_SES_SECRET_ACCESS_KEY to access Simple Email Service (SES) |
-| AWS_SES_SECRET_ACCESS_KEY | <string> | Pair with AWS_SES_ACCESS_KEY_ID to access Simple Email Service (SES) |
-| AWS_SES_REGION_NAME | <string> | Name of AWS SES region, a geographic area containing Amazon data centers |
-| AWS_SES_REGION_ENDPOINT | <string> | API endpoint associated with AWS_SES_REGION_NAME |
-| AWS_ACCESS_KEY_ID | <string> | User account ID key to access general Amazon Web Services (AWS) |
-| AWS_SECRET_ACCESS_KEY | <string> | Secret key associated with AWS_ACCESS_KEY_ID |
-| AWS_DEFAULT_REGION | <string> | Default region for AWS access |
-| ECS_CLUSTER | <string> | Name of Elastic Container Service (ECS) Cluster |
-| AWS_STORAGE_BUCKET_NAME | <string> | Your AWS storage bucket name |
-| AWS_S3_CUSTOM_DOMAIN | <string> | Domain of S3, if used as a Content Delivery Network (CDN) |
-| DATABASE_HOST=localhost | <string> | Database host |
-| DATABASE_USER=postgres | <string> | Database user |
-| DATABASE_PASSWORD | <string> | Database password |
-| DATABASE_PORT | <string> | Database port |
-| DATABASE_NAME | <string> | Database name |
-| DEBUG | <boolean> | Enables the app's debug mode |
-| DEFAULT_FROM_EMAIL | <email> | Default email address for sending app-backend messages |
-| DEFAULT_STRIPE_PLAN_ID | <string> | Name of Stripe subscription plan (also the default for new users) |
-| DJANGO_SETTINGS_MODULE | <string> | Module name of Django application settings file |
-| DOCKER_DOMAIN | <string> | IP address of your Docker's domain |
-| DOCKER_HOST | <string> | TCP address of your Docker's host |
-| DOCKER_EVENTS_URL | <string> | URL for your Docker's events distributor |
-| DOCKER_NET | <string> | Name of Docker Net |
-| ELASTICSEARCH_URL | <string> | URL for Elasticsearch endpoint |
-| ELASTICSEARCH_USER | <string> | Elasticsearch username |
-| ELASTICSEARCH_PASSWORD | <string> | Password associated with ELASTICSEARCH_USER |
-| EMAIL_HOST | <string> | Host address for email client |
-| EMAIL_PORT | <integer> | Port number for email client |
-| EMAIL_HOST_USER | <string> | Email host username |
-| EMAIL_HOST_PASSWORD | <string> | Password associated with EMAIL_HOST_USER |
-| EMAIL_USE_TLS | <boolean> | Enables Transport Layer Security (TLS) when talking to SMTP server |
-| EMAIL_USE_SSL | <boolean> | Enables implicit TLS (commonly known as "SSL") when talking to SMTP server |
-| EXCHANGE_DIR_CONTAINER | <string> | Exchange directory used by `nbgrader` to exchange files. Defaults to `/srv/nbgrader/exchange`. |
-| EXCHANGE_DIR_HOST | <string> | Exchange directory used by `nbgrader` to exchange files. Defaults to `/workspaces/nbgrader/exchange`. |
-| EXTERNAL_IPV4 | <string> | External facing IPV4 address, required by webapp to accept connections without a domain name. |
-| GITHUB_CLIENT_ID | <string> | Client ID for Github account |
-| GITHUB_CLIENT_SECRET | <string> | Secret access key associated with GITHUB_CLIENT_ID |
-| GOOGLE_CLIENT_ID | <string> | Client ID for Google account |
-| GOOGLE_CLIENT_SECRET | <string> | Secret access key associated with GOOGLE_CLIENT_ID |
-| MOCK_STRIPE | <boolean> | Enables use of mock connections to Stripe for development purposes |
-| NVIDIA_DOCKER_HOST | <string> | URL for NVIDIA Docker host |
-| RABBITMQ_URL | <string> | URL for RabbitMQ message broker |
-| REDIS_URL | <string> | URL for Redis data store/notifications |
-| RESOURCE_DIR | <string> | Root level directory for all user directories |
-| SECRET_KEY | <string> | Secret key used for Django-related security |
-| SENTRY_DSN | <string> | Data Source Name (DSN) for Sentry's error tracking and monitoring service |
-| SERVER_PORT | <integer> | Port number for main application environment |
-| SERVER_RESOURCE_DIR | <string> | Container user home folder. Defaults to `/home/jovyan`. |
-| SLACK_KEY | <string> | Slack account ID key |
-| SLACK_SECRET | <string> | Secret access key associated with SLACK_KEY |
-| STATIC_ROOT | <string> | The absolute path to the directory where collectstatic will collect static files for deployment. |
-| STATIC_URL | <string> | URL to use when referring to static files located in `STATIC_ROOT`. |
-| STATICFILES_DIRS | <string> | defines the additional locations the staticfiles app will traverse if the `FileSystemFinder` finder is enabled. |
-| STATICFILES_FINDERS | <string> | The list of finder backends that know how to find static files in various locations. |
-| APP_DOMAIN | <string> | Domain of IllumiDesk main development environment |
-| APP_SCHEME | <string> | An additional host name or IP address from which the application will allow connections, added to Django's ALLOWED_HOSTS |
-| TLS | <boolean> | Enables application's use of secure HTTP |
-| TRAVIS_PULL_REQUEST | <boolean> | Enables Travis CI's automated Docker image building upon pull request submission |
+| Variable  |  Type | Note  | Default Value |
+|---|---|---|---|
+| API_HOST |<string> | API host either as IPv4 or FQDN. | `dev-api.illumidesk.com` |
+| API_PORT |<string> | API port. | `443` |
+| AWS_ACCOUNT_ID | <string> | AWS account ID | `860100747351` |
+| AWS_SES_ACCESS_KEY_ID |<string> | Pair with AWS_SES_SECRET_ACCESS_KEY to access Simple Email Service (SES) | `''` |
+| AWS_SES_SECRET_ACCESS_KEY | <string> | Pair with AWS_SES_ACCESS_KEY_ID to access Simple Email Service (SES) | `''` |
+| AWS_SES_REGION_NAME | <string> | Name of AWS SES region, a geographic area containing Amazon data centers | `''` |
+| AWS_SES_REGION_ENDPOINT | <string> | API endpoint associated with AWS_SES_REGION_NAME | `''` |
+| AWS_ACCESS_KEY_ID | <string> | User account ID key to access general Amazon Web Services (AWS) | `''` |
+| AWS_SECRET_ACCESS_KEY | <string> | Secret key associated with AWS_ACCESS_KEY_ID | `''` |
+| AWS_DEFAULT_REGION | <string> | Default region for AWS access | `''` |
+| DEBUG | <boolean> | Enables the app's debug mode | `True` |
+| DEFAULT_FROM_EMAIL | <email> | Default email address for sending app-backend messages | `no-reply@illumidesk.com` |
+| DJANGO_SETTINGS_MODULE | <string> | Module name of Django application settings file | `config.settings.dev` |
+| DOCKER_NET | <string> | Used to allow workspace containers with docker-compose, used only to run tests. | `illumidesk` |
+| ECS_CLUSTER | <string> | Name of Elastic Container Service (ECS) Cluster | `default` |
+| EMAIL_HOST | <string> | Host address for email client | `localhost` |
+| EMAIL_PORT | <integer> | Port number for email client | `587` |
+| EMAIL_HOST_USER | <string> | Email host username | `''` |
+| EMAIL_HOST_PASSWORD | <string> | Password associated with EMAIL_HOST_USER | `''` |
+| EXCHANGE_DIR_CONTAINER | <string> | Exchange directory used by `nbgrader` to exchange files. | `/srv/nbgrader/exchange` |
+| EXCHANGE_DIR_HOST | <string> | Exchange directory used by `nbgrader` to exchange files. | `/workspaces/nbgrader/exchange` |
+| EXTERNAL_IPV4 | <string> | External facing IPV4 address included with ALLOWED_HOSTS. | `''` |
+| FRONTEND_DOMAIN | <string> | Frontend domain name. | `dev-app.illumidesk.com` |
+| REDIS_URL | <string> | URL for Redis data store/notifications | `redis://localhost:6379/0` |
+| RESOURCE_DIR | <string> | Root level directory for all user directories | `/workspaces` |
+| SECRET_KEY | <string> | Secret key used for Django-related security | `''` |
+| SENTRY_DSN | <string> | Data Source Name (DSN) for Sentry's error tracking and monitoring service | `''` |
+| SERVER_RESOURCE_DIR | <string> | Container user home folder. | `/home/jovyan` |
+| SITE_ID | <string> | Site ID as UUID | `c66d1616-09a7-4594-8c6d-2e1c1ba5fe3b` |
+| TLS | <boolean> | Enables application's use of secure HTTP | `False` |

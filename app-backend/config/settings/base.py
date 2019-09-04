@@ -3,24 +3,24 @@ import datetime
 import uuid
 import environ
 from pathlib import Path
+
 from . import BASE_DIR
 
-# Using django-environ to set/read env vars (it simplify the use of keys like DATABASE_URL)
+# Using django-environ to set/read env vars (it simplifies the use of keys like DATABASE_URL)
 
-
-# N folder back from current file
-# (app-backend/config/settings/base.py - 3 = app-backend/)
+# The ROOT_DIR uses an integer to define number of nested folders from the root. For example,
+# app-backend/config/settings/base.py - 3 = app-backend/.
 ROOT_DIR = environ.Path(__file__) - 3
 APPS_DIR = ROOT_DIR.path('appdj')
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 
 # set default values and casting
-env = environ.Env(DEBUG=(bool, False), TLS=(bool, False),)
+env = environ.Env(
+    DEBUG=(bool, False),
+    TLS=(bool, False),
+)
 
-environ.Env.read_env(os.path.join(ROOT_DIR, '.env'))  # reading .env file if exists
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/1.10/howto/deployment/checklist/
+# read from .env file if it exists
+environ.Env.read_env(os.path.join(ROOT_DIR, '.env'))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('SECRET_KEY', 'test')
@@ -28,14 +28,24 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'test')
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# https://docs.djangoproject.com/en/dev/ref/settings/#debug
-DEBUG = env('DEBUG')  # False if not in os.environ
+DEBUG = env('DEBUG')
 
-
+# By default settings don't include any allowed hosts
 ALLOWED_HOSTS = []
 
-# Application definition
+# Domain and port settings:
+# 
+# - API_HOST and API_PORT are used to set the SITE_ID domain when creating a new database. 
+# - API_PORT should reflect the mounted Traefik port, although in most cases the port should 
+# be 443 since by default it's running behind an AWS ALB. 
+# - FRONTEND_DOMAIN is used to set domains used in password
+# reset url's, etc.
+API_HOST = os.getenv('API_HOST', 'dev-api.illumidesk.com')
+API_PORT = os.getenv('API_PORT', '443')
+FRONTEND_DOMAIN = os.getenv('FRONTEND_DOMAIN', 'dev-app.illumidesk.com')
 
+
+# Application definition
 INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.admin',
@@ -121,17 +131,11 @@ STATICFILES_FINDERS = [
 
 # Email Settings
 EMAIL_BACKEND = 'django_ses.SESBackend'
-AWS_SES_ACCESS_KEY_ID = os.getenv("AWS_SES_ACCESS_KEY_ID")
-AWS_SES_SECRET_ACCESS_KEY = os.getenv("AWS_SES_SECRET_ACCESS_KEY")
-AWS_SES_REGION_NAME = os.getenv("AWS_SES_REGION_NAME")
-AWS_SES_REGION_ENDPOINT = os.getenv("AWS_SES_REGION_ENDPOINT")
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
-EMAIL_HOST = os.environ.get('EMAIL_HOST', 'localhost')
-EMAIL_PORT = os.environ.get('EMAIL_PORT', '587')
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
-EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'False') == 'True'
-EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
+AWS_SES_ACCESS_KEY_ID = os.getenv('AWS_SES_ACCESS_KEY_ID')
+AWS_SES_SECRET_ACCESS_KEY = os.getenv('AWS_SES_SECRET_ACCESS_KEY')
+AWS_SES_REGION_NAME = os.getenv('AWS_SES_REGION_NAME')
+AWS_SES_REGION_ENDPOINT = os.getenv('AWS_SES_REGION_ENDPOINT')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'no-reply@illumidesk.com')
 
 DATABASES = {
     'default': env.db('DATABASE_URL',
@@ -140,7 +144,7 @@ DATABASES = {
 
 # Channels
 
-ASGI_APPLICATION = "config.routing.application"
+ASGI_APPLICATION = 'config.routing.application'
 
 CHANNEL_LAYERS = {
     "default": {
@@ -162,16 +166,6 @@ AUTHENTICATION_BACKENDS = (
     'guardian.backends.ObjectPermissionBackend',
 )
 
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.environ.get('GOOGLE_CLIENT_ID', '')
-SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '')
-SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = [
-    'https://www.googleapis.com/auth/userinfo.email',
-    'https://www.googleapis.com/auth/drive'
-]
-
-SOCIAL_AUTH_GITHUB_KEY = os.environ.get('GITHUB_CLIENT_ID', '')
-SOCIAL_AUTH_GITHUB_SECRET = os.environ.get('GITHUB_CLIENT_SECRET', '')
-SOCIAL_AUTH_GITHUB_SCOPE = ['user:email', 'repo']
 SOCIAL_AUTH_CANVAS_KEY = os.environ.get('CANVAS_CLIENT_ID', '')
 SOCIAL_AUTH_CANVAS_SECRET = os.environ.get('CANVAS_CLIENT_SECRET', '')
 SOCIAL_AUTH_PIPELINE = (
@@ -192,14 +186,12 @@ OAUTH2_PROVIDER_REFRESH_TOKEN_MODEL = 'oauth2_provider.RefreshToken'
 OAUTH2_PROVIDER_ACCESS_TOKEN_MODEL = 'oauth2_provider.AccessToken'
 OAUTH2_PROVIDER_GRANT_MODEL = 'oauth2_provider.Grant'
 
-HTTPS = env('TLS')  # False if not in os.environ
+# False if not in os.environ
+HTTPS = env('TLS')
 LOGIN_URL = '/api-auth/login/'
 LOGIN_REDIRECT_URL = '{scheme}://{host}/auth/token-login'.format(
-    scheme='https' if HTTPS else 'http', host=os.environ.get('APP_DOMAIN'))
+    scheme='https' if HTTPS else 'http', host=os.environ.get('FRONTEND_DOMAIN'))
 LOGOUT_URL = '/api-auth/logout/'
-
-# Password validation
-# https://docs.djangoproject.com/en/1.10/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -257,15 +249,7 @@ SITE_ID = os.environ.get('SITE_ID', 'c66d1616-09a7-4594-8c6d-2e1c1ba5fe3b')
 AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
 AWS_DEFAULT_REGION = os.environ.get('AWS_DEFAULT_REGION', 'us-west-2')
-AWS_ACCOUNT_ID = os.environ.get('AWS_ACCOUNT_ID', '')
-AWS_DEPLOYMENT_ROLE = os.environ.get('AWS_DEPLOYMENT_ROLE', '')
-AWS_LAMBDA_AUTHORIZER = os.environ.get('AWS_LAMBDA_AUTHORIZER', '')
-AWS_AUTHORIZER_ROLE = os.environ.get('AWS_AUTHORIZER_ROLE', '')
-AWS_JOBS_ROLE = os.environ.get('AWS_JOBS_ROLE', '')
-
-SWAGGER_SETTINGS = {
-    'SUPPORTED_SUBMIT_METHODS': ['head', 'get', 'post', 'put', 'delete', 'patch']
-}
+AWS_ACCOUNT_ID = os.environ.get('AWS_ACCOUNT_ID', '860100747351')
 
 REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': (
@@ -296,12 +280,12 @@ REST_FRAMEWORK = {
 }
 
 DJOSER = {
-    'DOMAIN': os.getenv("APP_DOMAIN"),
+    'DOMAIN': os.getenv('FRONTEND_DOMAIN', 'dev-app.illumidesk.com'),
     'PASSWORD_RESET_CONFIRM_URL': os.getenv(
         'PASSWORD_RESET_CONFIRM_URL',
         '/auth/password/reset/confirm/?uid={uid}&token={token}'
     ),
-    'PASSWORD_RESET_DOMAIN': os.getenv('PASSWORD_RESET_DOMAIN', 'dev-app.illumidesk.com'),
+    'PASSWORD_RESET_DOMAIN': os.getenv('FRONTEND_DOMAIN', 'dev-app.illumidesk.com'),
     'SERIALIZERS': {'user_create': "appdj.users.serializers.UserSerializer",
                     'user': "appdj.users.serializers.UserSerializer",
                     'user_registration': "appdj.users.serializers.UserSerializer",
@@ -315,7 +299,7 @@ DJOSER = {
     },
 }
 
-DEFAULT_VERSION = os.environ.get('API_VERSION', "v1")
+DEFAULT_VERSION = os.environ.get('API_VERSION', 'v1')
 
 RESOURCE_DIR = os.environ.get('RESOURCE_DIR', '/workspaces')
 EXCHANGE_DIR_CONTAINER = os.environ.get('EXCHANGE_DIR_CONTAINER', '/srv/nbgrader/exchange')
@@ -324,7 +308,7 @@ EXCHANGE_DIR_HOST = os.environ.get('EXCHANGE_DIR_HOST', '/workspaces/nbgrader/ex
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': os.environ.get('REDIS_URL'),
+        'LOCATION': os.environ.get('REDIS_URL', 'redis://localhost:6379/0'),
         'OPTIONS': {
             'SERIALIZER_CLASS': 'base.utils.UJSONSerializer',
             'PARSER_CLASS': 'redis.connection.HiredisParser',
@@ -397,9 +381,9 @@ MIGRATION_MODULES = {
 
 
 # Server settings
-SERVER_RESOURCE_DIR = os.environ.get("SERVER_RESOURCE_DIR", "/home/jovyan")
-SERVER_PORT_MAPPING = {'8080': "proxy"}
-SERVER_TYPES = {"proxy"}
+SERVER_RESOURCE_DIR = os.environ.get('SERVER_RESOURCE_DIR', '/home/jovyan')
+SERVER_PORT_MAPPING = {'8080': 'proxy'}
+SERVER_TYPES = {'proxy'}
 SERVER_TYPE_MAPPING = {'jupyter': 'proxy'}
 SERVER_ENDPOINT_URLS = {'proxy': '/proxy/'}
 SERVER_COMMANDS = {
@@ -415,10 +399,6 @@ SERVER_COMMANDS = {
         ' --NotebookApp.port=8080'
     ),
 }
-# slack
-
-SOCIAL_AUTH_SLACK_KEY = os.environ.get('SLACK_KEY')
-SOCIAL_AUTH_SLACK_SECRET = os.environ.get('SLACK_SECRET')
 
 # CORS requests
 CORS_ORIGIN_ALLOW_ALL = True
@@ -426,27 +406,14 @@ CORS_ORIGIN_ALLOW_ALL = True
 # A list of url *names* that require a subscription to access.
 SUBSCRIPTION_REQUIRED_URLS = ["server-start"]
 
-# What should this setting actually be? They seem reasonable for dev environments
-# But I'm not sure if they're secure and what not for prod
-MEDIA_ROOT = "/workspaces/"
-MEDIA_URL = "/media/"
-
-DOCKER_NET = os.environ.get('DOCKER_NET', 'illumidesk-net')
-
-# KB * KB = MB -> 15 MB
-DATA_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024 * int(os.getenv("MAX_FILE_UPLOAD_SIZE", 15))
+MEDIA_ROOT = os.path.join(BASE_DIR, '/workspaces/')
+MEDIA_URL = '/media/'
 
 SILENCED_SYSTEM_CHECKS = ["auth.W004"]
 
-NVIDIA_DOCKER_HOST = os.environ.get('NVIDIA_DOCKER_HOST')
-
 SPAWNER = 'appdj.servers.spawners.docker.DockerSpawner'
-DEPLOYER = 'appdj.servers.spawners.aws_lambda.deployer.LambdaDeployer'
-SCHEDULER = 'appdj.servers.spawners.ecs.JobScheduler'
 JUPYTER_IMAGE = os.environ.get('JUPYTER_IMAGE', 'illumidesk/datascience-notebook')
 ECS_CLUSTER = os.environ.get('ECS_CLUSTER', 'default')
-BATCH_COMPUTE_ENV = os.environ.get('BATCH_COMPUTE_ENV')
-BATCH_JOB_QUEUE = os.environ.get('BATCH_JOB_QUEUE')
 REDIRECT_IS_HTTPS = True
 
 # Default server memory sizes in MB, implemented in /servers/management/commands/
@@ -456,12 +423,6 @@ SERVER_SIZE = {
     "Medium": 2048,
     "Large": 4096
 }
-
-USAGE_WARNING_THRESHOLDS = os.environ.get("USAGE_WARNING_THRESHOLDS", "75,90,100")
-
-BILLING_BUCKET_SIZE_GB = os.environ.get("BILLING_BUCKET_SIZE_GB", 5)
-
-BUCKET_COST_USD = os.environ.get("BUCKET_COST_USD", 5)
 
 LOGGING = {
     'version': 1,

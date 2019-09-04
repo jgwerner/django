@@ -8,6 +8,7 @@ SECRET_KEY = 'test'
 tmp_dir = tempfile.mkdtemp()
 RESOURCE_DIR = tmp_dir
 MEDIA_ROOT = tmp_dir
+DOCKER_NET = 'test-net'
 
 PASSWORD_HASHERS = (
     'django.contrib.auth.hashers.MD5PasswordHasher',
@@ -18,6 +19,11 @@ TEMPLATE_DEBUG = False
 REST_FRAMEWORK['TEST_REQUEST_DEFAULT_FORMAT'] = 'json'
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'localhost')
+EMAIL_PORT = os.environ.get('EMAIL_PORT', '587')
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True')
 
 BROKER_BACKEND = 'memory'
 CELERY_ALWAYS_EAGER = True

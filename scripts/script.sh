@@ -25,9 +25,9 @@ run_linter () {
 
 run_unit_tests () {
   docker-compose \
-    -f app-backend/$DOCKER_COMPOSE_TEST \
-    run beat ash -c \
-    "/srv/env/bin/python manage.py test"
+  -f app-backend/$DOCKER_COMPOSE_TEST \
+  run --rm -e DJANGO_SETTINGS_MODULE=config.settings.test \
+  beat /srv/env/bin/python manage.py test
 }
 
 main () {
