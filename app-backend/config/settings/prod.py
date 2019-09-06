@@ -16,8 +16,8 @@ sentry_sdk.init(
 )
 
 ALLOWED_HOSTS = ['localhost', os.getenv('EXTERNAL_IPV4'), 'api.illumidesk.com']
-if 'APP_SCHEME' in os.environ:
-    ALLOWED_HOSTS.append(os.environ['APP_SCHEME'])
+if 'API_HOST' in os.environ:
+    ALLOWED_HOSTS.append(os.environ['API_HOST'])
 
 # Adding possible load balancer IP addresses.
 # It's necessary to add the whole range because this address can change.
@@ -27,3 +27,6 @@ for x in range(0, 256):
         ALLOWED_HOSTS.append(f"172.30.{x}.{y}")
 
 SPAWNER = 'appdj.servers.spawners.ecs.ECSSpawner'
+
+LTI_JWT_PRIVATE_KEY = Path(str(ROOT_DIR), 'rsa_private.pem').read_bytes()
+LTI_JWT_PUBLIC_KEY = Path(str(ROOT_DIR), 'rsa_public.pem').read_bytes()
