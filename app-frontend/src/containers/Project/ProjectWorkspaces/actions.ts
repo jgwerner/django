@@ -39,8 +39,8 @@ export type DELETE_SERVER_FAILURE = typeof DELETE_SERVER_FAILURE
 export const UPDATE_STATUS = 'UPDATE_STATUS'
 export type UPDATE_STATUS = typeof UPDATE_STATUS
 
-export const CLOSE_ERROR = 'CLOSE_ERROR'
-export type CLOSE_ERROR = typeof CLOSE_ERROR
+export const CLOSE_SERVER_ERROR = 'CLOSE_SERVER_ERROR'
+export type CLOSE_SERVER_ERROR = typeof CLOSE_SERVER_ERROR
 
 export interface GetSizesActions {
   type: GET_SIZES_REQUEST | GET_SIZES_SUCCESS | GET_SIZES_FAILURE
@@ -75,10 +75,6 @@ export interface DeleteServerActions {
 export interface UpdateStatusAction {
   type: UPDATE_STATUS
   data?: any
-}
-
-export interface CloseErrorAction {
-  type: CLOSE_ERROR
 }
 
 export const getServerSizes = () => (dispatch: Dispatch<GetSizesActions>) => {
@@ -247,8 +243,6 @@ export const updateStatus = (data: any) => {
   }
 }
 
-export const closeError = () => (dispatch: Dispatch) => {
-  dispatch({
-    type: CLOSE_ERROR
-  })
-}
+export const closeServerError = () => ({
+  type: CLOSE_SERVER_ERROR
+})

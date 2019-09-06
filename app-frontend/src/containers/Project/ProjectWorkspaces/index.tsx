@@ -3,11 +3,17 @@ import { withRouter, RouteComponentProps } from 'react-router-dom'
 import { connect } from 'react-redux'
 import { bindActionCreators, Dispatch } from 'redux'
 import Loadable from 'react-loadable'
-import { getWorkspaces, GetWorkspacesActions, closeError } from './actions'
+import {
+  getWorkspaces,
+  GetWorkspacesActions,
+  closeServerError
+} from './actions'
 import { getProject, ProjectDetailsActions } from '../actions'
 import { StoreState } from 'utils/store'
-import Container from 'components/atoms/Container'
-import Banner from 'components/Banner'
+import {
+  closeUpdateProjectError,
+  closeUpdateProjectSuccess
+} from '../Settings/actions'
 
 interface WorkspacesRouteProps {
   userName: string
@@ -19,7 +25,6 @@ interface WorkspacesMapStateToProps {
   projectDetails: any
   newWorkspace: boolean
   workspaces: any
-  startServerError: boolean
 }
 
 interface WorkspacesMapDispatchToProps {
@@ -31,7 +36,9 @@ interface WorkspacesMapDispatchToProps {
     userName: string,
     id: string
   ) => (dispatch: Dispatch<GetWorkspacesActions>) => void
-  closeError: () => void
+  closeServerError: () => void
+  closeUpdateProjectError: () => void
+  closeUpdateProjectSuccess: () => void
 }
 
 type WorkspacesProps = WorkspacesMapDispatchToProps &
@@ -50,8 +57,16 @@ const AsyncWorkspaceTable = Loadable({
 
 class Workspaces extends React.Component<WorkspacesProps> {
   componentDidMount() {
-    const { match, getWorkspaces, projectDetails } = this.props
+    const {
+      match,
+      getWorkspaces,
+      projectDetails,
+      closeUpdateProjectError,
+      closeUpdateProjectSuccess
+    } = this.props
     getWorkspaces(match.params.userName, projectDetails.id)
+    closeUpdateProjectError()
+    closeUpdateProjectSuccess()
   }
 
   componentDidUpdate(prev: any) {
@@ -63,14 +78,13 @@ class Workspaces extends React.Component<WorkspacesProps> {
     }
   }
 
+  componentWillUnmount() {
+    const { closeServerError } = this.props
+    closeServerError()
+  }
+
   render() {
-    const {
-      projectDetails,
-      workspaces,
-      match,
-      startServerError,
-      closeError
-    } = this.props
+    const { projectDetails, workspaces, match } = this.props
     return (
       <Fragment>
         {projectDetails.name === match.params.projectName ? (
@@ -81,19 +95,6 @@ class Workspaces extends React.Component<WorkspacesProps> {
               </Fragment>
             ) : (
               <Fragment>
-                {startServerError ? (
-                  <Container>
-                    <Banner
-                      danger
-                      message="The server could not be found. Please delete the server and create a new one."
-                      my={3}
-                      width={1}
-                      action={() => closeError()}
-                    />
-                  </Container>
-                ) : (
-                  ''
-                )}
                 {workspaces[0].project === projectDetails.id ? (
                   <AsyncWorkspaceTable statusURL={workspaces[0].status_url} />
                 ) : (
@@ -115,8 +116,7 @@ const mapStateToProps = ({
 }: StoreState): WorkspacesMapStateToProps => ({
   workspaces: project.workspaces.servers.workspaces,
   newWorkspace: project.workspaces.add.newWorkspace,
-  projectDetails: project.details.projectDetails,
-  startServerError: project.workspaces.servers.startServerError
+  projectDetails: project.details.projectDetails
 })
 
 const mapDispatchToProps = (dispatch: Dispatch): WorkspacesMapDispatchToProps =>
@@ -124,7 +124,9 @@ const mapDispatchToProps = (dispatch: Dispatch): WorkspacesMapDispatchToProps =>
     {
       getProject,
       getWorkspaces,
-      closeError
+      closeServerError,
+      closeUpdateProjectError,
+      closeUpdateProjectSuccess
     },
     dispatch
   )

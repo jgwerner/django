@@ -5,9 +5,11 @@ describe('project reducer', () => {
   it('should return the initial state', () => {
     expect(settings(initialState, { type: null })).toEqual({
       projectUpdated: false,
-      updateSuccess: false,
-      updateError: false,
-      errorMessage: ''
+      updateProjectSuccess: false,
+      updateProjectError: false,
+      updateProjectErrorMessage: '',
+      deleteProjectSuccess: false,
+      deleteProjectError: false
     })
   })
 
@@ -27,8 +29,8 @@ describe('project reducer', () => {
     expect(settings(initialState, successAction)).toEqual({
       ...initialState,
       projectUpdated: true,
-      updateSuccess: true,
-      updateError: false
+      updateProjectSuccess: true,
+      updateProjectError: false
     })
   })
 
@@ -43,9 +45,9 @@ describe('project reducer', () => {
     }
     expect(settings(initialState, failureAction)).toEqual({
       ...initialState,
-      updateError: true,
-      errorMessage: failureAction.error.data.name[0],
-      updateSuccess: false
+      updateProjectError: true,
+      updateProjectErrorMessage: failureAction.error.data.name[0],
+      updateProjectSuccess: false
     })
   })
 
@@ -66,7 +68,7 @@ describe('project reducer', () => {
     expect(settings(initialState, successAction)).toEqual({
       ...initialState,
       projectUpdated: true,
-      updateSuccess: true
+      updateProjectSuccess: true
     })
   })
 
@@ -76,7 +78,7 @@ describe('project reducer', () => {
     }
     expect(settings(initialState, failureAction)).toEqual({
       ...initialState,
-      updateError: true
+      updateProjectError: true
     })
   })
 
@@ -94,7 +96,8 @@ describe('project reducer', () => {
       type: actions.DELETE_PROJECT_SUCCESS
     }
     expect(settings(initialState, successAction)).toEqual({
-      ...initialState
+      ...initialState,
+      deleteProjectSuccess: true
     })
   })
 
@@ -103,7 +106,8 @@ describe('project reducer', () => {
       type: actions.DELETE_PROJECT_FAILURE
     }
     expect(settings(initialState, failureAction)).toEqual({
-      ...initialState
+      ...initialState,
+      deleteProjectError: true
     })
   })
 })

@@ -14,14 +14,13 @@ export type ADD_PROJECT_FAILURE = typeof ADD_PROJECT_FAILURE
 export const CLOSE_ERROR = 'CLOSE_ERROR'
 export type CLOSE_ERROR = typeof CLOSE_ERROR
 
+export const CLOSE_SUCCESS = 'CLOSE_SUCCESS'
+export type CLOSE_SUCCESS = typeof CLOSE_SUCCESS
+
 export interface AddProjectActions {
   type: ADD_PROJECT_REQUEST | ADD_PROJECT_SUCCESS | ADD_PROJECT_FAILURE
   data?: any
   error?: any
-}
-
-export interface CloseErrorAction {
-  type: CLOSE_ERROR
 }
 
 export const addProject = (username: string, values: any) => (
@@ -55,8 +54,11 @@ export const addProject = (username: string, values: any) => (
     }
   )
 }
-export const closeError = () => (dispatch: Dispatch) => {
-  dispatch({
-    type: CLOSE_ERROR
-  })
-}
+
+export const closeCreateProjectError = () => ({
+  type: CLOSE_ERROR
+})
+
+export const closeCreateProjectSuccess = () => ({
+  type: CLOSE_SUCCESS
+})

@@ -4,7 +4,7 @@ import { bindActionCreators, Dispatch } from 'redux'
 import { getFormValues } from 'redux-form'
 import Modal from 'components/Modal'
 import AddProjectForm from './Form'
-import { addProject } from './actions'
+import { addProject, closeCreateProjectError } from './actions'
 import { StoreState } from 'utils/store'
 
 interface AddProjectMapStateToProps {
@@ -14,20 +14,29 @@ interface AddProjectMapStateToProps {
 
 interface AddProjectMapDispatchToProps {
   addProject: (username: string, values: any) => void
+  closeCreateProjectError: () => void
 }
 
 type AddProjectProps = AddProjectMapStateToProps & AddProjectMapDispatchToProps
 
-const AddProject = (props: AddProjectProps) => {
-  const { username, values, addProject } = props
-  return (
-    <React.Fragment>
-      <Modal
-        header="Add new project"
-        body={<AddProjectForm onSubmit={() => addProject(username, values)} />}
-      />
-    </React.Fragment>
-  )
+const AddProject = class extends React.PureComponent<AddProjectProps> {
+  componentWillUnmount() {
+    const { closeCreateProjectError } = this.props
+    closeCreateProjectError()
+  }
+  render() {
+    const { username, values, addProject } = this.props
+    return (
+      <React.Fragment>
+        <Modal
+          header="Add new project"
+          body={
+            <AddProjectForm onSubmit={() => addProject(username, values)} />
+          }
+        />
+      </React.Fragment>
+    )
+  }
 }
 
 const mapStateToProps = (state: StoreState) => ({
@@ -38,7 +47,8 @@ const mapStateToProps = (state: StoreState) => ({
 const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
-      addProject
+      addProject,
+      closeCreateProjectError
     },
     dispatch
   )

@@ -9,9 +9,8 @@ import Flex from 'components/atoms/Flex'
 import Button from 'components/atoms/Button'
 import history from 'utils/history'
 import { getProject } from '../../actions'
-import { closeError, closeSuccess } from '../actions'
+import { closeUpdateProjectError, closeUpdateProjectSuccess } from '../actions'
 import { StoreState } from 'utils/store'
-import Banner from 'components/Banner'
 
 interface AdvancedSettingsRouteProps {
   userName: string
@@ -20,15 +19,12 @@ interface AdvancedSettingsRouteProps {
 
 interface AdvancedSettingsMapStateToProps {
   projectDetails: any
-  updateError: boolean
-  updateSuccess: boolean
-  errorMessage: string
 }
 
 interface AdvancedSettingsMapDispatchToProps {
   getProject: (userName: string, projectName: string) => void
-  closeError: () => void
-  closeSuccess: () => void
+  closeUpdateProjectError: () => void
+  closeUpdateProjectSuccess: () => void
 }
 
 type AdvancedSettingsProps = AdvancedSettingsMapStateToProps &
@@ -49,9 +45,9 @@ const AdvancedSettings = class extends React.PureComponent<
   AdvancedSettingsProps
 > {
   componentDidMount() {
-    const { closeError, closeSuccess } = this.props
-    closeError()
-    closeSuccess()
+    const { closeUpdateProjectError, closeUpdateProjectSuccess } = this.props
+    closeUpdateProjectError()
+    closeUpdateProjectSuccess()
   }
 
   componentDidUpdate(prev: any) {
@@ -61,45 +57,18 @@ const AdvancedSettings = class extends React.PureComponent<
   }
 
   componentWillUnmount() {
-    const { closeError, closeSuccess } = this.props
-    closeError()
-    closeSuccess()
+    const { closeUpdateProjectError, closeUpdateProjectSuccess } = this.props
+    closeUpdateProjectError()
+    closeUpdateProjectSuccess()
   }
 
   render() {
-    const {
-      match,
-      projectDetails,
-      updateError,
-      updateSuccess,
-      closeError,
-      closeSuccess
-    } = this.props
+    const { match, projectDetails } = this.props
     return (
       <React.Fragment>
         <Heading mb={4} bold>
           Advanced Settings
         </Heading>
-        {updateError ? (
-          <Banner
-            danger
-            width={1}
-            message="There was an error updating the project"
-            action={() => closeError()}
-          />
-        ) : (
-          ''
-        )}
-        {updateSuccess ? (
-          <Banner
-            success
-            width={1}
-            message="Project has been updated"
-            action={() => closeSuccess()}
-          />
-        ) : (
-          ''
-        )}
         <Flex width="100%" m={[2, 3, 4]}>
           <Text m={2}>
             {projectDetails.private
@@ -139,18 +108,15 @@ const AdvancedSettings = class extends React.PureComponent<
 }
 
 const mapStateToProps = (state: StoreState) => ({
-  projectDetails: state.project.details.projectDetails,
-  updateError: state.project.settings.updateError,
-  updateSuccess: state.project.settings.updateSuccess,
-  errorMessage: state.project.settings.errorMessage
+  projectDetails: state.project.details.projectDetails
 })
 
 const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
       getProject,
-      closeError,
-      closeSuccess
+      closeUpdateProjectError,
+      closeUpdateProjectSuccess
     },
     dispatch
   )

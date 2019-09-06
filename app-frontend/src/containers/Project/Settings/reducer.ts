@@ -8,23 +8,29 @@ import {
   CHANGE_VISIBILITY_REQUEST,
   CHANGE_VISIBILITY_SUCCESS,
   CHANGE_VISIBILITY_FAILURE,
-  CLOSE_ERROR,
-  CLOSE_SUCCESS
+  CLOSE_UPDATE_ERROR,
+  CLOSE_UPDATE_SUCCESS,
+  CLOSE_DELETE_SUCCESS,
+  CLOSE_DELETE_ERROR
 } from './actions'
 import { AnyAction } from 'redux'
 
 export interface SettingsStoreState {
   projectUpdated: boolean
-  updateSuccess: boolean
-  updateError: boolean
-  errorMessage: string
+  updateProjectSuccess: boolean
+  updateProjectError: boolean
+  updateProjectErrorMessage: string
+  deleteProjectSuccess: boolean
+  deleteProjectError: boolean
 }
 
 export const initialState = {
   projectUpdated: false,
-  updateSuccess: false,
-  updateError: false,
-  errorMessage: ''
+  updateProjectSuccess: false,
+  updateProjectError: false,
+  updateProjectErrorMessage: '',
+  deleteProjectSuccess: false,
+  deleteProjectError: false
 }
 
 const settings = (state = initialState, action: AnyAction) => {
@@ -38,15 +44,17 @@ const settings = (state = initialState, action: AnyAction) => {
       return {
         ...state,
         projectUpdated: true,
-        updateSuccess: true,
-        updateError: false
+        updateProjectSuccess: true,
+        updateProjectError: false
       }
     case UPDATE_PROJECT_FAILURE:
       return {
         ...state,
-        updateError: true,
-        updateSuccess: false,
-        errorMessage: action.error.data.name[0]
+        updateProjectError: true,
+        updateProjectSuccess: false,
+        updateProjectErrorMessage: action.error.data.name
+          ? action.error.data.name[0]
+          : 'Error updating project'
       }
     case CHANGE_VISIBILITY_REQUEST:
       return {
@@ -57,12 +65,12 @@ const settings = (state = initialState, action: AnyAction) => {
       return {
         ...state,
         projectUpdated: true,
-        updateSuccess: true
+        updateProjectSuccess: true
       }
     case CHANGE_VISIBILITY_FAILURE:
       return {
         ...state,
-        updateError: true
+        updateProjectError: true
       }
     case DELETE_PROJECT_REQUEST:
       return {
@@ -70,22 +78,34 @@ const settings = (state = initialState, action: AnyAction) => {
       }
     case DELETE_PROJECT_SUCCESS:
       return {
-        ...state
+        ...state,
+        deleteProjectSuccess: true
       }
     case DELETE_PROJECT_FAILURE:
       return {
-        ...state
+        ...state,
+        deleteProjectError: true
       }
-    case CLOSE_ERROR:
+    case CLOSE_UPDATE_ERROR:
       return {
         ...state,
-        updateError: false
+        updateProjectError: false
       }
-    case CLOSE_SUCCESS:
+    case CLOSE_UPDATE_SUCCESS:
       return {
         ...state,
-        updateSuccess: false,
+        updateProjectSuccess: false,
         projectUpdated: false
+      }
+    case CLOSE_DELETE_ERROR:
+      return {
+        ...state,
+        deleteProjectError: false
+      }
+    case CLOSE_DELETE_SUCCESS:
+      return {
+        ...state,
+        deleteProjectSuccess: false
       }
     default:
       return state

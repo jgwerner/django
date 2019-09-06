@@ -10,9 +10,10 @@ import Icon from 'components/Icon'
 import {
   deleteApp,
   getApps,
-  closeDeleteSuccess,
-  closeCreateSuccess,
-  closeCreateError
+  closeCreateAppSuccess,
+  closeCreateAppError,
+  closeDeleteAppSuccess,
+  closeDeleteAppError
 } from './actions'
 import { StoreState } from 'utils/store'
 import {
@@ -23,7 +24,6 @@ import {
   DeleteButton,
   ToolTip
 } from 'components/AppDetails'
-import Banner from 'components/Banner'
 
 interface AppState {
   open: boolean
@@ -42,17 +42,17 @@ interface AppListMapStateToProps {
   username: string
   apps: any
   appsFetched: boolean
-  newApp: boolean
-  appDeleted: boolean
-  newAppError: boolean
+  createAppSuccess: boolean
+  deleteAppSuccess: boolean
 }
 
 interface AppListMapDispatchToProps {
   deleteApp: (username: string, id: string) => void
   getApps: (username: string) => void
-  closeDeleteSuccess: () => void
-  closeCreateSuccess: () => void
-  closeCreateError: () => void
+  closeCreateAppSuccess: () => void
+  closeCreateAppError: () => void
+  closeDeleteAppSuccess: () => void
+  closeDeleteAppError: () => void
 }
 
 type AppListProps = AppListMapStateToProps & AppListMapDispatchToProps
@@ -129,67 +129,36 @@ const AppList = class extends React.PureComponent<AppListProps> {
   }
 
   componentDidUpdate(prev: any) {
-    const { username, getApps, newApp, appDeleted } = this.props
-    if (newApp !== prev.newApp || appDeleted !== prev.appDeleted) {
+    const { username, getApps, createAppSuccess, deleteAppSuccess } = this.props
+    if (
+      createAppSuccess !== prev.createAppSuccess ||
+      deleteAppSuccess !== prev.deleteAppSuccess
+    ) {
       getApps(username)
     }
   }
 
   componentWillUnmount() {
-    const { closeDeleteSuccess, closeCreateSuccess } = this.props
-    closeCreateSuccess()
-    closeDeleteSuccess()
+    const {
+      closeCreateAppSuccess,
+      closeCreateAppError,
+      closeDeleteAppSuccess,
+      closeDeleteAppError
+    } = this.props
+    closeCreateAppSuccess()
+    closeCreateAppError()
+    closeDeleteAppSuccess()
+    closeDeleteAppError()
   }
 
   render() {
-    const {
-      apps,
-      appsFetched,
-      deleteApp,
-      username,
-      appDeleted,
-      closeDeleteSuccess,
-      closeCreateSuccess,
-      newApp,
-      newAppError,
-      closeCreateError
-    } = this.props
+    const { apps, appsFetched, deleteApp, username } = this.props
     return (
       <React.Fragment>
         {!appsFetched ? (
           <Container />
         ) : (
           <Container>
-            {newApp ? (
-              <Banner
-                success
-                width={1}
-                message="New application created"
-                action={() => closeCreateSuccess()}
-              />
-            ) : (
-              ''
-            )}
-            {newAppError ? (
-              <Banner
-                danger
-                width={1}
-                message="Error creating new app"
-                action={() => closeCreateError()}
-              />
-            ) : (
-              ''
-            )}
-            {appDeleted ? (
-              <Banner
-                success
-                width={1}
-                message="Delete Application Request Succeeded"
-                action={() => closeDeleteSuccess()}
-              />
-            ) : (
-              ''
-            )}
             {apps.map((i: any) => (
               <Container key={i.id}>
                 <App
@@ -212,10 +181,9 @@ const AppList = class extends React.PureComponent<AppListProps> {
 const mapStateToProps = (state: StoreState) => ({
   apps: state.settings.oauth2.apps,
   appsFetched: state.settings.oauth2.appsFetched,
-  newApp: state.settings.oauth2.newApp,
-  appDeleted: state.settings.oauth2.appDeleted,
   username: state.home.user.username,
-  newAppError: state.settings.oauth2.newAppError
+  createAppSuccess: state.settings.oauth2.createAppSuccess,
+  deleteAppSuccess: state.settings.oauth2.deleteAppSuccess
 })
 
 const mapDispatchToProps = (dispatch: Dispatch) =>
@@ -223,9 +191,10 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     {
       deleteApp,
       getApps,
-      closeDeleteSuccess,
-      closeCreateSuccess,
-      closeCreateError
+      closeCreateAppSuccess,
+      closeCreateAppError,
+      closeDeleteAppSuccess,
+      closeDeleteAppError
     },
     dispatch
   )

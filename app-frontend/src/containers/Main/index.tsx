@@ -4,8 +4,10 @@ import Loadable from 'react-loadable'
 import PrivateRoute from 'utils/PrivateRoute'
 import AuthRoute from 'utils/AuthRoute'
 import AuthenticatedLayout from 'components/AuthenticatedLayout'
-import Content from 'components/AuthenticatedLayout/Content'
+import { ContentWrapper } from 'components/AuthenticatedLayout/Content'
 import Header from './Header'
+import Banners from './Banners'
+import Content from 'components/AuthenticatedLayout/Content'
 
 const AsyncAuth = Loadable({
   loader: () => import('../Auth'),
@@ -27,14 +29,17 @@ const AsyncSettings = Loadable({
 const PrivateRoutes = () => (
   <AuthenticatedLayout>
     <Header />
-    <Content>
-      <Switch>
-        <Route path="/projects/new" component={AsyncHome} />
-        <Route path="/settings" component={AsyncSettings} />
-        <Route path="/:userName/:projectName" component={AsyncProject} />
-        <PrivateRoute path="/" component={AsyncHome} />
-      </Switch>
-    </Content>
+    <ContentWrapper width={['98%', '75%']}>
+      <Banners />
+      <Content>
+        <Switch>
+          <Route path="/projects/new" component={AsyncHome} />
+          <Route path="/settings" component={AsyncSettings} />
+          <Route path="/:userName/:projectName" component={AsyncProject} />
+          <PrivateRoute path="/" component={AsyncHome} />
+        </Switch>
+      </Content>
+    </ContentWrapper>
   </AuthenticatedLayout>
 )
 

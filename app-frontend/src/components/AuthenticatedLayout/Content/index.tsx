@@ -12,7 +12,8 @@ type PanelProps = FlexProps & ContentProps
 
 export const ContentWrapper = styled(Container)<ContainerProps>`
   position: relative;
-  top: 50px;
+  top: 60px;
+  margin-top: 20px;
 `
 export const ContentPanel = styled(Flex)<PanelProps>`
   padding-top: ${theme.contentPadding};
@@ -37,17 +38,17 @@ export const ContentTopAction = styled(Container)`
 `
 
 const Content = (props: ContentProps) => (
-  <ContentWrapper width={['98%', '75%']}>
+  <React.Fragment>
     <ContentPanel
       bg="white"
       px={['25px', '50px']}
-      mt="50px"
+      mt="20px"
       mx="auto"
       mb="30px"
       width={1}
       {...props}
     />
-  </ContentWrapper>
+  </React.Fragment>
 )
 
 ContentTop.displayName = 'ContentTop'

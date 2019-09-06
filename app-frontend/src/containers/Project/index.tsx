@@ -15,6 +15,10 @@ import Container from 'components/atoms/Container'
 import Breadcrumbs from './Breadcrumbs'
 import { getProject } from './actions'
 import { StoreState } from 'utils/store'
+import {
+  closeUpdateProjectError,
+  closeUpdateProjectSuccess
+} from './Settings/actions'
 
 interface ProjectRouterProps {
   userName: string
@@ -28,6 +32,8 @@ interface ProjectMapStateToProps {
 
 interface ProjectMapDispatchToProps {
   getProject: (userName: string, projectName: string) => void
+  closeUpdateProjectError: () => void
+  closeUpdateProjectSuccess: () => void
 }
 
 type ProjectProps = ProjectMapStateToProps &
@@ -54,6 +60,12 @@ const Project = class extends React.PureComponent<ProjectProps> {
     if (match.params.projectName !== prev.match.params.projectName) {
       getProject(match.params.userName, match.params.projectName)
     }
+  }
+
+  componentWillUnmount() {
+    const { closeUpdateProjectError, closeUpdateProjectSuccess } = this.props
+    closeUpdateProjectError()
+    closeUpdateProjectSuccess()
   }
 
   render() {
@@ -104,7 +116,9 @@ const mapStateToProps = (state: StoreState) => ({
 const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
-      getProject
+      getProject,
+      closeUpdateProjectError,
+      closeUpdateProjectSuccess
     },
     dispatch
   )

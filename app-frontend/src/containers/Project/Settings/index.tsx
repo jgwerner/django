@@ -48,13 +48,6 @@ const AsyncAdvancedSettings = Loadable({
 })
 
 const Settings = class extends React.PureComponent<SettingsProps> {
-  // componentDidMount() {
-  //   const { match, getProject, projectUpdated } = this.props
-  //   console.log('CDM')
-  //   if (projectUpdated) {
-  //   getProject(match.params.userName, match.params.projectName)
-  //   }
-  // }
   render() {
     const { match } = this.props
     return (

@@ -6,9 +6,10 @@ describe('OAuth2 settings reducer', () => {
     expect(reducer(initialState, { type: null })).toEqual({
       apps: [],
       appsFetched: false,
-      newApp: false,
-      appDeleted: false,
-      newAppError: false
+      createAppSuccess: false,
+      deleteAppSuccess: false,
+      createAppError: false,
+      deleteAppError: false
     })
   })
 
@@ -47,7 +48,8 @@ describe('OAuth2 settings reducer', () => {
     }
     expect(reducer(initialState, expectedAction)).toEqual({
       ...initialState,
-      newApp: false
+      createAppSuccess: false,
+      createAppError: false
     })
   })
 
@@ -57,7 +59,7 @@ describe('OAuth2 settings reducer', () => {
     }
     expect(reducer(initialState, expectedAction)).toEqual({
       ...initialState,
-      newApp: true
+      createAppSuccess: true
     })
   })
 
@@ -67,7 +69,7 @@ describe('OAuth2 settings reducer', () => {
     }
     expect(reducer(initialState, expectedAction)).toEqual({
       ...initialState,
-      newAppError: true
+      createAppError: true
     })
   })
 
@@ -77,7 +79,8 @@ describe('OAuth2 settings reducer', () => {
     }
     expect(reducer(initialState, expectedAction)).toEqual({
       ...initialState,
-      appDeleted: false
+      deleteAppSuccess: false,
+      deleteAppError: false
     })
   })
 
@@ -87,7 +90,7 @@ describe('OAuth2 settings reducer', () => {
     }
     expect(reducer(initialState, expectedAction)).toEqual({
       ...initialState,
-      appDeleted: true
+      deleteAppSuccess: true
     })
   })
 
@@ -96,7 +99,8 @@ describe('OAuth2 settings reducer', () => {
       type: actions.DELETE_APP_FAILURE
     }
     expect(reducer(initialState, expectedAction)).toEqual({
-      ...initialState
+      ...initialState,
+      deleteAppError: true
     })
   })
 })

@@ -2,18 +2,21 @@ import {
   ADD_PROJECT_REQUEST,
   ADD_PROJECT_SUCCESS,
   ADD_PROJECT_FAILURE,
-  CLOSE_ERROR
+  CLOSE_ERROR,
+  CLOSE_SUCCESS
 } from './actions'
 import { AnyAction } from 'redux'
 
 export interface AddProjectProps {
-  newProjectSuccess: boolean
-  newProjectError: boolean
+  createProjectSuccess: boolean
+  createProjectError: boolean
+  createProjectErrorMessage: string
 }
 
 export const initialState = {
-  newProjectSuccess: false,
-  newProjectError: false
+  createProjectSuccess: false,
+  createProjectError: false,
+  createProjectErrorMessage: ''
 }
 
 const addProject = (state = initialState, action: AnyAction) => {
@@ -25,17 +28,25 @@ const addProject = (state = initialState, action: AnyAction) => {
     case ADD_PROJECT_SUCCESS:
       return {
         ...state,
-        newProjectSuccess: true
+        createProjectSuccess: true
       }
     case ADD_PROJECT_FAILURE:
       return {
         ...state,
-        newProjectError: true
+        createProjectError: true,
+        createProjectErrorMessage: action.error.data.name
+          ? action.error.data.name[0]
+          : 'Error creating project'
       }
     case CLOSE_ERROR:
       return {
         ...state,
-        newProjectError: false
+        createProjectError: false
+      }
+    case CLOSE_SUCCESS:
+      return {
+        ...state,
+        createProjectSuccess: false
       }
     default:
       return state

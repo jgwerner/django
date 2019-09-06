@@ -14,7 +14,7 @@ import {
 } from 'components/Form'
 import { StoreState } from 'utils/store'
 import Banner from 'components/Banner'
-import { closeError, CloseErrorAction } from './actions'
+import { closeCreateProjectError } from './actions'
 import Container from 'components/atoms/Container'
 
 interface AddProjectFormProps {
@@ -28,11 +28,12 @@ interface AddProjectFormProps {
 }
 
 interface FormMapDispatchProps {
-  closeError: () => void
+  closeCreateProjectError: () => void
 }
 
 interface FormWrapperProps extends InjectedFormProps {
-  newProjectError?: boolean
+  createProjectError?: boolean,
+  createProjectErrorMessage?: string
 }
 
 type FormProps = FormWrapperProps & FormMapDispatchProps
@@ -85,15 +86,21 @@ const renderTextArea = ({
 )
 
 export const AddProjectForm = (props: FormProps) => {
-  const { handleSubmit, invalid, newProjectError, closeError } = props
+  const {
+    handleSubmit,
+    invalid,
+    createProjectError,
+    closeCreateProjectError,
+    createProjectErrorMessage
+  } = props
   return (
     <Container>
-      {newProjectError ? (
+      {createProjectError ? (
         <Banner
           danger
           width={1}
-          message="Error creating new project"
-          action={() => closeError()}
+          message={createProjectErrorMessage}
+          action={() => closeCreateProjectError()}
         />
       ) : (
         ''
@@ -137,13 +144,14 @@ export const AddProjectForm = (props: FormProps) => {
 }
 
 const mapStateToProps = (state: StoreState) => ({
-  newProjectError: state.home.addProject.newProjectError
+  createProjectError: state.home.addProject.createProjectError,
+  createProjectErrorMessage: state.home.addProject.createProjectErrorMessage
 })
 
-const mapDispatchToProps = (dispatch: Dispatch<CloseErrorAction>) =>
+const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
-      closeError
+      closeCreateProjectError
     },
     dispatch
   )

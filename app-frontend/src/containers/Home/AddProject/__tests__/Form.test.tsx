@@ -6,7 +6,8 @@ let mock = jest.fn()
 
 function shallowSetup() {
   const props = {
-    newProjectError: true,
+    createProjectError: true,
+    createProjectErrorMessage: '',
     handleSubmit: mock
   }
 
@@ -38,8 +39,8 @@ describe('add project form', () => {
     expect(wrapper.exists()).toBe(true)
     let banner = wrapper.find('Banner')
     expect(banner.exists()).toBe(true)
-    expect(banner.props().message).toEqual('Error creating new project')
-    wrapper.setProps({ newProjectError: false })
+    expect(banner.props().danger).toEqual(true)
+    wrapper.setProps({ createProjectError: false })
     banner = wrapper.find('Banner')
     expect(banner.exists()).toBe(false)
   })

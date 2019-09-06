@@ -16,7 +16,6 @@ import {
 } from './actions'
 import { getUserInfo } from 'containers/Home/actions'
 import { StoreState } from 'utils/store'
-import Banner from 'components/Banner'
 import history from 'utils/history'
 
 interface AccountSettingsRouteProps {
@@ -27,8 +26,6 @@ interface AccountSettingsRouteProps {
 interface AccountSettingsMapStateToProps {
   accountID: string
   pwValues: any
-  passwordUpdateSuccess: boolean
-  passwordUpdateError: boolean
 }
 
 interface AccountSettingsMapDispatchToProps {
@@ -58,36 +55,9 @@ const Account = class extends React.PureComponent<AccountSettingsProps> {
     closePasswordSuccess()
   }
   render() {
-    const {
-      match,
-      accountID,
-      pwValues,
-      changePassword,
-      passwordUpdateSuccess,
-      passwordUpdateError,
-      closePasswordSuccess,
-      closePasswordError
-    } = this.props
+    const { match, accountID, pwValues, changePassword } = this.props
     return (
       <Container width={1}>
-        {passwordUpdateSuccess ? (
-          <Banner
-            success
-            message="Password updated"
-            action={() => closePasswordSuccess()}
-          />
-        ) : (
-          ''
-        )}
-        {passwordUpdateError ? (
-          <Banner
-            danger
-            message="There was an error updating your password"
-            action={() => closePasswordError()}
-          />
-        ) : (
-          ''
-        )}
         <Heading my={4} bold size="h2">
           Change Password
         </Heading>
@@ -123,9 +93,7 @@ const Account = class extends React.PureComponent<AccountSettingsProps> {
 
 const mapStateToProps = (state: StoreState) => ({
   accountID: state.home.user.accountID,
-  pwValues: getFormValues('changePassword')(state),
-  passwordUpdateSuccess: state.settings.account.passwordUpdateSuccess,
-  passwordUpdateError: state.settings.account.passwordUpdateError
+  pwValues: getFormValues('changePassword')(state)
 })
 
 const mapDispatchToProps = (dispatch: Dispatch) =>

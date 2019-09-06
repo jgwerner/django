@@ -16,7 +16,7 @@ import {
   DELETE_SERVER_SUCCESS,
   DELETE_SERVER_FAILURE,
   UPDATE_STATUS,
-  CLOSE_ERROR
+  CLOSE_SERVER_ERROR
 } from './actions'
 import add, { AddWorkspaceStoreState } from './AddWorkspace/reducer'
 
@@ -84,7 +84,7 @@ export const servers = (state = initialState, action: AnyAction) => {
         ...state,
         startServerError: true
       }
-    case CLOSE_ERROR:
+    case CLOSE_SERVER_ERROR:
       return {
         ...state,
         startServerError: false

@@ -26,6 +26,9 @@ export type DELETE_APP_FAILURE = typeof DELETE_APP_FAILURE
 export const CLOSE_DELETE_SUCCESS = 'CLOSE_DELETE_SUCCESS'
 export type CLOSE_DELETE_SUCCESS = typeof CLOSE_DELETE_SUCCESS
 
+export const CLOSE_DELETE_ERROR = 'CLOSE_DELETE_ERROR'
+export type CLOSE_DELETE_ERROR = typeof CLOSE_DELETE_ERROR
+
 export const CLOSE_CREATE_SUCCESS = 'CLOSE_CREATE_SUCCESS'
 export type CLOSE_CREATE_SUCCESS = typeof CLOSE_CREATE_SUCCESS
 
@@ -51,7 +54,11 @@ export interface DeleteAppActions {
 }
 
 export interface CloseBannerActions {
-  type: CLOSE_DELETE_SUCCESS | CLOSE_CREATE_SUCCESS | CLOSE_CREATE_ERROR
+  type:
+    | CLOSE_DELETE_SUCCESS
+    | CLOSE_CREATE_SUCCESS
+    | CLOSE_CREATE_ERROR
+    | CLOSE_DELETE_ERROR
 }
 
 export type OAuth2Actions = GetAppsActions & NewAppActions & DeleteAppActions
@@ -150,14 +157,18 @@ export const deleteApp = (username: string, appID: string) => (
   )
 }
 
-export const closeDeleteSuccess = () => ({
+export const closeDeleteAppSuccess = () => ({
   type: CLOSE_DELETE_SUCCESS
 })
 
-export const closeCreateSuccess = () => ({
+export const closeDeleteAppError = () => ({
+  type: CLOSE_DELETE_ERROR
+})
+
+export const closeCreateAppSuccess = () => ({
   type: CLOSE_CREATE_SUCCESS
 })
 
-export const closeCreateError = () => ({
+export const closeCreateAppError = () => ({
   type: CLOSE_CREATE_ERROR
 })

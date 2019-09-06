@@ -23,11 +23,17 @@ export type DELETE_PROJECT_SUCCESS = typeof DELETE_PROJECT_SUCCESS
 export const DELETE_PROJECT_FAILURE = 'DELETE_PROJECT_FAILURE'
 export type DELETE_PROJECT_FAILURE = typeof DELETE_PROJECT_FAILURE
 
-export const CLOSE_ERROR = 'CLOSE_ERROR'
-export type CLOSE_ERROR = typeof CLOSE_ERROR
+export const CLOSE_UPDATE_ERROR = 'CLOSE_UPDATE_ERROR'
+export type CLOSE_UPDATE_ERROR = typeof CLOSE_UPDATE_ERROR
 
-export const CLOSE_SUCCESS = 'CLOSE_SUCCESS'
-export type CLOSE_SUCCESS = typeof CLOSE_SUCCESS
+export const CLOSE_UPDATE_SUCCESS = 'CLOSE_UPDATE_SUCCESS'
+export type CLOSE_UPDATE_SUCCESS = typeof CLOSE_UPDATE_SUCCESS
+
+export const CLOSE_DELETE_ERROR = 'CLOSE_DELETE_ERROR'
+export type CLOSE_DELETE_ERROR = typeof CLOSE_DELETE_ERROR
+
+export const CLOSE_DELETE_SUCCESS = 'CLOSE_DELETE_SUCCESS'
+export type CLOSE_DELETE_SUCCESS = typeof CLOSE_DELETE_SUCCESS
 
 export interface UpdateProjectActions {
   type: UPDATE_PROJECT_REQUEST | UPDATE_PROJECT_SUCCESS | UPDATE_PROJECT_FAILURE
@@ -48,14 +54,6 @@ export interface DeleteProjectActions {
   type: DELETE_PROJECT_REQUEST | DELETE_PROJECT_SUCCESS | DELETE_PROJECT_FAILURE
   data?: any
   error?: any
-}
-
-export interface CloseErrorAction {
-  type: CLOSE_ERROR
-}
-
-export interface CloseSuccessAction {
-  type: CLOSE_SUCCESS
 }
 
 export const updateProject = (
@@ -162,14 +160,18 @@ export const deleteProject = (username: string, projectName: string) => (
   )
 }
 
-export const closeError = () => (dispatch: Dispatch) => {
-  dispatch({
-    type: CLOSE_ERROR
-  })
-}
+export const closeUpdateProjectError = () => ({
+  type: CLOSE_UPDATE_ERROR
+})
 
-export const closeSuccess = () => (dispatch: Dispatch) => {
-  dispatch({
-    type: CLOSE_SUCCESS
-  })
-}
+export const closeUpdateProjectSuccess = () => ({
+  type: CLOSE_UPDATE_SUCCESS
+})
+
+export const closeDeleteProjectError = () => ({
+  type: CLOSE_DELETE_ERROR
+})
+
+export const closeDeleteProjectSuccess = () => ({
+  type: CLOSE_DELETE_SUCCESS
+})

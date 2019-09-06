@@ -10,24 +10,27 @@ import {
   DELETE_APP_FAILURE,
   CLOSE_DELETE_SUCCESS,
   CLOSE_CREATE_SUCCESS,
-  CLOSE_CREATE_ERROR
+  CLOSE_CREATE_ERROR,
+  CLOSE_DELETE_ERROR
 } from './actions'
 import { AnyAction } from 'redux'
 
 export interface OAuth2StoreState {
   apps: any
   appsFetched: boolean
-  newApp: boolean
-  appDeleted: boolean
-  newAppError: boolean
+  createAppSuccess: boolean
+  deleteAppSuccess: boolean
+  createAppError: boolean
+  deleteAppError: boolean
 }
 
 export const initialState = {
   apps: [],
   appsFetched: false,
-  newApp: false,
-  appDeleted: false,
-  newAppError: false
+  createAppSuccess: false,
+  deleteAppSuccess: false,
+  createAppError: false,
+  deleteAppError: false
 }
 
 const oauth2 = (state = initialState, action: AnyAction) => {
@@ -49,47 +52,54 @@ const oauth2 = (state = initialState, action: AnyAction) => {
     case NEW_APP_REQUEST:
       return {
         ...state,
-        newApp: false,
-        newAppError: false
+        createAppSuccess: false,
+        createAppError: false
       }
     case NEW_APP_SUCCESS:
       return {
         ...state,
-        newApp: true
+        createAppSuccess: true
       }
     case NEW_APP_FAILURE:
       return {
         ...state,
-        newAppError: true
+        createAppError: true
       }
     case DELETE_APP_REQUEST:
       return {
         ...state,
-        appDeleted: false
+        deleteAppSuccess: false,
+        deleteAppError: false
       }
     case DELETE_APP_SUCCESS:
       return {
         ...state,
-        appDeleted: true
+        deleteAppSuccess: true
       }
     case DELETE_APP_FAILURE:
       return {
-        ...state
+        ...state,
+        deleteAppError: true
       }
     case CLOSE_DELETE_SUCCESS:
       return {
         ...state,
-        appDeleted: false
+        deleteAppSuccess: false
+      }
+    case CLOSE_DELETE_ERROR:
+      return {
+        ...state,
+        deleteAppError: false
       }
     case CLOSE_CREATE_SUCCESS:
       return {
         ...state,
-        newApp: false
+        createAppSuccess: false
       }
     case CLOSE_CREATE_ERROR:
       return {
         ...state,
-        newAppError: false
+        createAppError: false
       }
     default:
       return state

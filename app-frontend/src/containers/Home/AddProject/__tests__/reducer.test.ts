@@ -4,8 +4,9 @@ import * as actions from '../actions'
 describe('add project reducer', () => {
   it('should return the initial state', () => {
     expect(reducer(initialState, { type: null })).toEqual({
-      newProjectSuccess: false,
-      newProjectError: false
+      createProjectSuccess: false,
+      createProjectError: false,
+      createProjectErrorMessage: ''
     })
   })
 
@@ -24,17 +25,23 @@ describe('add project reducer', () => {
     }
     expect(reducer(initialState, successAction)).toEqual({
       ...initialState,
-      newProjectSuccess: true
+      createProjectSuccess: true
     })
   })
 
   it('should handle ADD_PROJECT_FAILURE', () => {
     const failureAction = {
-      type: actions.ADD_PROJECT_FAILURE
+      type: actions.ADD_PROJECT_FAILURE,
+      error: {
+        data: {
+          name: ['Project with name already exists']
+        }
+      }
     }
     expect(reducer(initialState, failureAction)).toEqual({
       ...initialState,
-      newProjectError: true
+      createProjectError: true,
+      createProjectErrorMessage: 'Project with name already exists'
     })
   })
 
@@ -44,7 +51,7 @@ describe('add project reducer', () => {
     }
     expect(reducer(initialState, closeErrorAction)).toEqual({
       ...initialState,
-      newProjectError: false
+      createProjectError: false
     })
   })
 })
