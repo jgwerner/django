@@ -3,7 +3,6 @@ import json
 import shutil
 from urllib.parse import quote
 
-from django.urls import reverse
 from django.http import Http404
 from django.conf import settings
 from django.contrib.auth import get_user_model

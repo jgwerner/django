@@ -9,7 +9,6 @@ from django.urls import reverse
 from django.utils.crypto import get_random_string
 from django.http import HttpResponseRedirect
 from django.contrib.sites.shortcuts import get_current_site
-from django.contrib import auth
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import views
@@ -22,6 +21,7 @@ from mozilla_django_oidc.utils import absolutify
 from appdj.canvas.models import CanvasInstance
 from appdj.canvas.lti import get_lti
 from .renderer import CanvasRenderer
+from .tasks import create_course_members
 
 logger = logging.getLogger(__name__)
 Application = get_application_model()
@@ -147,6 +147,10 @@ class Auth13(views.APIView):
     parser_classes = (FormParser,)
 
     def post(self, request, **kwargs):
+        lti = get_lti(request.auth)
+        context_memberships_url = lti.context_memberships_url
+        if context_memberships_url:
+            create_course_members.delay(request.auth)
         return HttpResponseRedirect(settings.LOGIN_REDIRECT_URL)
 
 
@@ -164,7 +168,6 @@ class LTIDeepLinking(views.APIView):
         )
         resp = requests.post(lti.deep_link_return_url, data={'JWT': token})
         resp.raise_for_status()
-        logger.debug(resp)
         return HttpResponseRedirect(settings.LOGIN_REDIRECT_URL)
 
 
@@ -174,6 +177,18 @@ class OIDCAuthenticationRequest(OIDCAuthenticationRequestView):
 
     def __init__(self, *args, **kwargs):
         super(OIDCAuthenticationRequestView).__init__(*args, **kwargs)  # pylint: disable=bad-super-call
+
+    def get(self, request):
+        iss = request.GET.get('iss')
+        login_hint = request.GET.get('login_hint')
+        lti_message_hint = request.GET.get('lti_message_hint')
+        return self._common(request, iss, login_hint, lti_message_hint)
+
+    def post(self, request):
+        iss = request.POST.get('iss')
+        login_hint = request.POST.get('login_hint')
+        lti_message_hint = request.POST.get('lti_message_hint')
+        return self._common(request, iss, login_hint, lti_message_hint)
 
     def _common(self, request, iss, login_hint, lti_message_hint):
         canvas_instance = CanvasInstance.objects.get(instance_guid=iss)
@@ -202,15 +217,3 @@ class OIDCAuthenticationRequest(OIDCAuthenticationRequestView):
         query = urlencode(params)
         redirect_url = f'{canvas_instance.oidc_auth_endpoint}?{query}'
         return HttpResponseRedirect(redirect_url)
-
-    def get(self, request):
-        iss = request.GET.get('iss')
-        login_hint = request.GET.get('login_hint')
-        lti_message_hint = request.GET.get('lti_message_hint')
-        return self._common(request, iss, login_hint, lti_message_hint)
-
-    def post(self, request):
-        iss = request.POST.get('iss')
-        login_hint = request.POST.get('login_hint')
-        lti_message_hint = request.POST.get('lti_message_hint')
-        return self._common(request, iss, login_hint, lti_message_hint)

@@ -1,5 +1,9 @@
 import time
+import uuid
 from abc import ABCMeta, abstractproperty, abstractmethod
+
+import requests
+import jwt
 
 from django.core.validators import ValidationError
 
@@ -100,20 +104,56 @@ class LTI13(LTI):
     def deep_link_return_url(self):
         return self.data['https://purl.imsglobal.org/spec/lti-dl/claim/deep_linking_settings']['deep_link_return_url']
 
+    @property
+    def context_memberships_url(self):
+        if 'https://purl.imsglobal.org/spec/lti-nrps/claim/namesroleservice' in self.data:
+            return self.data['https://purl.imsglobal.org/spec/lti-nrps/claim/namesroleservice']['context_memberships_url']
+
     def prepare_deep_linking_response(self, content_items=None):
         content_items = content_items or []
+        token_info = self.token_info()
+        token_info.update({
+            'https://purl.imsglobal.org/spec/lti/claim/message_type': 'LtiDeepLinkingResponse',
+            'https://purl.imsglobal.org/spec/lti-dl/claim/content_items': content_items,
+            'https://purl.imsglobal.org/spec/lti-dl/claim/data':
+                self.data['https://purl.imsglobal.org/spec/lti-dl/claim/deep_linking_settings']['data'],
+        })
+        return token_info
+
+    def token_info(self):
         return {
             'iss': self.data['iss'],
             'aud': self.data['aud'],
             'exp': int(time.time()) + 600,
             'iat': int(time.time()),
             'nonce': self.data['nonce'],
-            'https://purl.imsglobal.org/spec/lti/claim/message_type': 'LtiDeepLinkingResponse',
+            'jti': uuid.uuid4().hex,
             'https://purl.imsglobal.org/spec/lti/claim/version': '1.3.0',
             'https://purl.imsglobal.org/spec/lti/claim/deployment_id': 'testdeploy',
-            'https://purl.imsglobal.org/spec/lti-dl/claim/content_items': content_items,
-            'https://purl.imsglobal.org/spec/lti-dl/claim/data': self.data['https://purl.imsglobal.org/spec/lti-dl/claim/deep_linking_settings']['data'],
         }
+
+    def get_access_token(self, token_url, key, client_id, scope):
+        token_info = self.token_info()
+        token_info.update({
+            'sub': client_id
+        })
+        print(token_info)
+        token = jwt.encode(
+            token_info,
+            key,
+            algorithm='RS256'
+        )
+
+        params = {
+            'grant_type': 'client_credentials',
+            'client_assertion_type': 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
+            'client_assertion': token,
+            'scope': scope
+        }
+        headers = {'Accept': 'application/json'}
+        resp = requests.post(token_url, data=params, headers=headers)
+        resp.raise_for_status()
+        return resp.json()
 
     def verify(self):
         self._verify_version()
