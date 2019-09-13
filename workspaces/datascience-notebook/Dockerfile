@@ -36,46 +36,51 @@ RUN $CONDA_DIR/envs/python2/bin/python -m ipykernel install && \
 
 USER $NB_UID
 
-# install jupyter-lti extension
-RUN jupyter labextension install $JUPYTER_LTI_VERSION
-
 # Install Tensorflow
 RUN conda install --quiet --yes \
     'tensorflow=1.13*' \
     'keras=2.2*' && \
-    conda build purge-all && \
-    fix-permissions $CONDA_DIR && \
-    fix-permissions /home/$NB_USER
+    conda build purge-all
 
 # Xeus Cling
 RUN conda install -c conda-forge \
     xeus-cling && \
-    conda build purge-all && \
-    fix-permissions $CONDA_DIR && \
-    fix-permissions /home/$NB_USER
+    conda build purge-all
 
 # Additional pip packages
-RUN pip install \
+RUN pip install -v \
     bqplot \
     colour \
     cvxpy \
     ipympl \
     ipyvolume \
-    nbgrader==0.6.0 \
-    plotly==2.7 \
-    voila && \
-    fix-permissions $CONDA_DIR && \
-    fix-permissions /home/$NB_USER
+    ipywidgets==7.5.* \
+    jupyter_nbextensions_configurator \
+    plotly==2.7
 
-# copy/install as root, then fix permissions for $NB_USER
+# install nbextension for classic notebooks with conda
+# https://jupyter-contrib-nbextensions.readthedocs.io/en/latest/install.html#conda
+RUN conda install -c conda-forge jupyter_contrib_nbextensions -y
+RUN mkdir -p $CONDA_DIR/share/jupyter/nbextensions/illumidesk_lti/
+    
+# copy to dir used by --sys-prefix flag, enable extension
+ADD illumidesk_lti/. $CONDA_DIR/share/jupyter/nbextensions/illumidesk_lti/
+RUN jupyter nbextension enable illumidesk_lti/illumidesk_lti
+
+# install nbgrader with conda
+RUN conda install -c conda-forge nbgrader
+
 USER root
 
+# jupyter and nbgrader config
 COPY jupyter_notebook_config.py /etc/jupyter/
 COPY nbgrader_config.py /etc/jupyter/
+
+# not necessary, but removes error in formgrader tab
 RUN mkdir -p /srv/nbgrader/exchange
-RUN fix-permissions /srv/nbgrader/exchange/
-RUN fix-permissions /etc/jupyter/
-RUN fix-permissions $CONDA_DIR && \
+RUN fix-permissions /srv/nbgrader/exchange/ && \
+    fix-permissions /etc/jupyter/ && \
+    fix-permissions $CONDA_DIR && \
     fix-permissions /home/$NB_USER
 
 EXPOSE 8080

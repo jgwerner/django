@@ -16,6 +16,7 @@ OWNER?=$(ACCOUNT)
 APP-BACKEND_IMAGE:=app-backend
 ALL_PROXY_IMAGES:=nginx \
         traefik
+ALL_WORKSPACE_IMAGES:=datascience-notebook
 
 help:
 # http://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
@@ -52,3 +53,14 @@ build-all-backends: $(foreach I,$(APP-BACKEND_IMAGE), build-app-backend/$(I) ) #
 push-app-backend/%: ## Push an image to the registry
 	docker push $(AWS_ACCOUNT).dkr.ecr.$(AWS_REGION).amazonaws.com/$(OWNER)/$(notdir $@):$(TAG)
 push-all-backends: $(foreach I,$(APP-BACKEND_IMAGE), push-app-backend/$(I) ) ## Build app-backend images
+
+build-workspace/%: DARGS?=
+build-workspace/%: ## Build and tag a reverse-proxy image
+	docker build $(DARGS) --rm --force-rm -t $(AWS_ACCOUNT).dkr.ecr.$(AWS_REGION).amazonaws.com/$(OWNER)/$(notdir $@):$(TAG) ./workspaces/$(notdir $@)
+
+build-all-workspaces: $(foreach I,$(ALL_WORKSPACE_IMAGES), build-workspace/$(I) ) ## Build all reverse-proxy images
+
+push-workspace/%: ## Push a reverse-proxy image to the registry
+	docker push $(AWS_ACCOUNT).dkr.ecr.$(AWS_REGION).amazonaws.com/$(OWNER)/$(notdir $@):$(TAG)
+
+push-all-workspaces: $(foreach I,$(ALL_WORKSPACE_IMAGES), push-workspace/$(I) ) ## Push all reverse-proxy images

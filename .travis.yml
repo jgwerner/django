@@ -37,9 +37,9 @@ matrix:
       node_js:
         - lts/*
       before_install:
-        - bash jupyter-lti/scripts/before_install.sh
+        - bash jupyter-lti/jupyterlab/scripts/before_install.sh
       install:
-        - bash jupyter-lti/scripts/install.sh
+        - bash jupyter-lti/jupyterlab/scripts/install.sh
       deploy:
         provider: npm
         email: $NPM_EMAIL

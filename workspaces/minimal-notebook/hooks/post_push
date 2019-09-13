@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# Tag the latest build with the short git sha. Push the tag in addition
-# to the "latest" and "travis bild" tags already pushed.
-GIT_SHA_TAG=${SOURCE_COMMIT:0:12}
-docker tag $OWNER/$DOCKER_JUPYTER_IMAGE_NAME:$GIT_SHA_TAG
-docker push $OWNER/$DOCKER_JUPYTER_IMAGE_NAME:$GIT_SHA_TAG

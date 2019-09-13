@@ -2,12 +2,22 @@
 
 set -e
 
+copy_jupyter_lti_files () {
+  mkdir workspaces/datascience-notebook/illumidesk_lti
+  cp -r jupyter-lti/jupyterclassic/. workspaces/datascience-notebook/illumidesk_lti
+}
+
 create_env_file () {
   cp ./app-backend/env.compose ./app-backend/.env
 }
 
 create_docker_network () {
   docker network create $DOCKER_NETWORK
+}
+
+create_rsa_keys () {
+  openssl genrsa -out app-backend/rsa_private.pem 2048
+  openssl rsa -in app-backend/rsa_private.pem -outform PEM -pubout -out app-backend/rsa_public.pem
 }
 
 docker_compose_build_dev () {
@@ -38,10 +48,14 @@ install_terraform () {
 }
 
 main () {
+  echo "Copy Jupyter nbextension files..."
+  copy_jupyter_lti_files
   echo "Create .env file.."
   create_env_file
   echo "Creating docker network ${DOCKER_NETWORK}"
   create_docker_network
+  echo "Create rsa keys ..."
+  create_rsa_keys
   echo "Build images with docker-compose ..."
   docker_compose_build_dev
   make_build_proxies

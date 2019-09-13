@@ -106,7 +106,7 @@ def email_to_username(email: str) -> str:
 
 def lti_ready_url(scheme, workspace, path, assignment_id=None):
     endpoint = get_server_url(str(workspace.project.pk), str(workspace.pk),
-                              scheme, '/endpoint/proxy/lab/tree/', namespace=workspace.namespace_name)
+                              scheme, '/endpoint/proxy/tree/', namespace=workspace.namespace_name)
     params = {'token': workspace.access_token}
     if not Assignment.objects.filter(teacher_project=workspace.project, external_id=assignment_id, path=path).exists():
         path = str(Path(path).relative_to('release')) if path.startswith('release') else path

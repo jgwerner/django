@@ -15,22 +15,30 @@ tag_and_push () {
       make push-all-proxies;
       make build-all-backends;
       make push-all-backends;
+      make build-all-workspaces;
+      make push-all-workspaces;
       export TAG="${GITHUB_DEV_BRANCH}"-latest
       make build-all-proxies;
       make push-all-proxies;
       make build-all-backends;
       make push-all-backends;
+      make build-all-workspaces;
+      make push-all-workspaces;
     elif [ "${TRAVIS_BRANCH}" == "${GITHUB_PROD_BRANCH}" ]; then
       export TAG="${GITHUB_PROD_BRANCH}"-"${TRAVIS_BUILD_NUMBER}"
       make build-all-proxies;
       make push-all-proxies;
       make build-all-backends;
       make push-all-backends;
+      make build-all-workspaces;
+      make push-all-workspaces;
       export TAG="${GITHUB_PROD_BRANCH}"-latest
       make build-all-proxies;
       make push-all-proxies;
       make build-all-backends;
       make push-all-backends;
+      make build-all-workspaces;
+      make push-all-workspaces;
     fi
   fi
 }

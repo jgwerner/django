@@ -14,8 +14,8 @@ RUN apk update \
 
 RUN pip install virtualenv
 
-RUN addgroup -g 1000 -S app && \
-    adduser -u 1000 -S app -G app
+RUN addgroup -g 100 -S users && \
+    adduser -u 1000 -S app -G users
 
 RUN mkdir -p /workspaces/
 RUN mkdir -p /srv/app/staticfiles
