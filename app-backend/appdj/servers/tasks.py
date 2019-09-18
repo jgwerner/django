@@ -1,12 +1,13 @@
-import logging
 import time
 
 import boto3
 from django.contrib.auth import get_user_model
 from celery import shared_task
+from celery.utils.log import get_task_logger
 
 from appdj.canvas.lti import get_lti
 
+from appdj.projects.models import Collaborator
 from appdj.projects.utils import perform_project_copy
 from appdj.assignments.models import Assignment, StudentProjectThrough, get_assignment_or_module
 from .models import Server, ServerRunStatistics
@@ -14,7 +15,7 @@ from .spawners import get_spawner_class
 from .utils import create_server, server_action, email_to_username
 
 
-logger = logging.getLogger(__name__)
+logger = get_task_logger(__name__)
 
 Spawner = get_spawner_class()
 User = get_user_model()
@@ -55,6 +56,10 @@ def lti_project(*, user, project_pk, course_id, path, assignment_id):
     """
     Gets lti users project
     """
+    if path.startswith('autograded'):
+        col = Collaborator.objects.filter(project_id=project_pk, user=user, owner=True).first()
+        if col:
+            return col.project, True
     obj, is_teacher = get_assignment_or_module(
         project_pk=project_pk,
         course_id=course_id,
