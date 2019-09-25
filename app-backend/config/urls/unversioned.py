@@ -92,7 +92,7 @@ urlpatterns = [
         servers_views.VerifyJSONWebTokenServer.as_view(), name='server-api-key-verify'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/auth/$',
         servers_views.check_token, name='server-auth'),
-    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/endpoint/proxy/lab/tree/(?P<path>.*?/?\w+(?:\.\w+)+)$',
+    url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/endpoint/proxy/notebooks/(?P<path>.*?/?\w+(?:\.\w+)+)$',
         servers_views.lti_redirect, name='lti-redirect'),
     url(r'^(?P<namespace>[\w-]+)/projects/(?P<project_project>[\w-]+)/servers/(?P<server>[^/.]+)/(?P<path>.*?/?\w+(?:\.\w+)+)$',
         servers_views.lti_file_handler, name='lti-file'),
