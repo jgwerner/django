@@ -6,14 +6,12 @@ debug = false
 logLevel = "ERROR"
 defaultEntryPoints = ["http", "https"]
 
-[tls.stores]
-    [tls.stores.default]
-
 [entryPoints]
     [entryPoints.http]
     address = ":80"
     [entryPoints.https]
     address = ":443"
+        [entryPoints.https.tls]
 
 # use default stdout. this allows for using any log driver to pipe logs
 # to a third party service.
