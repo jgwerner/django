@@ -253,7 +253,7 @@ class AssignmentTest(TestCase):
         )
         obj, is_teacher = get_assignment_or_module(
             project_pk=str(self.teacher_col.project.pk),
-            course_id='123',
+            course_id='1234',
             user=self.teacher_col.user,
             path=str(self.path),
             assignment_id=''

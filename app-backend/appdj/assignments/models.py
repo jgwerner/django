@@ -237,24 +237,42 @@ class Module(ModuleAbstract):
 
 
 def get_assignment_or_module(*, project_pk, course_id, user, path, assignment_id):
-    cls = Assignment if assignment_id else Module
-    qs = cls.objects.filter(
+    if assignment_id:
+        assignment = Assignment.objects.filter(course_id=course_id, external_id=assignment_id).first()
+        if assignment:
+            teacher = assignment.teacher_project.collaborator_set.filter(owner=True).first()
+            return assignment, teacher.user == user
+    filters = dict(
         teacher_project_id=project_pk,
         teacher_project__is_active=True,
         course_id=course_id,
         path=path
     )
-    if assignment_id:
-        qs = qs.filter(external_id=assignment_id)
-    teacher_obj = qs.filter(
+    teacher_filters = dict(
         teacher_project__collaborator__user=user,
         teacher_project__collaborator__owner=True,
-    ).first()
-    if teacher_obj is not None:
-        return teacher_obj, True
-    student_obj = qs.filter(
+    )
+    student_filters = dict(
         students_projects__is_active=True,
         students_projects__collaborator__user=user,
         students_projects__collaborator__owner=True,
-    ).first()
-    return student_obj, False
+    )
+    qs = Assignment.objects.filter(**filters)
+    teacher_qs = qs.filter(**teacher_filters)
+    if teacher_qs.exists():
+        obj = teacher_qs.first()
+        return obj, True
+    student_qs = qs.filter(**student_filters)
+    if student_qs.exists():
+        obj = student_qs.first()
+        return obj, False
+    qs = Module.objects.filter(**filters)
+    teacher_qs = qs.filter(**teacher_filters)
+    if teacher_qs.exists():
+        obj = teacher_qs.first()
+        return obj, True
+    student_qs = qs.filter(**student_filters)
+    if student_qs.exists():
+        obj = student_qs.first()
+        return obj, False
+    return None, False

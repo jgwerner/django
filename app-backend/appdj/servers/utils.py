@@ -110,6 +110,15 @@ def lti_ready_url(scheme, workspace, path, assignment_id=None):
     params = {'token': workspace.access_token}
     if not Assignment.objects.filter(teacher_project=workspace.project, external_id=assignment_id, path=path).exists():
         path = str(Path(path).relative_to('release')) if path.startswith('release') else path
+    if path.startswith('autograded'):
+        ppath = Path(path)
+        assignment_path = str('release' / ppath.relative_to(ppath.parents[1]))
+        assignment = Assignment.objects.filter(
+            students_projects=workspace.project,
+            path=assignment_path
+        )
+        if assignment.exists():
+            path = str(ppath.relative_to(ppath.parents[1]))
     if assignment_id:
         params['assignment_id'] = assignment_id
     query = urlencode(params)

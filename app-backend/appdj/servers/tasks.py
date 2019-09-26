@@ -1,4 +1,5 @@
 import time
+from pathlib import Path
 
 import boto3
 from django.contrib.auth import get_user_model
@@ -7,7 +8,6 @@ from celery.utils.log import get_task_logger
 
 from appdj.canvas.lti import get_lti
 
-from appdj.projects.models import Collaborator
 from appdj.projects.utils import perform_project_copy
 from appdj.assignments.models import Assignment, StudentProjectThrough, get_assignment_or_module
 from .models import Server, ServerRunStatistics
@@ -40,6 +40,9 @@ def lti_user(email, canvas_user_id):
     """
     Gets lti user based on lti email
     """
+    user = User.objects.filter(profile__config__canvas_user_id=canvas_user_id).first()
+    if user:
+        return user
     user, _ = User.objects.get_or_create(
         email=email,
         defaults=dict(
@@ -57,9 +60,8 @@ def lti_project(*, user, project_pk, course_id, path, assignment_id):
     Gets lti users project
     """
     if path.startswith('autograded'):
-        col = Collaborator.objects.filter(project_id=project_pk, user=user, owner=True).first()
-        if col:
-            return col.project, True
+        ppath = Path(path)
+        path = str('release' / ppath.relative_to(ppath.parents[1]))
     obj, is_teacher = get_assignment_or_module(
         project_pk=project_pk,
         course_id=course_id,
@@ -70,7 +72,7 @@ def lti_project(*, user, project_pk, course_id, path, assignment_id):
     if is_teacher:
         project = obj.teacher_project
     else:
-        if assignment_id:
+        if isinstance(obj, Assignment):
             project = user.projects.filter(
                 student_assignments=obj,
                 collaborator__owner=True
