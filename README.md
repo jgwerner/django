@@ -161,14 +161,32 @@ Or, just print all of them with `printenv`.
 This project enforces the [Contributor Covenant](./CODE_OF_CONDUCT.md). Be kind
 and build a nice open source community with us.
 
-### Commit Messages
+### Commit Messages and Changelogs
 
-This projet adhere's to the [Conventional Commits](https://conventionalcommits.org) standard.
+This projet adhere's to the [Conventional Commits](https://conventionalcommits.org) standard and uses [`git-chglog`](https://github.com/git-chglog/git-chglog) to udpate the [changelog](./CHANGELOG.md).
 
-Changelogs are automated with [Standard Version](https://github.com/conventional-changelog/standard-version). Use the release command to
-update the release and the changelog:
+When stashing and merging to the `master` branch, use the following format to provide consistent updates to the `CHANGELOG.md` file:
 
-    npm run release
+    <Commit Type>: <Merge Description>
+
+- `Merge Description` should initiate with a capital letter, as it provides the changelog with a standard sentence structure.
+
+- `Commit Types` are listed below:
+
+| Commit Type | Commit Format |
+| --- | --- |
+| Chores | `chore` |
+| Features | `feat` |
+| Fixes | `fix` |
+| Performance | `perf` |
+| Refactoring | `refactor` |
+
+Examples:
+
+- Commit a new feature: `feat: Publish static notebooks with live widgets`
+- Commit a bug fix: `fix: Allow students to open submitted assignments from grades section`
+
+The `git-chglog` command will append the GitHub issue number related to the commit message.
 
 ## Copyright and license
 

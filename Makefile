@@ -34,6 +34,14 @@ help:
 	@echo
 	@grep -E '^[a-zA-Z0-9_%/-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
+# Changelog: https://github.com/git-chglog/git-chglog
+changelog: ## Update CHANGELOG.md 
+	git-chglog -o CHANGELOG.md --next-tag `semtag final -s minor -o`
+
+release: ## Create a new minor release
+	semtag final -s minor
+
+# Build and push proxies
 build-proxy/%: DARGS?=
 build-proxy/%: ## Build and tag a reverse-proxy image
 	docker build $(DARGS) --rm --force-rm -t $(AWS_ACCOUNT).dkr.ecr.$(AWS_REGION).amazonaws.com/$(OWNER)/$(notdir $@):$(TAG) ./reverse-proxies/$(notdir $@)
@@ -45,6 +53,7 @@ push-proxy/%: ## Push a reverse-proxy image to the registry
 
 push-all-proxies: $(foreach I,$(ALL_PROXY_IMAGES), push-proxy/$(I) ) ## Push all reverse-proxy images
 
+# Build and push app-backend
 build-app-backend/%: DARGS?=
 build-app-backend/%: ## Build and tag app-backend
 	docker build $(DARGS) --rm --force-rm -t $(AWS_ACCOUNT).dkr.ecr.$(AWS_REGION).amazonaws.com/$(OWNER)/$(notdir $@):$(TAG) ./$(notdir $@)
@@ -54,6 +63,7 @@ push-app-backend/%: ## Push an image to the registry
 	docker push $(AWS_ACCOUNT).dkr.ecr.$(AWS_REGION).amazonaws.com/$(OWNER)/$(notdir $@):$(TAG)
 push-all-backends: $(foreach I,$(APP-BACKEND_IMAGE), push-app-backend/$(I) ) ## Build app-backend images
 
+# Build and push workspaces
 build-workspace/%: DARGS?=
 build-workspace/%: ## Build and tag a reverse-proxy image
 	docker build $(DARGS) --rm --force-rm -t $(AWS_ACCOUNT).dkr.ecr.$(AWS_REGION).amazonaws.com/$(OWNER)/$(notdir $@):$(TAG) ./workspaces/$(notdir $@)
