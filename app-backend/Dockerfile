@@ -14,8 +14,8 @@ RUN apk update \
 
 RUN pip install virtualenv
 
-RUN addgroup -g 100 -S users && \
-    adduser -u 1000 -S app -G users
+RUN addgroup -g 1000 -S app && \
+    adduser -u 1000 -S app -G app
 
 RUN mkdir -p /workspaces/
 RUN mkdir -p /srv/app/staticfiles
@@ -32,7 +32,7 @@ RUN . env/bin/activate; pip install --upgrade setuptools pip wheel
 COPY --chown=1000:1000 requirements/ /srv/app/requirements
 
 # install requirements to run app
-RUN . env/bin/activate; pip install -r app/requirements/base.txt
+RUN . env/bin/activate; pip install -r app/requirements/dev.txt
 
 COPY --chown=1000:1000 . /srv/app
 

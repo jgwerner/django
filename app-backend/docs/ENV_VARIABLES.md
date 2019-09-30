@@ -17,7 +17,8 @@ The IllumiDesk `app-backend` application interacts with various internal applica
 | DEBUG | <boolean> | Enables the app's debug mode | `True` |
 | DEFAULT_FROM_EMAIL | <email> | Default email address for sending app-backend messages | `no-reply@illumidesk.com` |
 | DJANGO_SETTINGS_MODULE | <string> | Module name of Django application settings file | `config.settings.dev` |
-| DOCKER_NET | <string> | Used to allow workspace containers with docker-compose, used only to run tests. | `illumidesk` |
+| DOCKER_HOST | <string> | Used to allow workspace containers with the docker spawner client, used for local development and to run tests. | `12.0.0.1` |
+| DOCKER_NET | <string> | Docker network name used with docker spawner, used for local development and to run tests. | `illumidesk-net` |
 | ECS_CLUSTER | <string> | Name of Elastic Container Service (ECS) Cluster | `default` |
 | EMAIL_HOST | <string> | Host address for email client | `localhost` |
 | EMAIL_PORT | <integer> | Port number for email client | `587` |

@@ -412,6 +412,7 @@ MEDIA_URL = '/media/'
 SILENCED_SYSTEM_CHECKS = ["auth.W004"]
 
 SPAWNER = 'appdj.servers.spawners.docker.DockerSpawner'
+DOCKER_NET = os.getenv('DOCKER_NET', 'illumidesk-net')
 JUPYTER_IMAGE = os.environ.get('JUPYTER_IMAGE', 'illumidesk/datascience-notebook')
 ECS_CLUSTER = os.environ.get('ECS_CLUSTER', 'default')
 REDIRECT_IS_HTTPS = True

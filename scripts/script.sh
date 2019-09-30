@@ -2,12 +2,15 @@
 
 set -e
 
+change_dir () {
+  cd app-backend
+}
+
 # pylint w/ django plugin is run for reference lint score/messages.
 run_linter () {
-  echo "Running Pylint with Django plugin ..."
   docker-compose \
-    -f ./app-backend/$DOCKER_COMPOSE_TEST \
     run \
+    -e DJANGO_SETTINGS_MODULE=config.settings.test \
     api ash -c "/srv/env/bin/pylint \
       --load-plugins pylint_django \
       appdj.base \
@@ -25,15 +28,16 @@ run_linter () {
 
 run_unit_tests () {
   docker-compose \
-  -f app-backend/$DOCKER_COMPOSE_TEST \
-  run --rm -e DJANGO_SETTINGS_MODULE=config.settings.test \
-  beat /srv/env/bin/python manage.py test
+    run --rm -e DJANGO_SETTINGS_MODULE=config.settings.test \
+    beat /srv/env/bin/python manage.py test
 }
 
 main () {
+    echo "Change into app-backend directory ..."
+    change_dir
     # linting errors shouldn't make travis fail
     set +e
-    echo "Running linter..."
+    echo "Running Pylint with Django plugin ..."
     run_linter
     set -e
     echo "Running unit tests..."
