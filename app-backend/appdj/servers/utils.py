@@ -96,6 +96,8 @@ def email_to_username(email: str) -> str:
     username = re.sub(r'\([^)]*\)', '', username)
     # remove special characters
     username = re.sub(r'[^\w-]+', '', username)
+    # convert to lower case
+    username = username.lower()
     user = User.objects.filter(username=username).only('username').first()
     if user is not None:
         ints_in_username = [int(s) for s in re.findall(r'\d+', user.username)]

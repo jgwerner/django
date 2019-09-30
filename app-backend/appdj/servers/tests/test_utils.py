@@ -53,6 +53,12 @@ class TestUtils(TestCase):
         username = email_to_username(email)
         self.assertEqual(expected, username)
 
+    def test_email_with_upper_and_lower_case_to_username(self):
+        expected = 'johntest'
+        email = "JoHnTeSt@example.com"
+        username = email_to_username(email)
+        self.assertEqual(expected, username)
+
     def test_email_with_everything_to_username(self):
         expected = 'johntest_test-test'
         email = "(comment1)!#$%&'*/=?^`{{|}}~john.test_test-test!#$%&'*/=?^`{{|}}~(comment2)+tag123@example.com"
