@@ -75,7 +75,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.backend=nginx"
-      - "traefik.nginx.frontend.rule=PathPrefix:/media"
+      - "traefik.nginx.frontend.rule=PathPrefix:/media,/static"
 
 volumes:
   postgres_data:
