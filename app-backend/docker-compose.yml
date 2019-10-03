@@ -22,7 +22,7 @@ services:
       - "traefik.frontend.rule=PathPrefix:/"
   channels:
     <<: *django
-    command: /srv/env/bin/daphne -p 8080 -b 0.0.0.0 -v 2 config.asgi:channel_layer
+    command: /srv/env/bin/daphne -p 8080 -b 0.0.0.0 -v 2 config.asgi:application
     entrypoint: ''
     ports:
       - "8080"
@@ -34,7 +34,7 @@ services:
       - "traefik.frontend.rule=Path:/sns/{server}/,/{version}/{namespace}/projects/{project}/servers/{server}/status/"
   channel_worker:
     <<: *django
-    command: /srv/env/bin/python manage.py runworker -v 2
+    command: /srv/env/bin/python manage.py runworker -v 2 statuses
     entrypoint: ''
   celery:
     <<: *django
