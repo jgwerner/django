@@ -26,7 +26,9 @@ RUN conda create --quiet --yes -p $CONDA_DIR/envs/python2 python=2.7 \
 # Install Tensorflow
 RUN conda install --quiet --yes \
     'tensorflow=1.13*' \
-    'keras=2.2*' && \
+    'keras=2.2*' \
+    && \
+    conda clean --all -f -y && \
     fix-permissions $CONDA_DIR && \
     fix-permissions /home/$NB_USER
 
@@ -41,13 +43,21 @@ RUN conda install -c conda-forge -y \
     jupyter_nbextensions_configurator \
     plotly==2.7 \
     pythreejs \
-    nbgrader
+    nbgrader \
+    && \
+    conda clean --all -f -y && \
+    fix-permissions $CONDA_DIR && \
+    fix-permissions /home/$NB_USER
 
 # install nbextension for classic notebooks with conda
 # https://jupyter-contrib-nbextensions.readthedocs.io/en/latest/install.html#conda
 RUN conda install -c conda-forge \
     jupyter_contrib_nbextensions \
-    widgetsnbextension -y
+    widgetsnbextension -y \
+    && \
+    conda clean --all -f -y && \
+    fix-permissions $CONDA_DIR && \
+    fix-permissions /home/$NB_USER
 
 # install widgets and illumidesk lti extensions for jupyterlab
 RUN jupyter labextension install @jupyter-widgets/jupyterlab-manager && \
