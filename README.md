@@ -190,7 +190,33 @@ Examples:
 
 **Updating the Changelog Format**
 
-Refer to the official `standard-version` docs to update the `CHANGELOG.md` template with additional options.
+Refer to the official [`standard-version`](https://github.com/conventional-changelog/standard-version) docs to update the `CHANGELOG.md` template with additional options.
+
+**Releases**
+
+IllumiDesk uses [`semantic versioning`](https://semver.org) with this monorepo. To cut a release, use the commands available with the `npm run release` command. (Make sure you run `npm install` to install required dependencies).
+
+Merges that conclude a [milestone](https://github.com/IllumiDesk/illumidesk/milestones) `SHOULD` update and tag the release. Versions are managed as major, minor, or patch releases. Generally speaking (text below is from the semantic versioning docs):
+
+```
+- MAJOR version when you make incompatible API changes,
+- MINOR version when you add functionality in a backwards compatible manner, and
+- PATCH version when you make backwards compatible bug fixes.
+
+Additional labels for pre-release and build metadata are available as extensions to the MAJOR.MINOR.PATCH format.
+```
+
+Examples:
+
+Automatically cut a new minor release:
+
+    npm run release -- --release-as minor
+
+Cut a new release with a specific tag:
+
+    npm run release -- --release-as 1.1.0
+
+Refer to the [`standard-version`](https://github.com/conventional-changelog/standard-version) for additional release command options.
 
 ## Copyright and license
 
