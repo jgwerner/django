@@ -4,9 +4,12 @@ import sqlite3
 import logging
 from pathlib import Path
 
+import requests
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 from django.contrib.sites.models import Site
+from django.contrib.postgres.fields import JSONField
 from django.template.loader import render_to_string
 from django.urls import reverse
 from requests_oauthlib import OAuth1Session
@@ -15,6 +18,7 @@ from nbgrader.coursedir import CourseDirectory
 from traitlets.config import Config
 
 from appdj.base.models import TBSQuerySet
+from appdj.canvas.utils import get_canvas_access_token
 from appdj.projects.models import Project
 
 logger = logging.getLogger(__name__)
@@ -29,7 +33,7 @@ class StudentProjectThrough(models.Model):
 class ModuleAbstract(models.Model):
     NATURAL_KEY = 'external_id'
 
-    external_id = models.TextField()
+    external_id = models.TextField(blank=True)
     path = models.TextField()
     course_id = models.TextField(blank=True)
 
@@ -61,6 +65,7 @@ class Assignment(ModuleAbstract):
         related_name='assignments',
         on_delete=models.SET_NULL, null=True
     )
+    endpoint = JSONField(default=dict, null=True)
 
     def students_path(self, student_project):
         """
@@ -101,6 +106,8 @@ class Assignment(ModuleAbstract):
         """
         States if assignment file was copied to student directory
         """
+        if student_project == self.teacher_project:
+            return True
         return self.students_path(student_project).exists()
 
     def submission_path(self, student_project):
@@ -169,19 +176,14 @@ class Assignment(ModuleAbstract):
         logger.info("Submit assignment file from %s to %s", source, destination)
         shutil.copy(source, destination)
 
-    def send(self, student_project):
-        """
-        Send assiignment to canvas
-        """
+    def _prepare_send(self, student_project):
         self.copy_submitted_file(student_project)
         if self.should_autograde:
             self.autograde(student_project)
-            grade = self.get_grade(student_project)
+            return self.get_grade(student_project)
+
+    def _tool_url_path(self, student_project):
         teacher_workspace = self.teacher_project.servers.get(is_active=True, config__type='jupyter')
-        oauth_session = OAuth1Session(
-            self.oauth_app.application.client_id,
-            client_secret=self.oauth_app.application.client_secret
-        )
         scheme = 'https' if settings.HTTPS else 'http'
         namespace = self.teacher_project.namespace_name
         if self.is_autograded(student_project):
@@ -196,14 +198,29 @@ class Assignment(ModuleAbstract):
             'path': path.relative_to(self.teacher_project.resource_root())
         })
         domain = Site.objects.get_current().domain
-        url = f"{scheme}://{domain}{url_path}"
-        logger.debug(f"[Send assignment] Server url: {url}")
+        return f"{scheme}://{domain}{url_path}"
+
+    def send(self, student_project):
+        if self.endpoint:
+            return self.sendLTI13(student_project)
+        return self.sendLTI11(student_project)
+
+    def sendLTI11(self, student_project):
+        """
+        Send assiignment to canvas
+        """
+        grade = self._prepare_send(student_project)
+        oauth_session = OAuth1Session(
+            self.oauth_app.application.client_id,
+            client_secret=self.oauth_app.application.client_secret
+        )
         source_did = StudentProjectThrough.objects.get(assignment=self, project=student_project).source_did
         context = {
             'msg_id': uuid.uuid4().hex,
             'source_did': source_did,
-            'url': url,
+            'url': self._tool_url_path(student_project),
         }
+        logger.debug(f"[Send assignment] Server url: {context['url']}")
         if self.should_autograde:
             context.update({
                 'grade': grade
@@ -212,6 +229,33 @@ class Assignment(ModuleAbstract):
         response = oauth_session.post(self.outcome_url, data=xml,
                                       headers={'Content-Type': 'application/xml'})
         response.raise_for_status()
+
+    def sendLTI13(self, student_project):
+        """
+        Send assiignment to canvas
+        """
+        grade = self._prepare_send(student_project)
+        scope = ' '.join(self.endpoint['scope'])
+        token = get_canvas_access_token(self.lms_instance, self.oauth_app.application.client_id, scope)
+        headers = {
+            'Authorization': '{token_type} {access_token}'.format(**token),
+            'Content-Type': 'application/vnd.ims.lis.v1.score+json'
+        }
+        resp = requests.get(self.endpoint['lineitem'], headers=headers)
+        resp.raise_for_status()
+        line_item = resp.json()
+        data = {
+            'timestamp': timezone.now().isoformat(),
+            'userId': student_project.owner.profile.config['lti13_user_id'],
+            'scoreGiven': grade,
+            'scoreMaximum': line_item['scoreMaximum'],
+            'gradingProgress': 'FullyGraded',
+            'activityProgress': 'Completed',
+            'comment': '',
+        }
+        url = self.endpoint['lineitem'] + '/scores'
+        resp = requests.post(url, json=data, headers=headers)
+        resp.raise_for_status()
 
 
 class Module(ModuleAbstract):
@@ -252,27 +296,12 @@ def get_assignment_or_module(*, project_pk, course_id, user, path, assignment_id
         teacher_project__collaborator__user=user,
         teacher_project__collaborator__owner=True,
     )
-    student_filters = dict(
-        students_projects__is_active=True,
-        students_projects__collaborator__user=user,
-        students_projects__collaborator__owner=True,
-    )
     qs = Assignment.objects.filter(**filters)
     teacher_qs = qs.filter(**teacher_filters)
-    if teacher_qs.exists():
-        obj = teacher_qs.first()
-        return obj, True
-    student_qs = qs.filter(**student_filters)
-    if student_qs.exists():
-        obj = student_qs.first()
-        return obj, False
+    if qs.exists():
+        return qs.first(), teacher_qs.exists()
     qs = Module.objects.filter(**filters)
     teacher_qs = qs.filter(**teacher_filters)
-    if teacher_qs.exists():
-        obj = teacher_qs.first()
-        return obj, True
-    student_qs = qs.filter(**student_filters)
-    if student_qs.exists():
-        obj = student_qs.first()
-        return obj, False
+    if qs.exists():
+        return qs.first(), teacher_qs.exists()
     return None, False

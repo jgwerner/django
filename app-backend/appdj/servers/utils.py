@@ -14,8 +14,8 @@ from guardian.shortcuts import assign_perm
 
 from appdj.assignments.models import Assignment
 from appdj.projects.models import Project
-from .models import ServerRunStatistics, Server, ServerSize
 from appdj.jwt_auth.utils import create_server_jwt
+from .models import ServerRunStatistics, Server, ServerSize
 
 User = get_user_model()
 
@@ -24,7 +24,6 @@ def server_action(action: str, server: Union[str, Server]) -> bool:
     if isinstance(server, str):
         server = Server.objects.tbs_filter_str(server).get()
     spawner = server.spawner
-    print('spawner to execute the action:', spawner)
     getattr(spawner, action)()
 
 
@@ -101,7 +100,7 @@ def email_to_username(email: str) -> str:
     user = User.objects.filter(username=username).only('username').first()
     if user is not None:
         ints_in_username = [int(s) for s in re.findall(r'\d+', user.username)]
-        last = ints_in_username[-1]+1 if ints_in_username else 1
+        last = ints_in_username[-1] + 1 if ints_in_username else 1
         username = f'{username}{last}'
     return username
 
@@ -110,7 +109,7 @@ def lti_ready_url(scheme, workspace, path, assignment_id=None):
     endpoint = get_server_url(str(workspace.project.pk), str(workspace.pk),
                               scheme, '/endpoint/proxy/notebooks/', namespace=workspace.namespace_name)
     params = {'token': workspace.access_token}
-    if not Assignment.objects.filter(teacher_project=workspace.project, external_id=assignment_id, path=path).exists():
+    if not Assignment.objects.filter(teacher_project=workspace.project, path=path).exists():
         path = str(Path(path).relative_to('release')) if path.startswith('release') else path
     if path.startswith('autograded'):
         ppath = Path(path)

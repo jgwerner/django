@@ -263,6 +263,7 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
     ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
+        'appdj.canvas.authorization.InUrlJWTAuth',
         'appdj.canvas.authorization.JSONWebTokenAuthenticationForm',
         'appdj.canvas.authorization.CanvasAuth',
         'rest_framework.authentication.TokenAuthentication',

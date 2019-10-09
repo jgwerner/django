@@ -11,7 +11,7 @@ from appdj.projects import views as project_views
 from appdj.servers import views as servers_views
 from appdj.users import views as user_views
 from appdj.teams import views as team_views
-from appdj.canvas.views import CanvasXML, Auth, Auth13, LTIDeepLinking
+from appdj.canvas.views import CanvasXML, Auth, Auth13, LTIDeepLinking, LTI13JSON
 from appdj.oauth2.views import ApplicationViewSet
 
 router = routers.SimpleRouter()
@@ -50,6 +50,7 @@ router.register('oauth/applications', ApplicationViewSet)
 urlpatterns = [
     url(r'^lti.xml$', CanvasXML.as_view(), name='canvas-xml'),
     url(r'^lti/$', Auth.as_view(), name='lti-auth'),
+    url(r'^lti13.json$', LTI13JSON.as_view(), name='lti13-json'),
     url(r'^lti13/$', Auth13.as_view(), name='lti13-auth'),
     url(r'^lti13/deep/$', LTIDeepLinking.as_view(), name='lti13-deep-linking'),
     url(r'^(?P<namespace>[\w-]+)/lti/(?P<task_id>[\w-]+)/(?P<path>.*?/?\w+(?:\.\w+)+)$',

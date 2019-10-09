@@ -35,6 +35,7 @@ class AssignmentTestCase(APITestCase):
     def test_create_assignment(self):
         self.client.force_authenticate(self.teacher_col.user)
         data = {
+            'course_id': '123',
             'external_id': '123',
             'path': str(self.path),
             'lms_instance': str(self.lms_instance.pk),
@@ -49,23 +50,4 @@ class AssignmentTestCase(APITestCase):
         resp = self.client.post(url, data)
         self.assertEqual(resp.status_code, 201)
         assignment = Assignment.objects.get(external_id=data['external_id'])
-        self.assertEqual(assignment.teacher_project.pk, self.teacher_col.project.pk)
-
-    def test_create_module(self):
-        self.client.force_authenticate(self.teacher_col.user)
-        data = {
-            'external_id': '',
-            'path': str(self.path),
-            'lms_instance': str(self.lms_instance.pk),
-            'teacher_project': str(self.teacher_col.project.pk),
-            'oauth_app': str(self.oauth_app.pk),
-        }
-        url = reverse('create-assignment', kwargs={
-            'version': 'v1',
-            'namespace': self.teacher_col.project.namespace_name,
-            'project_project': str(self.teacher_col.project.pk),
-        })
-        resp = self.client.post(url, data)
-        self.assertEqual(resp.status_code, 201)
-        assignment = Module.objects.get(path=str(self.path), teacher_project=self.teacher_col.project)
         self.assertEqual(assignment.teacher_project.pk, self.teacher_col.project.pk)

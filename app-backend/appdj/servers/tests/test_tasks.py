@@ -137,7 +137,8 @@ class LTI11Test(TestCase):
             teacher_project=self.project,
             oauth_app=app,
             path='release/ps1/Untitled.ipynb',
-            external_id='123'
+            external_id='123',
+            course_id='123'
         )
         teachers_path = self.project.resource_root() / 'release' / assignment_path
         teachers_path.parent.mkdir(exist_ok=True, parents=True)

@@ -69,10 +69,11 @@ def lti_project(*, user, project_pk, course_id, path, assignment_id):
         path=path,
         assignment_id=assignment_id
     )
+    is_assignment = isinstance(obj, Assignment)
     if is_teacher:
         project = obj.teacher_project
     else:
-        if isinstance(obj, Assignment):
+        if is_assignment:
             project = user.projects.filter(
                 student_assignments=obj,
                 collaborator__owner=True
@@ -83,13 +84,13 @@ def lti_project(*, user, project_pk, course_id, path, assignment_id):
                 collaborator__owner=True
             ).first()
     if project is None:
-        if assignment_id:
+        if is_assignment:
             project = perform_project_copy(user, str(project_pk), copy_files=False)
         else:
             project = perform_project_copy(user, str(project_pk))
         if obj:
             obj.students_projects.add(project)
-    return project, is_teacher
+    return project, is_teacher, obj.id if obj else None, is_assignment
 
 
 def lti_workspace(user, project):
@@ -127,7 +128,7 @@ def lti(project_pk, data, path):
     logger.debug('[LTI] data: %s', data)
     user = lti_user(lti_helper.email, lti_helper.user_id)
     logger.debug('[LTI] user %s', user)
-    project, is_teacher = lti_project(
+    project, is_teacher, obj_id, is_assignment = lti_project(
         user=user,
         project_pk=project_pk,
         course_id=lti_helper.course_id,
@@ -135,26 +136,31 @@ def lti(project_pk, data, path):
         assignment_id=lti_helper.assignment_id
     )
     logger.debug('[LTI] user project: %s', project.pk)
-    if not is_teacher and lti_helper.assignment_id:
+    assignment_id = None
+    if is_assignment:
+        assignment_id = obj_id
         logger.debug("Setting up assignment")
         setup_assignment(project, data, path, project_pk)
     workspace = lti_workspace(user, project)
-    return str(workspace.pk), lti_helper.assignment_id
+    return str(workspace.pk), assignment_id
 
 
 def setup_assignment(project, data, path, teacher_project_pk):
-    lti_helper = get_lti(data)
-    assignment = Assignment.objects.get(
-        external_id=lti_helper.assignment_id,
+    assignment = Assignment.objects.filter(
         teacher_project_id=teacher_project_pk,
         path=path,
-    )
+    ).first()
+    if not assignment:
+        return
     if 'lis_result_sourcedid' in data:
         source_did_obj, _ = StudentProjectThrough.objects.get_or_create(assignment=assignment, project=project)
         source_did_obj.source_did = data['lis_result_sourcedid']
         source_did_obj.save()
-    if not assignment.outcome_url:
+    if 'lis_outcome_service_url' in data and not assignment.outcome_url:
         assignment.outcome_url = data['lis_outcome_service_url']
+        assignment.save()
+    if 'https://purl.imsglobal.org/spec/lti-ags/claim/endpoint' in data:
+        assignment.endpoint = data['https://purl.imsglobal.org/spec/lti-ags/claim/endpoint']
         assignment.save()
     if not assignment.is_assigned(project):
         assignment.assign(project)
@@ -165,7 +171,7 @@ def setup_assignment(project, data, path, teacher_project_pk):
 def send_assignment(workspace_pk, assignment_id):
     workspace = Server.objects.get(pk=workspace_pk)
     assignment = Assignment.objects.get(
-        external_id=assignment_id,
+        id=assignment_id,
         students_projects=workspace.project
     )
     assignment.send(workspace.project)

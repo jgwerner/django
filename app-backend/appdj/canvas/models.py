@@ -7,6 +7,7 @@ from appdj.infrastructure.models import ECSCluster
 class CanvasInstance(models.Model):
     instance_guid = models.CharField(max_length=100, blank=False, unique=True)
     name = models.CharField(max_length=100, blank=True)
+    url = models.URLField(blank=True)
     applications = models.ManyToManyField(settings.OAUTH2_PROVIDER_APPLICATION_MODEL)
     users = models.ManyToManyField(settings.AUTH_USER_MODEL)
     clusters = models.ManyToManyField(ECSCluster)

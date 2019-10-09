@@ -56,16 +56,17 @@
         var path = input.getAttribute("data-path");
         var project = input.getAttribute("data-project");
         var url = `${window.location.origin}/{{ version }}/{{ namespace }}/projects/${project}/assignments/`
+        var data = {
+            {% if assignment_id %}external_id: '{{ assignment_id }}',{% endif %}
+            path: path,
+            lms_instance: '{{ canvas_instance_id }}',
+            oauth_app: '{{ oauth_app }}',
+            teacher_project: project,
+            course_id: '{{ course_id }}',
+        };
         fetch(url, {
             method: 'post',
-            body: JSON.stringify({
-                external_id: '{{ assignment_id }}',
-                path: path,
-                lms_instance: '{{ canvas_instance_id }}',
-                oauth_app: '{{ oauth_app }}',
-                teacher_project: project,
-                course_id: '{{ course_id }}',
-            }),
+            body: JSON.stringify(data),
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': 'JWT {{ token }}',

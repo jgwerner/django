@@ -27,7 +27,7 @@ from rest_framework.decorators import (
 from rest_framework import filters
 from rest_framework.response import Response
 from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser as DRFIsAdminUser
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework_jwt.settings import api_settings
 from rest_framework_csv.renderers import CSVRenderer
@@ -37,7 +37,6 @@ from appdj.base.views import LookupByMultipleFields
 from appdj.base.permissions import IsAdminUser
 from appdj.base.parser import PlainTextParser
 from appdj.base.utils import get_object_or_404, validate_uuid
-from appdj.canvas.authorization import CanvasAuth, JSONWebTokenAuthenticationForm
 from appdj.canvas.models import CanvasInstance
 from appdj.projects.permissions import ProjectChildPermission
 from appdj.projects.models import Project
@@ -281,17 +280,21 @@ def lti_redirect(request, *args, **kwargs):
     return redirect(request.get_full_path())
 
 
-@api_view(['post'])
-@authentication_classes([CanvasAuth, JSONWebTokenAuthenticationForm])
+@api_view(['post', 'get'])
 @permission_classes([])
 @parser_classes([MultiPartParser, FormParser, JSONParser])
 @renderer_classes([TemplateHTMLRenderer, JSONRenderer])
 def lti_file_handler(request, *args, **kwargs):
     project = get_object_or_404(Project, kwargs.get('project_project'))
     path = kwargs.get('path', '')
+    if request.auth:
+        data = request.auth
+    else:
+        data = request.data
+
     task = lti.delay(
         project.pk,
-        request.data,
+        data,
         path
     )
     task_url = reverse('lti-task', kwargs={

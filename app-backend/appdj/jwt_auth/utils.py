@@ -18,9 +18,12 @@ def create_server_jwt(user, server_id):
     return jwt_encode_handler(payload)
 
 
-def create_auth_jwt(user):
-    payload = jwt_payload_handler(user)
-    return jwt_encode_handler(payload)
+def create_auth_jwt(
+        user,
+        payload_handler=jwt_payload_handler,
+        encode_handler=jwt_encode_handler):
+    payload = payload_handler(user)
+    return encode_handler(payload)
 
 
 def create_one_time_jwt(user):

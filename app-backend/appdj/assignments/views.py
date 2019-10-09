@@ -1,19 +1,18 @@
 from rest_framework.generics import CreateAPIView
 
-from .models import Assignment, Module
-from .serializers import AssignmentSerializer, ModuleSerializer
+from .models import Assignment
+from .serializers import AssignmentSerializer
 
 
 class CreateModuleOrAssignment(CreateAPIView):
-    def is_assignment(self):
-        return bool(self.request.data.get('external_id'))
+    queryset = Assignment.objects.all()
+    serializer_class = AssignmentSerializer
 
-    def get_queryset(self):
-        if self.is_assignment():
-            return Assignment.objects.all()
-        return Module.objects.all()
-
-    def get_serializer_class(self):
-        if self.is_assignment():
-            return AssignmentSerializer
-        return ModuleSerializer
+    def perform_create(self, serializer):
+        data = serializer.validated_data
+        exists = Assignment.objects.filter(
+            path=data['path'],
+            course_id=data['course_id'],
+        ).exists()
+        if not exists:
+            serializer.save()

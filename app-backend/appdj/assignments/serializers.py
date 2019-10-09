@@ -3,7 +3,6 @@ from rest_framework import serializers
 from .models import Assignment, Module
 
 
-
 class AssignmentSerializer(serializers.ModelSerializer):
 
     class Meta:

@@ -9,6 +9,7 @@ from oauth2_provider.models import Application
 from oauthlib.oauth1 import RequestValidator, SignatureOnlyEndpoint
 from rest_framework import authentication, exceptions
 from rest_framework_jwt.authentication import BaseJSONWebTokenAuthentication
+from rest_framework_jwt.settings import api_settings
 from django.core.cache import cache
 from django.core.exceptions import SuspiciousOperation
 from django.conf import settings
@@ -23,6 +24,7 @@ from .lti import get_lti
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
+jwt_decode_handler = api_settings.JWT_DECODE_HANDLER
 
 
 class CanvasValidator(RequestValidator):  # pylint: disable=abstract-method
@@ -136,7 +138,7 @@ def lti_jwt_decode(token, jwks=None, verify=True, audience=None):
     return jwt.decode(
         token,
         key,
-        verify or settings.LTI_JWT_VERIFY,
+        verify,
         audience=audience
     )
 
@@ -151,16 +153,16 @@ class JSONWebTokenAuthenticationForm(BaseJSONWebTokenAuthentication):
         if jwt_value is None:
             return None
 
-        jwks_endpoint = None
-        audience = None
-        if 'state' in jwt_value:
-            state = jwt_value['state']
-            iss = cache.get(state)
-            self.canvas_instance = CanvasInstance.objects.filter(instance_guid=iss).first()
-            if not self.canvas_instance:
-                raise exceptions.AuthenticationFailed('Invalid iss')
-            jwks_endpoint = self.canvas_instance.oidc_jwks_endpoint
-            audience = self.canvas_instance.applications.first().client_id
+        unverified_payload = lti_jwt_decode(jwt_value['id_token'], verify=False)
+        self.canvas_instance = self.get_lms_instance(unverified_payload)
+        if not self.canvas_instance:
+            raise exceptions.AuthenticationFailed()
+        state = jwt_value['state']
+        iss = cache.get(state)
+        if not iss:
+            raise exceptions.AuthenticationFailed('Bad state')
+        jwks_endpoint = self.canvas_instance.oidc_jwks_endpoint
+        audience = self.canvas_instance.applications.filter(client_id=unverified_payload['aud']).first().client_id
         try:
             payload = lti_jwt_decode(jwt_value['id_token'], jwks_endpoint, audience=audience)
         except jwt.ExpiredSignature:
@@ -175,6 +177,11 @@ class JSONWebTokenAuthenticationForm(BaseJSONWebTokenAuthentication):
         self.verify_lti(payload)
         user = self.authenticate_credentials(payload)
         return (user, payload)
+
+    @staticmethod
+    def get_lms_instance(payload):
+        instance_guid = payload['https://purl.imsglobal.org/spec/lti/claim/tool_platform']['guid']
+        return CanvasInstance.objects.filter(instance_guid=instance_guid).first()
 
     @staticmethod
     def verify_lti(payload):
@@ -194,16 +201,38 @@ class JSONWebTokenAuthenticationForm(BaseJSONWebTokenAuthentication):
 
     def authenticate_credentials(self, payload):
         email = payload.get('email')
+        user = None
+        canvas_user_id = payload['sub']
         if email is None:
-            raise exceptions.AuthenticationFailed("Email is required")
-
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
-            user = User.objects.create_user(
-                username=email_to_username(email),
-                email=email
-            )
+            try:
+                user = User.objects.get(profile__config__canvas_user_id=canvas_user_id)
+            except User.DoesNotExist:
+                raise exceptions.AuthenticationFailed("Email required")
+        else:
+            try:
+                user = User.objects.get(email=email)
+            except User.DoesNotExist:
+                user = User.objects.create_user(
+                    username=email_to_username(email),
+                    email=email
+                )
+            user.profile.config['lti13_user_id'] = canvas_user_id
+            user.profile.save()
         if not user.is_active:
             raise exceptions.AuthenticationFailed("User account is disabled")
         return user
+
+
+class InUrlJWTAuth(BaseJSONWebTokenAuthentication):
+    def authenticate(self, request):
+        out = super().authenticate(request)
+        if out:
+            user = out[0]
+            token = out[1]
+            payload = jwt_decode_handler(token)
+            if 'lti' in payload:
+                return user, payload['lti']
+        return out
+
+    def get_jwt_value(self, request):
+        return request.GET.get('jwt')

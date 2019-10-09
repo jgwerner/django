@@ -90,15 +90,15 @@ class LTI13(LTI):
 
     @property
     def user_id(self):
-        return self.data['https://purl.imsglobal.org/spec/lti/claim/lti11_legacy_user_id']
+        return self.data['sub']
 
     @property
     def assignment_id(self):
-        return self.data['ext_lti_assignment_id']
+        return ''
 
     @property
     def course_id(self):
-        return ''
+        return self.data['https://purl.imsglobal.org/spec/lti/claim/context']['id']
 
     @property
     def deep_link_return_url(self):
@@ -108,6 +108,10 @@ class LTI13(LTI):
     def context_memberships_url(self):
         if 'https://purl.imsglobal.org/spec/lti-nrps/claim/namesroleservice' in self.data:
             return self.data['https://purl.imsglobal.org/spec/lti-nrps/claim/namesroleservice']['context_memberships_url']
+
+    @property
+    def target_link_uri(self):
+        return self.data['https://purl.imsglobal.org/spec/lti/claim/target_link_uri']
 
     def prepare_deep_linking_response(self, content_items=None):
         content_items = content_items or []
@@ -129,15 +133,15 @@ class LTI13(LTI):
             'nonce': self.data['nonce'],
             'jti': uuid.uuid4().hex,
             'https://purl.imsglobal.org/spec/lti/claim/version': '1.3.0',
-            'https://purl.imsglobal.org/spec/lti/claim/deployment_id': 'testdeploy',
+            'https://purl.imsglobal.org/spec/lti/claim/deployment_id': self.data['https://purl.imsglobal.org/spec/lti/claim/deployment_id'],
         }
 
     def get_access_token(self, token_url, key, client_id, scope):
         token_info = self.token_info()
         token_info.update({
-            'sub': client_id
+            'sub': client_id,
+            'aud': token_url
         })
-        print(token_info)
         token = jwt.encode(
             token_info,
             key,

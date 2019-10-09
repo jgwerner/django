@@ -20,7 +20,6 @@ from rest_framework.views import APIView
 from appdj.base.views import NamespaceMixin, LookupByMultipleFields
 from appdj.base.utils import validate_uuid
 from appdj.canvas.models import CanvasInstance
-from appdj.canvas.authorization import CanvasAuth, JSONWebTokenAuthenticationForm
 from appdj.servers.utils import get_server_url, create_server
 from appdj.jwt_auth.utils import create_auth_jwt
 from appdj.oauth2.models import Application
@@ -140,12 +139,17 @@ class CloneGitProject(CreateAPIView):
 
 
 class FileSelection(APIView):
-    authentication_classes = (JSONWebTokenAuthenticationForm, CanvasAuth)
     permission_classes = ()
     parser_classes = (FormParser, MultiPartParser)
     renderer_classes = (TemplateHTMLRenderer,)
 
+    def get(self, request, *args, **kwargs):
+        return self._common(request, *args, **kwargs)
+
     def post(self, request, *args, **kwargs):
+        return self._common(request, *args, **kwargs)
+
+    def _common(self, request, *args, **kwargs):
         projects = Project.objects.filter(
             Q(collaborator__user=request.user) | Q(team__in=Team.objects.filter(groups__user=request.user)),
             Q(is_active=True),
@@ -221,21 +225,20 @@ class FileSelection(APIView):
 
     @staticmethod
     def get_v13_context(request, projects_context):
-        course_id = request.META['HTTP_REFERER'].split('/')[4]
+        instance_guid = request.auth['https://purl.imsglobal.org/spec/lti/claim/tool_platform']['guid']
         oauth_app, _ = Application.objects.get_or_create(
-            application=ProviderApp.objects.get(client_id=request.data['oauth_consumer_key']))
+            application=ProviderApp.objects.get(client_id=request.auth['aud']))
         return {
-            'course_id': course_id,
             'token': create_auth_jwt(request.user),
             'lti_version': request.auth['https://purl.imsglobal.org/spec/lti/claim/version'],
             'projects': projects_context,
             'action_url': request.auth['https://purl.imsglobal.org/spec/lti/claim/launch_presentation']['return_url'],
-            'assignment_id': request.auth.get('ext_lti_assignment_id'),
+            'course_id': request.auth['https://purl.imsglobal.org/spec/lti/claim/context']['id'],
             'canvas_instance_id': CanvasInstance.objects.filter(
-                instance_guid=request.data['tool_consumer_instance_guid']).first().pk,
+                instance_guid=instance_guid).first().pk,
             'oauth_app': str(oauth_app.pk),
             'version': request.version,
-            'namespace': request.namespace
+            'namespace': request.user.username
         }
 
     def _iterate_dir(self, directory):
