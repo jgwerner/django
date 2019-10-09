@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+# [1.3.0](https://github.com/illumidesk/illumidesk/compare/v1.2.2...v1.3.0) (2019-10-09)
+
+### Features
+
+* **core:** Canvas LTI 1.3, does not include support for Canvas's `Speed Grader` or viewing file with the `Submission URL`. ([#459](https://github.com/illumidesk/illumidesk/issues/459)) ([0d9dfaf](https://github.com/illumidesk/illumidesk/commit/0d9dfaf))
+
+
 ## [1.2.2](https://github.com/illumidesk/illumidesk/compare/v1.1.0...v1.2.2) (2019-10-09)
 
 ### Bug Fixes
