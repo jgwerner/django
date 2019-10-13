@@ -183,7 +183,10 @@ class Assignment(ModuleAbstract):
             return self.get_grade(student_project)
 
     def _tool_url_path(self, student_project):
-        teacher_workspace = self.teacher_project.servers.get(is_active=True, config__type='jupyter')
+        teacher_workspace = self.teacher_project.servers.get(config__type='jupyter')
+        if not teacher_workspace.is_active:
+            teacher_workspace.is_active = True
+            teacher_workspace.save()
         scheme = 'https' if settings.HTTPS else 'http'
         namespace = self.teacher_project.namespace_name
         if self.is_autograded(student_project):
