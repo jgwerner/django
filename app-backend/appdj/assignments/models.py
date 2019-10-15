@@ -13,13 +13,11 @@ from django.contrib.postgres.fields import JSONField
 from django.template.loader import render_to_string
 from django.urls import reverse
 from requests_oauthlib import OAuth1Session
-from nbgrader.apps import NbGraderAPI
-from nbgrader.coursedir import CourseDirectory
-from traitlets.config import Config
 
 from appdj.base.models import TBSQuerySet
 from appdj.canvas.utils import get_canvas_access_token
 from appdj.projects.models import Project
+from appdj.servers.spawners import get_spawner_class
 
 logger = logging.getLogger(__name__)
 
@@ -130,16 +128,14 @@ class Assignment(ModuleAbstract):
         path = Path(self.path).relative_to('release') if 'release' in self.path else self.path
         return self.teacher_project.resource_root() / directory / student_username / path
 
-    def autograde(self, student_project):
+    def autograde(self):
         """
         Autograde assignment
         """
-        config = Config()
-        config.CourseDirectory.root = str(self.teacher_project.resource_root())
-        api = NbGraderAPI(CourseDirectory(config=config), config=config)
-        resp = api.autograde(self.assignment_id, student_project.owner.username, force=False)
-        if not resp['success']:
-            raise Exception(f"Assignment {self.external_id} not autograded for student {student_project.owner.username}: {resp}")
+        Spawner = get_spawner_class()
+        workspace = self.teacher_project.servers.first()
+        spawner = Spawner(workspace)
+        spawner.autograde(self.assignment_id)
 
     def get_grade(self, student_project):
         """
@@ -179,7 +175,7 @@ class Assignment(ModuleAbstract):
     def _prepare_send(self, student_project):
         self.copy_submitted_file(student_project)
         if self.should_autograde:
-            self.autograde(student_project)
+            self.autograde()
             return self.get_grade(student_project)
 
     def _tool_url_path(self, student_project):

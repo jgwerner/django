@@ -16,3 +16,6 @@ class DummySpawner(SpawnerInterface):
 
     def status(self) -> str:
         return self.server.RUNNING
+
+    def autograde(self, assignment_id):
+        return None
