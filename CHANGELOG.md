@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+# [1.4.0](https://github.com/illumidesk/illumidesk/compare/v1.3.0...v1.4.0) (2019-10-15)
+
+### Features
+
+* **core:** Autograde with ECS task ([#496](https://github.com/illumidesk/illumidesk/issues/496)) ([c9add21](https://github.com/illumidesk/illumidesk/commit/c9add21))
+* **workspace:** Update Jupyter Notebook Auto Grader UX ([#494](https://github.com/IllumiDesk/illumidesk/pull/494)) ([a6b6c54](https://github.com/illumidesk/illumidesk/commit/a6b6c54))
+
+
 # [1.3.0](https://github.com/illumidesk/illumidesk/compare/v1.2.2...v1.3.0) (2019-10-09)
 
 ### Features
