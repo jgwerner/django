@@ -43,9 +43,17 @@ RUN conda install -c conda-forge -y \
     jupyter_nbextensions_configurator \
     plotly==2.7 \
     pythreejs \
-    nbgrader \
     && \
     conda clean --all -f -y && \
+    fix-permissions $CONDA_DIR && \
+    fix-permissions /home/$NB_USER
+
+# nbgrader
+ENV NBGRADER_VERSION=0.6.0-2
+RUN cd /tmp && \
+    wget --quiet https://github.com/IllumiDesk/nbgrader/archive/${NBGRADER_VERSION}.zip && \
+    $CONDA_DIR/bin/pip install ${NBGRADER_VERSION}.zip && \
+    rm ${NBGRADER_VERSION}.zip && \
     fix-permissions $CONDA_DIR && \
     fix-permissions /home/$NB_USER
 
@@ -89,4 +97,15 @@ RUN fix-permissions $CONDA_DIR && \
 EXPOSE 8080
 
 # set container to run with $NB_USER by default
-USER $NB_UID
+USER $NB_UID   
+
+# nbgrader edits
+## adjust nbgrader assignment list and course list extensions
+RUN jupyter nbextension install --sys-prefix --py nbgrader --overwrite && \
+    jupyter nbextension enable --sys-prefix --py nbgrader && \
+    jupyter serverextension enable --sys-prefix --py nbgrader
+
+RUN jupyter nbextension disable --sys-prefix assignment_list/main --section=tree && \
+    jupyter serverextension disable --sys-prefix nbgrader.server_extensions.assignment_list && \
+    jupyter nbextension disable --sys-prefix course_list/main --section=tree && \
+    jupyter serverextension disable --sys-prefix nbgrader.server_extensions.course_list
