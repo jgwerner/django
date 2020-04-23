@@ -6,7 +6,11 @@ import environ
 
 
 BASE_DIR = Path(__file__).parents[2]
+# cd into illumidesk subfolder
+BASE_DIR = BASE_DIR / 'illumidesk'
 APPS_DIR = BASE_DIR / 'illumidesk'
+
+print('BASE_DIR:', BASE_DIR)
 
 env = environ.Env()
 
@@ -70,17 +74,16 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'config.urls'
 
+print('TEMPLATES_PATH', os.path.join(BASE_DIR, 'illumidesk','templates'))
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            os.path.join(BASE_DIR, 'illumidesk/templates')
+            os.path.join(BASE_DIR, 'illumidesk', 'templates')
         ],
+        'APP_DIRS': True,
         'OPTIONS': {
-            'loaders': [
-                'django.template.loaders.filesystem.Loader',
-                'django.template.loaders.app_directories.Loader',
-            ],
+            
             'context_processors': [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
@@ -100,7 +103,7 @@ DATABASES = {'default': env.db('DATABASE_URL')}
 DATABASES['default']['ATOMIC_REQUESTS'] = True
 
 AUTH_USER_MODEL = 'users.IllumiDeskUser'
-LOGIN_REDIRECT_URL = 'users:redirect'
+LOGIN_REDIRECT_URL = 'web:home'
 
 AUTH_PASSWORD_VALIDATORS = [
     {
