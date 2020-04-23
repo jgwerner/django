@@ -1,0 +1,36 @@
+
+################################################################
+# Global configuration
+################################################################
+
+logLevel = "DEBUG"
+defaultEntryPoints = ["http", "https"]
+
+[entryPoints]
+  [entryPoints.http]
+    address = ":80"
+
+# use default stdout. this allows for using any log driver to pipe logs
+# to a third party service.
+[traefikLog]
+  format = "common"
+
+[accessLog]
+  format = "common"
+
+################################################################
+# Web configuration backend
+################################################################
+
+[web]
+  address = ":5000"
+
+################################################################
+# Docker configuration backend
+################################################################
+
+[docker]
+  endpoint = "unix:///var/run/docker.sock"
+  domain = "localhost"
+  exposedbydefault = true
+  watch = true

@@ -1,0 +1,52 @@
+{% extends "illumidesk/app/app_base.html" %}
+{% load static %}
+{% block app %}
+<section class="section app-card">
+  <div class="columns columns-reversed">
+    <div class="column is-one-quarter">
+        <img src="{% static 'images/illumidesk/undraw/undraw_joyride.svg' %}" alt="Yay!">
+    </div>
+    <div class="column is-three-quarters">
+      <h1 class="title is-size-4">My Subscription</h1>
+      <h2 class="subtitle">You're subscribed to a plan. Thanks for the support!</h2>
+      {% if subscription %}
+        <p class="heading">Subscription Details</p>
+        <div id="subscription-details-table" class="my-2">
+           <div class="subscription-detail">
+             <div class="subscription-detail-label">
+               Current Subscription
+             </div>
+             <div class="subscription-detail-value">
+               <div class="tag is-success">{{ product.metadata.name }}</div>
+               <div class="subdetail">Since: {{ subscription.start.date }}</div>
+             </div>
+           </div>
+          <div class="subscription-detail">
+             <div class="subscription-detail-label">
+               Price
+             </div>
+             <div class="subscription-detail-value">
+               {{ subscription.plan.human_readable_price }}
+             </div>
+           </div>
+          <div class="subscription-detail">
+             <div class="subscription-detail-label">
+               Auto-Renews
+             </div>
+             <div class="subscription-detail-value">
+               <div class="tag is-info">{{ subscription.plan.nickname }}</div>
+               <div class="subdetail">Next payment: {{ friendly_payment_amount }} on {{ subscription.current_period_end.date }}</div>
+             </div>
+           </div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+  <p class="is-size-6"><em>
+    To modify or cancel your subscription just send a mail to
+    <a href="mailto:{{ project_meta.CONTACT_EMAIL }}">{{ project_meta.CONTACT_EMAIL }}</a>
+    and we'll process it as quickly as possible&mdash;usually within 24 hours.
+    </em>
+  </p>
+</section>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "illumidesk/base.html" %}
+{% load static %}
+{% block body %}
+{% block notifications %}
+{% endblock %}
+<section class="section">
+    <div class="container illumidesk-two-column" id="app-main">
+        <div id="app-nav">
+            {% block sidebar-nav %}
+                {% include "web/components/app_nav.html" %}
+            {% endblock %}
+        </div>
+        <div id="app-content">
+            {% block app %}
+            {% endblock %}
+        </div>
+    </div>
+</section>
+{% endblock %}

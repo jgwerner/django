@@ -1,0 +1,25 @@
+# General
+# ------------------------------------------------------------------------------
+DJANGO_READ_DOT_ENV_FILE=False
+USE_DOCKER=yes
+IPYTHONDIR=/app/.ipython
+DJANGO_DEBUG=True
+
+# Redis
+# ------------------------------------------------------------------------------
+REDIS_URL=redis://redis:6379/0
+
+# Celery
+# ------------------------------------------------------------------------------
+
+# Flower
+CELERY_FLOWER_USER=debug
+CELERY_FLOWER_PASSWORD=debug
+
+# Stripe
+# ------------------------------------------------------------------------------
+STRIPE_TEST_PUBLIC_KEY=pk_test_U01IorbAENUSoqfWgSNWMPJi00JyPNN76T
+STRIPE_TEST_SECRET_KEY=sk_test_XXYAJRQugIaJz6EWoQmhrt1v
+STRIPE_LIVE_MODE=False
+
+DJSTRIPE_WEBHOOK_SECRET=whsec_JcBSrLhUbQ3Nk3Oa594FEW81dqYqhMp3

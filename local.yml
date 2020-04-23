@@ -1,0 +1,70 @@
+version: "3.5"
+
+x-django: &django
+  build:
+    context: .
+    dockerfile: ./compose/local/django/Dockerfile
+  image: illumidesk_docker_local_django
+  env_file:
+    - ./.envs/.local/.django
+    - ./.envs/.local/.postgres
+  depends_on:
+    - postgres
+    - redis
+  volumes:
+    - .:/app
+
+services:
+  reverse-proxy:
+    image: traefik:v2.2
+    command: --api.insecure=true --providers.docker=true --providers.docker.watch=true
+    ports:
+      - "5000:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  webapp:
+    <<: *django
+    command: /start
+    ports:
+      - "5000"
+      - "5001:5000"
+    labels:
+      - "traefik.http.routers.webapp.rule=PathPrefix(`/`)"
+
+  celeryworker:
+    <<: *django
+    image: illumidesk_docker_local_celeryworker
+    command: /start-celeryworker
+
+  celerybeat:
+    <<: *django
+    image: illumidesk_docker_local_celerybeat
+    command: /start-celerybeat
+
+  flower:
+    <<: *django
+    image: illumidesk_docker_local_flower
+    command: /start-flower
+    ports:
+      - "5555"
+
+  postgres:
+    build:
+      context: .
+      dockerfile: ./compose/production/postgres/Dockerfile
+    image: illumidesk_docker_local_postgres
+    volumes:
+      - local_postgres_data:/var/lib/postgresql/data
+      - local_postgres_data_backups:/backups
+    env_file:
+      - ./.envs/.local/.postgres
+
+  redis:
+    image: redis:5.0
+
+volumes:
+  local_postgres_data: {}
+  local_postgres_data_backups: {}
+  local_traefik: {}

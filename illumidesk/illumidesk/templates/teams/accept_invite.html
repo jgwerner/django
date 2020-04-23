@@ -1,0 +1,45 @@
+{% extends "illumidesk/base.html" %}
+{% load static %}
+{% load i18n %}
+{% block body %}
+<section class="section container">
+    <div class="columns">
+        <div class="column is-one-third">
+            <img src="{% static 'images/illumidesk/undraw/undraw_lighthouse.svg' %}" alt="Welcome!">
+        </div>
+        <div id="tagline" class="column">
+            <h1 class="title is-size-2">Accept Invitation?</h1>
+            <h2 class="subtitle is-size-4">
+                You've been invited to join {{ invitation.team.name }}
+                by {{ invitation.invited_by.get_display_name }}.
+            </h2>
+            {% if request.user.is_authenticated and request.user == invitation.email %}
+                <p class="buttons">
+                    <a class="button is-primary is-large" href="{% url 'account_signup' %}?invitation_id={{ invitation.id }}">
+                        Accept
+                    </a>
+                </p>
+            {% elif request.user.is_authenticated %}
+                <p class="warning">
+                     This invitation was sent to {{ invitation.email }} but you're logged in as {{ request.user.email }}.
+                     What would you like to do?
+                </p>
+                <p class="buttons">
+                    <a class="button is-primary is-large" href="{% url 'account_signup' %}?invitation_id={{ invitation.id }}">
+                        Accept as {{ request.user.email }}
+                    </a>
+                    <a class="button is-primary is-large is-outlined" href="{% url 'account_signup' %}?invitation_id={{ invitation.id }}">
+                        Sign out
+                    </a>
+                </p>
+            {% else %}
+                <p class="buttons">
+                    <a class="button is-primary is-large" href="{% url 'account_signup' %}?invitation_id={{ invitation.id }}">
+                        Create Account to Accept
+                    </a>
+                </p>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

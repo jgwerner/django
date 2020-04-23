@@ -1,0 +1,88 @@
+{% extends "illumidesk/examples/examples_base.html" %}
+{% load static %}
+{% block app %}
+<section class="section app-card">
+    <h1 class="title">Tasks Example</h1>
+    <h2 class="subtitle">
+        Support background, long-running, or scheduled tasks easily with Celery
+    </h2>
+    <div class="content">
+        <p>
+            Most applications eventually need to perform tasks that take longer than a few seconds to complete,
+            for example data imports/exports.
+            If yours is one of these, you'll probably want to use
+            <a href="http://www.celeryproject.org/" >Celery</a> for the job to run in the background.
+        </p>
+        <p>
+            This page is a complete example that creates tasks for a background Celery process
+            and displays the progress below.
+            It should provide a perfect example to build from.
+        </p>
+        <p>
+            <strong>Kick off your first Celery task below!</strong>
+        </p>
+        <div class="buttons">
+            <button class="button is-primary" id="task-starter">
+                <span>Run Task</span>
+                <span class="icon">
+                    <i class="fa fa-angle-double-right"></i>
+                </span>
+            </button>
+        </div>
+        <div class="progress-bar-demo" style="margin-bottom: 1em;">
+            <div class='progress-wrapper'>
+              <div id="progress-bar" class='progress-bar' style="background-color: #3273dc; width: 2px;">&nbsp;</div>
+            </div>
+            <div id="progress-bar-message" style="color: grey;">Waiting for progress to start...</div>
+        </div>
+        <p>
+            For more information about how this works see:
+            <a href="https://buildwithdjango.com/blog/post/celery-progress-bars/">
+                Building Progress Bars for the Web with Django and Celery
+            </a>
+        </p>
+    </div>
+</section>
+    <div id="csrf-helper" style="display: none">{% csrf_token %}</div>
+{% endblock %}
+{% block page_js %}
+    <script src="{% static 'celery_progress/celery_progress.js' %}"></script>
+    <script>
+    var apiUrl = "{% url 'pegasus_examples:tasks_api' %}";
+    console.log('apiUrl', apiUrl);
+    var progressUrl = "{% url 'celery_progress:task_status' 'task-id-stub' %}";
+    document.addEventListener("DOMContentLoaded", function () {
+        var trigger = document.getElementById('task-starter');
+        trigger.addEventListener('click', function (e) {
+            e.preventDefault();
+            var pb = document.getElementById('progress-bar');
+            pb.style.display = 'inherit';
+            var csrfToken = document.getElementById('csrf-helper').firstChild.attributes.value['value'];
+            var data = new FormData();
+            data.append('csrfmiddlewaretoken', csrfToken);
+            fetch(apiUrl, {
+                method: 'post',
+                body: data,
+                credentials: 'same-origin',
+            }).then(
+                function (response) {
+                    return response.text();
+                }).then(function (text) {
+                    var taskUrl = progressUrl.replace('task-id-stub', text);
+                    CeleryProgressBar.initProgressBar(taskUrl, {
+                        onProgress: function (progressBarElement, progressBarMessageElement, progress) {
+                            console.log('test on progress')
+                            progressBarElement.style.width = progress.percent + "%";
+                            progressBarElement.style.backgroundColor = '#3273dc';
+                            progressBarMessageElement.innerHTML = progress.current + ' of ' + progress.total + ' processed.';
+                        },
+                    });
+                  })
+                  .catch(function (error) {
+                    console.error('Request failed', error);
+                });
+                e.preventDefault();
+        }, false);
+    });
+    </script>
+{% endblock %}
