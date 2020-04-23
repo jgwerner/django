@@ -14,19 +14,21 @@ from rest_framework.authtoken.views import obtain_auth_token
 
 schemajs_view = get_schemajs_view(title='IllumiDesk API')
 
+
 urlpatterns = [
     path(settings.ADMIN_URL, admin.site.urls),
+    path('', include('illumidesk.web.urls')),
     path('api/', include('config.api_router')),
     path('auth-token/', obtain_auth_token),
     path('accounts/', include('allauth.urls')),
-    path('users/', include('illumidesk.users.urls')),
-    path('subscriptions/', include('illumidesk.subscriptions.urls')),
-    path('teams/', include('illumidesk.teams.urls')),
-    path('', include('illumidesk.web.urls')),
-    path('illumidesk/', include('illumidesk.examples.urls')),
     path('celery-progress/', include('celery_progress.urls')),
+    path('docs/', include_docs_urls(title='IllumiDesk API Docs')),
+    path('illumidesk/', include('illumidesk.examples.urls')),
     path('schemajs/', schemajs_view, name='api_schemajs'),
     path('stripe/', include('djstripe.urls', namespace='djstripe')),
+    path('subscriptions/', include('illumidesk.subscriptions.urls')),
+    path('teams/', include('illumidesk.teams.urls')),
+    path('users/', include('illumidesk.users.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG:

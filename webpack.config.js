@@ -4,12 +4,12 @@ const ExtractTextPlugin = require("extract-text-webpack-plugin");
 module.exports = {
   entry: {
     index: './assets/index.js',
-    teams: './assets/javascript/illumidesk/teams.js',
-    IllumiDesk: './assets/javascript/illumidesk/IllumiDesk.js',
-    'object-lifecycle': './assets/javascript/illumidesk/examples/object-lifecycle.js',
+    teams: './assets/js/illumidesk/teams.js',
+    IllumiDesk: './assets/js/illumidesk/IllumiDesk.js',
+    'object-lifecycle': './assets/js/illumidesk/examples/object-lifecycle.js',
   },
   output: {
-    path: path.resolve(__dirname, './static'),
+    path: path.resolve(__dirname, './staticfiles'),
     filename: 'js/[name]-bundle.js',
     library: ["SiteJS", "[name]"],
   },

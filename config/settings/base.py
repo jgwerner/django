@@ -100,7 +100,7 @@ DATABASES = {'default': env.db('DATABASE_URL')}
 DATABASES['default']['ATOMIC_REQUESTS'] = True
 
 AUTH_USER_MODEL = 'users.IllumiDeskUser'
-LOGIN_REDIRECT_URL = 'users:redirect'
+LOGIN_REDIRECT_URL = 'web:home'
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -138,11 +138,11 @@ USE_TZ = True
 
 LOCALE_PATHS = [str(BASE_DIR / 'locale')]
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'static_root')
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),
+    os.path.join(BASE_DIR, 'assets'),
 ]
 
 # uncomment to use manifest storage to bust cache when file change

@@ -17,6 +17,13 @@ Generally, if you want to emulate production environment use `production.yml` in
 
     $ docker-compose -f production.yml up -d --build
 
+Then, build the front end assets:
+
+    $ npm install
+    $ npm run dev
+
+You can also use the `npm run dev-watch` option to enable hot reloading.
+
 ### Execute Management Commands
 
 As with any shell command that we wish to run in our container, this is done using the `docker-compose -f local.yml run --rm ...` command:
@@ -24,7 +31,7 @@ As with any shell command that we wish to run in our container, this is done usi
     $ docker-compose -f local.yml run --rm webapp python manage.py migrate
     $ docker-compose -f local.yml run --rm webapp python manage.py createsuperuser
 
-Here, `webapp` is the target service we are executing the commands against.
+Here, `webapp` is the target service we are executing the commands against. The `collectstatic` command is run when starting the webapp container.
 
 ### Type checks
 
