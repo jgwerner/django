@@ -37,7 +37,7 @@ Here, `webapp` is the target service we are executing the commands against.
 
 ### Unit Tests
 
-    $ docker-compose -f local.yml webapp python pytest illumidesk
+    $ docker-compose -f local.yml run --rm webapp pytest illumidesk
 
 ### Configuring the Environment
 
