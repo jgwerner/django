@@ -28,12 +28,12 @@ Here, `webapp` is the target service we are executing the commands against.
 
 ### Type checks
 
-    $ docker-compose -f local.yml webapp python mypy illumidesk
+    $ docker-compose -f local.yml run --rm webapp python mypy illumidesk
 
 ### Linters
 
-    $ docker-compose -f local.yml webapp python flake8 illumidesk
-    $ docker-compose -f local.yml webapp python pylint illumidesk
+    $ docker-compose -f local.yml run --rm webapp flake8 illumidesk
+    $ docker-compose -f local.yml run --rm webapp pylint illumidesk
 
 ### Unit Tests
 
