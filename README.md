@@ -17,21 +17,32 @@ Generally, if you want to emulate production environment use `production.yml` in
 
     $ docker-compose -f production.yml up -d --build
 
-Then, build the front end assets:
-
-    $ npm install
-    $ npm run dev
-
-You can also use the `npm run dev-watch` option to enable hot reloading.
-
 ### Execute Management Commands
 
 As with any shell command that we wish to run in our container, this is done using the `docker-compose -f local.yml run --rm ...` command:
 
     $ docker-compose -f local.yml run --rm webapp python manage.py migrate
+    $ docker-compose -f local.yml run --rm webapp python manage.py collectstatic
     $ docker-compose -f local.yml run --rm webapp python manage.py createsuperuser
 
-Here, `webapp` is the target service we are executing the commands against. The `collectstatic` command is run when starting the webapp container.
+### Build Custom Frontend Assets
+
+Build the front end assets:
+
+    $ npm install
+    $ npm run dev
+
+You can also use the `npm run dev-watch` option to enable hot reloading. Use `npm run build` for production builds.
+
+## Setting Up Your Users
+
+* When running tests the **test user accounts** are created with factory methods so only the test command is necessary to run tests that require user accounts.
+
+* To create a **normal user account**, just go to Sign Up and fill out the form. Once you submit it, you'll see a "Verify Your E-mail Address" page. Go to your console to see a simulated email verification message. Copy the link into your browser. Now the user's email should be verified and ready to go.
+
+* You can create any number of **superuser accounts** which allows you to log into the `admin` console:
+
+    $ docker-compose -f local.yml run --rm webapp python manage.py createsuperuser
 
 ### Type checks
 
@@ -81,7 +92,7 @@ The three envs we are presented with here are `POSTGRES_DB`, `POSTGRES_USER`, an
 
 The .env file will then be created, with all your production envs residing beside each other.
 
-### django-debug-toolbar
+### Debugging with `django-debug-toolbar`
 
 In order for django-debug-toolbar to work designate your Docker Machine IP with INTERNAL_IPS in local.py.
 
@@ -105,13 +116,3 @@ Possible uses could be for testing, or ease of profiling with DJDT.
 Flower is a “real-time monitor and web admin for Celery distributed task queue”.
 
 By default, it’s enabled both in local and production environments (`local.yml` and `production.yml` Docker Compose configs, respectively) through a flower service. For added security, flower requires its clients to provide authentication credentials specified as the corresponding environments’ `.envs/.local/.django` and `.envs/.production/.django` `CELERY_FLOWER_USER` and `CELERY_FLOWER_PASSWORD` environment variables. By default, the flower services is exposed via port `5555`.
-
-## Setting Up Your Users
-
-* To create a **normal user account**, just go to Sign Up and fill out the form. Once you submit it, you'll see a "Verify Your E-mail Address" page. Go to your console to see a simulated email verification message. Copy the link into your browser. Now the user's email should be verified and ready to go.
-
-* To create an **superuser account**, use this command::
-
-    $ python manage.py createsuperuser
-
-For convenience, you can keep your normal user logged in on Chrome and your superuser logged in on Firefox (or similar), so that you can see how the site behaves for both kinds of users.
