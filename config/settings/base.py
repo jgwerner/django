@@ -6,8 +6,7 @@ import environ
 
 
 BASE_DIR = Path(__file__).parents[2]
-# cd into illumidesk subfolder
-BASE_DIR = BASE_DIR / 'illumidesk'
+
 APPS_DIR = BASE_DIR / 'illumidesk'
 
 print('BASE_DIR:', BASE_DIR)
@@ -74,7 +73,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'config.urls'
 
-print('TEMPLATES_PATH', os.path.join(BASE_DIR, 'illumidesk','templates'))
+print('TEMPLATES_PATH', os.path.join(BASE_DIR, 'illumidesk', 'templates'))
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -141,11 +140,11 @@ USE_TZ = True
 
 LOCALE_PATHS = [str(BASE_DIR / 'locale')]
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'static_root')
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),
+    os.path.join(BASE_DIR, 'assets'),
 ]
 
 # uncomment to use manifest storage to bust cache when file change
