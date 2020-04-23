@@ -7,7 +7,16 @@
 - Docker Compose
 - Docker CE
 
-###  Build and Run the Stack
+### Build Custom Frontend Assets
+
+Build the front end assets:
+
+    $ npm install
+    $ npm run dev
+
+You can also use the `npm run dev-watch` option to enable hot reloading. Use `npm run build` for production builds.
+
+### Build and Run the Stack
 
 Build and run the docker images in detached mode using the `docker-compose` command:
 
@@ -17,22 +26,13 @@ Generally, if you want to emulate production environment use `production.yml` in
 
     $ docker-compose -f production.yml up -d --build
 
-### Execute Management Commands
+> **Note**: For those of you familiar with django's collectstatic and migrate commands, these are included as part of the docker image entry points.
+
+### Create Admin User
 
 As with any shell command that we wish to run in our container, this is done using the `docker-compose -f local.yml run --rm ...` command:
 
-    $ docker-compose -f local.yml run --rm webapp python manage.py migrate
-    $ docker-compose -f local.yml run --rm webapp python manage.py collectstatic
     $ docker-compose -f local.yml run --rm webapp python manage.py createsuperuser
-
-### Build Custom Frontend Assets
-
-Build the front end assets:
-
-    $ npm install
-    $ npm run dev
-
-You can also use the `npm run dev-watch` option to enable hot reloading. Use `npm run build` for production builds.
 
 ## Setting Up Your Users
 
