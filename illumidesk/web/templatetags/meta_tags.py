@@ -10,6 +10,16 @@ register = template.Library()
 
 
 @register.filter
+def is_member_of(user, team):
+    return user_can_access_team(user, team)
+
+
+@register.filter
+def is_admin_of(user, team):
+    return user_can_administer_team(user, team)
+
+
+@register.filter
 def get_title(project_meta, page_title=None):
     if page_title:
         return '{} | {}'.format(page_title, project_meta['NAME'])
