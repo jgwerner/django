@@ -101,44 +101,15 @@ def get_active_plan_interval_metadata():
 # Remove one of them to only allow monthly/annual pricing.
 # The first element is considered the default
 ACTIVE_PLAN_INTERVALS = [
-    PlanInterval.year,
     PlanInterval.month,
+    PlanInterval.year,
 ]
-
 
 # These are the products that will be shown to users in the UI and allowed to be associated
 # with plans on your side
 ACTIVE_PRODUCTS = [
-    ProductMetadata(
-        stripe_id='',
-        name=_('Starter'),
-        description=_('For hobbyists and side-projects'),
-        features=[
-            _('Up to 100 Widgets'),
-            _('Unlimited Widget Editing'),
-        ],
-    ),
-    ProductMetadata(
-        stripe_id='',
-        name=_('Standard'),
-        description=_('For small businesses and teams'),
-        is_default=True,
-        features=[
-            _('Up to 500 Widgets'),
-            _('Unlimited Widget Editing'),
-            _('Advanced Widget Editing Features'),
-        ],
-    ),
-    ProductMetadata(
-        stripe_id='',
-        name=_('Premium'),
-        description=_('For small businesses and teams'),
-        features=[
-            _('Unlimited Widgets'),
-            _('All Features'),
-            _('Priority Support and Training'),
-        ],
-    ),
+    ProductMetadata(stripe_id='prod_H9Xcih05aRA4Vn', name='Enterprise', features=['Enterprise Feature 1', 'Enterprise Feature 2', 'Enterprise Feature 3'], description='The Enterprise plan', is_default=True),
+    ProductMetadata(stripe_id='prod_H9XaZ6eaSlRpyI', name='Starter', features=['Starter Feature 1', 'Starter Feature 2', 'Starter Feature 3'], description='The Starter plan', is_default=False),
 ]
 
 ACTIVE_PRODUCTS_BY_ID = {

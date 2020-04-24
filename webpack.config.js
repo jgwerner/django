@@ -6,7 +6,6 @@ module.exports = {
     index: './assets/index.js',
     teams: './assets/js/illumidesk/teams.js',
     IllumiDesk: './assets/js/illumidesk/IllumiDesk.js',
-    'object-lifecycle': './assets/js/illumidesk/examples/object-lifecycle.js',
   },
   output: {
     path: path.resolve(__dirname, './staticfiles'),
