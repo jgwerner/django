@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "description": "",
   "main": "webpack.config.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/IllumiDesk/django.git"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack --mode production",
@@ -28,5 +32,8 @@
     "style-loader": "^0.23.1",
     "webpack": "^4.42.0",
     "webpack-cli": "^3.3.11"
+  },
+  "release": {
+      "branches": ["master"]
   }
 }
