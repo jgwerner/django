@@ -26,7 +26,6 @@ jobs:
       script:
         - docker-compose -f local.yml run --rm webapp flake8 illumidesk
         - docker-compose -f local.yml run --rm webapp pylint illumidesk
-        - 
   jobs:
     include:
       - stage: release
